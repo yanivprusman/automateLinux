@@ -1,0 +1,12 @@
+[Unit]
+Description=Map mouse extra button to Enter key
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/yaniv/coding/automationLinux/mouse_to_enter.py
+Restart=on-failure
+User=root
+
+[Install]
+WantedBy=multi-user.target

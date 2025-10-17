@@ -1,0 +1,207 @@
+4630  xev | grep button
+ 4631  sudo apt install xbindkeys xdotool
+ 4632  code ~/.xbindkeysrc
+ 4633  xbindkeys
+ 4634  pgrep -a xbindkeys
+ 4635  rm ~/.xbindkeysrc
+ 4636  sudo apt install input-remapper
+ 4637  input-remapper-gtk
+ 4638  sudo apt install evtest
+ 4639  sudo evtest
+ 4640  sudo evtest /dev/input/event6
+ 4641  input-remapper-gtk
+ 4642  code ~/.config/input-remapper/
+ 4643  sudo input-remapper --device "Logitech USB Receiver Mouse" --profile "YourProfileName"
+ 4644  sudo evtest /dev/input/event6
+ 4645  xbindkeys --defaults > ~/.xbindkeysrc
+ 4646  code ~/.xbindkeysrc
+ 4647  xbindkeys
+ 4648  xev
+ 4649  echo $XDG_SESSION_TYPE
+ 4650  sudo apt install wtype
+ 4651  sudo apt install ratbagd piper
+ 4652  sudo systemctl enable --now ratbagd
+ 4653  piper
+ 4654  ls /dev/input/
+ 4655  sudo pip3 install python-evdev python-uinput
+ 4656  sudo apt install python3-evdev python3-uinput
+ 4657  systemctl --user enable /home/yaniv/coding/automationLinux/mouse_to_enter.service
+ 4658  systemctl --user start mouse_to_enter.service
+ 4659  systemctl --user status mouse_to_enter.service
+ 4660  groups
+ 4661  sudo usermod -aG input yaniv
+ 4662  systemctl --user status mouse_to_enter.service
+ 4663  journalctl --user-unit=mouse_to_enter.service --no-pager -n 20
+ 4664  sudo usermod -aG uinput yaniv
+ 4665  sudo groupadd uinput && sudo usermod -aG uinput yaniv
+ 4666  sudo udevadm control --reload-rules && sudo udevadm trigger
+ 4667  rm ~/.xbindkeysrc
+ 4668  code ~/.config/input-remapper/
+ 4669  systemctl --user status mouse_to_enter.service
+ 4670  sudo systemctl status mouse-remap.service
+ 4671  sudo systemctl enable mouse-remap.service
+ 4672  sudo systemctl start mouse-remap.service
+ 4673  sudo systemctl status mouse-remap.service
+ 4674  sudo journalctl -u mouse-remap.service -n 50
+ 4675  cat /usr/local/bin/mouse-remap.py | head -20
+ 4676  sudo systemctl restart mouse-remap.service
+ 4677  sudo systemctl stop mouse-remap.service
+ 4678  sudo python3 /usr/local/bin/mouse-remap-debug.py
+ 4679  sudo touch /usr/local/bin/mouse-remap-debug.py
+ 4680  code /usr/local/bin/mouse-remap-debug.py
+ 4681  sudo chmod +x /usr/local/bin/mouse-remap-debug.py
+ 4682  sudo python3 /usr/local/bin/mouse-remap-debug.py
+ 4683  sudo systemctl status mouse-remap.service
+ 4684  ps aux | grep mouse-remap
+ 4685  sudo systemctl is-enabled mouse-remap.service
+ 4686  cat /etc/udev/hwdb.d/90-mouse-remap.hwdb
+ 4687  history
+ 4688  h "service"
+ 4689  ls ~/.config/systemd/user/
+ 4690  ls -l ~/.config/systemd/user/
+ 4691  code /home/yaniv/coding/automationLinux/mouse_to_enter.service
+ 4692  sudo apt install python3-evdev python3-uinput
+ 4693  code /usr/local/bin/mouse-remap.py
+ 4694  sudo touch /usr/local/bin/mouse-remap.py
+ 4695  code /usr/local/bin/mouse-remap.py
+ 4696  sudo chmod +x /usr/local/bin/mouse-remap.py
+ 4697  sudo touch /etc/systemd/system/mouse-remap.service
+ 4698  code /etc/systemd/system/mouse-remap.service
+ 4699  sudo modprobe uinput
+ 4700  echo "uinput" | sudo tee /etc/modules-load.d/uinput.conf
+ 4701  sudo systemctl daemon-reload
+ 4702  sudo systemctl enable mouse-remap.service
+ 4703  sudo systemctl start mouse-remap.service
+ 4704  sudo systemctl stop mouse-remap.service
+ 4705  sudo systemctl disable mouse-remap.service
+ 4706  sudo python3 /usr/local/bin/mouse-remap.py
+ 4707  sudo journalctl -u mouse-remap.service -f
+ 4708  sudo systemctl daemon-reload && sudo systemctl enable mouse_to_enter.service && sudo systemctl start mouse_to_enter.service && sudo systemctl status mouse_to_enter.service
+ 4709  sudo cp /home/yaniv/coding/automationLinux/mouse_to_enter.service /etc/systemd/system/
+ 4710  sudo systemctl daemon-reload && sudo systemctl enable mouse_to_enter.service && sudo systemctl start mouse_to_enter.service && sudo systemctl status mouse_to_enter.service
+ 4711  sudo systemctl start mouse_to_enter.service && sudo systemctl status mouse_to_enter.service
+ 4712  sudo journalctl -u mouse_to_enter.service --no-pager | tail -20
+ 4713  sudo systemctl restart mouse_to_enter.service && sudo systemctl status mouse_to_enter.service && sudo journalctl -u mouse_to_enter.service --no-pager | tail -20
+ 4714  sudo systemctl restart mouse_to_enter.service
+ 4715  sudo systemctl status mouse_to_enter.service
+ 4716  sudo journalctl -u mouse_to_enter.service --no-pager | tail -20
+ 4717  sudo systemctl restart mouse_to_enter.service && sudo systemctl status mouse_to_enter.service && sudo journalctl -u mouse_to_enter.service --no-pager | tail -20
+ 4718  pyenv shell 3.12.0
+ 4719  /home/yaniv/.pyenv/versions/3.12.0/bin/python /home/yaniv/coding/automationLinux/mouse_to_enter.py
+ 4720  python3 /home/yaniv/coding/automationLinux/mouse_to_enter.py
+ 4721  fuser -v /dev/input/event6
+ 4722  pyenv shell 3.12.0
+ 4723  cd ../automationLinux/
+ 4724  sudo reboo
+ 4725  fuser -v /dev/input/event6
+ 4726  sudo evtest /dev/input/event6
+ 4727  fuser -v /dev/input/event6
+ 4728  ls
+ 4729  git init
+ 4730  git a
+ 4731  git s
+ 4732  git m "start"
+ 4733  sudo evtest /dev/input/event6
+ 4734  h "touch"
+ 4735  /etc/systemd/system/
+ 4736  /usr/local/bin/
+ 4737  ls /etc/systemd/system/
+ 4738  ls -l /etc/systemd/system/input-remapper.service
+ 4739  cat /usr/lib/systemd/system/input-remapper-daemon.service
+ 4740  sudo sytemctl status input-remapper.service
+ 4741  h "status"
+ 4742  sudo systemctl status input-remapper.service
+ 4743  sudo systemctl stop input-remapper.service
+ 4744  sudo systemctl status input-remapper.service
+ 4745  sudo evtest /dev/input/event6
+ 4746  ls /etc/systemd/system/
+ 4747  cat /etc/systemd/system/mouse-remap.service 
+ 4748  sudo systemctl status mouse-remap.service 
+ 4749  sudo systemctl status mouse-remap.service
+ 4750  sudo systemctl status input-remapper.service
+ 4751  sudo systemctl status mouse_to_enter.service
+ 4752  sudo systemctl status mouse-remap.service --no-pager
+ 4753  sudo systemctl status input-remapper.service --no-pager
+ 4754  sudo systemctl status mouse_to_enter.service --no-pager
+ 4755  clear
+ 4756  sudo systemctl status mouse-remap.service --no-pager
+ 4757  sudo systemctl status input-remapper.service --no-pager
+ 4758  sudo systemctl status mouse_to_enter.service --no-pager
+ 4759  clear
+ 4760  cat /etc/systemd/system/mouse-remap.service 
+ 4761  cat /etc/systemd/system/input-remapper.service 
+ 4762  cat /etc/systemd/system/mouse_to_enter.service 
+ 4763  chmod +x 101.txt 
+ 4764  ./101.txt 
+ 4765  ./101.txt | code -
+ 4766  sudo systemctl enable mouse-remap.service --no-pager
+ 4767  sudo systemctl disable input-remapper.service --no-pager
+ 4768  sudo systemctl disable mouse_to_enter.service --no-pager
+ 4769  sudo systemctl enable mouse-remap.service 
+ 4770  sudo systemctl disable input-remapper.service 
+ 4771  sudo systemctl disable mouse_to_enter.service 
+ 4772  sudo systemctl status mouse-remap.service --no-pager
+ 4773  sudo systemctl status input-remapper.service --no-pager
+ 4774  sudo systemctl status mouse_to_enter.service --no-pager
+ 4775  sudo systemctl start mouse-remap.service 
+ 4776  sudo systemctl stop input-remapper.service 
+ 4777  sudo systemctl stop mouse_to_enter.service 
+ 4778  yaniv@ubuntu:~/coding/automationLinux$ sudo systemctl start mouse-remap.service 
+ 4779  sudo systemctl stop input-remapper.service 
+ 4780  sudo systemctl stop mouse_to_enter.service 
+ 4781  sudo systemctl status input-remapper.service --no-pager
+ 4782  sudo systemctl enable input-remapper.service 
+ 4783  sudo apt update
+ 4784  sudo apt install --reinstall input-remapper
+ 4785  sudo systemctl enable input-remapper.service 
+ 4786  systemctl list-unit-files | grep input-remapper
+ 4787  sudo systemctl status input-remapper-daemon.service --no-pager
+ 4788  sudo systemctl start mouse-remap.service 
+ 4789  sudo systemctl stop mouse_to_enter.service 
+ 4790  sudo systemctl stop mouse-remap.service 
+ 4791  sudo systemctl start mouse_to_enter.service 
+ 4792  sudo systemctl disable mouse-remap.service 
+ 4793  sudo systemctl enable mouse_to_enter.service 
+ 4794  sudo systemctl stop mouse-remap.service 
+ 4795  sudo systemctl start mouse_to_enter.service 
+ 4796  sudo systemctl disable mouse-remap.service 
+ 4797  sudo systemctl enable mouse_to_enter.service 
+ 4798  sudo systemctl stop mouse-remap.service 
+ 4799  sudo systemctl start mouse_to_enter.service 
+ 4800  sudo python3 /home/yaniv/coding/automationLinux/mouse_to_enter.py
+ 4801  sudo systemctl restart mouse_to_enter.service 
+ 4802  ls -l /etc/systemd/system/mouse-remap.service
+ 4803  ls -l /etc/systemd/system/
+ 4804  cat /etc/systemd/system/mouse-remap.service
+ 4805  rm /usr/local/bin/mouse-remap.py
+ 4806  sudo rm /usr/local/bin/mouse-remap.py
+ 4807  cat /etc/systemd/system/mouse-remap.service
+ 4808  sudo rm /etc/systemd/system/mouse-remap.service
+ 4809  ls -l /etc/systemd/system/
+ 4810  ls -l /usr/lib/systemd/system/
+ 4811  ls -l /usr/lib/systemd/system/d*
+ 4812  ls -l /usr/lib/systemd/system/D*
+ 4813  ps aux | grep -i deskflow
+ 4814  systemctl list-units --type=service | grep -i deskflow
+ 4815  flatpak list | grep -i deskflow
+ 4816  ls  ~/.config/autostart/
+ 4817  find ~/ -iname "*deskflow*"
+ 4818  find ~/ -iname "*deskflow*" 2>/dev/null
+ 4819  flatpak list | grep -i deskflow
+ 4820  systemctl --user disable deskflow.service
+ 4821  systemctl --user enable deskflow.service
+ 4822  systemctl --user disable deskflow.service
+ 4823  ls /etc/systemd/system/
+ 4824  ls /usr/local/bin/
+ 4825  systemctl list-units --type=service | grep -i mouse
+ 4826  cat /usr/local/bin/mouse-remap-debug.py
+ 4827  code /usr/local/bin/mouse-remap-debug.py
+ 4828  :
+ 4829  code ~/.xinitrc
+ 4830  code ~/.xsession
+ 4831  grep -i mouse ~/.xinitrc ~/.xsession ~/.profile ~/.config/autostart/*.desktop 2>/dev/null
+ 4832  xinput list
+ 4833  ls /dev/input/by-id/
+ 4834  sudo lsof /dev/input/by-id/*-event-mouse
+ 4835  sudo evtest /dev/input/by-id/usb-Logitech_USB_Receiver-if01-event-mouse
+ 4836  history | code -

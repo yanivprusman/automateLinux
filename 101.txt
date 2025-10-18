@@ -14,4 +14,6 @@ sudo systemctl restart mouse_to_enter.service
 # sudo systemctl disable input-remapper-daemon.service 
 # cat /etc/systemd/system/input-remapper-daemon.service 
 
+/usr/lib/systemd/system/input-remapper-daemon.service
+/var/lib/systemd/deb-systemd-helper-enabled/default.target.wants/input-remapper-daemon.service
 

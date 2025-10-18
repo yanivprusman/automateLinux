@@ -1,0 +1,3 @@
+evsieve
+https://github.com/KarsMulder/evsieve?tab=readme-ov-file
+sudo evsieve --input /dev/input/event* --print

@@ -1,0 +1,1 @@
+help me create a service that runs all scripts in mappings

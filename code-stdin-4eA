@@ -1,0 +1,14 @@
+Event:  type:code = msc:scan       value = 458777      domain = /dev/input/event3
+Event:  type:code = key:v          value = 1 (down)    domain = /dev/input/event3
+vEvent:  type:code = msc:scan       value = 458777      domain = /dev/input/event3
+Event:  type:code = key:v          value = 0 (up)      domain = /dev/input/event3
+
+
+Event:  type:code = msc:scan       value = 458979      domain = /dev/input/event3
+Event:  type:code = key:leftmeta   value = 1 (down)    domain = /dev/input/event3
+Event:  type:code = msc:scan       value = 458777      domain = /dev/input/event3
+Event:  type:code = key:v          value = 1 (down)    domain = /dev/input/event3
+Event:  type:code = msc:scan       value = 458979      domain = /dev/input/event3
+Event:  type:code = key:leftmeta   value = 0 (up)      domain = /dev/input/event3
+Event:  type:code = msc:scan       value = 458777      domain = /dev/input/event3
+Event:  type:code = key:v          value = 0 (up)      domain = /dev/input/event3

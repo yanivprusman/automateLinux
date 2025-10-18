@@ -5,5 +5,5 @@ echo "Detected mouse: /dev/input/$MOUSE_EVENT"
 
 sudo evsieve --input /dev/input/$MOUSE_EVENT grab \
     --map btn:forward key:enter \
-    --output &
+    --output name="evsieve mouse"
 

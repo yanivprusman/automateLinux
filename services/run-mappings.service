@@ -1,0 +1,13 @@
+[Unit]
+Description=Thumb to Enter evsieve mapping
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'for script in /home/yaniv/coding/automationLinux/mappings/*.sh; do [ -x "$script" ] && "$script" & done'
+RemainAfterExit=yes
+User=root
+WorkingDirectory=/home/yaniv/coding/automationLinux
+
+[Install]
+WantedBy=multi-user.target

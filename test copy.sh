@@ -49,5 +49,5 @@ sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase2 domain=evsieveKeyboa
     # --hook key:enter send-key=key:leftctrl:1 send-key=key:leftctrl:0 send-key=key:a \
     # --hook key:leftctrl send-key=key:a \
     # --hook key:leftctrl key:1 key:2 send-key=key:a \
-qweqweqwasdfewasdf111
+qweqweqwasdfewasdf
 

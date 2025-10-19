@@ -7,7 +7,7 @@ sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase2 domain=evsieveKeyboa
     --map key:q key:q@devNull \
     --map key:w key:w@devNull \
     --hook key:q key:w exec-shell="echo Hello, world2!" \
-    --hook key:q key:w send-key=key:a send-key=key:s send-key=key:d send-key=key:f --withold \
+    --hook key:q key:w send-key=key:a send-key=key:s send-key=key:d send-key=key:f --withhold \
     --output @devNull
     # --hook key:q key:w exec-shell="echo Hello, world2!" \
     # --withhold \

@@ -4,10 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash -c 'for script in /home/yaniv/coding/automationLinux/mappings/*.sh; do [ -x "$script" ] && "$script" & done'
+ExecStart=/bin/bash -c 'for script in /home/yaniv/coding/automateLinux/mappings/*.sh; do [ -x "$script" ] && "$script" & done'
 RemainAfterExit=yes
 User=root
-WorkingDirectory=/home/yaniv/coding/automationLinux
+WorkingDirectory=/home/yaniv/coding/automateLinux
 
 [Install]
 WantedBy=multi-user.target
+

@@ -24,9 +24,8 @@ sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase2 domain=evsieveKeyboa
     --map key:e @devNull \
     --hook key:e key:w send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential\
     --withhold key:w \
-    --hook key:e key:w send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential\
-    --withhold key:w \
-    --hook key:e key:g key:k key:y key:4 send-key=key:enter sequential\
+\
+    --hook key:leftshift key:e key:g key:k key:y key:4 send-key=key:enter sequential\
     --withhold \
     --output @sparce
 # egky1
@@ -35,6 +34,7 @@ sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase2 domain=evsieveKeyboa
 # egky4
 # egky5
 # egky6
+# EGKY!
     # (hook) sequential
     # send-key=key:a send-key=key:s send-key=key:d send-key=key:f \
     # --hook key:leftctrl key:e send-key=key:a send-key=key:s send-key=key:d send-key=key:f \

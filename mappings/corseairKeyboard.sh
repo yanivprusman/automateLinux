@@ -2,7 +2,7 @@ KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
 sudo evsieve --input /dev/input/by-id/$KEYBOARD_BY_ID grab \
     --output name="evsieve keyboard phase 1" create-link=/dev/input/by-id/evsieveKeyboardPhase1 &
 
-sleep 1
+# sleep 1
 
 sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase1 grab \
     --map key:f2:1 key:leftctrl:1 key:s:1 key:s:0 key:leftctrl:0 key:f2:0 \
@@ -13,7 +13,7 @@ sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase1 grab \
     --map key:compose:1 key:leftctrl:1 key:slash:1 key:slash:0 key:leftctrl:0 key:compose:0 \
     --output name="evsieve keyboard phase 2" create-link=/dev/input/by-id/evsieveKeyboardPhase2 &
 
-wait
+# wait
     # --hook key:leftctrl key:n send-key=key:f5 sequential --withhold \
     # --toggle key:a key:b \
  

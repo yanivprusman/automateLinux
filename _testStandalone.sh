@@ -1,5 +1,7 @@
 # exec 2>/dev/null
-sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase2 domain=evsieveKeyboardPhase2 grab \
+KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
+# sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase2 domain=evsieveKeyboardPhase2 grab \
+sudo evsieve --input /dev/input/by-id/$KEYBOARD_BY_ID grab \
     --hook key:leftshift key:e key:g key:k key:y key:6 send-key=key:leftctrl send-key=key:c sequential \
     --hook key:leftshift key:e key:g key:k key:y key:5 send-key=key:leftctrl send-key=key:v sequential \
     --hook key:leftshift key:e key:g key:k key:y key:4 send-key=key:enter sequential \
@@ -14,4 +16,3 @@ sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase2 domain=evsieveKeyboa
     --print format=direct\
     --output 
 # 
-# s

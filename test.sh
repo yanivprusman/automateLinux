@@ -6,7 +6,7 @@ sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase2 domain=evsieveKeyboa
     --map key:q         @sparce \
     --map key:w         @sparce \
     --map key:rightctrl @sparce \
-    --map key:leftctrl  @sparce \
+    --map key:leftctrl  @ctrl \
     --map key:leftalt   @sparce \
     --map key:leftshift @sparce \
     --map key:backslash @sparce \
@@ -20,40 +20,29 @@ sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase2 domain=evsieveKeyboa
     --map key:4         @sparce \
     --map key:5         @sparce \
     --map key:6         @sparce \
-    --map key:tab         @sparce \
-    --map key:e @devNull \
-    --hook key:e key:w send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential\
-    --withhold key:w \
-\
-    --hook key:leftshift key:e key:g key:k key:y key:4 send-key=key:enter sequential\
+    --map key:tab       @sparce \
+    --map key:e         @sparce \
+    \
+    --hook key:leftshift key:w send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential \
+    \
+    --hook key:leftshift key:e key:g key:k key:y key:1 send-key=key:enter sequential \
+    --hook key:leftshift key:e key:g key:k key:y key:2 send-key=key:enter sequential \
+    --hook key:leftshift key:e key:g key:k key:y key:3 send-key=key:enter sequential \
+    --hook key:leftshift key:e key:g key:k key:y key:4 send-key=key:enter sequential \
+    --hook key:leftshift key:e key:g key:k key:y key:5 send-key=key:enter sequential \
+    --hook key:leftshift key:e key:g key:k key:y key:6 send-key=key:enter sequential \
     --withhold \
-    --output @sparce
-# egky1
-# egky2
-# egky3
-# egky4
-# egky5
-# egky6
-# EGKY!
-    # (hook) sequential
-    # send-key=key:a send-key=key:s send-key=key:d send-key=key:f \
-    # --hook key:leftctrl key:e send-key=key:a send-key=key:s send-key=key:d send-key=key:f \
-    # (hook) --withhold
-    # --hook key:q key:w exec-shell="echo Hello, world2!" \
-    # --hook key:q key:w exec-shell="echo Hello, world2!" \
-    # --withhold \
+    \
+    --hook key:leftctrl key:e toggle=leftctrl:2 send-key=key:leftshift send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential \
+    --withhold \
+    --toggle key:leftctrl:1 key:leftctrl:1 key:leftctrl:0 id=leftctrl \
+    --output @sparce @ctrl
+# asdfasdfasdfasdfasdfasdfasdfasdfasdfasdfw2asdfasdfasdfasdf
+    # --hook key:e key:w send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential \
+    # --print @ctrl format=direct \
+    # --print @ctrl format=direct \22asdfasdfasdfasdfasdf222asdf
+    # --hook key:leftctrl key:w toggle=leftctrl:1 send-key=key:leftctrl sequential \
+    # --toggle key:leftctrl key:leftctrl:1 key:leftctrl:0 id=leftctrl mode=passive \
+    # --withhold key:w \
     # --print \
-    # --hook key:enter exec-shell="echo Hello, world!" \
-    # --map key:a key:b \
-    # --print \
-    # --hook key:q key:w exec-shell="echo Hello, world2!" \
-    # --hook key:q key:w send-key=key:1 \
-    # --map key:b key:a \
-    # --map key:a key:a key:s key:d key:f \
-    # --hook key:leftctrl exec-shell="echo Hello, world!" \
-    # --hook key:leftctrl exec-shell="echo Hello, world!" \
-    # --hook key:enter send-key=key:leftctrl:1 send-key=key:leftctrl:0 send-key=key:a \
-    # --hook key:leftctrl send-key=key:a \
-    # --hook key:leftctrl key:1 key:2 send-key=key:a \
-qweqweqwasdfewasdf111
-
+    # --withhold key:w \

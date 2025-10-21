@@ -1,2 +1,9 @@
+instructions: 
 https://github.com/KarsMulder/evsieve?tab=readme-ov-file
+print:
 sudo evsieve --input /dev/input/event* --print
+adding combination:
+-   breaks-on=key::1 
+-   toggle=regularToDevNull:2
+-   add @special to sent keys
+-   sequential

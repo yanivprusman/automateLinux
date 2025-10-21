@@ -16,6 +16,9 @@ sudo evsieve --input /dev/input/by-id/keyBoard grab domain=regular\
     --hook key:leftctrl key:r \
         breaks-on=key::1 toggle=regularToDevNull:2 send-key=key:leftshift@special  send-key=key:s@special send-key=key:d@special send-key=key:f@special send-key=key:g@special sequential \
     --withhold \
+    --hook key:leftctrl@regular key:s \
+        breaks-on=key::1 toggle=regularToDevNull:2 send-key=key:leftctrl@special send-key=key:n@special sequential \
+    --withhold \
     --toggle @regular @regular @devNull id=regularToDevNull\
     --output @regular @special repeat=disable \
 

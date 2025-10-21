@@ -1,9 +1,15 @@
 instructions: 
 https://github.com/KarsMulder/evsieve?tab=readme-ov-file
 print:
-sudo evsieve --input /dev/input/event* --print
+sudo evsieve --input /dev/input/event* --print format=direct
 adding combination:
 -   breaks-on=key::1 
 -   toggle=regularToDevNull:2
 -   add @special to sent keys
 -   sequential
+
+
+clean:
+sudo systemctl stop keyBoardTest.service 2>/dev/null
+sudo systemctl reset-failed keyBoardTest.service 2>/dev/null
+and add --collect

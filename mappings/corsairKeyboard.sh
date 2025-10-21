@@ -8,3 +8,11 @@ systemd-run --service-type=notify --unit=automateLinuxKeyboardPhase1.service \
     --map key:f6:1 key:s:1 key:s:0 key:f6:0 \
     --map key:compose:1 key:leftctrl:1 key:slash:1 key:slash:0 key:leftctrl:0 key:compose:0 \
     --output name="keyboard" create-link=/dev/input/by-id/keyBoard repeat=disable 
+
+
+# 6 copy   
+# 5 paste               
+# 4 enter               
+# 3 cut                 
+# 2 select all and copy 
+# 1 copy and search    

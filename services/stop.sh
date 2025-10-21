@@ -1,2 +1,2 @@
 systemctl stop automateLinuxKeyboardPhase1
-systemctl stop automateLinuxKeyboardPhase2
+systemctl stop automateLinuxMouse

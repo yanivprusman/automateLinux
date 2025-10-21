@@ -1,40 +1,32 @@
 # exec 2>/dev/null
-# KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
-# sudo evsieve --input /dev/input/by-id/$KEYBOARD_BY_ID grab \
-sudo evsieve --input /dev/input/by-id/evsieveKeyboardPhase2 domain=evsieveKeyboardPhase2 grab \
-    --map key:a         @sparce \
-    --map key:q         @sparce \
-    --map key:w         @sparce \
-    --map key:rightctrl @sparce \
-    --map key:leftctrl  @ctrl \
-    --map key:leftalt   @sparce \
-    --map key:leftshift @sparce \
-    --map key:backslash @sparce \
-    --map key:enter     @sparce \
-    --map key:e         @sparce \
-    --map key:k         @sparce \
-    --map key:y         @sparce \
-    --map key:1         @sparce \
-    --map key:2         @sparce \
-    --map key:3         @sparce \
-    --map key:4         @sparce \
-    --map key:5         @sparce \
-    --map key:6         @sparce \
-    --map key:tab       @sparce \
-    --map key:e         @sparce \
-    \
-    --hook key:leftshift key:w send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential \
-    \
-    --hook key:leftshift key:e key:g key:k key:y key:1 send-key=key:enter sequential \
-    --hook key:leftshift key:e key:g key:k key:y key:2 send-key=key:enter sequential \
-    --hook key:leftshift key:e key:g key:k key:y key:3 send-key=key:enter sequential \
-    --hook key:leftshift key:e key:g key:k key:y key:4 send-key=key:enter sequential \
-    --hook key:leftshift key:e key:g key:k key:y key:5 send-key=key:enter sequential \
-    --hook key:leftshift key:e key:g key:k key:y key:6 send-key=key:enter sequential \
+sudo evsieve --input /dev/input/by-id/keyBoard grab \
+    --hook key:leftshift key:k key:e key:y key:g key:6 \
+        send-key=key:leftctrl send-key=key:c sequential \
+    --print format=direct \
+    --hook key:leftshift key:k key:e key:y key:g key:5 \
+        send-key=key:leftctrl send-key=key:v sequential \
     --withhold \
     \
-    --hook key:leftctrl key:e toggle=leftctrl:2 send-key=key:leftshift send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential \
-    --withhold \
     --toggle key:leftctrl:1 key:leftctrl:1 key:leftctrl:0 id=leftctrl \
-    --output @sparce @ctrl
+    --toggle @regular @regular @devNull id=regularToDevNull \
+    --output 
 # 
+    # --hook key:leftctrl key:e toggle=leftctrl:2 send-key=key:leftshift send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential \
+    # --withhold \
+    # --print format=direct \
+    # --withhold \
+    # --withhold \
+    # --hook key:leftshift key:k key:e key:y key:g key:4 send-key=key:enter sequential \
+    # --hook key:leftshift key:k key:e key:y key:g key:3 send-key=key:leftctrl send-key=key:x sequential \
+    # --hook key:leftshift key:k key:e key:y key:g key:2 send-key=key:leftctrl send-key=key:a send-key=key:c sequential \
+    # --hook key:leftshift key:k key:e key:y key:g key:1 send-key=key:leftctrl send-key=key:f sequential \
+# ssdfg sdfg sddddd sddddd sdfg sdd6keyg key:g key:gdd cDF ASDFggggg
+
+# 6 copy                KEYG^   6keyg
+# 5 paste               KEYG% 
+# 4 enter               KEYG$   4keyg
+# 3 cut                 KEYG#   3keyg
+# 2 select all and copy KEYG@   2keyg
+# 1 copy and search     KEYG!   1keyg
+
+

@@ -1,5 +1,7 @@
 # exec 2>/dev/null
-sudo evsieve --input /dev/input/by-id/keyBoard grab \
+sudo evsieve --input /dev/input/by-id/keyBoard grab domain=regular\
+    --hook "" toggle=regularToDevNull:1 \
+    --map key:a:1 key:a:1 \
     --hook key:leftshift key:k key:e key:y key:g key:6 \
         breaks-on=key::1 send-key=key:leftctrl send-key=key:c sequential \
     --hook key:leftshift key:k key:e key:y key:g key:5 \
@@ -10,15 +12,16 @@ sudo evsieve --input /dev/input/by-id/keyBoard grab \
         breaks-on=key::1 send-key=key:leftctrl send-key=key:x sequential \
     --withhold \
     --hook key:leftctrl key:e \
-        breaks-on=key::1 send-key=key:leftshift send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential \
+        breaks-on=key::1 toggle=regularToDevNull:2 send-key=key:leftshift@special send-key=key:a@special send-key=key:s@special send-key=key:d@special send-key=key:f@special sequential \
     --withhold \
-    --output repeat=disable \
+    --toggle @regular @regular @devNull id=regularToDevNull\
+    --output @regular @special repeat=disable \
 
 
     # --withhold \
 # 
     # --print format=direct \
-    # --hook key:leftshift key:k key:e key:y key:g key:2 send-key=key:leftctrl send-key=key:a send-key=key:c sequential \
+    # --hook key:leftshift key:k key:e key:y ke
     # --hook key:leftshift key:k key:e ke:e ke
 
 # 6 copy   

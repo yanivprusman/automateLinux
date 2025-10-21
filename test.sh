@@ -4,6 +4,9 @@ systemd-run --collect --service-type=notify --unit=keyBoardTest.service \
 evsieve --input /dev/input/by-id/keyBoard grab domain=regular \
     --map key:space:1 key:leftctrl:1 key:n:1 key:n:0 key:s:1 key:s:0 key:leftctrl:0 \
     --output  name="keyboardB4Test" create-link=/dev/input/by-id/keyBoardB4Test repeat=disable \
+    # --map key:space:1 key:leftctrl:1 key:n:1 key:n:0 key:s:1 key:s:0 key:leftctrl:0 \
+    # --map key:space:1 key:leftctrl:1 key:n:1 key:n:0 key:leftctrl:0 \
+    # --map key:space:1 key:leftctrl:1 key:s:1 key:s:0 key:leftctrl:0 \ the only one that is working
 
 
 sudo evsieve --input /dev/input/by-id/keyBoardB4Test grab domain=regular \
@@ -23,8 +26,12 @@ sudo evsieve --input /dev/input/by-id/keyBoardB4Test grab domain=regular \
     --hook key:leftctrl@regular key:r \
         breaks-on=key::1 toggle=regularToDevNull:2 send-key=key:leftshift@special  send-key=key:s@special send-key=key:d@special send-key=key:f@special send-key=key:g@special sequential \
     --withhold \
-    --hook key:leftctrl@regular key:s \
-        breaks-on=key::1 toggle=regularToDevNull:2 send-key=key:leftctrl@special send-key=key:n@special sequential \
+    --copy key:leftctrl key:leftctrl@copy \
+    --hook key:leftctrl@copy key:s \
+        toggle=regularToDevNull:2 send-key=key:leftctrl@special send-key=key:n@special sequential \
+    --withhold \
+    --hook key:leftctrl@copy key:s \
+        \
     --withhold \
     --toggle @regular @regular @devNull id=regularToDevNull\
     --print format=direct \

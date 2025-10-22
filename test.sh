@@ -12,14 +12,22 @@ evsieve --input /dev/input/by-id/keyBoard grab \
 
 
 sudo evsieve --input /dev/input/by-id/keyBoardB4Test grab domain=regular \
-    \--map key:leftshift @leftShift \
+    --map key:leftshift @leftShift \
     --hook @regular toggle=leftshiftCount:1 \
     --hook @leftShift toggle=leftshiftCount \
     --toggle @leftShift @leftShift0 @leftShift1 @leftShift2 @leftShift3 id=leftshiftCount \
     --hook @leftShift3 \
-        toggle=leftshiftCount send-key=key:leftshift send-key=key:a send-key=key:s send-key=key:d send-key=key:f sequential \
+        toggle=leftshiftCount:1 send-key=key:leftshift@leftShiftUp send-key=key:a send-key=key:s send-key=key:d send-key=key:f \
+    --map @leftShiftUp key:leftshift:0 \
     --map key @regular \
-    --output @regular create-link=/dev/input/by-id/keyBoardTest repeat=disable \
+    --output create-link=/dev/input/by-id/keyBoardTest repeat=disable \
+
+    # --hook @leftShift3 \
+    #     toggle=leftshiftCount:1 send-key=key:a@doAsdf sequential \
+    # --hook @doAsdf \
+    #     send-key=key:a@regular send-key=key:s@regular send-key=key:d@regular send-key=key:f@regular \
+
+    # --print format=direct \
     # --copy key:leftshift key:leftshift@copy \
     # --copy key:leftctrl key:leftctrl@copy \
     # --hook key:leftshift@copy key:k key:e key:y key:g key:6 \

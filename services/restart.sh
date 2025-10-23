@@ -1,2 +1,2 @@
-systemctl stop automateLinuxKeyboardPhase1
-systemctl stop automateLinuxMouse
+sudo ./stop.sh 
+sudo ./run.sh 

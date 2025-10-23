@@ -9,7 +9,7 @@ KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
 # G3         cut                 
 # G2         select all and copy 
 # G1         copy and search    
-# systemd-run --service-type=notify --unit=automateLinuxKeyboardPhase1.service \
+# systemd-run --service-type=notify --unit=corsairKeyBoard.service \
 systemd-run --collect --service-type=notify --unit=corsairKeyBoard.service \
     evsieve --input /dev/input/by-id/$KEYBOARD_BY_ID grab domain=regular \
     --map key:f2:1 key:leftctrl:1 key:s:1 key:s:0 key:leftctrl:0 key:f2:0 \

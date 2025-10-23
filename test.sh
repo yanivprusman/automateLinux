@@ -13,17 +13,31 @@ evsieve --input /dev/input/by-id/keyBoard grab \
 
 sudo evsieve --input /dev/input/by-id/keyBoardB4Test grab domain=regular \
     --map key:leftshift @leftShift \
-    --hook @regular toggle=leftshiftCount:1 \
-    --hook @leftShift toggle=leftshiftCount \
-    --toggle @leftShift @leftShift0 @leftShift1 @leftShift2 @leftShift3 id=leftshiftCount \
+    --hook @regular toggle=leftShiftCount:1 \
+    --hook @leftShift toggle=leftShiftCount \
+    --toggle @leftShift @leftShift0 @leftShift1 @leftShift2 @leftShift3 id=leftShiftCount \
     --hook @leftShift3 \
-        toggle=leftshiftCount:1 send-key=key:leftshift@leftShiftUp send-key=key:a send-key=key:s send-key=key:d send-key=key:f \
+        toggle=leftShiftCount:1 send-key=key:leftshift@leftShiftUp send-key=key:a send-key=key:s send-key=key:d send-key=key:f \
     --map @leftShiftUp key:leftshift:0 \
     --map key @regular \
+    \
+    --hook key:leftctrl@regular key:s \
+        send-key=key:leftctrl@output send-key=key:n sequential \
+    --withhold key:s \
+    --map key:leftctrl:0@output \
+    --print format=direct \
     --output create-link=/dev/input/by-id/keyBoardTest repeat=disable \
 
+    # --hook @leftCtrl toggle=leftCtrlState \
+    # --toggle @leftShift @leftShift0 @leftShift1 @leftShift2 @leftShift3 id=leftCtrlState \
     # --hook @leftShift3 \
-    #     toggle=leftshiftCount:1 send-key=key:a@doAsdf sequential \
+    #     toggle=leftCtrlState:1 send-key=key:leftshift@leftShiftUp send-key=key:a send-key=key:s send-key=key:d send-key=key:f \
+    # --map @leftShiftUp key:leftshift:0 \
+    # --map key @regular \
+    # \
+
+    # --hook @leftShift3 \
+    #     toggle=leftShiftCount:1 send-key=key:a@doAsdf sequential \
     # --hook @doAsdf \
     #     send-key=key:a@regular send-key=key:s@regular send-key=key:d@regular send-key=key:f@regular \
 

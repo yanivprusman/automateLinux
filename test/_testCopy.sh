@@ -16,7 +16,7 @@
 # --map key:space:1 key:leftctrl:1 key:s:1 key:s:0 key:n:1 key:n:0 key:leftctrl:0 \
 # systemd-run --service-type=notify --unit=keyBoardTest.service \
 systemd-run --collect --service-type=notify --unit=keyBoardTest.service \
-evsieve --input /dev/input/by-id/corsairKeyBoard grab \
+evsieve --input /dev/input/by-id/keyBoard grab \
     --output  name="keyboardB4Test" create-link=/dev/input/by-id/keyBoardB4Test repeat=disable \
 # mappings:
 # g6 - copy

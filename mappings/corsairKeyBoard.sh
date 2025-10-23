@@ -9,12 +9,26 @@ KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
 # G3         cut                 
 # G2         select all and copy 
 # G1         copy and search    
+    # --map key:f2 key:f2@F \
+    # --hook key:leftctrl key:f2 toggle=F \
+    # --toggle @F @myF @regualrF id=F \
+    # --print format=direct \
+    # --map key:f2:1 key:leftctrl:1 key:s:1 key:s:0 key:leftctrl:0 key:f2:0 \
 # systemd-run --service-type=notify --unit=corsairKeyBoard.service \
 systemd-run --collect --service-type=notify --unit=corsairKeyBoard.service \
     evsieve --input /dev/input/by-id/$KEYBOARD_BY_ID grab domain=regular \
-    --map key:f2:1 key:leftctrl:1 key:s:1 key:s:0 key:leftctrl:0 key:f2:0 \
-    --map key:f3:1 key:leftctrl:1 key:y:1 key:y:0 key:leftctrl:0 key:f3:0 \
-    --map key:f4:1 key:leftctrl:1 key:z:1 key:z:0 key:leftctrl:0 key:f4:0 \
+    --map key:f2 key:f2@F \
+    --map key:f3 key:f3@F \
+    --map key:f4 key:f4@F \
+    --hook key:leftctrl toggle=F \
+    --hook key:leftctrl:0 toggle=F \
+    --toggle @F @myF @regualrF id=F \
+    --map key:f2@myF key:leftctrl key:s \
+    --map key:f2@regualrF key:leftctrl:0 key:f2 \
+    --map key:f3@myF key:leftctrl key:y \
+    --map key:f3@regualrF key:leftctrl:0 key:f3 \
+    --map key:f4@myF key:leftctrl key:z \
+    --map key:f4@regualrF key:leftctrl:0 key:f4 \
     --map key:compose:1 key:leftctrl:1 key:slash:1 key:slash:0 key:leftctrl:0 key:compose:0 \
     --map key:leftshift key:leftshift@leftShift \
     --toggle key:leftshift@leftShift @leftShift0 @leftShift1 @leftShift2 @leftShift3 \

@@ -18,5 +18,6 @@ KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
 systemd-run --collect --service-type=notify --unit=corsairKeyBoard.service \
     evsieve --input /dev/input/by-id/$KEYBOARD_BY_ID grab domain=regular \
     --output name="corsair keyboard" create-link=/dev/input/by-id/corsairKeyBoard repeat=disable 
+    # --hook "" exec-shell='notify-send "Current time" "$(date '+%H:%M:%S')"' \
 
 

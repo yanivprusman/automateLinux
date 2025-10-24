@@ -37,8 +37,8 @@ sudo evsieve --input /dev/input/by-id/keyBoardMouseB4Test grab domain=regular \
     --hook @leftShift3 toggle=leftShiftCount:3 \
     --toggle key:leftctrl @leftControlMax @leftControl1 @leftControl2 @leftControl3 id=leftControlCount\
     --hook @leftControl3 toggle=leftControlCount:3 \
-    --print format=direct \
-    --output create-link=/dev/input/by-id/keyBoardMouseTest repeat=disable > $EVSIEVE_LOG_DIR/evsieve.log.txt | grep -v 'Quit'
+    --print key format=direct \
+    --output create-link=/dev/input/by-id/keyBoardMouseTest repeat=disable > $EVSIEVE_LOG_DIR/evsieve.log.txt | grep -v 'Quit' 
 
 sudo systemctl stop keyBoardMouseTest.service 2>/dev/null
 sudo systemctl reset-failed keyBoardMouseTest.service 2>/dev/null

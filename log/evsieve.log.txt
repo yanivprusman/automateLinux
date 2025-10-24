@@ -360,3 +360,29 @@ key:rightctrl:1@regular
 2025-10-24 13:40:22
 msc:scan:458801@regular
 key:backslash:1@regular
+led:numl:1@regular
+2025-10-24 13:43:52
+msc:scan:458774@regular
+key:s:1@regular
+msc:scan:458759@regular
+key:d:1@regular
+msc:scan:458761@regular
+key:f:1@regular
+msc:scan:458762@regular
+key:g:1@regular
+msc:scan:458774@regular
+key:s:0@regular
+msc:scan:458759@regular
+key:d:0@regular
+2025-10-24 13:43:53
+msc:scan:458761@regular
+key:f:0@regular
+2025-10-24 13:43:53
+msc:scan:458762@regular
+key:g:0@regular
+2025-10-24 13:43:53
+msc:scan:458980@regular
+key:rightctrl:1@regular
+2025-10-24 13:43:53
+msc:scan:458801@regular
+key:backslash:1@regular

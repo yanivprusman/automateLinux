@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+EVSIEVE_LOG_DIR="$(dirname "${BASH_SOURCE[0]}")/../log"    
 # useful stuff:
 ## print:
 # --print format=direct \
@@ -13,17 +14,16 @@
 # --hook "" exec-shell="echo Hello, world!" \ 
 ## send keystrokes to test by pressing space:
 # --map key:space:1 key:leftctrl:1 key:s:1 key:s:0 key:n:1 key:n:0 key:leftctrl:0 \
-EVSIEVE_LOG_DIR="$(dirname "${BASH_SOURCE[0]}")/../log"    
 # systemd-run --service-type=notify --unit=keyBoardTest.service \
-systemd-run --collect --service-type=notify --unit=keyBoardTest.service \
-evsieve --input /dev/input/by-id/corsairKeyBoard grab \
+systemd-run --collect --service-type=notify --unit=keyBoardMouseTest.service \
+evsieve --input /dev/input/by-id/corsairKeyBoardLogiMouse grab \
     --map msc:scan \
     --map led:numl \
-    --output  name="keyboardB4Test" create-link=/dev/input/by-id/keyBoardB4Test repeat=disable 
+    --output  name="keyBoardMouseB4Test" create-link=/dev/input/by-id/keyBoardMouseB4Test repeat=disable 
 
 # coutn shift presses
 # coutn control presses
-sudo evsieve --input /dev/input/by-id/keyBoardB4Test grab domain=regular \
+sudo evsieve --input /dev/input/by-id/keyBoardMouseB4Test grab domain=regular \
     --map key:leftshift @leftShiftTemp \
     --hook @regular toggle=leftShiftCount:1 \
     --map key:leftshift @regular \
@@ -38,10 +38,10 @@ sudo evsieve --input /dev/input/by-id/keyBoardB4Test grab domain=regular \
     --toggle key:leftctrl @leftControlMax @leftControl1 @leftControl2 @leftControl3 id=leftControlCount\
     --hook @leftControl3 toggle=leftControlCount:3 \
     --print format=direct \
-    --output create-link=/dev/input/by-id/keyBoardTest repeat=disable > $EVSIEVE_LOG_DIR/evsieve.log.txt | grep -v 'Quit'
+    --output create-link=/dev/input/by-id/keyBoardMouseTest repeat=disable > $EVSIEVE_LOG_DIR/evsieve.log.txt | grep -v 'Quit'
 
-sudo systemctl stop keyBoardTest.service 2>/dev/null
-sudo systemctl reset-failed keyBoardTest.service 2>/dev/null
+sudo systemctl stop keyBoardMouseTest.service 2>/dev/null
+sudo systemctl reset-failed keyBoardMouseTest.service 2>/dev/null
 
 # insert
 # numlock

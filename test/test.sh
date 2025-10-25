@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-EVSIEVE_LOG_DIR="$(dirname "${BASH_SOURCE[0]}")/../log"    
+EVSIEVE_LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/../log/evsieve.log.txt"    
 # useful stuff:
 ## print:
 # --print format=direct \
@@ -16,6 +16,8 @@ EVSIEVE_LOG_DIR="$(dirname "${BASH_SOURCE[0]}")/../log"
 # --map key:space:1 key:leftctrl:1 key:s:1 key:s:0 key:n:1 key:n:0 key:leftctrl:0 \
 # systemd-run --service-type=notify --unit=keyBoardTest.service \
 systemd-run --collect --service-type=notify --unit=keyBoardMouseTest.service \
+--property=StandardOutput=append:/home/yaniv/coding/automateLinux/log/systemd.txt \
+--property=StandardError=append:/home/yaniv/coding/automateLinux/log/systemd.txt \
 evsieve --input /dev/input/by-id/corsairKeyBoardLogiMouse grab \
     --map msc:scan \
     --map led:numl \
@@ -38,7 +40,7 @@ sudo evsieve --input /dev/input/by-id/keyBoardMouseB4Test grab domain=regular \
     --toggle key:leftctrl @leftControlMax @leftControl1 @leftControl2 @leftControl3 id=leftControlCount\
     --hook @leftControl3 toggle=leftControlCount:3 \
     --print key format=direct \
-    --output create-link=/dev/input/by-id/keyBoardMouseTest repeat=disable > $EVSIEVE_LOG_DIR/evsieve.log.txt | grep -v 'Quit' 
+    --output create-link=/dev/input/by-id/keyBoardMouseTest repeat=disable > $EVSIEVE_LOG_FILE | grep -v 'Quit' 
 
 sudo systemctl stop keyBoardMouseTest.service 2>/dev/null
 sudo systemctl reset-failed keyBoardMouseTest.service 2>/dev/null
@@ -46,7 +48,8 @@ sudo systemctl reset-failed keyBoardMouseTest.service 2>/dev/null
 # insert
 # numlock
 # caps
-# notify-send "Current time" "$(date '+%H:%M:%S')"
+# hook notify-send "Current time" "$(date '+%H:%M:%S')"
+# echo "Hello" | wl-copy | wl-paste
 # --map key:capslock key:backspace \?
 # --hook "" exec-shell="echo Hello, world!" 
 # --hook "" exec-shell='echo "$(date +"%Y-%m-%d %T")"' \

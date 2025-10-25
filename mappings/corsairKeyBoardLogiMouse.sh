@@ -23,7 +23,7 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     `# mouse events` \
     --map btn:forward key:enter \
     `# keyboard events` \
-    --print key format=direct \
+    --print key@myOutput key@regularOutput format=direct \
     --output @myOutput @regularOutput name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable
 # --property=StandardOutput=file:$EVSIEVE_LOG_FILE \
 #  > $EVSIEVE_LOG_FILE 2>$SYSTEMD_LOG_FILE

@@ -1,4 +1,3 @@
 While parsing the arguments "--map btn:forward key:enter2":
     While parsing the key "key:enter2":
         Invalid argument: unknown event code "key:enter2".
- for details.

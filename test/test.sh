@@ -1,20 +1,6 @@
 #!/usr/bin/env bash
 EVSIEVE_LOG_FILE="$(dirname "${BASH_SOURCE[0]}")/../log/evsieve.log.txt"    
-# useful stuff:
-## print:
-# --print format=direct \
-## avoid clutter:
-# --map led:numl @numl \ 
-## switch ctrl+s -> ctrl+n:
-# --hook key:leftctrl@regular key:s \
-#     send-key=key:leftctrl@output send-key=key:n sequential \
-# --withhold key:s \
-# --map key:leftctrl:0@output \
-## echo:
-# --hook "" exec-shell="echo Hello, world!" \ 
-## send keystrokes to test by pressing space:
-# --map key:space:1 key:leftctrl:1 key:s:1 key:s:0 key:n:1 key:n:0 key:leftctrl:0 \
-# systemd-run --service-type=notify --unit=keyBoardTest.service \
+
 systemd-run --collect --service-type=notify --unit=keyBoardMouseTest.service \
 --property=StandardOutput=append:/home/yaniv/coding/automateLinux/log/systemd.txt \
 --property=StandardError=append:/home/yaniv/coding/automateLinux/log/systemd.txt \

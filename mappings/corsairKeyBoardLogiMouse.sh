@@ -8,9 +8,10 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --property=StandardError=file:$SYSTEMD_LOG_FILE \
     --property=StandardOutput=append:$EVSIEVE_LOG_FILE \
     evsieve \
-    --input /dev/input/by-id/$KEYBOARD_BY_ID grab domain=regular \
-    --input /dev/input/$MOUSE_EVENT grab \
-    --map btn:forward key:enter2 \
+    --input /dev/input/by-id/$KEYBOARD_BY_ID /dev/input/$MOUSE_EVENT grab domain=regular \
+    `# mouse events` \
+    --map btn:forward key:enter \
+    `# keyboard events` \
     --print key format=direct \
     --output name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable
 # --property=StandardOutput=file:$EVSIEVE_LOG_FILE \

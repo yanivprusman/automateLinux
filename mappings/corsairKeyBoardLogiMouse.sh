@@ -18,6 +18,7 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --copy @input @regularOutput \
     --map @input @myOutput \
     --hook key:numlock toggle=myOutputNull toggle=regularOutputNull \
+    --block key:numlock \
     --toggle @myOutput @myOutput @null id=myOutputNull \
     --toggle @regularOutput @null @regularOutput id=regularOutputNull \
     `# mouse events` \

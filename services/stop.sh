@@ -1,2 +1,1 @@
-sudo systemctl stop corsairKeyBoardLogiMouse
-sudo systemctl reset-failed corsairKeyBoardLogiMouse 2>/dev/null
+sudo "$(dirname "${BASH_SOURCE[0]}")/_sudoStop.sh"

@@ -18,14 +18,14 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --copy @input @regularOutput \
     --map @input @myOutput \
     --hook key:numlock toggle=myOutputNull toggle=regularOutputNull \
-    --block key:numlock \
+    --map key:numlock @dontPrint \
     --toggle @myOutput @myOutput @null id=myOutputNull \
     --toggle @regularOutput @null @regularOutput id=regularOutputNull \
     `# mouse events` \
     --map btn:forward key:enter \
     `# keyboard events` \
     --print key@myOutput key@regularOutput format=direct \
-    --output @myOutput @regularOutput name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable
+    --output @myOutput @regularOutput @dontPrint name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable
 # --property=StandardOutput=file:$EVSIEVE_LOG_FILE \
 #  > $EVSIEVE_LOG_FILE 2>$SYSTEMD_LOG_FILE
 # | grep -v 'Quit' 

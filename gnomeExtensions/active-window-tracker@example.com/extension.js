@@ -76,18 +76,9 @@ export default class ActiveWindowTracker {
     #onActiveWindowChanged() {
         const window = global.display.focus_window;
         const wmClass = window.get_wm_class() || 'unknown';
-        const command = `echo "${wmClass}" | tee /home/yaniv/coding/automateLinux/gnomeExtensions/active-window-tracker@example.com/activeWindow.txt`;
-        // if (!window) {
-        //     // No window in focus (e.g., desktop)
-        //     GLib.spawn_async(
-        //         null,
-        //         ['/bin/bash', '-c', command],
-        //         null,
-        //         GLib.SpawnFlags.DEFAULT,
-        //         null
-        //     );
-        //     return;
-        // }
+        // const command = `echo "${wmClass}" | tee -a /home/yaniv/coding/automateLinux/gnomeExtensions/active-window-tracker@example.com/activeWindow.txt`;
+        const command = `echo "${wmClass}" | /home/yaniv/coding/automateLinux/evsieve/toggle/activeWindow.sh`;
+        // const command = `/bin/bash -c 'echo "${wmClass}" | /home/yaniv/coding/automateLinux/evsieve/toggle/activeWindow.sh'`;
 
         try {
             const subprocess = new Gio.Subprocess({

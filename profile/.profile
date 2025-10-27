@@ -1,11 +1,11 @@
 # ~/.profile: executed by the command interpreter for login shells.
 
 # if running bash
-if [ -n "$BASH_VERSION" ]; then
+# if [ -n "$BASH_VERSION" ]; then
     if [ -f "$HOME/.bashrc" ]; then
         . "$HOME/.bashrc"
     fi
-fi
+# fi
 
 # set PATH so it includes user's private bins if they exist
 for dir in "$HOME/bin" "$HOME/.local/bin" "$HOME/.npm-global/bin" "$HOME/go/bin" "$HOME/.pixi/bin"; do

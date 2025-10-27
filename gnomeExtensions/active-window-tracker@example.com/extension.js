@@ -9,6 +9,12 @@ const ActiveWindowTrackerInterface =
     <method name="getActiveWindow">
       <arg name="windowInfo" type="a{ss}" direction="out"/>
     </method>
+    <method name="getWindowClassKey">
+      <arg name="key" type="s" direction="out"/>
+    </method>
+    <method name="emulateKeypress">
+      <arg name="keyString" type="s" direction="in"/>
+    </method>
     <signal name="ActiveWindowChanged">
       <arg name="windowInfo" type="a{ss}"/>
     </signal>
@@ -76,5 +82,31 @@ export default class ActiveWindowTracker {
     // D-Bus method
     getActiveWindow() {
         return this.#getActiveWindowInfo();
+    }
+
+    // D-Bus method to get a single character key based on window class
+    getWindowClassKey() {
+        const windowInfo = this.#getActiveWindowInfo();
+        const wmClass = windowInfo['wm-class'];
+        
+        switch (wmClass) {
+            case 'gnome-terminal-server':
+                return 't';
+            case 'Code':
+                return 'c';
+            case 'google-chrome':
+                return 'g';
+            default:
+                return '';
+        }
+    }
+
+    // D-Bus method to emulate keypress events
+    emulateKeypress(keyString) {
+        // This function is a placeholder for key emulation
+        // The actual key emulation should be handled by evsieve
+        // This just logs the request for debugging
+        log(`Key emulation requested: ${keyString}`);
+        return;
     }
 }

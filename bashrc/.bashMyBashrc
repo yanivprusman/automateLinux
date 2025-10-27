@@ -31,3 +31,8 @@ alias evsievep='sudo evsieve --input /dev/input/event* --print format=direct'
 if ! pgrep -f "/home/yaniv/coding/automateLinux/evsieve/services/run.sh" > /dev/null; then
     sudo -n /home/yaniv/coding/automateLinux/evsieve/services/run.sh > /dev/null 2>/dev/null
 fi
+
+SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+# $SCRIPT_DIR/openAppsOnStartup.sh
+

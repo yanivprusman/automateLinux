@@ -74,12 +74,20 @@ export default class ActiveWindowTracker {
     }
 
     #onActiveWindowChanged() {
+        try {
+            // Make sure we have write permissions
+            const logPath = '/tmp/window-changes.log';
+            const timestamp = new Date().toISOString();
+            const command = `touch "${logPath}" && echo "[${timestamp}] Window changed!" >> "${logPath}" && chmod 666 "${logPath}"`;
+            GLib.spawn_command_line_async(command);
+        } catch (error) {
+            logError(error, 'Failed to execute test command');
+        }
+
         const windowInfo = this.#getActiveWindowInfo();
         this.#dbus.emit_signal('ActiveWindowChanged',
             new GLib.Variant('(a{ss})', [windowInfo]));
-    }
-
-    // D-Bus method
+    }    // D-Bus method
     getActiveWindow() {
         return this.#getActiveWindowInfo();
     }

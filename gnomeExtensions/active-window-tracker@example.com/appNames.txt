@@ -1,4 +1,7 @@
-ple.ActiveWindowTracker; member=ActiveWindowChanged
+gnome-terminal-server
+Code
+google-chrome
+interface=com.example.ActiveWindowTracker; member=ActiveWindowChanged
    array [
       dict entry(
          string "window-title"

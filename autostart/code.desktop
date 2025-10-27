@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Exec=code
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=VS Code
+Comment=Open Visual Studio Code on startup

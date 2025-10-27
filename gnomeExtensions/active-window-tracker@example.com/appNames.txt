@@ -1,0 +1,84 @@
+ple.ActiveWindowTracker; member=ActiveWindowChanged
+   array [
+      dict entry(
+         string "window-title"
+         string "extension.js - gnomeExtensions - Visual Studio Code"
+      )
+      dict entry(
+         string "wm-class"
+         string "Code"
+      )
+      dict entry(
+         string "wm-instance"
+         string "code"
+      )
+      dict entry(
+         string "window-id"
+         string "12392801"
+      )
+      dict entry(
+         string "app-id"
+         string "code.desktop"
+      )
+      dict entry(
+         string "app-name"
+         string "Visual Studio Code"
+      )
+   ]
+signal time=1761587606.803622 sender=:1.28 -> destination=(null destination) serial=1191 path=/com/example/ActiveWindowTracker; interface=com.example.ActiveWindowTracker; member=ActiveWindowChanged
+   array [
+      dict entry(
+         string "window-title"
+         string "Automated app launch script - Claude - Google Chrome"
+      )
+      dict entry(
+         string "wm-class"
+         string "google-chrome"
+      )
+      dict entry(
+         string "wm-instance"
+         string "google-chrome"
+      )
+      dict entry(
+         string "window-id"
+         string "12392799"
+      )
+      dict entry(
+         string "app-id"
+         string "google-chrome.desktop"
+      )
+      dict entry(
+         string "app-name"
+         string "Google Chrome"
+      )
+   ]
+signal time=1761587608.705810 sender=:1.28 -> destination=(null destination) serial=1194 path=/com/example/ActiveWindowTracker; interface=com.example.ActiveWindowTracker; member=ActiveWindowChanged
+   array [
+      dict entry(
+         string "window-title"
+         string "yaniv@ubuntu: ~/coding/automateLinux"
+      )
+      dict entry(
+         string "wm-class"
+         string "gnome-terminal-server"
+      )
+      dict entry(
+         string "wm-instance"
+         string "gnome-terminal-server"
+      )
+      dict entry(
+         string "window-id"
+         string "12392821"
+      )
+      dict entry(
+         string "app-id"
+         string "org.gnome.Terminal.desktop"
+      )
+      dict entry(
+         string "app-name"
+         string "Terminal"
+      )
+   ]
+^\Quit (core dumped)
+yaniv@ubuntu:~/coding/automateLinux$ 
+

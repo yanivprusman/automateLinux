@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Exec=google-chrome-stable
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=Google Chrome
+Comment=Open Google Chrome on startup

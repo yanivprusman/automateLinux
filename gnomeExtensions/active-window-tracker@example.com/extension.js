@@ -84,20 +84,29 @@ export default class ActiveWindowTracker {
         return this.#getActiveWindowInfo();
     }
 
-    // D-Bus method to get a single character key based on window class
+    // D-Bus method to execute a script based on window class
     getWindowClassKey() {
         const windowInfo = this.#getActiveWindowInfo();
         const wmClass = windowInfo['wm-class'];
         
-        switch (wmClass) {
-            case 'gnome-terminal-server':
-                return 't';
-            case 'Code':
-                return 'c';
-            case 'google-chrome':
-                return 'g';
-            default:
-                return '';
+        // Execute script based on window class
+        try {
+            switch (wmClass) {
+                case 'gnome-terminal-server':
+                    GLib.spawn_command_line_async('bash -c "sudo ydotool key 30:1 30:0"');
+                    return 't';
+                case 'Code':
+                    GLib.spawn_command_line_async('bash -c "sudo ydotool key 46:1 46:0"');
+                    return 'c';
+                case 'google-chrome':
+                    GLib.spawn_command_line_async('bash -c "sudo ydotool key 34:1 34:0"');
+                    return 'g';
+                default:
+                    return '';
+            }
+        } catch (e) {
+            logError(e);
+            return '';
         }
     }
 

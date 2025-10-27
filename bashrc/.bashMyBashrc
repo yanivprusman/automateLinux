@@ -1,0 +1,33 @@
+# echo "B4 doing this (~/.bashMyBashrc)"
+cppWebSocket1(){
+    cd ~/coding/cpp/IXWebSocket/build && 
+    cmake .. -DDEVICE_SERVER=ON -DUSE_TLS=ON && 
+    make && 
+    if [ -f ./deviceServer ]; then ./deviceServer; else echo "Build failed or deviceServer not created"; fi
+}
+pushd ~/coding/ > /dev/null
+cd() { builtin pushd "$@" > /dev/null; }
+pd() { popd > /dev/null; }
+PROMPT_COMMAND='pwd > ~/.myBash/last_dir'
+if [ -f ~/.myBash/last_dir ]; then
+    last_dir=$(head -n 1 ~/.myBash/last_dir)
+    if [ -d "$last_dir" ]; then
+        cd "$last_dir" >/dev/null 2>&1
+    fi
+fi
+export PATH="/home/yaniv/coding/flatBuffers/execute:$PATH"
+export PATH=$PATH:/usr/local/go/bin
+generatePassword() { python3 ~/generatePassword.py; }
+export PATH="$PATH:$HOME/coding/scripts"
+h() {
+    history | grep "$1"
+}
+export FREECAD_MACROS_DIR="/home/yaniv/coding/freeCad/Macros/"
+alias mk='mkdir'
+alias boot='history -a && sudo reboot'
+alias pkill='sudo pkill -9'
+alias pkillev='sudo pkill -9 evsieve'
+alias evsievep='sudo evsieve --input /dev/input/event* --print format=direct'
+if ! pgrep -f "/home/yaniv/coding/automateLinux/evsieve/services/run.sh" > /dev/null; then
+    sudo -n /home/yaniv/coding/automateLinux/evsieve/services/run.sh > /dev/null 2>/dev/null
+fi

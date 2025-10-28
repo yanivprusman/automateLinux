@@ -1,4 +1,5 @@
 # numlock   toggle unsieved / my outputs
+# defalut led off my outputs
 # scancode  100 100 100 101 102 103 104 toggle regular / code / terminal / chrome
 # f2        save
 # f3        redo

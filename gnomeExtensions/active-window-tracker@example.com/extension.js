@@ -25,7 +25,6 @@ export default class ActiveWindowTracker {
     #dbus;
     #windowTracker;
     #signalId;
-
     enable() {
         this.#windowTracker = Shell.WindowTracker.get_default();
         this.#dbus = Gio.DBusExportedObject.wrapJSObject(
@@ -36,32 +35,25 @@ export default class ActiveWindowTracker {
             Gio.DBus.session,
             '/com/example/ActiveWindowTracker'
         );
-
-        // Connect to window focus changes
         this.#signalId = global.display.connect('notify::focus-window', 
             () => this.#onActiveWindowChanged());
     }
-
     disable() {
         if (this.#signalId) {
             global.display.disconnect(this.#signalId);
             this.#signalId = null;
         }
-
         if (this.#dbus) {
             this.#dbus.unexport();
             this.#dbus = null;
         }
-
         this.#windowTracker = null;
     }
-
     #getActiveWindowInfo() {
         const window = global.display.focus_window;
         if (!window) {
             return { 'status': 'no-window' };
         }
-
         const app = this.#windowTracker.get_window_app(window);
         return {
             'window-title': window.get_title() || '',
@@ -72,14 +64,10 @@ export default class ActiveWindowTracker {
             'app-name': app ? app.get_name() || '' : '',
         };
     }
-
     #onActiveWindowChanged() {
         const window = global.display.focus_window;
         const wmClass = window.get_wm_class() || 'unknown';
-        // const command = `echo "${wmClass}" | tee -a /home/yaniv/coding/automateLinux/gnomeExtensions/active-window-tracker@example.com/activeWindow.txt`;
-        const command = `echo "${wmClass}" | /home/yaniv/coding/automateLinux/evsieve/toggle/activeWindow.sh`;
-        // const command = `/bin/bash -c 'echo "${wmClass}" | /home/yaniv/coding/automateLinux/evsieve/toggle/activeWindow.sh'`;
-
+        const command = `/home/yaniv/coding/automateLinux/evsieve/toggle/sendKeys "${wmClass}"`;
         try {
             const subprocess = new Gio.Subprocess({
                 argv: ['/bin/bash', '-c', command],
@@ -89,32 +77,20 @@ export default class ActiveWindowTracker {
         } catch (error) {
             logError(error, 'Failed to execute test command');
         }
-
-        // const windowInfo = this.#getActiveWindowInfo();
-        // this.#dbus.emit_signal('ActiveWindowChanged',
-        //     new GLib.Variant('(a{ss})', [windowInfo]));
-    }    // D-Bus method
-
+    }    
     getActiveWindow() {
         return this.#getActiveWindowInfo();
     }
-
-    // D-Bus method to execute a script based on window class
     getWindowClassKey() {
         const windowInfo = this.#getActiveWindowInfo();
         const wmClass = windowInfo['wm-class'];
-        
-        // Execute script based on window class
         try {
             switch (wmClass) {
                 case 'gnome-terminal-server':
-                    GLib.spawn_command_line_async('bash -c "sudo ydotool key 30:1 30:0"');
                     return 't';
                 case 'Code':
-                    GLib.spawn_command_line_async('bash -c "sudo ydotool key 46:1 46:0"');
                     return 'c';
                 case 'google-chrome':
-                    GLib.spawn_command_line_async('bash -c "sudo ydotool key 34:1 34:0"');
                     return 'g';
                 default:
                     return '';

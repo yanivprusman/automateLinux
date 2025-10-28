@@ -34,9 +34,11 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --toggle msc:scan:$SERVICE_INITIALIZED_CODE @serviceUnInitialized @serviceIinitialized id=serviceInitializedToggle\
     --hook "" toggle=serviceInitializedToggle:2\
     `#led numlock initialization`\
-    --hook @serviceUnInitialized led:numl send-key=key:numlock@send breaks-on=@serviceIinitialized\
-    --hook @serviceUnInitialized led:numl send-key=key:a@null breaks-on=@serviceIinitialized breaks-on=@serviceIinitialized\
-    `#--map key:a@null %0:%0:%0@send`\
+    `#--hook @serviceUnInitialized led:numl send-key=key:numlock@send breaks-on=@serviceIinitialized`\
+    --hook @serviceUnInitialized led:numl send-key=key:a@null breaks-on=@serviceIinitialized\
+    --map key:a:1@null key:numlock:1@send key:numlock:0@send\
+    --block key:a:0@null\
+    `#numlock toggle logic`\
     --print key:numlock format=direct\
     `#led numlock toggle logic`\
     `#--toggle led:numl @ledNumUnInitialized @ledNumlInitialized id=ledNumlInitializedToggle\
@@ -71,6 +73,6 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --map btn:forward key:enter\
     `# toggle outputs`\
     `# toggle outputs`\
-    `# --print key format=direct`\
+    --print key format=direct
 
 

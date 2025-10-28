@@ -8,41 +8,21 @@ for arg in "$@"; do
         > "$EVSIEVE_LOG_FILE"
     fi
 done
-# systemd-run --service-type=notify --unit=corsairKeyBoard.service \
 systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service \
     --property=StandardError=file:$SYSTEMD_LOG_FILE \
     --property=StandardOutput=append:$EVSIEVE_LOG_FILE \
     evsieve \
     --input /dev/input/by-id/$KEYBOARD_BY_ID /dev/input/$MOUSE_EVENT grab domain=input \
     `# toggle outputs` \
-    --copy @input @regularOutput \
+    --copy @input @unsievedOutput \
     --map @input @myOutput \
-    --hook key:numlock toggle=myOutputNull toggle=regularOutputNull \
+    --hook key:numlock toggle=myOutputNull toggle=unsievedOutputNull \
     --map key:numlock @dontPrint \
     --toggle @myOutput @myOutput @null id=myOutputNull \
-    --toggle @regularOutput @null @regularOutput id=regularOutputNull \
+    --toggle @unsievedOutput @null @unsievedOutput id=unsievedOutputNull \
     `# mouse events` \
     --map btn:forward key:enter \
     `# keyboard events` \
-    --print key@myOutput key@regularOutput format=direct \
-    --output @myOutput @regularOutput @dontPrint name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable
-# --property=StandardOutput=file:$EVSIEVE_LOG_FILE \
-#  > $EVSIEVE_LOG_FILE 2>$SYSTEMD_LOG_FILE
-# | grep -v 'Quit' 
-# --hook "" exec-shell='notify-send "Current time" "$(date '+%H:%M:%S')"' \
-# f2        save
-# f3        redo
-# f4        undo
-# compopse  comment
-# G6         copy   
-# G5         paste               
-# G4         enter               
-# G3         cut                 
-# G2         select all and copy 
-# G1         copy and search    
-    # --map key:f2 key:f2@F \
-    # --hook key:leftctrl key:f2 toggle=F \
-    # --toggle @F @myF @regualrFWithoutCtrl id=F \
-    # --print format=direct \
-    # --map key:f2:1 key:leftctrl:1 key:s:1 key:s:0 key:leftctrl:0 key:f2:0 \
-# hook to copy -> paste paste
+    --print key@myOutput key@unsievedOutput format=direct \
+    --output @myOutput @unsievedOutput @dontPrint name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable
+

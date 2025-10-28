@@ -6,15 +6,6 @@ import GLib from 'gi://GLib';
 const ActiveWindowTrackerInterface = 
 `<node>
   <interface name="com.example.ActiveWindowTracker">
-    <method name="getActiveWindow">
-      <arg name="windowInfo" type="a{ss}" direction="out"/>
-    </method>
-    <method name="getWindowClassKey">
-      <arg name="key" type="s" direction="out"/>
-    </method>
-    <method name="emulateKeypress">
-      <arg name="keyString" type="s" direction="in"/>
-    </method>
     <signal name="ActiveWindowChanged">
       <arg name="windowInfo" type="a{ss}"/>
     </signal>
@@ -49,21 +40,6 @@ export default class ActiveWindowTracker {
         }
         this.#windowTracker = null;
     }
-    #getActiveWindowInfo() {
-        const window = global.display.focus_window;
-        if (!window) {
-            return { 'status': 'no-window' };
-        }
-        const app = this.#windowTracker.get_window_app(window);
-        return {
-            'window-title': window.get_title() || '',
-            'wm-class': window.get_wm_class() || '',
-            'wm-instance': window.get_wm_class_instance() || '',
-            'window-id': window.get_id().toString(),
-            'app-id': app ? app.get_id() || '' : '',
-            'app-name': app ? app.get_name() || '' : '',
-        };
-    }
     #onActiveWindowChanged() {
         const window = global.display.focus_window;
         const wmClass = window.get_wm_class() || 'unknown';
@@ -78,35 +54,4 @@ export default class ActiveWindowTracker {
             logError(error, 'Failed to execute test command');
         }
     }    
-    getActiveWindow() {
-        return this.#getActiveWindowInfo();
-    }
-    getWindowClassKey() {
-        const windowInfo = this.#getActiveWindowInfo();
-        const wmClass = windowInfo['wm-class'];
-        try {
-            switch (wmClass) {
-                case 'gnome-terminal-server':
-                    return 't';
-                case 'Code':
-                    return 'c';
-                case 'google-chrome':
-                    return 'g';
-                default:
-                    return '';
-            }
-        } catch (e) {
-            logError(e);
-            return '';
-        }
-    }
-
-    // D-Bus method to emulate keypress events
-    emulateKeypress(keyString) {
-        // This function is a placeholder for key emulation
-        // The actual key emulation should be handled by evsieve
-        // This just logs the request for debugging
-        log(`Key emulation requested: ${keyString}`);
-        return;
-    }
 }

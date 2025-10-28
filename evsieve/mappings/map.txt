@@ -1,4 +1,5 @@
-KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
+# numlock   toggle unsieved / my outputs
+# scancode  100 100 100 101 102 103 104 toggle regular / code / terminal / chrome
 # f2        save
 # f3        redo
 # f4        undo
@@ -9,15 +10,10 @@ KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
 # G3         cut                 
 # G2         select all and copy 
 # G1         copy and search    
+# --hook "" exec-shell='notify-send "Current time" "$(date '+%H:%M:%S')"' \
     # --map key:f2 key:f2@F \
     # --hook key:leftctrl key:f2 toggle=F \
     # --toggle @F @myF @regualrFWithoutCtrl id=F \
     # --print format=direct \
     # --map key:f2:1 key:leftctrl:1 key:s:1 key:s:0 key:leftctrl:0 key:f2:0 \
-# systemd-run --service-type=notify --unit=corsairKeyBoard.service \
-systemd-run --collect --service-type=notify --unit=corsairKeyBoard.service \
-    evsieve --input /dev/input/by-id/$KEYBOARD_BY_ID grab domain=regular \
-    --output name="corsair keyboard" create-link=/dev/input/by-id/corsairKeyBoard repeat=disable 
-    # --hook "" exec-shell='notify-send "Current time" "$(date '+%H:%M:%S')"' \
-
-
+# hook to copy -> paste paste

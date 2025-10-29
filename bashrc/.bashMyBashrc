@@ -1,4 +1,4 @@
-# echo "B4 doing this (~/.bashMyBashrc)"
+
 cppWebSocket1(){
     cd ~/coding/cpp/IXWebSocket/build && 
     cmake .. -DDEVICE_SERVER=ON -DUSE_TLS=ON && 
@@ -28,10 +28,14 @@ alias boot='history -a && sudo reboot'
 alias pkill='sudo pkill -9'
 alias pkillev='sudo pkill -9 evsieve'
 alias evsievep='sudo evsieve --input /dev/input/event* --print format=direct'
-if ! pgrep -f "/home/yaniv/coding/automateLinux/evsieve/services/run.sh" > /dev/null; then
-    sudo -n /home/yaniv/coding/automateLinux/evsieve/services/run.sh > /dev/null 2>/dev/null
-fi
-
-# Enable sendKeys command completion
 source ~/coding/automateLinux/evsieve/toggle/sendkeys-completion.bash
+EVSIEVE_LOG_FILE=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
+AUTOMAT_LINUX_DIR=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+AUTOMAT_LINUX_ENV_FILE="$AUTOMAT_LINUX_DIR/bashrc/env.sh"
+[ -f "$AUTOMAT_LINUX_ENV_FILE" ] && source "$AUTOMAT_LINUX_ENV_FILE"
+AUTOMAT_LINUX_SYMLINK_DIR="$AUTOMAT_LINUX_DIR/symlinks"
+SCRIPT="$AUTOMAT_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
+if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then
+    sudo -n "$SCRIPT" > /dev/null 2>/dev/null
+fi
 

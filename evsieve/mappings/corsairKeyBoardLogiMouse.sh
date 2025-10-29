@@ -45,7 +45,7 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --block key:a:0@null`\
     `#set numlock on after initialization`\
     `#test release in toggle`\
-    --print key msc:scan:~199 msc:scan:201~ format=direct\
+    --print key msc:scan:~199 msc:scan:201~589824 format=direct\
     `#--print @input @null @unInitialized format=direct`\
     --output @send @input @myOutput @unsievedOutput @dontPrint @setNumLockOnAfterInitialization \
     name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable\

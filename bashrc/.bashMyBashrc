@@ -32,3 +32,6 @@ if ! pgrep -f "/home/yaniv/coding/automateLinux/evsieve/services/run.sh" > /dev/
     sudo -n /home/yaniv/coding/automateLinux/evsieve/services/run.sh > /dev/null 2>/dev/null
 fi
 
+# Enable sendKeys command completion
+source ~/coding/automateLinux/evsieve/toggle/sendkeys-completion.bash
+

@@ -1,10 +1,13 @@
+# Get script directory for relative paths
+SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
 # KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
 MOUSE_EVENT=$(awk '/Logitech/ && /Mouse/ {found=1} found && /Handlers/ {if (match($0, /event[0-9]+/, a)) {print a[0]; exit}}' /proc/bus/input/devices)
-# EVSIEVE_LOG_FILE=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../log/log.txt")
-EVSIEVE_LOG_FILE=$(getRealPath /../log/log.txt)
-SYSTEMD_LOG_FILE=$(getRealPath /../log/error.txt)
-ECHO_LOG_FILE=$(getRealPath /../log/echo.txt)
-SEND_KEYS=$(getRealPath /../toggle/sendKeys)
+
+EVSIEVE_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/log.txt")"
+SYSTEMD_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/error.txt")"
+ECHO_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/echo.txt")"
+SEND_KEYS="$(realpath "${SCRIPT_DIR}/../toggle/sendKeys")"
 > "$SYSTEMD_LOG_FILE"
 for arg in "$@"; do
     if [[ "$arg" == "reset" ]]; then

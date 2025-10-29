@@ -19,6 +19,8 @@ SERVICE_INITIALIZED_CODE=200
 SERVICE_INITIALIZED_CODE1=200
 SERVICE_INITIALIZED_CODE2=201
 SERVICE_INITIALIZED_CODE3=202
+# command="source /home/yaniv/.bashrc && $SEND_KEYS 'numlock'"
+command="$SEND_KEYS 'numlock' 'SYN_REPORT' 'keyA' 'SYN_REPORT'"
 systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service\
     --property=StandardError=file:$SYSTEMD_LOG_FILE\
     --property=StandardOutput=append:$EVSIEVE_LOG_FILE\
@@ -39,10 +41,13 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --toggle msc:scan:$SERVICE_INITIALIZED_CODE @serviceUnInitialized @serviceIinitialized id=serviceInitializedToggle\
     --hook "" toggle=serviceInitializedToggle:2\
     `#led numlock initialization`\
-    --hook @serviceUnInitialized led:numl send-key=key:a@null breaks-on="" exec-shell='echo "hi"'\
-    --map key:a:1@null key:numlock:1@send key:numlock:0@send key:numlock:1@send key:numlock:0@send\
+    --hook @serviceUnInitialized breaks-on="" led:numl send-key=key:a@null\
+    --map key:a:1@null key:numlock:1@send key:numlock:0@send\
     --block key:a:0@null\
     `#test`\
+    --hook @serviceUnInitialized breaks-on="" exec-shell="$command"\
+    --map key:a:1@null key:numlock:1@send key:numlock:0@send\
+    --block key:a:0@null\
     `#--hook @serviceUnInitialized exec-shell="$SEND_KEYS 'SYN_REPORT'" breaks-on=""`\
     `#--hook @serviceUnInitialized led:numl send-key=key:a@null breaks-on=""`\
     `#--map key:a:1@null key:numlock:1@send key:numlock:0@send\

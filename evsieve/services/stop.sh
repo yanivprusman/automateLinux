@@ -1,1 +1,1 @@
-sudo $(scriptPath _sudoStop.sh)
+sudo $(runScriptRelative _sudoStop.sh)

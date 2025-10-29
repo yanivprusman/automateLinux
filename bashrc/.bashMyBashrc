@@ -1,10 +1,4 @@
 
-cppWebSocket1(){
-    cd ~/coding/cpp/IXWebSocket/build && 
-    cmake .. -DDEVICE_SERVER=ON -DUSE_TLS=ON && 
-    make && 
-    if [ -f ./deviceServer ]; then ./deviceServer; else echo "Build failed or deviceServer not created"; fi
-}
 pushd ~/coding/ > /dev/null
 cd() { builtin pushd "$@" > /dev/null; }
 pd() { popd > /dev/null; }
@@ -27,6 +21,7 @@ AUTOMAT_LINUX_DIR=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 BASH_RC_DIR="$AUTOMAT_LINUX_DIR/bashrc"
 AUTOMAT_LINUX_ENV_FILE="$BASH_RC_DIR/env.sh"
 source $BASH_RC_DIR/aliases.sh
+source $BASH_RC_DIR/functions.sh
 source ~/coding/automateLinux/evsieve/toggle/sendkeys-completion.bash
 EVSIEVE_LOG_FILE=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
 [ -f "$AUTOMAT_LINUX_ENV_FILE" ] && source "$AUTOMAT_LINUX_ENV_FILE"

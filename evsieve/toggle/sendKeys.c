@@ -4,10 +4,14 @@
 #include <linux/input.h>
 #include <string.h>
 #include <sys/time.h>
+
 int fd;
 const int codeForCode = 101;
 const int codeForGnomeTerminal = 102;
 const int codeForGoogleChrome = 103;
+
+// Default keyboard device path
+const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 
 void send_event(int type, int code, int value) {
     struct input_event ev;
@@ -19,46 +23,96 @@ void send_event(int type, int code, int value) {
     write(fd, &ev, sizeof(ev));
 }
 
-int isApp(const char *input){
+void send_key_event(int key, int value) {
+    send_event(EV_KEY, key, value);
+    send_event(EV_SYN, SYN_REPORT, 0);
+}
+
+int isApp(const char *input) {
     if (strcmp(input, "Code") == 0) return codeForCode;
     if (strcmp(input, "gnome-terminal-server") == 0) return codeForGnomeTerminal;
     if (strcmp(input, "google-chrome") == 0) return codeForGoogleChrome;
     return 0;
 }
-// int getCodeFromInput(const char *app) {
-//     if (strcmp(app, "Code") == 0) return 102;
-//     if (strcmp(app, "gnome-terminal-server") == 0) return 103;
-//     if (strcmp(app, "google-chrome") == 0) return 104;
-//     if (strcmp(app, "google-chrome") == 0) return 104;
-//     return 101;
-// }
+
+void print_usage() {
+    printf("Usage: sendKeys [OPTIONS] COMMANDS...\n");
+    printf("Options:\n");
+    printf("  -k, --keyboard PATH   Specify keyboard device path\n");
+    printf("Commands:\n");
+    printf("  keyADown             Press key A\n");
+    printf("  keyAUp               Release key A\n");
+    printf("  keyA                 Press and release key A\n");
+    printf("  numlock              Toggle numlock\n");
+    printf("  Code                 Send Code app signal\n");
+    printf("  gnome-terminal-server  Send terminal app signal\n");
+    printf("  google-chrome        Send Chrome app signal\n");
+    printf("  syn                  Send sync report\n");
+}
+
+void handle_command(const char *cmd) {
+    if (strcmp(cmd, "keyADown") == 0) {
+        send_event(EV_KEY, KEY_A, 1);
+    } else if (strcmp(cmd, "keyAUp") == 0) {
+        send_event(EV_KEY, KEY_A, 0);
+    } else if (strcmp(cmd, "keyA") == 0) {
+        send_event(EV_KEY, KEY_A, 1);
+        send_event(EV_KEY, KEY_A, 0);
+    } else if (strcmp(cmd, "numlock") == 0) {
+        send_event(EV_KEY, KEY_NUMLOCK, 1);
+        send_event(EV_KEY, KEY_NUMLOCK, 0);
+    } else if (strcmp(cmd, "syn") == 0) {
+        send_event(EV_SYN, SYN_REPORT, 0);
+    } else {
+        int appCode = isApp(cmd);
+        if (appCode) {
+            for (int i = 0; i < 3; i++) {
+                send_event(EV_MSC, MSC_SCAN, 100);
+            }
+            send_event(EV_MSC, MSC_SCAN, appCode);
+            send_event(EV_SYN, SYN_REPORT, 0);
+        }
+    }
+}
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
+    const char *keyboard_path = DEFAULT_KEYBOARD;
+    int i;
+
+    if (argc < 2) {
+        print_usage();
         return 1;
     }
-    const char *input = argv[1];
-    // const char *device = "/dev/input/by-id/corsairKeyBoardLogiMouse";
-    const char *device = "/dev/input/by-id/usb-Corsair_CORSAIR_K100_RGB_Optical-Mechanical_Gaming_Keyboard_502A81D24AAA7CC6-event-kbd";
-    fd = open(device, O_WRONLY);
+
+    // Parse options
+    for (i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            print_usage();
+            return 0;
+        } else if (strcmp(argv[i], "-k") == 0 || strcmp(argv[i], "--keyboard") == 0) {
+            if (i + 1 < argc) {
+                keyboard_path = argv[++i];
+            } else {
+                fprintf(stderr, "Error: --keyboard requires a path argument\n");
+                return 1;
+            }
+        } else {
+            break;  // Start of commands
+        }
+    }
+
+    // Open keyboard device
+    fd = open(keyboard_path, O_WRONLY);
     if (fd < 0) {
+        fprintf(stderr, "Error: Could not open keyboard device: %s\n", keyboard_path);
         return 1;
     }
-    int appCode = isApp(input);
-    if (appCode){
-        for (int i = 0; i < 3; i++) { send_event(EV_MSC, MSC_SCAN, 100); }
-        send_event(EV_MSC, MSC_SCAN, appCode);
-        send_event(EV_SYN, SYN_REPORT, 0);
-    } else if (strcmp(input, "SYN_REPORT") == 0){
-        send_event(EV_SYN, SYN_REPORT, 0);
-    } else if (strcmp(input, "CodeADown") == 0){
-        send_event(EV_KEY, KEY_A, 1);
-    } else if (strcmp(input, "CodeAUP") == 0){
-        send_event(EV_KEY, KEY_A, 0);
-    } else if (strcmp(input, "CodeADownUp") == 0){
-        send_event(EV_KEY, KEY_A, 1);
-        send_event(EV_KEY, KEY_A, 0);
+
+    // Process all commands
+    for (; i < argc; i++) {
+        handle_command(argv[i]);
     }
+
     close(fd);
     return 0;
 }

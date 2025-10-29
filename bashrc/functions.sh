@@ -1,5 +1,5 @@
 
-runScriptRelative() { # sudo $(runScriptRelative /relative/path/to/script.sh)
+getRealPath() { # sudo $(getRealPath /relative/path/to/script.sh)
     local relativePath="$1"
     if [ -z "$relativePath" ]; then
         echo "Error: No path provided" >&2
@@ -14,4 +14,4 @@ runScriptRelative() { # sudo $(runScriptRelative /relative/path/to/script.sh)
         echo "$(realpath "${PWD}/${relativePath}")"
     fi
 }
-export -f runScriptRelative
+export -f getRealPath

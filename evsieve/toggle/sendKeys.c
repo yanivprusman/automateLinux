@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <linux/input.h>
@@ -12,6 +13,18 @@ const int codeForGoogleChrome = 103;
 
 // Default keyboard device path
 const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
+
+// Get keyboard path from environment variable or use default
+const char* get_keyboard_path() {
+    static char full_path[256];
+    const char* env_path = getenv("KEYBOARD_BY_ID");
+    
+    if (env_path != NULL && *env_path != '\0') {
+        snprintf(full_path, sizeof(full_path), "/dev/input/by-id/%s", env_path);
+        return full_path;
+    }
+    return DEFAULT_KEYBOARD;
+}
 
 void send_event(int type, int code, int value) {
     struct input_event ev;
@@ -76,7 +89,7 @@ void handle_command(const char *cmd) {
 }
 
 int main(int argc, char *argv[]) {
-    const char *keyboard_path = DEFAULT_KEYBOARD;
+    const char *keyboard_path = get_keyboard_path();
     int i;
 
     if (argc < 2) {

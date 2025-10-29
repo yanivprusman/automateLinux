@@ -1,9 +1,10 @@
 # KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
 MOUSE_EVENT=$(awk '/Logitech/ && /Mouse/ {found=1} found && /Handlers/ {if (match($0, /event[0-9]+/, a)) {print a[0]; exit}}' /proc/bus/input/devices)
-EVSIEVE_LOG_FILE=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../log/log.txt")
-SYSTEMD_LOG_FILE=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../log/error.txt")
-ECHO_LOG_FILE=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../log/echo.txt")
-SEND_KEYS=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../toggle/sendKeys")
+# EVSIEVE_LOG_FILE=$(realpath "$(dirname "${BASH_SOURCE[0]}")/../log/log.txt")
+EVSIEVE_LOG_FILE=$(getRealPath /../log/log.txt)
+SYSTEMD_LOG_FILE=$(getRealPath /../log/error.txt)
+ECHO_LOG_FILE=$(getRealPath /../log/echo.txt)
+SEND_KEYS=$(getRealPath /../toggle/sendKeys)
 > "$SYSTEMD_LOG_FILE"
 for arg in "$@"; do
     if [[ "$arg" == "reset" ]]; then
@@ -35,11 +36,11 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --toggle msc:scan:$SERVICE_INITIALIZED_CODE @serviceUnInitialized @serviceIinitialized id=serviceInitializedToggle\
     --hook "" toggle=serviceInitializedToggle:2\
     `#led numlock initialization`\
-    --hook @serviceUnInitialized led:numl send-key=key:a@null breaks-on=""\
+    --hook @serviceUnInitialized led:numl send-key=key:a@null breaks-on="" exec-shell='echo "hi"'\
     --map key:a:1@null key:numlock:1@send key:numlock:0@send key:numlock:1@send key:numlock:0@send\
     --block key:a:0@null\
     `#test`\
-    --hook @serviceUnInitialized exec-shell="$SEND_KEYS 'SYN_REPORT'" breaks-on=""\
+    `#--hook @serviceUnInitialized exec-shell="$SEND_KEYS 'SYN_REPORT'" breaks-on=""`\
     `#--hook @serviceUnInitialized led:numl send-key=key:a@null breaks-on=""`\
     `#--map key:a:1@null key:numlock:1@send key:numlock:0@send\
     --block key:a:0@null`\

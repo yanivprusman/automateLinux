@@ -1,4 +1,4 @@
 #!/usr/bin/env bash 
-sudo $(runScriptRelative _sudoStop.sh)
-sudo $(runScriptRelative run.sh) "$@"
+sudo $(getRealPath _sudoStop.sh)
+sudo $(getRealPath run.sh) "$@"
 

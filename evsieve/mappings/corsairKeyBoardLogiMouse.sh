@@ -41,13 +41,21 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --toggle msc:scan:$SERVICE_INITIALIZED_CODE @serviceUnInitialized @serviceIinitialized id=serviceInitializedToggle\
     --hook "" toggle=serviceInitializedToggle:2\
     `#led numlock initialization`\
-    --hook @serviceUnInitialized breaks-on="" led:numl send-key=key:a@null\
+    --hook @serviceUnInitialized led:numl breaks-on=""  send-key=key:a@null exec-shell="echo 'hi 1'"\
     --map key:a:1@null key:numlock:1@send key:numlock:0@send\
     --block key:a:0@null\
     `#test`\
-    --hook @serviceUnInitialized breaks-on="" exec-shell="$command"\
+    --hook @serviceUnInitialized breaks-on="" send-key=key:a@null exec-shell="echo 'hi 2'"\
     --map key:a:1@null key:numlock:1@send key:numlock:0@send\
     --block key:a:0@null\
+    `#--hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi'"\
+    --hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi2'"\
+    --hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi3'"\
+    --hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi4'"\
+    --hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi5'"\
+    --hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi6'"\
+    --map key:a:1@null key:numlock:1@send key:numlock:0@send\
+    --block key:a:0@null`\
     `#--hook @serviceUnInitialized exec-shell="$SEND_KEYS 'SYN_REPORT'" breaks-on=""`\
     `#--hook @serviceUnInitialized led:numl send-key=key:a@null breaks-on=""`\
     `#--map key:a:1@null key:numlock:1@send key:numlock:0@send\
@@ -56,8 +64,9 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     `#test release in toggle`\
     --print key msc:scan:~199 msc:scan:201~589824 format=direct\
     `#--print @input @null @unInitialized format=direct`\
-    --output @send @input @myOutput @unsievedOutput @dontPrint @setNumLockOnAfterInitialization \
-    name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable\
+    `#--output @send @input @myOutput @unsievedOutput @dontPrint @setNumLockOnAfterInitialization\
+    name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable`\
+    --output name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable\
     `# mouse events`\
     --map btn:forward key:enter\
     `#--print key format=direct`

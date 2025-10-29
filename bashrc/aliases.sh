@@ -8,15 +8,14 @@ alias 1stop='stopCorsairKeyBoardLogiMouseService.sh'
 
 # sudo $(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/_sudoStop.sh")
 
-theRealPath() {
-  local path="$1"
-  # Remove leading slash and any ../ if present
-  path="${path#/}"
-  path="${path#../}"
-  # Use the workspace root directory
-  local workspace_root="/home/yaniv/coding/automateLinux"
-  # Remove any trailing whitespace
-  path="$(echo -n "${path}" | tr -d '[:space:]')"
-  echo "$(realpath "${workspace_root}/${path}")"
+scriptPath() {
+    # First argument is the relative path to resolve
+    local relativePath="$1"
+    # Remove leading slash if present
+    relativePath="${relativePath#/}"
+    echo "$(realpath "$(dirname "$(realpath "${BASH_SOURCE[1]}")")/${relativePath}")"
 }
-export -f theRealPath
+export -f scriptPath
+
+# Usage example:
+# sudo $(scriptPath _sudoStop.sh)

@@ -1,7 +1,7 @@
 instructions: 
 https://github.com/KarsMulder/evsieve?tab=readme-ov-file
 print:
-sudo evsieve --input /dev/input/event* --print format=direct
+sudo evsieve --input /dev/input/event* --print format=direct = evsievep
 # useful stuff:
 ## print:
 # --print format=direct \
@@ -17,3 +17,4 @@ sudo evsieve --input /dev/input/event* --print format=direct
 ## send keystrokes to test by pressing space:
 # --map key:space:1 key:leftctrl:1 key:s:1 key:s:0 key:n:1 key:n:0 key:leftctrl:0 \
 # systemd-run --service-type=notify --unit=keyBoardTest.service \
+

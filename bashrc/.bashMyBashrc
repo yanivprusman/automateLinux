@@ -23,15 +23,12 @@ h() {
     history | grep "$1"
 }
 export FREECAD_MACROS_DIR="/home/yaniv/coding/freeCad/Macros/"
-alias mk='mkdir'
-alias boot='history -a && sudo reboot'
-alias pkill='sudo pkill -9'
-alias pkillev='sudo pkill -9 evsieve'
-alias evsievep='sudo evsieve --input /dev/input/event* --print format=direct'
+AUTOMAT_LINUX_DIR=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
+BASH_RC_DIR="$AUTOMAT_LINUX_DIR/bashrc"
+AUTOMAT_LINUX_ENV_FILE="$BASH_RC_DIR/env.sh"
+source $BASH_RC_DIR/aliases.sh
 source ~/coding/automateLinux/evsieve/toggle/sendkeys-completion.bash
 EVSIEVE_LOG_FILE=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
-AUTOMAT_LINUX_DIR=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
-AUTOMAT_LINUX_ENV_FILE="$AUTOMAT_LINUX_DIR/bashrc/env.sh"
 [ -f "$AUTOMAT_LINUX_ENV_FILE" ] && source "$AUTOMAT_LINUX_ENV_FILE"
 AUTOMAT_LINUX_SYMLINK_DIR="$AUTOMAT_LINUX_DIR/symlinks"
 SCRIPT="$AUTOMAT_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"

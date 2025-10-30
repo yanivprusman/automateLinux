@@ -20,10 +20,8 @@ for arg in "$@"; do
         "$DELETE_LOGS" --reset
     fi
 done
-SERVICE_INITIALIZED_CODE=200
-SERVICE_INITIALIZED_CODE1=200
-SERVICE_INITIALIZED_CODE2=201
-SERVICE_INITIALIZED_CODE3=202
+SERVICE_UNINITIALIZED_CODE=200
+SERVICE_INITIALIZED_CODE=201
 # command="source /home/yaniv/.bashrc && $SEND_KEYS 'numlock'"
 command="$SEND_KEYS 'numlock' 'SYN_REPORT' 'keyA' 'SYN_REPORT'"
 systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse1.service \
@@ -65,15 +63,15 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse2.ser
     --input /dev/input/by-id/corsairKeyBoardLogiMouse1 grab domain=input\
     `#send event to see if service is / not initialized`\
     --hook "" send-key=key:a@null\
-    --map key:a@null msc:scan:$SERVICE_INITIALIZED_CODE\
-    --toggle msc:scan:$SERVICE_INITIALIZED_CODE @serviceUnInitialized @serviceIinitialized id=serviceInitializedToggle\
+    --map key:a@null msc:scan:$SERVICE_UNINITIALIZED_CODE\
+    --toggle msc:scan:$SERVICE_UNINITIALIZED_CODE msc:scan:$SERVICE_UNINITIALIZED_CODE@serviceUnInitialized msc:scan:$SERVICE_INITIALIZED_CODE@serviceIinitialized id=serviceInitializedToggle\
     --hook "" toggle=serviceInitializedToggle:2\
     `#--print msc key led format=direct`\
-    --copy led:numl:0 @numLedOff\
-    --copy led:numl:1 @numLedOn\
-    --hook @serviceUnInitialized send-key=key:numlock@initState\
-    --hook @numLedOn send-key=key:numlock@initState\
-    --block key:numlock@initState\
+    `#--copy led:numl:0 @numLedOff`\
+    `#--copy led:numl:1 @numLedOn`\
+    --hook msc:scan:$SERVICE_UNINITIALIZED_CODE@serviceUnInitialized send-key=key:numlock@initState\
+    `#--hook @numLedOn send-key=key:numlock@initState`\
+    `#--block key:numlock@initState`\
     --print key msc:scan:~199 msc:scan:201~589824 format=direct\
     --output name="combined2 corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse2 repeat=disable\
     --map btn:forward key:enter

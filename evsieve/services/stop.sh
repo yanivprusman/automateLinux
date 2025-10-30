@@ -1,1 +1,1 @@
-sudo $(getRealPath _sudoStop.sh)
+sudo $(theRealPath _sudoStop.sh)

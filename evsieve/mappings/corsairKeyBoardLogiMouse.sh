@@ -15,6 +15,8 @@ for arg in "$@"; do
     if [[ "$arg" == "reset" ]]; then
         > "$EVSIEVE_LOG_FILE"
         > "$ECHO_LOG_FILE"
+        > "$EVSIEVE_LOG_FILE2"
+        > "$ECHO_LOG_FILE2"
     fi
 done
 SERVICE_INITIALIZED_CODE=200
@@ -37,7 +39,7 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --map msc:scan:458978 @dontPrint`#scan code for left alt`\
     --map msc:scan:458795 @dontPrint`#scan code for tab`\
     --map msc:scan:458796 @dontPrint`#scan code for space`\
-    --print format=direct\
+    --print key msc:scan:~199 msc:scan:201~589824 format=direct\
     --output name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable
 
 systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse2.service \
@@ -50,13 +52,13 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse2.ser
     --map key:a@null msc:scan:$SERVICE_INITIALIZED_CODE\
     --toggle msc:scan:$SERVICE_INITIALIZED_CODE @serviceUnInitialized @serviceIinitialized id=serviceInitializedToggle\
     --hook "" toggle=serviceInitializedToggle:2\
-    --print msc key led format=direct\
+    `#--print msc key led format=direct`\
     --copy led:numl:0 @numLedOff\
     --copy led:numl:1 @numLedOn\
     --hook @serviceUnInitialized send-key=key:numlock@initState\
     --hook @numLedOn send-key=key:numlock@initState\
     --block key:numlock@initState\
-    --print format=direct\
+    --print key msc:scan:~199 msc:scan:201~589824 format=direct\
     --output name="combined2 corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse2 repeat=disable\
     --map btn:forward key:enter
 

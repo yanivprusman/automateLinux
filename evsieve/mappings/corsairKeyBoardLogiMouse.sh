@@ -1,18 +1,18 @@
 # Get script directory for relative paths
-SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-
+# SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 # KEYBOARD_BY_ID=$(ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
+
 MOUSE_EVENT=$(awk '/Logitech/ && /Mouse/ {found=1} found && /Handlers/ {if (match($0, /event[0-9]+/, a)) {print a[0]; exit}}' /proc/bus/input/devices)
 
-EVSIEVE_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/log.txt")"
-SYSTEMD_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/error.txt")"
-ECHO_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/echo.txt")"
-EVSIEVE_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/log2.txt")"
-SYSTEMD_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/error2.txt")"
-ECHO_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/echo2.txt")"
-SEND_KEYS="$(realpath "${SCRIPT_DIR}/../../utilities/sendKeys")"
+EVSIEVE_LOG_FILE="$(theRealPath ../log/log.txt)"
+SYSTEMD_LOG_FILE="$(theRealPath ../log/error.txt)"
+ECHO_LOG_FILE="$(theRealPath ../log/echo.txt)"
+EVSIEVE_LOG_FILE2="$(theRealPath ../log/log2.txt)"
+SYSTEMD_LOG_FILE2="$(theRealPath ../log/error2.txt)"
+ECHO_LOG_FILE2="$(theRealPath ../log/echo2.txt)"
+SEND_KEYS="$(theRealPath ../../utilities/sendKeys)"
 # Initialize log files
-DELETE_LOGS="$(realpath "${SCRIPT_DIR}/../log/deleteLogFiles.sh")"
+DELETE_LOGS="$(theRealPath ../log/deleteLogFiles.sh)"
 
 # Handle reset argument
 for arg in "$@"; do
@@ -58,11 +58,11 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse1.ser
     --block @copyForPrint\
     --output name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse1 repeat=disable
 
-systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse2.service \
-    --property=StandardError=file:$SYSTEMD_LOG_FILE2 \
-    --property=StandardOutput=append:$EVSIEVE_LOG_FILE2 \
-    evsieve \
-    --input /dev/input/by-id/corsairKeyBoardLogiMouse1 grab domain=input \
+systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse2.service\
+    --property=StandardError=file:$SYSTEMD_LOG_FILE2\
+    --property=StandardOutput=append:$EVSIEVE_LOG_FILE2\
+    evsieve\
+    --input /dev/input/by-id/corsairKeyBoardLogiMouse1 grab domain=input\
     `#send event to see if service is / not initialized`\
     --hook "" send-key=key:a@null\
     --map key:a@null msc:scan:$SERVICE_INITIALIZED_CODE\

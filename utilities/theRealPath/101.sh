@@ -1,1 +1,1 @@
-eval $(echo "cd /home")
+theRealPath ..

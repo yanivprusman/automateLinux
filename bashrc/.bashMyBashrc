@@ -22,7 +22,7 @@ BASH_RC_DIR="$AUTOMAT_LINUX_DIR/bashrc"
 AUTOMAT_LINUX_ENV_FILE="$BASH_RC_DIR/env.sh"
 source $BASH_RC_DIR/aliases.sh
 source $BASH_RC_DIR/functions.sh
-source ~/coding/automateLinux/evsieve/toggle/sendkeys-completion.bash
+source ~/coding/automateLinux/utilities/sendKeys/sendkeys-completion.bash
 EVSIEVE_LOG_FILE=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
 [ -f "$AUTOMAT_LINUX_ENV_FILE" ] && source "$AUTOMAT_LINUX_ENV_FILE"
 AUTOMAT_LINUX_SYMLINK_DIR="$AUTOMAT_LINUX_DIR/symlinks"

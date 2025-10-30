@@ -10,7 +10,7 @@ ECHO_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/echo.txt")"
 EVSIEVE_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/log2.txt")"
 SYSTEMD_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/error2.txt")"
 ECHO_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/echo2.txt")"
-SEND_KEYS="$(realpath "${SCRIPT_DIR}/../toggle/sendKeys")"
+SEND_KEYS="$(realpath "${SCRIPT_DIR}/../../utilities/sendKeys")"
 # Initialize log files
 DELETE_LOGS="$(realpath "${SCRIPT_DIR}/../log/deleteLogFiles.sh")"
 

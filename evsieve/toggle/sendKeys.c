@@ -72,8 +72,20 @@ void handle_command(const char *cmd) {
         send_event(EV_KEY, KEY_A, 1);
         send_event(EV_KEY, KEY_A, 0);
     } else if (strcmp(cmd, "numlock") == 0) {
+        // Send scan code first (0x45 is the standard scan code for numlock)
+        send_event(EV_MSC, MSC_SCAN, 0x45);
+        // Send key press
         send_event(EV_KEY, KEY_NUMLOCK, 1);
+        // Send sync after press
+        send_event(EV_SYN, SYN_REPORT, 0);
+        // Send release after a small delay
+        usleep(50000); // 50ms delay
+        // Send scan code again for release
+        send_event(EV_MSC, MSC_SCAN, 0x45);
+        // Send key release
         send_event(EV_KEY, KEY_NUMLOCK, 0);
+        // Final sync
+        send_event(EV_SYN, SYN_REPORT, 0);
     } else if (strcmp(cmd, "syn") == 0) {
         send_event(EV_SYN, SYN_REPORT, 0);
     } else {

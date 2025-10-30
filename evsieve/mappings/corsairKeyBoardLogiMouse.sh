@@ -6,6 +6,8 @@ MOUSE_EVENT=$(awk '/Logitech/ && /Mouse/ {found=1} found && /Handlers/ {if (matc
 
 EVSIEVE_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/log.txt")"
 SYSTEMD_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/error.txt")"
+EVSIEVE_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/log2.txt")"
+SYSTEMD_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/error2.txt")"
 ECHO_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/echo.txt")"
 SEND_KEYS="$(realpath "${SCRIPT_DIR}/../toggle/sendKeys")"
 > "$SYSTEMD_LOG_FILE"
@@ -21,11 +23,11 @@ SERVICE_INITIALIZED_CODE2=201
 SERVICE_INITIALIZED_CODE3=202
 # command="source /home/yaniv/.bashrc && $SEND_KEYS 'numlock'"
 command="$SEND_KEYS 'numlock' 'SYN_REPORT' 'keyA' 'SYN_REPORT'"
-systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service\
-    --property=StandardError=file:$SYSTEMD_LOG_FILE\
-    --property=StandardOutput=append:$EVSIEVE_LOG_FILE\
-    evsieve\
-    --input /dev/input/by-id/$KEYBOARD_BY_ID /dev/input/$MOUSE_EVENT grab domain=input\
+systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service \
+    --property=StandardError=file:$SYSTEMD_LOG_FILE \
+    --property=StandardOutput=append:$EVSIEVE_LOG_FILE \
+    evsieve \
+    --input /dev/input/by-id/$KEYBOARD_BY_ID /dev/input/$MOUSE_EVENT grab domain=input \
     `#dont print these events`\
     --map rel @dontPrint`#mouse move`\
     --map btn @dontPrint`#mouse click`\
@@ -35,40 +37,27 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     --map msc:scan:458978 @dontPrint`#scan code for left alt`\
     --map msc:scan:458795 @dontPrint`#scan code for tab`\
     --map msc:scan:458796 @dontPrint`#scan code for space`\
+    --print format=direct\
+    --output name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable
+
+systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse2.service \
+    --property=StandardError=file:$SYSTEMD_LOG_FILE2 \
+    --property=StandardOutput=append:$EVSIEVE_LOG_FILE2 \
+    evsieve \
+    --input /dev/input/by-id/corsairKeyBoardLogiMouse grab domain=input \
     `#send event to see if service is / not initialized`\
     --hook "" send-key=key:a@null\
     --map key:a@null msc:scan:$SERVICE_INITIALIZED_CODE\
     --toggle msc:scan:$SERVICE_INITIALIZED_CODE @serviceUnInitialized @serviceIinitialized id=serviceInitializedToggle\
     --hook "" toggle=serviceInitializedToggle:2\
-    `#led numlock initialization`\
-    --hook @serviceUnInitialized led:numl breaks-on=""  send-key=key:a@null exec-shell="echo 'hi 1'"\
-    --map key:a:1@null key:numlock:1@send key:numlock:0@send\
-    --block key:a:0@null\
-    `#test`\
-    --hook @serviceUnInitialized breaks-on="" send-key=key:a@null exec-shell="echo 'hi 2'"\
-    --map key:a:1@null key:numlock:1@send key:numlock:0@send\
-    --block key:a:0@null\
-    `#--hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi'"\
-    --hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi2'"\
-    --hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi3'"\
-    --hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi4'"\
-    --hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi5'"\
-    --hook @serviceUnInitialized breaks-on="" exec-shell="echo 'hi6'"\
-    --map key:a:1@null key:numlock:1@send key:numlock:0@send\
-    --block key:a:0@null`\
-    `#--hook @serviceUnInitialized exec-shell="$SEND_KEYS 'SYN_REPORT'" breaks-on=""`\
-    `#--hook @serviceUnInitialized led:numl send-key=key:a@null breaks-on=""`\
-    `#--map key:a:1@null key:numlock:1@send key:numlock:0@send\
-    --block key:a:0@null`\
-    `#set numlock on after initialization`\
-    `#test release in toggle`\
-    --print key msc:scan:~199 msc:scan:201~589824 format=direct\
-    `#--print @input @null @unInitialized format=direct`\
-    `#--output @send @input @myOutput @unsievedOutput @dontPrint @setNumLockOnAfterInitialization\
-    name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable`\
-    --output name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable\
-    `# mouse events`\
-    --map btn:forward key:enter\
-    `#--print key format=direct`
+    --print msc key led format=direct\
+    --copy led:numl:0 @numLedOff\
+    --copy led:numl:1 @numLedOn\
+    --hook @serviceUnInitialized send-key=key:numlock@initState\
+    --hook @numLedOn send-key=key:numlock@initState\
+    --block key:numlock@initState\
+    --print format=direct\
+    --output name="combined2 corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse2 repeat=disable\
+    --map btn:forward key:enter
 
 

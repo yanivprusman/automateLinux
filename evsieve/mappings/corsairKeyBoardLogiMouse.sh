@@ -6,17 +6,18 @@ MOUSE_EVENT=$(awk '/Logitech/ && /Mouse/ {found=1} found && /Handlers/ {if (matc
 
 EVSIEVE_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/log.txt")"
 SYSTEMD_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/error.txt")"
+ECHO_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/echo.txt")"
 EVSIEVE_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/log2.txt")"
 SYSTEMD_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/error2.txt")"
-ECHO_LOG_FILE="$(realpath "${SCRIPT_DIR}/../log/echo.txt")"
+ECHO_LOG_FILE2="$(realpath "${SCRIPT_DIR}/../log/echo2.txt")"
 SEND_KEYS="$(realpath "${SCRIPT_DIR}/../toggle/sendKeys")"
-> "$SYSTEMD_LOG_FILE"
+# Initialize log files
+DELETE_LOGS="$(realpath "${SCRIPT_DIR}/../log/deleteLogFiles.sh")"
+
+# Handle reset argument
 for arg in "$@"; do
     if [[ "$arg" == "reset" ]]; then
-        > "$EVSIEVE_LOG_FILE"
-        > "$ECHO_LOG_FILE"
-        > "$EVSIEVE_LOG_FILE2"
-        > "$ECHO_LOG_FILE2"
+        "$DELETE_LOGS" --reset
     fi
 done
 SERVICE_INITIALIZED_CODE=200
@@ -25,28 +26,43 @@ SERVICE_INITIALIZED_CODE2=201
 SERVICE_INITIALIZED_CODE3=202
 # command="source /home/yaniv/.bashrc && $SEND_KEYS 'numlock'"
 command="$SEND_KEYS 'numlock' 'SYN_REPORT' 'keyA' 'SYN_REPORT'"
-systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service \
+systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse1.service \
     --property=StandardError=file:$SYSTEMD_LOG_FILE \
     --property=StandardOutput=append:$EVSIEVE_LOG_FILE \
     evsieve \
     --input /dev/input/by-id/$KEYBOARD_BY_ID /dev/input/$MOUSE_EVENT grab domain=input \
     `#dont print these events`\
-    --map rel @dontPrint`#mouse move`\
-    --map btn @dontPrint`#mouse click`\
-    --map msc:scan:589825 @dontPrint`#scan code for mouse click`\
-    --map msc:scan:458976 @dontPrint`#scan code for left control`\
-    --map msc:scan:589830 @dontPrint`#scan code for mouse thumb`\
-    --map msc:scan:458978 @dontPrint`#scan code for left alt`\
-    --map msc:scan:458795 @dontPrint`#scan code for tab`\
-    --map msc:scan:458796 @dontPrint`#scan code for space`\
-    --print key msc:scan:~199 msc:scan:201~589824 format=direct\
-    --output name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse repeat=disable
+    --copy "" @copyForPrint\
+    --map rel@copyForPrint @dontPrint`#mouse move`\
+    --map btn@copyForPrint @dontPrint`#mouse click`\
+    --map key:leftctrl@copyForPrint @dontPrint\
+    --map key:1@copyForPrint @dontPrint\
+    --map msc:scan:589825@copyForPrint @dontPrint`#scan code for mouse click`\
+    --map msc:scan:458976@copyForPrint @dontPrint`#scan code for left control`\
+    --map msc:scan:589830@copyForPrint @dontPrint`#scan code for mouse thumb`\
+    --map msc:scan:458978@copyForPrint @dontPrint`#scan code for left alt`\
+    --map msc:scan:458795@copyForPrint @dontPrint`#scan code for tab`\
+    --map msc:scan:458796@copyForPrint @dontPrint`#scan code for space`\
+    --map msc:scan:458782@copyForPrint @dontPrint`#scan code for 1`\
+    --map msc:scan:~199@copyForPrint @dontPrint\
+    --map msc:scan:201~589824@copyForPrint @dontPrint\
+    --map key:right@copyForPrint @dontPrint\
+    --map key:up@copyForPrint @dontPrint\
+    --map key:left@copyForPrint @dontPrint\
+    --map key:down@copyForPrint @dontPrint\
+    --map key:tab@copyForPrint @dontPrint\
+    --map key:leftalt@copyForPrint @dontPrint\
+    --block @dontPrint\
+    --hook key:leftctrl key:1 exec-shell="$DELETE_LOGS --reset" \
+    --print @copyForPrint format=direct \
+    --block @copyForPrint\
+    --output name="combined corsair keyboard and logi mouse" create-link=/dev/input/by-id/corsairKeyBoardLogiMouse1 repeat=disable
 
 systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse2.service \
     --property=StandardError=file:$SYSTEMD_LOG_FILE2 \
     --property=StandardOutput=append:$EVSIEVE_LOG_FILE2 \
     evsieve \
-    --input /dev/input/by-id/corsairKeyBoardLogiMouse grab domain=input \
+    --input /dev/input/by-id/corsairKeyBoardLogiMouse1 grab domain=input \
     `#send event to see if service is / not initialized`\
     --hook "" send-key=key:a@null\
     --map key:a@null msc:scan:$SERVICE_INITIALIZED_CODE\

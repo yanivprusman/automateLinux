@@ -1,1 +1,1 @@
-led does not turn on after starting untill i send an event ( then my sent keys are sent in a row. i tried )
+learn about $()

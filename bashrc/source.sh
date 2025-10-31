@@ -1,1 +1,1 @@
-"$(theRealPath ../utilities/termcontrol/termcontrol-completion.bash)"
+source "$(theRealPath ../utilities/termcontrol/termcontrol-completion.bash)"

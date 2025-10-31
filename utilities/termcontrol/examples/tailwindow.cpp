@@ -33,6 +33,12 @@ public:
         int col;
         term.getCursorPosition(start_row, col);
         
+        // Save current terminal attributes
+        if (!term.setRawMode(true)) {
+            std::cerr << "Failed to set raw mode\n";
+            return false;
+        }
+        
         // Move down one line from current position
         term.moveCursor(start_row + 1, 0);
         
@@ -44,12 +50,7 @@ public:
         return true;
     }
 
-    void addLine(const std::string& line) {
-        if (lines.size() >= window_size) {
-            lines.erase(lines.begin());
-        }
-        lines.push_back(line);
-        
+    void updateDisplay() {
         // Move to start of window area
         term.moveCursor(start_row + 1, 0);
         
@@ -57,14 +58,25 @@ public:
         for (size_t i = 0; i < window_size; i++) {
             term.clearLine();
             if (i < lines.size()) {
-                std::cout << lines[i];
-            }
-            if (i < window_size - 1) {
+                std::cerr << "Debug: Printing line " << i << ": " << lines[i] << std::endl;
+                std::cout << lines[i] << std::endl;
+            } else {
                 std::cout << std::endl;
             }
         }
         
         std::cout.flush();
+    }
+
+    void addLine(const std::string& line) {
+        std::cerr << "Debug: Adding line: " << line << std::endl;
+        
+        if (lines.size() >= window_size) {
+            lines.erase(lines.begin());
+        }
+        lines.push_back(line);
+        
+        updateDisplay();
     }
 
     void run() {
@@ -76,10 +88,20 @@ public:
             return;
         }
 
-        // Set up cleanup handler
-        term.setRawMode(true);
+        std::cerr << "Debug: Starting to monitor file: " << filename << std::endl;
+        std::cerr << "Debug: Window size: " << window_size << std::endl;
+
+        // Read initial content of file
+        std::string line;
+        while (std::getline(file, line)) {
+            std::cerr << "Debug: Initial read line: " << line << std::endl;
+            addLine(line);
+        }
+
+        // Set up input handling
         auto input_handler = [this](char c) {
             if (c == 3 || c == 'q') { // Ctrl+C or 'q'
+                std::cerr << "Debug: Received quit signal" << std::endl;
                 running = false;
             }
         };
@@ -87,17 +109,23 @@ public:
         std::thread input_thread([this, &input_handler]() {
             while (running) {
                 term.readInput(input_handler);
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         });
 
         // Get to end of file
         file.seekg(0, std::ios::end);
 
-        std::string line;
+        // Reset file position to end for monitoring new content
+        file.clear();
+        file.seekg(0, std::ios::end);
+
+        // Continue monitoring for new content
         while (running) {
             if (file.peek() != EOF) {
                 std::getline(file, line);
                 if (!line.empty()) {
+                    std::cerr << "Debug: New line detected: " << line << std::endl;
                     addLine(line);
                 }
             } else {
@@ -107,11 +135,15 @@ public:
         }
 
         // Cleanup
+        term.resetAttributes();
+        term.setRawMode(false);
+        
+        // Print final newline to ensure terminal prompt appears correctly
+        std::cout << std::endl;
+        
         if (input_thread.joinable()) {
             input_thread.join();
         }
-        term.setRawMode(false);
-        term.resetAttributes();
     }
 };
 

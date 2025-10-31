@@ -136,4 +136,117 @@ void Terminal::resetAttributes() {
     fflush(stdout);
 }
 
+void Terminal::getTerminalSize(int& rows, int& cols) {
+    struct winsize ws;
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1) {
+        rows = 24;  // Default fallback
+        cols = 80;
+    } else {
+        rows = ws.ws_row;
+        cols = ws.ws_col;
+    }
+}
+
+Terminal::TerminalBufferInfo Terminal::getBufferInfo() {
+    TerminalBufferInfo info;
+    getTerminalSize(info.rows, info.cols);
+    getCursorPosition(info.cursor_row, info.cursor_col);
+    info.raw_mode = is_raw_mode;
+    return info;
+}
+
+Terminal::CharacterInfo Terminal::getCharacterInfo(int row, int col) {
+    CharacterInfo info = {0};
+    
+    // Save current position and attributes
+    saveCursor();
+    auto orig_attrs = "\033[0m";
+    
+    // Move to target position
+    moveCursor(row, col);
+    
+    // Query character using ANSI escape sequence
+    printf("\033[6n");  // Get cursor position
+    fflush(stdout);
+    
+    // Read response
+    char buf[32];
+    int i = 0;
+    while (i < sizeof(buf) - 1) {
+        if (read(STDIN_FILENO, &buf[i], 1) != 1) break;
+        if (buf[i] == 'R') break;
+        i++;
+    }
+    buf[i] = '\0';
+    
+    // Parse character attributes
+    // This requires terminal support for SGR parameters
+    printf("\033[0m\033[?25l");  // Reset attributes and hide cursor
+    fflush(stdout);
+    
+    printf("\033]10;?\007");  // Query foreground color
+    printf("\033]11;?\007");  // Query background color
+    fflush(stdout);
+    
+    // Read character at position
+    info.ch = buf[0];  // Simplified - in reality need to handle escape sequences
+    
+    // Restore position and attributes
+    printf("%s", orig_attrs);
+    restoreCursor();
+    fflush(stdout);
+    
+    return info;
+}
+
+void Terminal::setCharacterInfo(int row, int col, const CharacterInfo& info) {
+    saveCursor();
+    moveCursor(row, col);
+    
+    // Set attributes
+    if (info.bold) printf("\033[1m");
+    if (info.underline) printf("\033[4m");
+    if (info.reverse) printf("\033[7m");
+    if (info.blink) printf("\033[5m");
+    
+    // Set colors
+    if (info.fg_color >= 0) printf("\033[38;5;%dm", info.fg_color);
+    if (info.bg_color >= 0) printf("\033[48;5;%dm", info.bg_color);
+    
+    // Write character
+    printf("%c", info.ch);
+    
+    resetAttributes();
+    restoreCursor();
+    fflush(stdout);
+}
+
+std::vector<Terminal::CharacterInfo> Terminal::getCharacterRange(
+    int start_row, int start_col, int end_row, int end_col) {
+    
+    std::vector<CharacterInfo> chars;
+    for (int row = start_row; row <= end_row; row++) {
+        for (int col = (row == start_row ? start_col : 0); 
+             col <= (row == end_row ? end_col : 80); col++) {
+            chars.push_back(getCharacterInfo(row, col));
+        }
+    }
+    return chars;
+}
+
+void Terminal::setCharacterRange(
+    int start_row, int start_col, int end_row, int end_col,
+    const std::vector<CharacterInfo>& chars) {
+    
+    size_t idx = 0;
+    for (int row = start_row; row <= end_row; row++) {
+        for (int col = (row == start_row ? start_col : 0);
+             col <= (row == end_row ? end_col : 80); col++) {
+            if (idx < chars.size()) {
+                setCharacterInfo(row, col, chars[idx++]);
+            }
+        }
+    }
+}
+
 } // namespace termcontrol

@@ -16,10 +16,15 @@ target_include_directories(termcontrol PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Add example executable
+# Add executables
 add_executable(example
     examples/main.cpp
 )
 
-# Link example with the library
+add_executable(tailwindow
+    examples/tailwindow.cpp
+)
+
+# Link executables with the library
 target_link_libraries(example PRIVATE termcontrol)
+target_link_libraries(tailwindow PRIVATE termcontrol)

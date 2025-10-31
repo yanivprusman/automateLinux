@@ -60,6 +60,18 @@ public:
             "termcontrol --buffer"
         };
 
+        commands["--generate-completion"] = {
+            "Print shell completion script for termcontrol",
+            [this](const auto& args) { return handleGenerateCompletion(args); },
+            "termcontrol --generate-completion [bash|zsh]"
+        };
+
+        commands["--complete"] = {
+            "Internal: print completions for the given prefix (used by shell completion)",
+            [this](const auto& args) { return handleComplete(args); },
+            "termcontrol --complete PREFIX"
+        };
+
         commands["--char"] = {
             "Get character information at position",
             [this](const auto& args) { return handleChar(args); },
@@ -134,10 +146,49 @@ private:
     int handleBuffer(const std::vector<std::string>& args) {
         auto info = term.getBufferInfo();
         std::cout << "Terminal Buffer Information:\n"
-                  << "  Rows: " << info.rows << "\n"
-                  << "  Columns: " << info.cols << "\n"
-                  << "  Cursor Position: " << info.cursor_row << "," << info.cursor_col << "\n"
+                  << "  Visible Rows: " << info.rows << "\n"
+                  << "  Visible Columns: " << info.cols << "\n"
+                  << "  Buffer Rows (including scrollback): " << info.buffer_rows << "\n"
+                  << "  Buffer Columns: " << info.buffer_cols << "\n"
+                  << "  Cursor Position (visible): " << info.cursor_row << "," << info.cursor_col << "\n"
                   << "  Raw Mode: " << (info.raw_mode ? "Yes" : "No") << "\n";
+        return 0;
+    }
+
+    int handleGenerateCompletion(const std::vector<std::string>& args) {
+        std::string shell = "bash";
+        if (!args.empty()) shell = args[0];
+
+        if (shell == "bash") {
+            // simple bash completion that asks termcontrol for completions
+            std::cout << "_termcontrol() {\n"
+                      << "  local cur prev words cword\n"
+                      << "  _get_comp_words_by_ref -n : cur prev words cword || return\n"
+                      << "  COMPREPLY=( $(termcontrol --complete \"$cur\") )\n"
+                      << "}\n"
+                      << "complete -F _termcontrol termcontrol\n";
+            return 0;
+        } else if (shell == "zsh") {
+            std::cout << "# zsh completion not yet implemented\n";
+            return 0;
+        }
+        std::cerr << "Unsupported shell: " << shell << "\n";
+        return 1;
+    }
+
+    int handleComplete(const std::vector<std::string>& args) {
+        // print completions for the given prefix
+        std::string prefix;
+        if (!args.empty()) prefix = args[0];
+
+        std::vector<std::string> opts;
+        for (const auto& kv : commands) opts.push_back(kv.first);
+
+        for (const auto& o : opts) {
+            if (prefix.empty() || o.rfind(prefix, 0) == 0) {
+                std::cout << o << "\n";
+            }
+        }
         return 0;
     }
 

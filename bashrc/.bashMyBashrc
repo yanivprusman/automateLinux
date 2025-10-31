@@ -20,6 +20,7 @@ export FREECAD_MACROS_DIR="/home/yaniv/coding/freeCad/Macros/"
 AUTOMAT_LINUX_DIR=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 BASH_RC_DIR="$AUTOMAT_LINUX_DIR/bashrc"
 AUTOMAT_LINUX_ENV_FILE="$BASH_RC_DIR/env.sh"
+source theRealPath source.sh
 source $BASH_RC_DIR/aliases.sh
 source $BASH_RC_DIR/functions.sh
 source ~/coding/automateLinux/utilities/sendKeys/sendkeys-completion.bash

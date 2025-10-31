@@ -4,6 +4,7 @@
 #include <memory>
 #include <functional>
 #include <termios.h>
+#include "buffer.hpp"
 
 namespace termcontrol {
 
@@ -40,8 +41,13 @@ public:
 
     // Terminal buffer info
     struct TerminalBufferInfo {
+        // Visible window size
         int rows;
         int cols;
+        // Full buffer (including scrollback)
+        int buffer_rows;
+        int buffer_cols;
+        // Cursor position within visible window
         int cursor_row;
         int cursor_col;
         bool raw_mode;
@@ -68,6 +74,9 @@ private:
     struct termios original_termios;
     bool is_raw_mode;
     void getTerminalSize(int& rows, int& cols);
+    // internal buffer that tracks full scrollback/content written through this API
+    std::unique_ptr<Buffer> buffer;
+    int scrollback_lines = 1000; // reasonable default
     
     // Prevent copying
     Terminal(const Terminal&) = delete;

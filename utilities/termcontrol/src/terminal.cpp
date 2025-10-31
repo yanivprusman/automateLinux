@@ -15,7 +15,12 @@ bool Terminal::init() {
     if (tcgetattr(STDIN_FILENO, &original_termios) < 0) {
         return false;
     }
-    return true;
+        // initialize internal buffer with current terminal size + scrollback
+        int rows, cols;
+        getTerminalSize(rows, cols);
+        // buffer rows include visible rows plus scrollback
+        buffer.reset(new Buffer(rows + scrollback_lines, cols));
+        return true;
 }
 
 void Terminal::cleanup() {
@@ -149,9 +154,50 @@ void Terminal::getTerminalSize(int& rows, int& cols) {
 
 Terminal::TerminalBufferInfo Terminal::getBufferInfo() {
     TerminalBufferInfo info;
+    
+    // Save current state
+    saveCursor();
+    setRawMode(true);
+    
+    // Get visible size
     getTerminalSize(info.rows, info.cols);
+    
+    // Get current position
     getCursorPosition(info.cursor_row, info.cursor_col);
+    
+    // Move to top-left and query position
+    printf("\033[H");
+    fflush(stdout);
+    
+    // Move way up to find the scrollback limit
+    printf("\033[9999A\033[6n");
+    fflush(stdout);
+    
+    // Read response
+    char buf[32];
+    int i = 0;
+    while (i < sizeof(buf) - 1) {
+        if (read(STDIN_FILENO, &buf[i], 1) != 1) break;
+        if (buf[i] == 'R') break;
+        i++;
+    }
+    buf[i] = '\0';
+    
+    // Parse actual buffer size
+    int top_row, tmp_col;
+    if (sscanf(buf, "\033[%d;%dR", &top_row, &tmp_col) == 2) {
+        info.buffer_rows = abs(top_row); // abs() because some terminals report negative
+        info.buffer_cols = info.cols;     // buffer width matches visible width
+    } else {
+        // Fallback to visible size if query fails
+        info.buffer_rows = info.rows;
+        info.buffer_cols = info.cols;
+    }
+    
+    // Restore state
+    restoreCursor();
     info.raw_mode = is_raw_mode;
+    
     return info;
 }
 
@@ -216,6 +262,21 @@ void Terminal::setCharacterInfo(int row, int col, const CharacterInfo& info) {
     // Write character
     printf("%c", info.ch);
     
+        // update internal buffer if present (map visible position to buffer's bottom area)
+        if (buffer) {
+            int br = buffer->getRows();
+            int bc = buffer->getCols();
+            // place visible rows at the bottom of the buffer
+            int vis_rows, vis_cols;
+            getTerminalSize(vis_rows, vis_cols);
+            int base_row = br - vis_rows; // top row index in buffer corresponding to visible row 0
+            int buf_row = base_row + row;
+            if (buf_row >= 0 && buf_row < br && col >= 0 && col < bc) {
+                // buffer stores chars only; reflect character
+                buffer->write(std::string(1, info.ch), buf_row, col);
+            }
+        }
+    
     resetAttributes();
     restoreCursor();
     fflush(stdout);
@@ -225,12 +286,27 @@ std::vector<Terminal::CharacterInfo> Terminal::getCharacterRange(
     int start_row, int start_col, int end_row, int end_col) {
     
     std::vector<CharacterInfo> chars;
-    for (int row = start_row; row <= end_row; row++) {
-        for (int col = (row == start_row ? start_col : 0); 
-             col <= (row == end_row ? end_col : 80); col++) {
-            chars.push_back(getCharacterInfo(row, col));
+        // If we have an internal buffer, read from it for accurate and fast results
+        if (buffer) {
+            for (int row = start_row; row <= end_row; row++) {
+                for (int col = (row == start_row ? start_col : 0);
+                     col <= (row == end_row ? end_col : buffer->getCols() - 1); col++) {
+                    CharacterInfo ci = {0};
+                    ci.ch = buffer->at(row, col);
+                    ci.fg_color = -1;
+                    ci.bg_color = -1;
+                    chars.push_back(ci);
+                }
+            }
+            return chars;
         }
-    }
+
+        for (int row = start_row; row <= end_row; row++) {
+            for (int col = (row == start_row ? start_col : 0); 
+                 col <= (row == end_row ? end_col : 80); col++) {
+                chars.push_back(getCharacterInfo(row, col));
+            }
+        }
     return chars;
 }
 

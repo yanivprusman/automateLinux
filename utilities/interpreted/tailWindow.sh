@@ -70,20 +70,12 @@ fi
 # Monitor file with the specified window size
 tail -f "$file" 2>/dev/null | awk -v window_size="$window_size" '
 {
-    # Shift lines up
     for(i=1; i<window_size; i++) lines[i] = lines[i+1]
     lines[window_size] = $0
-
-    # Determine how many lines to print (don’t exceed NR or window_size)
     count = (NR < window_size) ? NR : window_size
-
-    # Move cursor up only after the first line
     if (NR > 1) printf "\033[" count "A"
-
-    # Print up to count lines
     for(i=window_size - count + 1; i<=window_size; i++) {
         if (i in lines) printf "\r\033[K%s\n", lines[i]
     }
-
     fflush()
 }'

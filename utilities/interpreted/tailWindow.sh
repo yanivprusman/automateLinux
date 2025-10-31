@@ -68,6 +68,8 @@ if [ ! -r "$file" ]; then
 fi
 
 # Monitor file with the specified window size
+# Print an empty line first to avoid overwriting the prompt
+echo ""
 tail -f "$file" 2>/dev/null | awk -v window_size="$window_size" '
 {
     for(i=1; i<window_size; i++) lines[i] = lines[i+1]

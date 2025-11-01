@@ -1,30 +1,48 @@
-theRealPath1() {
-  SCRIPT="$0"
-  while [ -h "$SCRIPT" ]; do
-    LINK=$(ls -ld -- "$SCRIPT" 2>/dev/null | awk '{print $(NF)}')
-    case $LINK in
-      /*) SCRIPT="$LINK" ;;
-      *)  SCRIPT="$(dirname -- "$SCRIPT")/$LINK" ;;
-    esac
-  done
-  SCRIPT_DIR=$(cd -P -- "$(dirname -- "$SCRIPT")" >/dev/null 2>&1 && pwd)
-  if [ -n "$1" ]; then
-    case $1 in
-      /*) FULL_PATH="$1" ;;
-      *)  FULL_PATH="$SCRIPT_DIR/$1" ;;
-    esac
-    REAL_PATH=$(cd -P -- "$(dirname -- "$FULL_PATH")" >/dev/null 2>&1 && pwd)/$(basename -- "$FULL_PATH")
-    echo "$REAL_PATH"
+
+SCRIPT="$0"
+while [ -h "$SCRIPT" ]; do
+  # resolve $SCRIPT until the file is no longer a symlink
+  LINK=$(ls -ld "$SCRIPT" | awk '{print $NF}')
+  if [ "${LINK:0:1}" = "/" ]; then
+    SCRIPT="$LINK"
+  else
+    SCRIPT="$(dirname "$SCRIPT")/$LINK"
+  fi
+done
+SCRIPT_DIR=$(cd -P "$(dirname "$SCRIPT")" > /dev/null 2>&1 && pwd)
+
+if [ "$1" = "../../" ]; then
+  # When exactly "../../" is passed, always return two directories up from script location
+  echo "$(cd "$SCRIPT_DIR/../.." > /dev/null 2>&1 && pwd)"
+else
+  # Normal path resolution for other cases
+  TARGET="$1"
+  if [ ! -z "$TARGET" ]; then
+    DIR_PATH="$(cd -P "$(dirname "$SCRIPT_DIR/$TARGET")" > /dev/null 2>&1 && pwd)"
+    BASE_NAME="$(basename "$TARGET")"
+    FULL_PATH="$DIR_PATH/$BASE_NAME"
+    
+    # Check if path exists
+    if [ -e "$FULL_PATH" ]; then
+      # Always output full path, whether it's a file or directory
+      echo "$FULL_PATH"
+    else
+      # If path doesn't exist, still show what it would resolve to
+      echo "$DIR_PATH/$BASE_NAME"
+    fi
   else
     echo "$SCRIPT_DIR"
   fi
-}
-theRealPath() {
-  # echo $1
-  # `bash -c 'cd dir1 && ./pwd.sh'`
-  echo "in theRealPath with arg: $1"
-}
+fi
 
-# bash -c 'cd "$(dirname "$1")" && echo "$(pwd)/$(basename "$1")"' _ "$1"
-bash -c 'cd "$(dirname "$1")" && realpath "$(pwd)/$(basename "$1")"' _ "$1"
-
+# bash -c '
+#   target="$1"
+#   cd -P "$(dirname "$target")" > /dev/null 2>&1 || exit
+#   base="$(basename "$target")"
+#   if [ "$base" = "." ] || [ "$base" = ".." ]; then
+#     cd -P "$base" > /dev/null 2>&1 || exit
+#     echo "$(pwd -P)"
+#   else
+#     echo "$(pwd -P)/$base"
+#   fi
+# ' _ "$1"

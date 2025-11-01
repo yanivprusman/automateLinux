@@ -1,33 +1,24 @@
 #!/bin/sh
 
-# Handle no args - print current directory
+# If no argument, print current directory
 [ -z "$1" ] && cd -P "$PWD" && pwd -P && exit 0
 
-# Save original directory and target
-ORIG_PWD="$PWD"
-TARGET="$1"
+# Save original directory and convert to absolute path
+ORIG_PWD=$PWD
+case "$1" in /*) TARGET=$1 ;; *) TARGET=$PWD/$1 ;; esac
 
-# Handle relative paths
-case "$TARGET" in
-    /*) : ;;
-    */|.|./*|..|..|../*) TARGET="$ORIG_PWD/$TARGET" ;;
-    *) TARGET="$ORIG_PWD/$TARGET" ;;
-esac
+# Let cd -P handle path resolution
+cd -P "$(dirname "$TARGET")" 2>/dev/null || { cd "$ORIG_PWD"; exit 1; }
+BASE=$(basename "$TARGET")
 
-# Clean up path by resolving one directory at a time
-cd -P / || exit 1
-set -- $(echo "$TARGET" | tr '/' ' ')
-for d; do
-    [ -z "$d" ] && continue
-    [ "$d" = "." ] && continue
-    [ "$d" = ".." ] && cd .. && continue
-    [ -d "$d" ] && cd "$d" || {
-        [ "$d" = "$(basename "$TARGET")" ] && echo "$(pwd -P)/$d"
-        cd "$ORIG_PWD"
-        exit 0
-    }
-done
-pwd -P
+# Print resolved path
+if [ "$BASE" = "." ] || [ "$BASE" = ".." ]; then
+    cd -P "$BASE" 2>/dev/null && pwd -P
+elif [ -d "$(pwd -P)/$BASE" ]; then
+    cd -P "$BASE" 2>/dev/null && pwd -P
+else
+    echo "$(pwd -P)/$BASE"
+fi
 
 # Handle special cases and directories
 if [ "$BASE" = "." ] || [ "$BASE" = ".." ]; then

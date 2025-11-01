@@ -1,2 +1,4 @@
-use `` to run command and use the output as a command or variable value.
+use `` to run command and 
+    use the output as a command
+    use the output as a variable value.
 use . theRealPath to source theRealPath function into the current script.

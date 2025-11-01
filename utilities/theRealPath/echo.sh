@@ -1,6 +1,1 @@
-#!/bin/bash
-echo "----"
-echo "Hello"
-. theRealPath
-path=$(theRealPath)
-echo "$path"
+echo "./dir1/echo.sh"

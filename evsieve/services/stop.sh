@@ -1,1 +1,3 @@
-sudo $(theRealPath _sudoStop.sh)
+# sudo `theRealPath _sudoStop.sh`
+. theRealPath
+sudo `theRealPath _sudoStop.sh`

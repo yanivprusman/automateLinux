@@ -1,7 +1,12 @@
-#!/usr/bin/env bash
+# # theRealPath ../../ # supposed to print yaniv@ubuntu:~/coding/automateLinux/utilities/
+# theRealPath ../../asdf # supposed to print yaniv@ubuntu:~/coding/automateLinux/utilities/asdf
 
-SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+# theRealPath ../../ # supposed to print ?
+theRealPath ../../asdf # supposed to print ?
+theRealPath ../_sudoStop.sh
 
-sudo "$(realpath "${SCRIPT_DIR}/_sudoStop.sh")"
-sudo "$(realpath "${SCRIPT_DIR}/run.sh")" "$@"
+# theRealPath ../_sudoStop.sh
+# theRealPath ../run.sh "$@"
+# sudo `theRealPath _sudoStop.sh`
+# sudo `theRealPath run.sh` "$@"
 

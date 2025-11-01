@@ -21,17 +21,16 @@ AUTOMAT_LINUX_DIR=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
 BASH_RC_DIR="$AUTOMAT_LINUX_DIR/bashrc"
 AUTOMAT_LINUX_ENV_FILE="$BASH_RC_DIR/env.sh"
 
-echo $PWD
 # . theRealPath
-# . `theRealPath source.sh`
-# source $BASH_RC_DIR/aliases.sh
-# source $BASH_RC_DIR/functions.sh
-# source ~/coding/automateLinux/utilities/sendKeys/sendkeys-completion.bash
-# EVSIEVE_LOG_FILE=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
-# [ -f "$AUTOMAT_LINUX_ENV_FILE" ] && source "$AUTOMAT_LINUX_ENV_FILE"
-# AUTOMAT_LINUX_SYMLINK_DIR="$AUTOMAT_LINUX_DIR/symlinks"
-# SCRIPT="$AUTOMAT_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
-# if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then
-#     sudo -n "$SCRIPT" > /dev/null 2>/dev/null
-# fi
+. `theRealPath source.sh`
+source $BASH_RC_DIR/aliases.sh
+source $BASH_RC_DIR/functions.sh
+source ~/coding/automateLinux/utilities/sendKeys/sendkeys-completion.bash
+EVSIEVE_LOG_FILE=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
+[ -f "$AUTOMAT_LINUX_ENV_FILE" ] && source "$AUTOMAT_LINUX_ENV_FILE"
+AUTOMAT_LINUX_SYMLINK_DIR="$AUTOMAT_LINUX_DIR/symlinks"
+SCRIPT="$AUTOMAT_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
+if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then
+    sudo -n "$SCRIPT" > /dev/null 2>/dev/null
+fi
 

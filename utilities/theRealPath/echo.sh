@@ -1,1 +1,0 @@
-echo "./dir1/echo.sh"

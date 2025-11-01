@@ -1,38 +1,49 @@
+#!/bin/sh
 
+# Resolve script location (needed for relative paths)
 SCRIPT="$0"
 while [ -h "$SCRIPT" ]; do
-  # resolve $SCRIPT until the file is no longer a symlink
-  LINK=$(ls -ld "$SCRIPT" | awk '{print $NF}')
-  if [ "${LINK:0:1}" = "/" ]; then
-    SCRIPT="$LINK"
-  else
-    SCRIPT="$(dirname "$SCRIPT")/$LINK"
-  fi
+    DIR=$(dirname "$SCRIPT")
+    LINK=$(readlink "$SCRIPT")
+    case "$LINK" in
+        /*) SCRIPT="$LINK" ;;
+        *) SCRIPT="$DIR/$LINK" ;;
+    esac
 done
-SCRIPT_DIR=$(cd -P "$(dirname "$SCRIPT")" > /dev/null 2>&1 && pwd)
+SCRIPT_DIR=$(cd -P "$(dirname "$SCRIPT")" && pwd)
 
-if [ "$1" = "../../" ]; then
-  # When exactly "../../" is passed, always return two directories up from script location
-  echo "$(cd "$SCRIPT_DIR/../.." > /dev/null 2>&1 && pwd)"
+TARGET="$1"
+[ -z "$TARGET" ] && TARGET="."
+
+# Handle no args - print current directory
+[ -z "$TARGET" ] && cd -P "$PWD" && pwd -P && exit
+
+# Convert to absolute path if relative
+case "$TARGET" in
+    /*) : ;;
+    *) TARGET="$PWD/$TARGET" ;;
+esac
+
+# Let cd -P do all path resolution and handle the last component
+cd -P "$(dirname "$TARGET")" 2>/dev/null || exit 1
+BASE=$(basename "$TARGET")
+if [ "$BASE" = "." ] || [ "$BASE" = ".." ]; then
+    cd -P "$BASE" 2>/dev/null && pwd -P
+elif [ -d "$(pwd -P)/$BASE" ]; then
+    cd -P "$BASE" 2>/dev/null && pwd -P
 else
-  # Normal path resolution for other cases
-  TARGET="$1"
-  if [ ! -z "$TARGET" ]; then
-    DIR_PATH="$(cd -P "$(dirname "$SCRIPT_DIR/$TARGET")" > /dev/null 2>&1 && pwd)"
-    BASE_NAME="$(basename "$TARGET")"
-    FULL_PATH="$DIR_PATH/$BASE_NAME"
-    
-    # Check if path exists
-    if [ -e "$FULL_PATH" ]; then
-      # Always output full path, whether it's a file or directory
-      echo "$FULL_PATH"
+    echo "$(pwd -P)/$BASE"
+fi
+
+if cd -P "$DIR_PART" 2>/dev/null; then
+    RESOLVED_DIR=$(pwd -P)
+    if [ -d "$RESOLVED_DIR/$BASE_PART" ]; then
+        cd -P "$BASE_PART" 2>/dev/null && pwd -P
     else
-      # If path doesn't exist, still show what it would resolve to
-      echo "$DIR_PATH/$BASE_NAME"
+        echo "$RESOLVED_DIR/$BASE_PART"
     fi
-  else
-    echo "$SCRIPT_DIR"
-  fi
+else
+    echo "$TARGET"
 fi
 
 # bash -c '

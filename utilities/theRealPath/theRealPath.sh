@@ -1,49 +1,41 @@
 #!/bin/sh
 
-# Resolve script location (needed for relative paths)
-SCRIPT="$0"
-while [ -h "$SCRIPT" ]; do
-    DIR=$(dirname "$SCRIPT")
-    LINK=$(readlink "$SCRIPT")
-    case "$LINK" in
-        /*) SCRIPT="$LINK" ;;
-        *) SCRIPT="$DIR/$LINK" ;;
-    esac
-done
-SCRIPT_DIR=$(cd -P "$(dirname "$SCRIPT")" && pwd)
-
-TARGET="$1"
-[ -z "$TARGET" ] && TARGET="."
-
 # Handle no args - print current directory
-[ -z "$TARGET" ] && cd -P "$PWD" && pwd -P && exit
+[ -z "$1" ] && cd -P "$PWD" && pwd -P && exit 0
 
-# Convert to absolute path if relative
+# Save original directory and target
+ORIG_PWD="$PWD"
+TARGET="$1"
+
+# Handle relative paths
 case "$TARGET" in
     /*) : ;;
-    *) TARGET="$PWD/$TARGET" ;;
+    */|.|./*|..|..|../*) TARGET="$ORIG_PWD/$TARGET" ;;
+    *) TARGET="$ORIG_PWD/$TARGET" ;;
 esac
 
-# Let cd -P do all path resolution and handle the last component
-cd -P "$(dirname "$TARGET")" 2>/dev/null || exit 1
-BASE=$(basename "$TARGET")
+# Clean up path by resolving one directory at a time
+cd -P / || exit 1
+set -- $(echo "$TARGET" | tr '/' ' ')
+for d; do
+    [ -z "$d" ] && continue
+    [ "$d" = "." ] && continue
+    [ "$d" = ".." ] && cd .. && continue
+    [ -d "$d" ] && cd "$d" || {
+        [ "$d" = "$(basename "$TARGET")" ] && echo "$(pwd -P)/$d"
+        cd "$ORIG_PWD"
+        exit 0
+    }
+done
+pwd -P
+
+# Handle special cases and directories
 if [ "$BASE" = "." ] || [ "$BASE" = ".." ]; then
     cd -P "$BASE" 2>/dev/null && pwd -P
 elif [ -d "$(pwd -P)/$BASE" ]; then
     cd -P "$BASE" 2>/dev/null && pwd -P
 else
     echo "$(pwd -P)/$BASE"
-fi
-
-if cd -P "$DIR_PART" 2>/dev/null; then
-    RESOLVED_DIR=$(pwd -P)
-    if [ -d "$RESOLVED_DIR/$BASE_PART" ]; then
-        cd -P "$BASE_PART" 2>/dev/null && pwd -P
-    else
-        echo "$RESOLVED_DIR/$BASE_PART"
-    fi
-else
-    echo "$TARGET"
 fi
 
 # bash -c '

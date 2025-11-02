@@ -1,0 +1,1 @@
+theRealPath ../asdf # supposed to print yaniv@ubuntu:~/coding/automateLinux/asdf

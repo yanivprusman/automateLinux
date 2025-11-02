@@ -7,19 +7,18 @@ fi
 # if theRealPath has been sourced already will call the function theRealPath
 # if is b can call theRealPath in this script or in the calling script
 theRealPath() {
-    echo result:
-    # realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/$1"
+    local GREEN='\033[0;32m'
+    local NC='\033[0m' # No Color
+    echo -e "${GREEN}result:${NC}" "\$1 is: $1"
     realpath "$(dirname "$(realpath "${BASH_SOURCE[-1]}")")/$1"
-    # echo calling script: 
-    # echo "${BASH_SOURCE[0]}"
     sizeofBashSource=${#BASH_SOURCE[@]}
-    echo size of BASH_SOURCE array: $sizeofBashSource
+    echo -e "${GREEN}size of BASH_SOURCE array:${NC} $sizeofBashSource"
     for (( i=0; i<sizeofBashSource; i++ )); do
-        echo BASH_SOURCE[$i]: ${BASH_SOURCE[$i]}
+        echo -e "${GREEN}BASH_SOURCE[$i]:${NC} ${BASH_SOURCE[$i]}"
     done
 }
 # can be sourced or subprocessed,
-echo B4 sourcing or executing theRealPath.sh 
+echo B4 sourcing or executing theRealPath.sh "\$1 is: $1"
 theRealPath "$@"
 echo after sourcing or executing theRealPath.sh 
 

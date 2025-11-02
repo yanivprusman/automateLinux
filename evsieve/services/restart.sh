@@ -2,6 +2,7 @@
 # theRealPath ../../asdf # supposed to print yaniv@ubuntu:~/coding/automateLinux/utilities/asdf
 
 # theRealPath ../../ # supposed to print ?
+. theRealPath
 theRealPath ../../asdf # supposed to print ?
 theRealPath ../_sudoStop.sh
 

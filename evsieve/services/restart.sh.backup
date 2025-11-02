@@ -1,0 +1,3 @@
+sudo `theRealPath _sudoStop.sh`
+sudo `theRealPath run.sh` "$@"
+

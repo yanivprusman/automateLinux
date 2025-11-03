@@ -1,3 +1,3 @@
-. theRealPath
-theRealPath ./
-theRealPath ../../asdf 
+theRealPath asdf
+theRealPath ./asdfg
+theRealPath ../../asdfgh 

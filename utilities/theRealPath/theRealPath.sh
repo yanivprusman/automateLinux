@@ -18,7 +18,10 @@ theRealPath() {
     done
 }
 # can be sourced or subprocessed,
-echo B4 sourcing or executing theRealPath.sh "\$1 is: $1"
+ORANGE='\033[1m'
+# ORANGE='\033[38;5;208m' 
+# ORANGE='\033[1;38;5;208;48;5;234m'
+echo -e "${ORANGE}B4 sourcing or executing theRealPath.sh \$1 is: $1"
 theRealPath "$@"
-echo after sourcing or executing theRealPath.sh 
+echo -e "${ORANGE}after sourcing or executing theRealPath.sh ${NC}"
 

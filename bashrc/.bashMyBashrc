@@ -1,17 +1,3 @@
-theRealPath() {
-    local script_dir
-    # Resolve the *real path* of the current script, following symlinks
-    script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[-1]}")")"
-    realpath "$script_dir/$1"
-}
-export -f theRealPath
-sudoTheRealPath() {
-    local target
-    target="$(theRealPath "$1")"
-    echo "sudoTheRealPath called with arg: $1"
-    sudo bash -c "echo 'Running sudo on: $target'; realpath '$target'"
-}
-export -f sudoTheRealPath
 pushd ~/coding/ > /dev/null
 cd() { builtin pushd "$@" > /dev/null; }
 pd() { popd > /dev/null; }

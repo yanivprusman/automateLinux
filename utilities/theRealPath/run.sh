@@ -229,12 +229,26 @@ echo -e "${GREEN}testing theRealPath${NC}"
 # echo -e "${GREEN}calling: the symlink${NC}"
 # restartCorsairKeyBoardLogiMouseService.sh | sed $'s/^/\t/'
 # echo -e "${YELLOW}----------------------------------------${NC}"
-echo -e "${GREEN}testing sourcing theRealPath and calling theRealPath:"
-echo -e "the symlink to test file: ${NC}${testFileSymlink}${GREEN}"
-echo -e "the test file: ${NC}${testFile}"
+echo -e "${GREEN}testing calling theRealPath:${NC}"
+echo -e "${GREEN}the symlink to test file: ${NC}${testFileSymlink}"
+echo -e "${GREEN}the test file: ${NC}${testFile}"
 echo -e "${GREEN}contents of the test file:${NC}"
-echo '''theRealPath ./asdfg
-theRealPath ../../asdfgh ''' | tee $testFile | sed $'s/^/\t/'
+tee $testFile <<'EOF' | sed $'s/^/\t/'
+theRealPath ./asdfg
+theRealPath ../../asdfgh
+EOF
 echo -e "${GREEN}calling: the symlink${NC}"
 restartCorsairKeyBoardLogiMouseService.sh | sed $'s/^/\t/'
 echo -e "${YELLOW}----------------------------------------${NC}"
+echo -e "${GREEN}testing calling sudoTheRealPath:${NC}"
+echo -e "${GREEN}the symlink to test file: ${NC}${testFileSymlink}"
+echo -e "${GREEN}the test file: ${NC}${testFile}"
+echo -e "${GREEN}contents of the test file:${NC}"
+tee $testFile <<'EOF' | sed $'s/^/\t/'
+sudoTheRealPath ./asdfg
+sudoTheRealPath ../../asdfgh
+EOF
+echo -e "${GREEN}calling: the symlink${NC}"
+restartCorsairKeyBoardLogiMouseService.sh | sed $'s/^/\t/'
+
+

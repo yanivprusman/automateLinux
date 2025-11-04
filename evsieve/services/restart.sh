@@ -1,2 +1,2 @@
-theRealPath ./asdfg
-theRealPath ../../asdfgh 
+sudoTheRealPath ./asdfg
+sudoTheRealPath ../../asdfgh

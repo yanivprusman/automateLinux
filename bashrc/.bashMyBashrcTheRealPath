@@ -1,0 +1,52 @@
+theRealPath() {
+    local script_dir target run_as_sudo=false execute=false
+
+    # Check for flags first
+    while [[ "$1" == --* ]]; do
+        case "$1" in
+            --exec) execute=true ;;
+            --sudo) run_as_sudo=true ;;
+            *) echo "Unknown option: $1"; return 1 ;;
+        esac
+        shift
+    done
+
+    if [[ -z "$1" ]]; then
+        echo "Usage: theRealPath [--exec] [--sudo] <script> [args...]"
+        return 1
+    fi
+
+    # Resolve real path of the target script (following symlinks)
+    script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[-1]}")")"
+    target="$(realpath "$script_dir/$1")"
+    shift  # shift past the script name
+
+    if [[ "$execute" == true ]]; then
+        if [[ "$run_as_sudo" == true ]]; then
+            echo "Running with sudo: $target $*"
+            sudo bash "$target" "$@"
+        else
+            echo "Running: $target $*"
+            bash "$target" "$@"
+        fi
+    else
+        # Just print the path
+        echo "$target"
+    fi
+}
+export -f theRealPath
+
+# theRealPath() {
+#     local script_dir
+#     # Resolve the *real path* of the current script, following symlinks
+#     script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[-1]}")")"
+#     realpath "$script_dir/$1"
+# }
+# export -f theRealPath
+# sudoTheRealPath() {
+#     local target
+#     target="$(theRealPath "$1")"
+#     echo "sudoTheRealPath running: $target"
+#     sudo bash "$target" "${@:2}"   # pass additional args
+# }
+# export -f sudoTheRealPath

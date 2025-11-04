@@ -1,14 +1,13 @@
-write a script to simplify 
-sudo $(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/_sudoStop.sh")
-it can be sourced by design or not sourced by design (help me decide)
-inside the script it will call the same sequence of:
-    ${BASH_SOURCE[0]}
-    realpath
-    dirname
-    realpath
-    and add the file name that is given.
-    the file name can be a relative file name (like it works in the $(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/x") )  syntax)
-    
-
-in the end the user will call theRealPath (may be sourced beforehand) and append the relative path :
-theRealPath path/to/file/relative/to/this/file
+in bash i want to create one command that sources a file (in the path) and executes a function in it.
+the name of the file and function are theRealPathFile and theRealPathFunction respectively.
+two alternatives alias or function
+tel me the pros and cons of both.
+this it the contents of file theRealPathFile:
+#!/bin/bash
+if [ -z "$BASH_VERSION" ]; then
+    echo "This script requires bash" >&2
+    return 1 2>/dev/null || exit 1
+fi
+theRealPathFunction() {
+    realpath "$(dirname "$(realpath "${BASH_SOURCE[-1]}")")/$1"
+}

@@ -1,4 +1,6 @@
-
+theRealPath(){ realpath "$(dirname "$(realpath "${BASH_SOURCE[-1]}")")/$1"; }
+    # . theRealPathFile && theRealPathFunction "$@";}
+export -f theRealPath
 pushd ~/coding/ > /dev/null
 cd() { builtin pushd "$@" > /dev/null; }
 pd() { popd > /dev/null; }
@@ -22,7 +24,7 @@ BASH_RC_DIR="$AUTOMAT_LINUX_DIR/bashrc"
 AUTOMAT_LINUX_ENV_FILE="$BASH_RC_DIR/env.sh"
 
 # . theRealPath
-. `theRealPath source.sh`
+# . `theRealPath source.sh`
 source $BASH_RC_DIR/aliases.sh
 source $BASH_RC_DIR/functions.sh
 source ~/coding/automateLinux/utilities/sendKeys/sendkeys-completion.bash

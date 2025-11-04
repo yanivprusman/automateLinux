@@ -1,3 +1,2 @@
-theRealPath asdf
 theRealPath ./asdfg
-theRealPath ../../asdfgh 
+theRealPath ../../asdfgh

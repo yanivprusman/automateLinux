@@ -1,2 +1,2 @@
-theRealPath _sudoStop.sh
-theRealPath run.sh "$@"
+sudoTheRealPath _sudoStop.sh
+sudoTheRealPath run.sh "$@"

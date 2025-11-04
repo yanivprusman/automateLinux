@@ -1,6 +1,9 @@
 theRealPath(){ realpath "$(dirname "$(realpath "${BASH_SOURCE[-1]}")")/$1"; }
-    # . theRealPathFile && theRealPathFunction "$@";}
 export -f theRealPath
+sudoTheRealPath() {
+    sudo bash -c 'source ~/.bashrc; theRealPath "$1"' _ "$1"
+}
+export -f sudoTheRealPath
 pushd ~/coding/ > /dev/null
 cd() { builtin pushd "$@" > /dev/null; }
 pd() { popd > /dev/null; }

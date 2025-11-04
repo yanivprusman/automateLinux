@@ -233,8 +233,8 @@ echo -e "${GREEN}the symlink to test file: ${NC}${testFileSymlink}"
 echo -e "${GREEN}the test file: ${NC}${testFile}"
 echo -e "${GREEN}contents of the test file:${NC}"
 tee $testFile <<'EOF' | sed $'s/^/\t/'
-theRealPath ./asdfg
-theRealPath ../../asdfgh
+theRealPath _sudoStop.sh
+theRealPath run.sh "$@"
 EOF
 echo -e "${GREEN}calling: the symlink${NC}"
 restartCorsairKeyBoardLogiMouseService.sh | sed $'s/^/\t/'

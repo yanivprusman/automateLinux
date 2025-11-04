@@ -2,8 +2,8 @@
 [0;32mthe symlink to test file: [0m/home/yaniv/coding/automateLinux/symlinks/restartCorsairKeyBoardLogiMouseService.sh
 [0;32mthe test file: [0m/home/yaniv/coding/automateLinux/evsieve/services/restart.sh
 [0;32mcontents of the test file:[0m
-	theRealPath ./asdfg
-	theRealPath ../../asdfgh
+	theRealPath _sudoStop.sh
+	theRealPath run.sh "$@"
 [0;32mcalling: the symlink[0m
-	/home/yaniv/coding/automateLinux/evsieve/services/asdfg
-	/home/yaniv/coding/automateLinux/asdfgh
+	/home/yaniv/coding/automateLinux/evsieve/services/_sudoStop.sh
+	/home/yaniv/coding/automateLinux/evsieve/services/run.sh

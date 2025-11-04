@@ -1,3 +1,7 @@
+sourceb 
+myBash=/home/yaniv/coding/automateLinux/bashrc/.bashMyBashrcTheRealPath 
+cls 
+tee "$myBash" <<'EOF' | sed $'s/^/\t/'
 theRealPath() {
     local script_path target execute=false run_as_sudo=false
 
@@ -36,3 +40,9 @@ theRealPath() {
     fi
 }
 export -f theRealPath
+EOF
+alias 1restart 
+which restartCorsairKeyBoardLogiMouseService.sh 
+cat /home/yaniv/coding/automateLinux/symlinks/restartCorsairKeyBoardLogiMouseService.sh 
+restartCorsairKeyBoardLogiMouseService.sh
+

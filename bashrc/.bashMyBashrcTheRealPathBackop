@@ -36,3 +36,18 @@ theRealPath() {
     fi
 }
 export -f theRealPath
+
+# theRealPath() {
+#     local script_dir
+#     # Resolve the *real path* of the current script, following symlinks
+#     script_dir="$(dirname "$(readlink -f "${BASH_SOURCE[-1]}")")"
+#     realpath "$script_dir/$1"
+# }
+# export -f theRealPath
+# sudoTheRealPath() {
+#     local target
+#     target="$(theRealPath "$1")"
+#     echo "sudoTheRealPath running: $target"
+#     sudo bash "$target" "${@:2}"   # pass additional args
+# }
+# export -f sudoTheRealPath

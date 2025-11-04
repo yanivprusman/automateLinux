@@ -1,2 +1,2 @@
-sudoTheRealPath ./asdfg
-sudoTheRealPath ../../asdfgh
+theRealPath _sudoStop.sh
+theRealPath run.sh "$@"

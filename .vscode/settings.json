@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "instructions.txt": "shellscript",
-        "assumptions.txt": "shellscript"
+        "assumptions.txt": "shellscript",
+
     }
 }

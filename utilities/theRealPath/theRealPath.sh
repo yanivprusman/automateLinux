@@ -11,7 +11,7 @@ theRealPath() {
     local GREEN='\033[0;32m'
     local NC='\033[0m' # No Color
     echo -e "${GREEN}result:${NC}" "\$1 is: $1"
-    realpath "$(dirname "$(realpath "${BASH_SOURCE[-1]}")")/$1"
+    realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/$1"
     sizeofBashSource=${#BASH_SOURCE[@]}
     echo -e "${GREEN}size of BASH_SOURCE array:${NC} $sizeofBashSource"
     for (( i=0; i<sizeofBashSource; i++ )); do
@@ -19,6 +19,7 @@ theRealPath() {
     done
 }
 STYLE='\033[4;32m'
+NC='\033[0m'
 echo -e "${STYLE}sourced or subprocessed${NC}"
 theRealPath "$@"
 # echo -e "${ORANGE}after sourcing or executing theRealPath.sh ${NC}"

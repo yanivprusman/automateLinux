@@ -1,10 +1,12 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
 
 # If not running interactively, don't do anything
-case $- in
-    *i*) ;;
-      *) return;;
-esac
+# echo "B4 checking interactive"
+# case $- in
+#     *i*) ;;
+#       *) return;;
+# esac
+# echo "after checking interactive"
 
 # don't put duplicate lines or lines starting with space in the history
 HISTCONTROL=ignoreboth

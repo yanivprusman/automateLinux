@@ -1,3 +1,0 @@
-use `` to run command and 
-    use the output as a command
-    use the output as a variable value.

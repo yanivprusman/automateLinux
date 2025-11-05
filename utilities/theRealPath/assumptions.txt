@@ -1,7 +1,0 @@
-${BASH_SOURCE[0]} always points to the actual file containing the code.
-works only in bash and not true, it is the symlink path.
-
-$0 gives the name of the current shell or script being executed.
-    $0 → in all POSIX shells, $0 is the path of the script being executed.
-    But if the script was sourced, $0 will be the parent script or shell, not the sourced script.
-

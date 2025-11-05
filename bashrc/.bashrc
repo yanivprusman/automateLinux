@@ -1,10 +1,13 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
 
-# If not running interactively, don't do anything
+if [ -f ~/.bashMyBashrcFirstThingInBashrc ]; then
+    . ~/.bashMyBashrcFirstThingInBashrc
+fi
 if [ -f ~/.bashMyBashrcTheRealPath ]; then
     . ~/.bashMyBashrcTheRealPath
 fi
 
+# If not running interactively, don't do anything
 case $- in
     *i*) ;;
       *) return;;

@@ -13,7 +13,7 @@ export PATH=$PATH:/usr/local/go/bin
 generatePassword() { python3 ~/generatePassword.py; }
 export PATH="$PATH:$HOME/coding/scripts"
 h() {
-    history | grep "$1"
+    history | grep "$@"
 }
 export FREECAD_MACROS_DIR="/home/yaniv/coding/freeCad/Macros/"
 AUTOMAT_LINUX_DIR=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
@@ -22,6 +22,7 @@ AUTOMAT_LINUX_ENV_FILE="$BASH_RC_DIR/env.sh"
 
 # . theRealPath
 # . `theRealPath source.sh`
+
 source $BASH_RC_DIR/aliases.sh
 source $BASH_RC_DIR/functions.sh
 source ~/coding/automateLinux/utilities/sendKeys/sendkeys-completion.bash
@@ -32,4 +33,4 @@ SCRIPT="$AUTOMAT_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
 if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then
     sudo -n "$SCRIPT" > /dev/null 2>/dev/null
 fi
-
+# pst=$PS1

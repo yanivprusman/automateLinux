@@ -1,1 +1,2 @@
-~/.config/autostart -> /home/yaniv/coding/automateLinux/autostart/
+ln -s /home/yaniv/coding/automateLinux/autostart/ ~/.config/autostart 
+ln -s /home/yaniv/coding/automateLinux/bashrc/bashrc ~/.bashrc

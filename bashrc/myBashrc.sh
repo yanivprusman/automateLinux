@@ -1,7 +1,10 @@
-pushd ~/coding/ > /dev/null
-cd() { builtin pushd "$@" > /dev/null; }
-pd() { popd > /dev/null; }
-PROMPT_COMMAND='pwd > ~/.myBash/last_dir'
+if [ -f "$AUTOMAT_LINUX_BASH_RC_DIR./aliases.sh" ]; then
+    . "$AUTOMAT_LINUX_BASH_RC_DIR./aliases.sh"
+fi
+if [ -f "$AUTOMAT_LINUX_BASH_RC_DIR./functions.sh" ]; then
+    . "$AUTOMAT_LINUX_BASH_RC_DIR./functions.sh"
+fi
+# pushd ~/coding/ > /dev/null
 if [ -f ~/.myBash/last_dir ]; then
     last_dir=$(head -n 1 ~/.myBash/last_dir)
     if [ -d "$last_dir" ]; then
@@ -16,15 +19,12 @@ h() {
     history | grep "$@"
 }
 export FREECAD_MACROS_DIR="/home/yaniv/coding/freeCad/Macros/"
-AUTOMAT_LINUX_DIR=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/..")
-BASH_RC_DIR="$AUTOMAT_LINUX_DIR/bashrc"
-AUTOMAT_LINUX_ENV_FILE="$BASH_RC_DIR/env.sh"
 
 # . theRealPath
 # . `theRealPath source.sh`
 
-source $BASH_RC_DIR/aliases.sh
-source $BASH_RC_DIR/functions.sh
+source $BASH_RC_DIR/aliases.sh # debugging purpose mistake
+# source $BASH_RC_DIR/functions.sh
 source ~/coding/automateLinux/utilities/sendKeys/sendkeys-completion.bash
 EVSIEVE_LOG_FILE=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
 [ -f "$AUTOMAT_LINUX_ENV_FILE" ] && source "$AUTOMAT_LINUX_ENV_FILE"

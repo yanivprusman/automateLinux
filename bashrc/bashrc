@@ -1,10 +1,10 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
 
-if [ -f ~/.bashMyBashrcFirstThingInBashrc ]; then
-    . ~/.bashMyBashrcFirstThingInBashrc
+if [ -f /home/yaniv/coding/automateLinux/bashrc/firstThing.sh ]; then
+    . /home/yaniv/coding/automateLinux/bashrc/firstThing.sh
 fi
-if [ -f ~/.bashMyBashrcTheRealPath ]; then
-    . ~/.bashMyBashrcTheRealPath
+if [ -f "$AUTOMAT_LINUX_BASH_RC_DIR./theRealPath" ]; then
+    . "$AUTOMAT_LINUX_BASH_RC_DIR./theRealPath"
 fi
 
 # If not running interactively, don't do anything
@@ -71,16 +71,6 @@ alias la='ls -A'
 alias l='ls -CF'
 alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
-# Source custom bash configuration
-if [ -f ~/.bashMyBashrc ]; then
-    . ~/.bashMyBashrc
-fi
-
-# Alias definitions
-if [ -f ~/.bash_aliases ]; then
-    . ~/.bash_aliases
-fi
-
 # enable programmable completion features
 if ! shopt -oq posix; then
   if [ -f /usr/share/bash-completion/bash_completion ]; then
@@ -109,8 +99,9 @@ if command -v ng &> /dev/null; then
     source <(ng completion script)
 fi
 
-# Custom aliases
-alias showDate='. ~/.myBash/showDate'
-
 # Unset NoMachine LD_PRELOAD
 unset LD_PRELOAD
+
+if [ -f "$AUTOMAT_LINUX_BASH_RC_DIR./myBashrc.sh" ]; then
+    . "$AUTOMAT_LINUX_BASH_RC_DIR./myBashrc.sh"
+fi

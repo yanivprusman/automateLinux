@@ -46,21 +46,33 @@ setEnd() {
     read r3 g3 b3 <<< "$(parseRGB "$1")"
 }
 setStart 555    
-setMiddle 030   
+setMiddle 555 #030   
 setEnd 555      
-dir="${PWD/#$HOME/~}/"
+dir="${PWD/#$HOME/\~}/"                 #  set dir
+if [ "$PROMPT_EMOJI" = true ]; then     #
+    dir="${PWD/#$HOME\/coding/🏰}/"     #
+fi                                      #
+[ "$PWD" = "/" ] && dir="/"             #
 len=${#dir}
 prompt=""
+half=$((len/2))
+if (( half <= 1 )); then
+    half=1
+fi
 for ((i=0; i<len; i++)); do
     if (( i < len/2 )); then
         # First half: start → middle
-        f=$(( i * 100 / (len/2 - 1) ))
+        divisor=$((half - 1))
+        (( divisor == 0 )) && divisor=1
+        f=$(( i * 100 / divisor ))
         r=$(( (r1*(100-f) + r2*f)/100 ))
         g=$(( (g1*(100-f) + g2*f)/100 ))
         b=$(( (b1*(100-f) + b2*f)/100 ))
     else
         # Second half: middle → end
-        f=$(( (i - len/2) * 100 / (len - len/2 - 1) ))
+        divisor=$((len - half))
+        (( divisor == 0 )) && divisor=1
+        f=$(( (i - len/2) * 100 / divisor ))
         r=$(( (r2*(100-f) + r3*f)/100 ))
         g=$(( (g2*(100-f) + g3*f)/100 ))
         b=$(( (b2*(100-f) + b3*f)/100 ))

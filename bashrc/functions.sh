@@ -37,3 +37,30 @@ printEmojiCodes() {
 setEmoji() {
     export PROMPT_EMOJI=true
 }
+
+setDirHistoryPointerToLast() {
+    if [[ -f "$AUTOMAT_LINUX_DIR_HISTORY_FILE" ]]; then
+        line_count=$(wc -l < "$AUTOMAT_LINUX_DIR_HISTORY_FILE" | tr -d ' ')
+        AUTOMAT_LINUX_DIR_HISTORY_POINTER=$line_count
+    else
+        AUTOMAT_LINUX_DIR_HISTORY_POINTER=1
+    fi
+    if [[ -z "$AUTOMAT_LINUX_DIR_HISTORY_POINTER" || "$AUTOMAT_LINUX_DIR_HISTORY_POINTER" -lt 1 ]]; then
+        AUTOMAT_LINUX_DIR_HISTORY_POINTER=1
+    fi
+    # if [[ -f "$AUTOMAT_LINUX_DIR_HISTORY_FILE" && "$AUTOMAT_LINUX_DIR_HISTORY_POINTER" -gt "$line_count" ]]; then
+    #     AUTOMAT_LINUX_DIR_HISTORY_POINTER=$line_count
+    # fi
+    # echo "$AUTOMAT_LINUX_DIR_HISTORY_FILE"
+    # echo "$AUTOMAT_LINUX_DIR_HISTORY_POINTER"
+    # echo "$line_count"
+}
+
+goToDirPointer(){
+    if [ -f "$AUTOMAT_LINUX_DIR_HISTORY_FILE" ]; then
+        lastDir=$(sed -n "${AUTOMAT_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMAT_LINUX_DIR_HISTORY_FILE")
+        if [ -d "$lastDir" ]; then
+            cd "$lastDir" >/dev/null 2>&1
+        fi
+    fi
+}

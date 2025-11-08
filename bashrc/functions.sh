@@ -1,6 +1,3 @@
-# add export -f  to all functions
-
-# pd() { popd > /dev/null; }
 resetPromptColor() {
     echo -en "\033[00m"
 }
@@ -70,24 +67,36 @@ goToDirPointer(){
 }
 export -f goToDirPointer
 
-insertDirAtIndex(){
-    # echo inserting directory "$1" at index "$2"
+insertDir(){
     local dir="$1"
     local index="$2"
+    local sedICommand="$3"
     if [[ -z "$dir" || -z "$index" ]]; then
         echo "Usage: insertDirAtIndex <directory> <index>"
         return 1
     fi
     if [ -s "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
-        echo "true"
-        sed -i "${index}i$dir" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+        sed -i "${index}$sedICommand$dir" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
     else
-        echo "false"
         echo "$dir" > "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
     fi
+}
+export -f insertDir
 
-    # echo "Inserting $dir at line $index in $AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-    # echo "Inserted $dir at line $index in $AUTOMATE_LINUX_DIR_HISTORY_FILE"
+insertDirAtIndex(){
+    insertDir "$1" "$2" "i"
 }
 export -f insertDirAtIndex
 
+insertDirAfterIndex(){
+    insertDir "$1" "$2" "a"
+}
+export -f insertDirAfterIndex
+
+pd() {
+    AUTOMATE_LINUX_DIR_HISTORY_POINTER=$((AUTOMATE_LINUX_DIR_HISTORY_POINTER - 1))
+    if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
+        AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+    fi  
+    goToDirPointer     
+}

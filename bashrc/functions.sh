@@ -100,3 +100,13 @@ pd() {
     fi  
     goToDirPointer     
 }
+export -f pd
+
+pdd() {
+    AUTOMATE_LINUX_DIR_HISTORY_POINTER=$((AUTOMATE_LINUX_DIR_HISTORY_POINTER + 1))
+    # if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
+    #     AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+    # fi  
+    goToDirPointer
+}
+export -f pdd

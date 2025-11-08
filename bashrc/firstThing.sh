@@ -18,8 +18,8 @@ export AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE="${AUTOMATE_LINUX_DIR_HISTORY_FILE%.
 export AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY=$(echo "$AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE"$( (tty) | tr "/" "_" ) ).sh
 
 #todo
-# export AUTOMATE_LINUX_VERBOSE=false
-# if [ "$AUTOMATE_LINUX_VERBOSE" = true ]; then
-#     set -x
-#     exec > >(tee "$AUTOMATE_LINUX_BASH_RC_LOG_FILE" >/dev/null) 2>&1
-# fi
+export AUTOMATE_LINUX_VERBOSE=false
+if [ "$AUTOMATE_LINUX_VERBOSE" = true ]; then
+    set -x
+    exec > >(tee "$AUTOMATE_LINUX_BASH_RC_LOG_FILE" >/dev/null) 2>&1
+fi

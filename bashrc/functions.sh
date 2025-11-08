@@ -49,6 +49,9 @@ initializeDirHistoryFileTty() {
             cp "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
         fi
         AUTOMATE_LINUX_DIR_HISTORY_POINTER=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
+        if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -eq 0 ]; then
+            AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+        fi
     else 
         touch "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
         AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
@@ -57,8 +60,9 @@ initializeDirHistoryFileTty() {
 export -f initializeDirHistoryFileTty
 
 goToDirPointer(){
-    if [ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE" ]; then
-        lastDir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE")
+    # echo "Going to dir pointer $AUTOMATE_LINUX_DIR_HISTORY_POINTER"
+    if [ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
+        lastDir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
         if [ -d "$lastDir" ]; then
             cd "$lastDir" >/dev/null 2>&1
         fi
@@ -67,17 +71,22 @@ goToDirPointer(){
 export -f goToDirPointer
 
 insertDirAtIndex(){
+    # echo inserting directory "$1" at index "$2"
     local dir="$1"
     local index="$2"
     if [[ -z "$dir" || -z "$index" ]]; then
         echo "Usage: insertDirAtIndex <directory> <index>"
         return 1
     fi
-    if [[ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]]; then
-        # echo "$dir" >> "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-        return 0
+    if [ -s "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
+        echo "true"
+        sed -i "${index}i$dir" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+    else
+        echo "false"
+        echo "$dir" > "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
     fi
-    sed -i "${index}i$dir" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+
+    # echo "Inserting $dir at line $index in $AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
     # echo "Inserted $dir at line $index in $AUTOMATE_LINUX_DIR_HISTORY_FILE"
 }
 export -f insertDirAtIndex

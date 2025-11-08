@@ -94,6 +94,6 @@ fi
 # Unset NoMachine LD_PRELOAD
 unset LD_PRELOAD
 
-if [ -f "$AUTOMAT_LINUX_BASH_RC_DIR./myBashrc.sh" ]; then
-    . "$AUTOMAT_LINUX_BASH_RC_DIR./myBashrc.sh"
+if [ -f "$AUTOMATE_LINUX_BASH_RC_DIR./myBashrc.sh" ]; then
+    . "$AUTOMATE_LINUX_BASH_RC_DIR./myBashrc.sh"
 fi

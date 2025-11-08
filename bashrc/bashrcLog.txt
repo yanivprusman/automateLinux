@@ -730,18 +730,18 @@ asdf
 +++ trap resetPromptColor DEBUG
 +++ resetPromptColor
 +++ echo -en '\033[00m'
-[00m++ setDirHistoryPointerToLast
+[00m++ initializeDirHistoryFileTty
 ++ [[ -f /home/yaniv/coding/automateLinux/bashrc/dirHistory.sh ]]
 +++ wc -l
 +++ tr -d ' '
 ++ line_count=0
-++ AUTOMAT_LINUX_DIR_HISTORY_POINTER=0
+++ AUTOMATE_LINUX_DIR_HISTORY_POINTER=0
 ++ [[ -z 0 ]]
 ++ [[ 0 -lt 1 ]]
-++ AUTOMAT_LINUX_DIR_HISTORY_POINTER=1
+++ AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
 ++ [[ -f /home/yaniv/coding/automateLinux/bashrc/dirHistory.sh ]]
 ++ [[ 1 -gt 0 ]]
-++ AUTOMAT_LINUX_DIR_HISTORY_POINTER=0
+++ AUTOMATE_LINUX_DIR_HISTORY_POINTER=0
 +++ resetPromptColor
 +++ echo -en '\033[00m'
 [00m++ goToDirPointer
@@ -807,7 +807,8 @@ sed: -e expression #1, char 2: invalid usage of line address 0
 [00m++ /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh
 bash: /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh: Permission denied
 [?2004h]0;yaniv@ubuntu: ~[01;32myaniv@ubuntu[00m:[01;34m~[00m$ ss
-[?2004l++ resetPromptColor
+[?2004l
+++ resetPromptColor
 ++ echo -en '\033[00m'
 [00m+ ss
 Netid State    Recv-Q Send-Q                                          Local Address:Port         Peer Address:Port   Process
@@ -1943,12 +1944,14 @@ tcp   ESTAB    0      0                                                  10.0.0.
 [00m++ /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh
 bash: /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh: Permission denied
 [?2004h]0;yaniv@ubuntu: ~[01;32myaniv@ubuntu[00m:[01;34m~[00m$ 
-[?2004l+++ resetPromptColor
+[?2004l
++++ resetPromptColor
 +++ echo -en '\033[00m'
 [00m++ /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh
 bash: /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh: Permission denied
 [?2004h]0;yaniv@ubuntu: ~[01;32myaniv@ubuntu[00m:[01;34m~[00m$ ls
-[?2004l++ resetPromptColor
+[?2004l
+++ resetPromptColor
 ++ echo -en '\033[00m'
 [00m+ ls --color=auto
 ~
@@ -2008,17 +2011,20 @@ zoom
 [00m++ /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh
 bash: /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh: Permission denied
 [?2004h]0;yaniv@ubuntu: ~[01;32myaniv@ubuntu[00m:[01;34m~[00m$ 
-[?2004l+++ resetPromptColor
+[?2004l
++++ resetPromptColor
 +++ echo -en '\033[00m'
 [00m++ /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh
 bash: /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh: Permission denied
 [?2004h]0;yaniv@ubuntu: ~[01;32myaniv@ubuntu[00m:[01;34m~[00m$ 
-[?2004l+++ resetPromptColor
+[?2004l
++++ resetPromptColor
 +++ echo -en '\033[00m'
 [00m++ /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh
 bash: /home/yaniv/coding/automateLinux/bashrc/promptCommand.sh: Permission denied
 [?2004h]0;yaniv@ubuntu: ~[01;32myaniv@ubuntu[00m:[01;34m~[00m$ sadf
-[?2004l++ resetPromptColor
+[?2004l
+++ resetPromptColor
 ++ echo -en '\033[00m'
 [00m+ sadf
 ubuntu	-1	2025-11-07 07:59:07 UTC	LINUX-RESTART	(32 CPU)

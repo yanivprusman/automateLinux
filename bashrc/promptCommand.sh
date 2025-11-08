@@ -1,15 +1,9 @@
-# pwd > "$AUTOMAT_LINUX_DIR_HISTORY_FILE"
-line_no=$AUTOMAT_LINUX_DIR_HISTORY_POINTER
-echo "$line_no"
 current_dir=$(pwd)
-if [ -s "$AUTOMAT_LINUX_DIR_HISTORY_FILE" ] && [ $(wc -l < "$AUTOMAT_LINUX_DIR_HISTORY_FILE") -ge "$line_no" ]; then
-    sed -i "${line_no}s|.*|$current_dir|" "$AUTOMAT_LINUX_DIR_HISTORY_FILE"
-else
-    while [ $(wc -l < "$AUTOMAT_LINUX_DIR_HISTORY_FILE") -lt $((line_no-1)) ]; do
-        echo "" >> "$AUTOMAT_LINUX_DIR_HISTORY_FILE"
-    done
-    echo "$current_dir" >> "$AUTOMAT_LINUX_DIR_HISTORY_FILE"
-fi
-
-
-
+existing_dir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
+if [ "$current_dir" != "$existing_dir" ]; then
+    echo "last dir $existing_dir, appending $current_dir"
+    # echo "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"B4
+    AUTOMATE_LINUX_DIR_HISTORY_POINTER=$((AUTOMATE_LINUX_DIR_HISTORY_POINTER + 1))
+    insertDirAtIndex $current_dir $AUTOMATE_LINUX_DIR_HISTORY_POINTER
+fi 
+# echo $AUTOMATE_LINUX_DIR_HISTORY_POINTER

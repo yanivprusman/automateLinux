@@ -1,8 +1,10 @@
-cd() { builtin pushd "$@" > /dev/null; }
-pd() { popd > /dev/null; }
+# add export -f  to all functions
+
+# pd() { popd > /dev/null; }
 resetPromptColor() {
     echo -en "\033[00m"
 }
+export -f resetPromptColor
 trap 'resetPromptColor' DEBUG
 
 printEmojis(){
@@ -14,7 +16,7 @@ printEmojis(){
         fi
     done
 }
-
+export -f printEmojis
 # printEmojiCodes() {
 #     for emoji in "$@"; do
 #         code=$(python3 -c "print('U+{:X}'.format(ord('$emoji')))")
@@ -33,34 +35,50 @@ printEmojiCodes() {
         echo
     done
 }
+export -f printEmojiCodes
 
 setEmoji() {
     export PROMPT_EMOJI=true
 }
+export -f setEmoji
 
-setDirHistoryPointerToLast() {
-    if [[ -f "$AUTOMAT_LINUX_DIR_HISTORY_FILE" ]]; then
-        line_count=$(wc -l < "$AUTOMAT_LINUX_DIR_HISTORY_FILE" | tr -d ' ')
-        AUTOMAT_LINUX_DIR_HISTORY_POINTER=$line_count
-    else
-        AUTOMAT_LINUX_DIR_HISTORY_POINTER=1
-    fi
-    if [[ -z "$AUTOMAT_LINUX_DIR_HISTORY_POINTER" || "$AUTOMAT_LINUX_DIR_HISTORY_POINTER" -lt 1 ]]; then
-        AUTOMAT_LINUX_DIR_HISTORY_POINTER=1
-    fi
-    # if [[ -f "$AUTOMAT_LINUX_DIR_HISTORY_FILE" && "$AUTOMAT_LINUX_DIR_HISTORY_POINTER" -gt "$line_count" ]]; then
-    #     AUTOMAT_LINUX_DIR_HISTORY_POINTER=$line_count
-    # fi
-    # echo "$AUTOMAT_LINUX_DIR_HISTORY_FILE"
-    # echo "$AUTOMAT_LINUX_DIR_HISTORY_POINTER"
-    # echo "$line_count"
+initializeDirHistoryFileTty() {
+    AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED=$(ls -1t "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"* 2>/dev/null | head -n 1)
+    if [[ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" ]]; then
+        if [ "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" != "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
+            cp "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+        fi
+        AUTOMATE_LINUX_DIR_HISTORY_POINTER=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
+    else 
+        touch "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+        AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+    fi 
 }
+export -f initializeDirHistoryFileTty
 
 goToDirPointer(){
-    if [ -f "$AUTOMAT_LINUX_DIR_HISTORY_FILE" ]; then
-        lastDir=$(sed -n "${AUTOMAT_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMAT_LINUX_DIR_HISTORY_FILE")
+    if [ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE" ]; then
+        lastDir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE")
         if [ -d "$lastDir" ]; then
             cd "$lastDir" >/dev/null 2>&1
         fi
     fi
 }
+export -f goToDirPointer
+
+insertDirAtIndex(){
+    local dir="$1"
+    local index="$2"
+    if [[ -z "$dir" || -z "$index" ]]; then
+        echo "Usage: insertDirAtIndex <directory> <index>"
+        return 1
+    fi
+    if [[ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]]; then
+        # echo "$dir" >> "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+        return 0
+    fi
+    sed -i "${index}i$dir" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+    # echo "Inserted $dir at line $index in $AUTOMATE_LINUX_DIR_HISTORY_FILE"
+}
+export -f insertDirAtIndex
+

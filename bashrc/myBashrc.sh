@@ -1,14 +1,12 @@
-# echo asdf
 if [ -f "${AUTOMATE_LINUX_BASH_RC_DIR}aliases.sh" ]; then
     . "${AUTOMATE_LINUX_BASH_RC_DIR}aliases.sh"
 fi
 if [ -f "${AUTOMATE_LINUX_BASH_RC_DIR}functions.sh" ]; then
     . "${AUTOMATE_LINUX_BASH_RC_DIR}functions.sh"
 fi
+# export PS4='+ ${BASH_SOURCE}:${LINENO}: ' && trap 'echo "+ ${BASH_SOURCE}:${LINENO}: $BASH_COMMAND"' DEBUG
 initializeDirHistoryFileTty
 goToDirPointer
-# trap 'AUTOMATE_LINUX_BASH_COMMAND=$BASH_COMMAND' DEBUG
-##########################
 export PATH="/home/yaniv/coding/flatBuffers/execute:$PATH"
 export PATH=$PATH:/usr/local/go/bin
 generatePassword() { python3 ~/generatePassword.py; }

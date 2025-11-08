@@ -5,6 +5,7 @@
 #include <linux/input.h>
 #include <string.h>
 #include <sys/time.h>
+#include <ctype.h>
 
 int fd;
 const int codeForCode = 101;
@@ -53,9 +54,9 @@ void print_usage() {
     printf("Options:\n");
     printf("  -k, --keyboard PATH   Specify keyboard device path\n");
     printf("Commands:\n");
-    printf("  keyADown             Press key A\n");
-    printf("  keyAUp               Release key A\n");
-    printf("  keyA                 Press and release key A\n");
+    printf("  key<X>               Press and release any letter key (A-Z)\n");
+    printf("  key<X>Down           Press any letter key (A-Z)\n");
+    printf("  key<X>Up             Release any letter key (A-Z)\n");
     printf("  numlock              Toggle numlock\n");
     printf("  Code                 Send Code app signal\n");
     printf("  gnome-terminal-server  Send terminal app signal\n");
@@ -63,14 +64,66 @@ void print_usage() {
     printf("  syn                  Send sync report\n");
 }
 
+static int get_key_code(char letter) {
+    /* Convert letter to uppercase for consistency */
+    letter = toupper(letter);
+    
+    /* Check if it's A-Z */
+    if (letter >= 'A' && letter <= 'Z') {
+        /* Linux input.h defines KEY_A as 30, KEY_B as 48, etc. 
+           Map ASCII A-Z to the correct key codes */
+        switch (letter) {
+            case 'A': return KEY_A;
+            case 'B': return KEY_B;
+            case 'C': return KEY_C;
+            case 'D': return KEY_D;
+            case 'E': return KEY_E;
+            case 'F': return KEY_F;
+            case 'G': return KEY_G;
+            case 'H': return KEY_H;
+            case 'I': return KEY_I;
+            case 'J': return KEY_J;
+            case 'K': return KEY_K;
+            case 'L': return KEY_L;
+            case 'M': return KEY_M;
+            case 'N': return KEY_N;
+            case 'O': return KEY_O;
+            case 'P': return KEY_P;
+            case 'Q': return KEY_Q;
+            case 'R': return KEY_R;
+            case 'S': return KEY_S;
+            case 'T': return KEY_T;
+            case 'U': return KEY_U;
+            case 'V': return KEY_V;
+            case 'W': return KEY_W;
+            case 'X': return KEY_X;
+            case 'Y': return KEY_Y;
+            case 'Z': return KEY_Z;
+        }
+    }
+    return -1;  /* Invalid or unsupported key */
+}
+
 void handle_command(const char *cmd) {
-    if (strcmp(cmd, "keyADown") == 0) {
-        send_event(EV_KEY, KEY_A, 1);
-    } else if (strcmp(cmd, "keyAUp") == 0) {
-        send_event(EV_KEY, KEY_A, 0);
-    } else if (strcmp(cmd, "keyA") == 0) {
-        send_event(EV_KEY, KEY_A, 1);
-        send_event(EV_KEY, KEY_A, 0);
+    /* Handle letter key commands in the format key<X>, key<X>Up, key<X>Down */
+    if (strncmp(cmd, "key", 3) == 0 && strlen(cmd) >= 4) {
+        char letter = cmd[3];
+        int key_code = get_key_code(letter);
+        
+        if (key_code != -1) {
+            const char *action = cmd + 4;  /* Points to either '\0' or "Up"/"Down" */
+            
+            if (*action == '\0') {
+                /* Simple press and release */
+                send_event(EV_KEY, key_code, 1);
+                send_event(EV_KEY, key_code, 0);
+            } else if (strcmp(action, "Down") == 0) {
+                send_event(EV_KEY, key_code, 1);
+            } else if (strcmp(action, "Up") == 0) {
+                send_event(EV_KEY, key_code, 0);
+            }
+            return;
+        }
     } else if (strcmp(cmd, "numlock") == 0) {
         // Send scan code first (0x45 is the standard scan code for numlock)
         send_event(EV_MSC, MSC_SCAN, 0x45);

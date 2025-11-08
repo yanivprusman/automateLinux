@@ -1,3 +1,4 @@
+#pd and pdd commands
 current_dir=$(pwd)
 existing_dir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
 if [ "$current_dir" != "$existing_dir" ]; then
@@ -6,3 +7,6 @@ if [ "$current_dir" != "$existing_dir" ]; then
     else
     touch "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
 fi 
+#ps1
+
+

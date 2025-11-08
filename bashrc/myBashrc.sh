@@ -4,13 +4,13 @@ fi
 if [ -f "${AUTOMATE_LINUX_BASH_RC_DIR}functions.sh" ]; then
     . "${AUTOMATE_LINUX_BASH_RC_DIR}functions.sh"
 fi
+if [ -f "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh" ]; then
+    . "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"
+fi
 # export PS4='+ ${BASH_SOURCE}:${LINENO}: ' && trap 'echo "+ ${BASH_SOURCE}:${LINENO}: $BASH_COMMAND"' DEBUG
 initializeDirHistoryFileTty
 goToDirPointer
-if [ -f "${AUTOMATE_LINUX_BASH_RC_DIR}bindings.sh" ]; then
-    . "${AUTOMATE_LINUX_BASH_RC_DIR}bindings.sh"
-fi
-
+PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '
 export PATH="/home/yaniv/coding/flatBuffers/execute:$PATH"
 export PATH=$PATH:/usr/local/go/bin
 generatePassword() { python3 ~/generatePassword.py; }

@@ -46,7 +46,7 @@ initializeDirHistoryFileTty() {
             cp "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
         fi
         AUTOMATE_LINUX_DIR_HISTORY_POINTER=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
-        if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -eq 0 ]; then
+        if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
             AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
         fi
     else 

@@ -1,0 +1,10 @@
+/home/yaniv/coding/automateLinux
+/home/yaniv/coding/automateLinux/pipe
+/home/yaniv/coding/automateLinux/sudoers
+/home/yaniv/coding/automateLinux
+/home/yaniv/coding
+/home/yaniv/coding/automateLinux
+/home/yaniv/coding/automateLinux/pipe
+/home/yaniv/coding/automateLinux
+/home/yaniv/coding
+/home/yaniv/coding/automateLinux

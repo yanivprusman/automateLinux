@@ -7,6 +7,7 @@ if [ -f "${AUTOMATE_LINUX_BASH_RC_DIR}functions.sh" ]; then
 fi
 initializeDirHistoryFileTty
 goToDirPointer
+# trap 'AUTOMATE_LINUX_BASH_COMMAND=$BASH_COMMAND' DEBUG
 ##########################
 export PATH="/home/yaniv/coding/flatBuffers/execute:$PATH"
 export PATH=$PATH:/usr/local/go/bin

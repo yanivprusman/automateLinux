@@ -103,10 +103,13 @@ pd() {
 export -f pd
 
 pdd() {
-    AUTOMATE_LINUX_DIR_HISTORY_POINTER=$((AUTOMATE_LINUX_DIR_HISTORY_POINTER + 1))
-    # if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
-    #     AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
-    # fi  
-    goToDirPointer
+    if [ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
+        AUTOMATE_LINUX_DIR_HISTORY_POINTER=$((AUTOMATE_LINUX_DIR_HISTORY_POINTER + 1))
+        totalLines=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
+        if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -ge "$totalLines" ]; then
+            AUTOMATE_LINUX_DIR_HISTORY_POINTER=$totalLines
+        fi
+        goToDirPointer
+    fi
 }
 export -f pdd

@@ -1,7 +1,6 @@
 current_dir=$(pwd)
 existing_dir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
 if [ "$current_dir" != "$existing_dir" ]; then
-    # echo "in promptCommand.sh pointer at $AUTOMATE_LINUX_DIR_HISTORY_POINTER last dir $existing_dir, appending $current_dir"
     insertDirAfterIndex $current_dir $AUTOMATE_LINUX_DIR_HISTORY_POINTER
     AUTOMATE_LINUX_DIR_HISTORY_POINTER=$((AUTOMATE_LINUX_DIR_HISTORY_POINTER + 1))
     else

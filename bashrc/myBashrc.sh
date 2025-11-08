@@ -7,6 +7,10 @@ fi
 # export PS4='+ ${BASH_SOURCE}:${LINENO}: ' && trap 'echo "+ ${BASH_SOURCE}:${LINENO}: $BASH_COMMAND"' DEBUG
 initializeDirHistoryFileTty
 goToDirPointer
+if [ -f "${AUTOMATE_LINUX_BASH_RC_DIR}bindings.sh" ]; then
+    . "${AUTOMATE_LINUX_BASH_RC_DIR}bindings.sh"
+fi
+
 export PATH="/home/yaniv/coding/flatBuffers/execute:$PATH"
 export PATH=$PATH:/usr/local/go/bin
 generatePassword() { python3 ~/generatePassword.py; }

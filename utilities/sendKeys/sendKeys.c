@@ -62,6 +62,7 @@ void print_usage() {
     printf("  gnome-terminal-server  Send terminal app signal\n");
     printf("  google-chrome        Send Chrome app signal\n");
     printf("  syn                  Send sync report\n");
+    printf("  enter                Send enter key\n");
 }
 
 static int get_key_code(char letter) {
@@ -141,6 +142,9 @@ void handle_command(const char *cmd) {
         send_event(EV_SYN, SYN_REPORT, 0);
     } else if (strcmp(cmd, "syn") == 0) {
         send_event(EV_SYN, SYN_REPORT, 0);
+    } else if (strcmp(cmd, "enter") == 0) {
+        send_key_event(KEY_ENTER, 1);
+        send_key_event(KEY_ENTER, 0);
     } else {
         int appCode = isApp(cmd);
         if (appCode) {

@@ -138,6 +138,9 @@ export -f pdd
 setDirHistoryPointer() {
     local ttyPath="$1"
     local pointerValue="$2"
+    if [ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" ]; then
+        touch "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+    fi
     if grep -q "^$ttyPath " "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"; then
         awk -v tty="$ttyPath" -v p="$pointerValue" \
             '$1 == tty {$2="pointer:"p} {print}' "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE.tmp" && mv "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE.tmp" "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"

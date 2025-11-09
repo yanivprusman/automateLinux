@@ -16,7 +16,6 @@ trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 initializeDirHistoryFileTty
 goToDirPointer
 PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '
-EVSIEVE_LOG_FILE=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
 [ -f "$AUTOMATE_LINUX_ENV_FILE" ] && source "$AUTOMATE_LINUX_ENV_FILE"
 SCRIPT="$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
 # if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then

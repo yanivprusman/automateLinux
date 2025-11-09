@@ -1,5 +1,8 @@
 #pd and pdd commands
 current_dir=$(pwd)
+if [ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
+    touch "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+fi
 existing_dir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
 if [ "$current_dir" != "$existing_dir" ]; then #in pd case this evaluates to false since pwd will return the same directory that's at the current history pointer
     insertDirAfterIndex $current_dir $AUTOMATE_LINUX_DIR_HISTORY_POINTER

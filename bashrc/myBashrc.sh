@@ -8,6 +8,9 @@ if [ -f "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh" ]; then
     . "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"
 fi
 # export PS4='+ ${BASH_SOURCE}:${LINENO}: ' && trap 'echo "+ ${BASH_SOURCE}:${LINENO}: $BASH_COMMAND"' DEBUG
+cd $AUTOMATE_LINUX_BASH_RC_DIR
+asdf
+return 0
 initializeDirHistoryFileTty
 goToDirPointer
 PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '

@@ -15,9 +15,6 @@ trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 initializeDirHistoryFileTty
 goToDirPointer
 PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '
-SCRIPT="$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
-# if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then
-#     sudo -n "$SCRIPT" > /dev/null 2>/dev/null
-# fi
+runSingleton "$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
 PROMPT_COMMAND=". $AUTOMATE_LINUX_PROMPT_COMMAND_SCRIPT_FILE"
 cat $AUTOMATE_LINUX_TRAP_ERR_LOG_FILE

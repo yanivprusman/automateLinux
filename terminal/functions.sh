@@ -154,14 +154,14 @@ getDirHistoryPointer() {
     awk -v tty="$ttyPath" '$1 == tty {print $2}' "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
 }
 
-run_singleton_script() {
+runSingleton() {
     local SCRIPT="$1"
-
     if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then
-        bash "$SCRIPT" &
-        echo "Started $SCRIPT"
+        # bash "$SCRIPT" &
+        "$SCRIPT" &
+        # echo "Started $SCRIPT"
     else
-        echo "$SCRIPT is already running or does not exist."
+        # echo "$SCRIPT is already running or does not exist."
     fi
 }
 

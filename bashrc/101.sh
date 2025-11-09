@@ -1,0 +1,2 @@
+rm "${AUTOMATE_LINUX_DIR_HISTORY_DIR}*}" #2>/dev/null
+ls "${AUTOMATE_LINUX_DIR_HISTORY_DIR}"* 2>/dev/null

@@ -12,6 +12,6 @@ date_time=$(date '+%Y-%m-%d %H:%M:%S')
     echo "  Line      : $line_no"
     echo "  Function  : ${func:-main}"
     echo "  PWD       : $PWD"
-    echo "  Script    : ${BASH_SOURCE[1]}"
+    echo "  Script    : ${BASH_SOURCE[@]}"
     echo "------------------------------------------"
 } >> "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"

@@ -28,11 +28,8 @@ source ~/coding/automateLinux/utilities/sendKeys/sendkeys-completion.bash
 EVSIEVE_LOG_FILE=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
 [ -f "$AUTOMATE_LINUX_ENV_FILE" ] && source "$AUTOMATE_LINUX_ENV_FILE"
 SCRIPT="$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
-if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then
-    sudo -n "$SCRIPT" > /dev/null 2>/dev/null
-fi
-PROMPT_COMMAND=". $AUTOMATE_LINUX_PROMPT_COMMAND_SCRIPT_FILE"
-# pst=$PS1
-# if [ -f "$AUTOMATE_LINUX_TERMINAL_DIR./theRealPath" ]; then
-#     . "$AUTOMATE_LINUX_TERMINAL_DIR./theRealPath"
+# if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then
+#     sudo -n "$SCRIPT" > /dev/null 2>/dev/null
 # fi
+PROMPT_COMMAND=". $AUTOMATE_LINUX_PROMPT_COMMAND_SCRIPT_FILE"
+cat $AUTOMATE_LINUX_TRAP_ERR_LOG_FILE

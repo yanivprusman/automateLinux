@@ -40,26 +40,25 @@ setEmoji() {
 export -f setEmoji
 
 initializeDirHistoryFileTty() {
-    AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED=$(ls -1t "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"* 2>/dev/null | head -n 1)
+    AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED=$(ls -1t "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"* 2>/dev/null | grep -Fxv "/home/yaniv/coding/automateLinux/bashrc/dirHistory/dirHistoryPointers.sh" | head -n 1)
     if [[ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" ]]; then
         if [ "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" != "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
             cp "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-        fi
-        # Try to get the saved pointer position for this TTY
-        local savedPointer=$(getDirHistoryPointer "$AUTOMATE_LINUX_TTY")
-        if [[ $savedPointer =~ pointer:([0-9]+) ]]; then
-            AUTOMATE_LINUX_DIR_HISTORY_POINTER="${BASH_REMATCH[1]}"
-        else
-            # If no saved pointer, set to last line
-            AUTOMATE_LINUX_DIR_HISTORY_POINTER=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
-        fi
-        if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
-            AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
-        fi
-        # Validate pointer isn't beyond file length
-        local totalLines=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
-        if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -gt "$totalLines" ]; then
-            AUTOMATE_LINUX_DIR_HISTORY_POINTER=$totalLines
+            AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED_TTY=${AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED#${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}}
+            AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED_TTY=${AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED_TTY%.*}
+            local savedPointer=$(getDirHistoryPointer "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED_TTY")
+            if [[ $savedPointer =~ pointer:([0-9]+) ]]; then
+                AUTOMATE_LINUX_DIR_HISTORY_POINTER="${BASH_REMATCH[1]}"
+            else
+                AUTOMATE_LINUX_DIR_HISTORY_POINTER=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
+            fi
+            if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
+                AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+            fi
+            local totalLines=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
+            if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -gt "$totalLines" ]; then
+                AUTOMATE_LINUX_DIR_HISTORY_POINTER=$totalLines
+            fi
         fi
     else 
         touch "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"

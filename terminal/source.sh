@@ -1,3 +1,2 @@
-# . 
-# source "$(theRealPath "$SCRIPT_DIR/../utilities/termcontrol/termcontrol-completion.bash")"
-` theRealPath ../utilities/termcontrol/termcontrol-completion.bash`
+# theRealPath ../utilities/termcontrol/termcontrol-completion.bash
+. ~/coding/automateLinux/utilities/sendKeys/sendkeys-completion.bash

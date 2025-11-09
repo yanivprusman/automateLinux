@@ -1,3 +1,9 @@
+generatePassword() { python3 ~/generatePassword.py; }
+
+h() {
+    history | grep "$@"
+}
+
 resetPromptColor() {
     echo -en "\033[00m"
 }

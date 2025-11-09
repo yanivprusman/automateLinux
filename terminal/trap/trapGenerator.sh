@@ -1,1 +1,3 @@
+# $AUTOMATE_LINUX_TRAP_GENERATOR_FILE
+# return 0
 asdf

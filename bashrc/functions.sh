@@ -45,14 +45,28 @@ initializeDirHistoryFileTty() {
         if [ "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" != "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
             cp "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
         fi
-        AUTOMATE_LINUX_DIR_HISTORY_POINTER=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
+        # Try to get the saved pointer position for this TTY
+        local savedPointer=$(getDirHistoryPointer "$AUTOMATE_LINUX_TTY")
+        if [[ $savedPointer =~ pointer:([0-9]+) ]]; then
+            AUTOMATE_LINUX_DIR_HISTORY_POINTER="${BASH_REMATCH[1]}"
+        else
+            # If no saved pointer, set to last line
+            AUTOMATE_LINUX_DIR_HISTORY_POINTER=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
+        fi
         if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
             AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+        fi
+        # Validate pointer isn't beyond file length
+        local totalLines=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
+        if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -gt "$totalLines" ]; then
+            AUTOMATE_LINUX_DIR_HISTORY_POINTER=$totalLines
         fi
     else 
         touch "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
         AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
     fi 
+    # Save the initial pointer position
+    setDirHistoryPointer "$AUTOMATE_LINUX_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
 }
 export -f initializeDirHistoryFileTty
 
@@ -98,6 +112,7 @@ pd() {
     if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
         AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
     fi  
+    setDirHistoryPointer "$AUTOMATE_LINUX_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
     goToDirPointer     
 }
 export -f pd
@@ -109,6 +124,7 @@ pdd() {
         if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -ge "$totalLines" ]; then
             AUTOMATE_LINUX_DIR_HISTORY_POINTER=$totalLines
         fi
+        setDirHistoryPointer "$AUTOMATE_LINUX_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
         goToDirPointer
     fi
 }

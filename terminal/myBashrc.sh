@@ -1,14 +1,15 @@
-if [ -f "${AUTOMATE_LINUX_BASH_RC_DIR}aliases.sh" ]; then
-    . "${AUTOMATE_LINUX_BASH_RC_DIR}aliases.sh"
+if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh" ]; then
+    . "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
+    else echo "No aliases file found at ${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
 fi
-if [ -f "${AUTOMATE_LINUX_BASH_RC_DIR}functions.sh" ]; then
-    . "${AUTOMATE_LINUX_BASH_RC_DIR}functions.sh"
+if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}functions.sh" ]; then
+    . "${AUTOMATE_LINUX_TERMINAL_DIR}functions.sh"
 fi
 if [ -f "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh" ]; then
     . "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"
 fi
 # export PS4='+ ${BASH_SOURCE}:${LINENO}: ' && trap 'echo "+ ${BASH_SOURCE}:${LINENO}: $BASH_COMMAND"' DEBUG
-cd $AUTOMATE_LINUX_BASH_RC_DIR
+cd $AUTOMATE_LINUX_TERMINAL_DIR
 trap $AUTOMATE_LINUX_TRAP_ERR_FILE ERR
 $AUTOMATE_LINUX_TRAP_GENERATOR_FILE
 return 0
@@ -32,6 +33,6 @@ if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then
 fi
 PROMPT_COMMAND=". $AUTOMATE_LINUX_PROMPT_COMMAND_SCRIPT_FILE"
 # pst=$PS1
-# if [ -f "$AUTOMATE_LINUX_BASH_RC_DIR./theRealPath" ]; then
-#     . "$AUTOMATE_LINUX_BASH_RC_DIR./theRealPath"
+# if [ -f "$AUTOMATE_LINUX_TERMINAL_DIR./theRealPath" ]; then
+#     . "$AUTOMATE_LINUX_TERMINAL_DIR./theRealPath"
 # fi

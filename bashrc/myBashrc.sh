@@ -9,8 +9,8 @@ if [ -f "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh" ]; then
 fi
 # export PS4='+ ${BASH_SOURCE}:${LINENO}: ' && trap 'echo "+ ${BASH_SOURCE}:${LINENO}: $BASH_COMMAND"' DEBUG
 cd $AUTOMATE_LINUX_BASH_RC_DIR
-# asdf
-trap $AUTOMATE_LINUX_TRAP_DEBUG_FILE DEBUG
+trap $AUTOMATE_LINUX_TRAP_ERR_FILE ERR
+$AUTOMATE_LINUX_TRAP_GENERATOR_FILE
 return 0
 initializeDirHistoryFileTty
 goToDirPointer

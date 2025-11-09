@@ -1,0 +1,16 @@
+[2025-11-09 15:48:17] ERROR DETECTED
+  Exit code : 0
+  Command   : asdf
+  Line      : 0
+  Function  : main
+  PWD       : /home/yaniv/coding/automateLinux/bashrc
+  Script    : 
+------------------------------------------
+[2025-11-09 15:51:18] ERROR DETECTED
+  Exit code : 0
+  Command   : $AUTOMATE_LINUX_TRAP_GENERATOR_FILE
+  Line      : 0
+  Function  : main
+  PWD       : /home/yaniv/coding/automateLinux/bashrc
+  Script    : 
+------------------------------------------

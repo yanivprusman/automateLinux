@@ -90,45 +90,13 @@ insertDir(){
     local index="$2"
     local sedICommand="$3"
     
-    # Validate arguments
     if [[ -z "$dir" || -z "$index" ]]; then
         return 1
     fi
-    
-    # Ensure dir is an actual path and not a pointer entry
-    if [[ "$dir" == *"pointer:"* ]]; then
-        return 1
-    fi
-    
-    # Create directory if needed
-    mkdir -p "$(dirname "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")"
-    
-    # For empty or non-existent files, just write the directory
-    if [ ! -s "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
-        echo "$dir" > "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-        return 0
-    fi
-    
-    # Get line count
-    local lines=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
-    
-    # Handle insertion based on index and command type
-    if [ "$sedICommand" = "i" ]; then
-        # Insert before
-        if [ "$index" -gt "$lines" ]; then
-            # If inserting beyond end, append instead
-            echo "$dir" >> "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-        else
-            sed -i "${index}i${dir}" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-        fi
+    if [ -s "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
+        sed -i "${index}$sedICommand$dir" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
     else
-        # Append after
-        if [ "$index" -ge "$lines" ]; then
-            # If appending after last line, just append
-            echo "$dir" >> "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-        else
-            sed -i "${index}a${dir}" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-        fi
+        echo "$dir" >> "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
     fi
 }
 export -f insertDir

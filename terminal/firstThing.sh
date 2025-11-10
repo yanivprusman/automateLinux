@@ -28,3 +28,4 @@ export AUTOMATE_LINUX_TRAP_DEBUG_FILE="${AUTOMATE_LINUX_TRAP_DIR}debug.sh"
 export AUTOMATE_LINUX_TRAP_GENERATOR_FILE="${AUTOMATE_LINUX_TRAP_DIR}trapGenerator.sh"
 echo "------------------------------------------">$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE
 echo "------------------------------------------">$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE_BACKGROUND
+export AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR="${AUTOMATE_LINUX_TERMINAL_DIR}functions/"

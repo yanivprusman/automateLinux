@@ -2,8 +2,8 @@ if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh" ]; then
     . "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
     else echo "No aliases file found at ${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
 fi
-if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}functions.sh" ]; then
-    . "${AUTOMATE_LINUX_TERMINAL_DIR}functions.sh"
+if [ -f "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh" ]; then
+    . "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh"
 fi
 if [ -f "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh" ]; then
     . "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"

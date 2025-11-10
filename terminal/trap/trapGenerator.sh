@@ -5,7 +5,8 @@
 #     return 127
 # }
 # generateIntentionalError
-asdf1
-( trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE background" ERR; asdf2 )
-( trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE background" ERR; asdf3 ) &
+
+# asdf1
+# ( trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE background" ERR; asdf2 )
+# ( trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE background" ERR; asdf3 ) &
 

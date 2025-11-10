@@ -161,6 +161,7 @@ runSingleton() {
         "$SCRIPT" &
         # echo "Started $SCRIPT"
     else
+        :
         # echo "$SCRIPT is already running or does not exist."
     fi
 }

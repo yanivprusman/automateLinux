@@ -46,7 +46,7 @@ setEmoji() {
 export -f setEmoji
 
 initializeDirHistoryFileTty() {
-    AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED=$(ls -1t "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"* 2>/dev/null | grep -Fxv "/home/yaniv/coding/automateLinux/bashrc/dirHistory/dirHistoryPointers.sh" | head -n 1)
+    AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED=$(ls -1t "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"* 2>/dev/null | grep -Fxv "/$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" | head -n 1)
     if [[ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" ]]; then
         if [ "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" != "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
             cp "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
@@ -70,7 +70,6 @@ initializeDirHistoryFileTty() {
         touch "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
         AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
     fi 
-    # Save the initial pointer position
     setDirHistoryPointer "$AUTOMATE_LINUX_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
 }
 export -f initializeDirHistoryFileTty
@@ -90,14 +89,46 @@ insertDir(){
     local dir="$1"
     local index="$2"
     local sedICommand="$3"
+    
+    # Validate arguments
     if [[ -z "$dir" || -z "$index" ]]; then
-        echo "Usage: insertDirAtIndex <directory> <index>"
         return 1
     fi
-    if [ -s "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
-        sed -i "${index}$sedICommand$dir" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-    else
+    
+    # Ensure dir is an actual path and not a pointer entry
+    if [[ "$dir" == *"pointer:"* ]]; then
+        return 1
+    fi
+    
+    # Create directory if needed
+    mkdir -p "$(dirname "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")"
+    
+    # For empty or non-existent files, just write the directory
+    if [ ! -s "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
         echo "$dir" > "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+        return 0
+    fi
+    
+    # Get line count
+    local lines=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
+    
+    # Handle insertion based on index and command type
+    if [ "$sedICommand" = "i" ]; then
+        # Insert before
+        if [ "$index" -gt "$lines" ]; then
+            # If inserting beyond end, append instead
+            echo "$dir" >> "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+        else
+            sed -i "${index}i${dir}" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+        fi
+    else
+        # Append after
+        if [ "$index" -ge "$lines" ]; then
+            # If appending after last line, just append
+            echo "$dir" >> "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+        else
+            sed -i "${index}a${dir}" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+        fi
     fi
 }
 export -f insertDir

@@ -1,4 +1,3 @@
-# recommended: ./printDirHistory.sh | less -R
 green='\e[32m'
 yellow='\e[33m'
 NC='\e[0m' # No Color

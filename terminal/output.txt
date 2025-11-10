@@ -1,0 +1,8 @@
+[32mdirHistory_dev_pts_1.sh:[0m
+/home/yaniv/coding/automateLinux/terminal/tests
+/home/yaniv/coding/automateLinux/terminal
+/home/yaniv/coding/automateLinux/terminal
+[33m------------------------------------------[0m
+[32mdirHistoryPointers.sh:[0m
+_dev_pts_1 pointer:2
+[33m------------------------------------------[0m

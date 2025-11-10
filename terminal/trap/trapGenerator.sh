@@ -1,12 +1,8 @@
-# $AUTOMATE_LINUX_TRAP_GENERATOR_FILE
-# return 0
-# # This is an intentional error to test trap handling
-# generateIntentionalError() {
-#     return 127
-# }
-# generateIntentionalError
-
-# asdf1
-# ( trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE background" ERR; asdf2 )
-# ( trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE background" ERR; asdf3 ) &
-
+generateIntentionalError() {
+    local exit_code=$1
+    echo "Generating intentional error with exit code: $exit_code"
+    return $exit_code
+}
+set -x
+generateIntentionalError 127
+set +x

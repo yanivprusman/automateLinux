@@ -25,4 +25,4 @@ PROMPT_COMMAND=". $AUTOMATE_LINUX_PROMPT_COMMAND_SCRIPT_FILE"
 #     sleep 1
 #     cat $AUTOMATE_LINUX_TRAP_ERR_LOG_FILE_BACKGROUND
 # fi
-CDPATH=/home/yaniv/coding/automateLinux/
+# CDPATH=/home/yaniv/coding/automateLinux/

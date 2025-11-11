@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Uninstall Hasleo WinToUSB
+Exec=env WINEPREFIX="/home/yaniv/.wine" wine-stable C:\\\\ProgramData\\\\Microsoft\\\\Windows\\\\Start\\ Menu\\\\Programs\\\\Hasleo\\ WinToUSB\\\\Uninstall\\ Hasleo\\ WinToUSB.lnk
+Type=Application
+StartupNotify=true
+Path=/home/yaniv/.wine/dosdevices/c:/Program Files/Hasleo/WinToUSB
+Icon=0CAA_unins000.0
+StartupWMClass=unins000.exe

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=RealVNC Connect Setup
+Exec=/home/yaniv/Downloads/RealVNC-Connect-Installer-3.0.0-Linux-x64 -uri %u
+MimeType=x-scheme-handler/com.realvnc.vncconnectsetup;
+NoDisplay=true

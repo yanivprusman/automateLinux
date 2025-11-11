@@ -13,7 +13,7 @@ if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}exports.sh" ]; then
 fi
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E
-"$AUTOMATE_LINUX_TRAP_GENERATOR_FILE"
+# "$AUTOMATE_LINUX_TRAP_GENERATOR_FILE"
 initializeDirHistoryFileTty
 goToDirPointer
 PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '

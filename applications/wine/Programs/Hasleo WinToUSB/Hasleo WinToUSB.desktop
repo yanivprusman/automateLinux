@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Hasleo WinToUSB
+Exec=env WINEPREFIX="/home/yaniv/.wine" wine-stable C:\\\\ProgramData\\\\Microsoft\\\\Windows\\\\Start\\ Menu\\\\Programs\\\\Hasleo\\ WinToUSB\\\\Hasleo\\ WinToUSB.lnk
+Type=Application
+StartupNotify=true
+Path=/home/yaniv/.wine/dosdevices/c:/Program Files/Hasleo/WinToUSB/bin
+Icon=A8B8_WinToUSB.0
+StartupWMClass=wintousb.exe

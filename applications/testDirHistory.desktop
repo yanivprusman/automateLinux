@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=testDirHistory
+Exec=/home/you/coding/automateLinux/terminal/tests/testDirHistory.sh
+Terminal=true
+NoDisplay=true

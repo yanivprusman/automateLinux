@@ -58,3 +58,13 @@ runSingleton() {
     fi
 }
 
+cd() {
+    if [ "$1" = "..." ]; then
+        builtin cd ../..
+    else
+        builtin cd "$@"
+    fi
+}
+export -f cd
+
+

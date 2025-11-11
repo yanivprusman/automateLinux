@@ -1,5 +1,5 @@
 #!/bin/bash
-ls
+ls > "${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}output.txt"
 # exec > "${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}terminaloutput.txt" 2>&1
 # gnome-terminal --tab  
 # rm "${AUTOMATE_LINUX_DIR_HISTORY_DIR}"* #2>/dev/null

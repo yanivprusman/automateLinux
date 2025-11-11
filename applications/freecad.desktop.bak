@@ -1,6 +1,0 @@
-[Desktop Entry]
-Name=FreeCAD
-Type=Application
-Exec=env FREECAD_MACROS_DIR="/home/yaniv/101_coding/freeCad/Macros/" /home/yaniv/freecad/FreeCAD_1.0.2-conda-Linux-x86_64-py311.AppImage %F
-Icon=/home/yaniv/freecad/logo-freecad.svg
-Terminal=false

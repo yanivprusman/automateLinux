@@ -1,3 +1,4 @@
 ln -s /home/yaniv/coding/automateLinux/autostart/ ~/.config/autostart 
 ln -s /home/yaniv/coding/automateLinux/bashrc/bashrc ~/.bashrc
 ln -s /home/yaniv/.local/share/applications /home/yaniv/coding/automateLinux/applications
+ln -s /home/yaniv/coding/automateLinux/desktop/ /home/yaniv/Desktop

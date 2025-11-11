@@ -1,6 +1,9 @@
 [Desktop Entry]
-Type=Application
+Version=1.0
 Name=testDirHistory
+Comment=testDirHistory
 Exec=/home/you/coding/automateLinux/terminal/tests/testDirHistory.sh
-Terminal=true
-NoDisplay=true
+;Icon=system-shutdown
+Terminal=false
+Type=Application
+Categories=System;

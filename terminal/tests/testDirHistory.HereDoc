@@ -1,3 +1,4 @@
+bash <<'EOF'
 
 #!/bin/bash
 # ls > "${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}output.txt"
@@ -10,3 +11,4 @@ cd ..
 cd ..
 ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh 
 echo "----"
+EOF

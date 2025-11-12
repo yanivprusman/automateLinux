@@ -1,0 +1,10 @@
+bash <<'EOF'
+Script started on 2025-11-12 17:46:34+02:00 [TERM="xterm-256color" TTY="/dev/pts/3" COLUMNS="195" LINES="50"]
+[?2004h]0;~/coding/automateLinux[1;34m~/coding/automateLinux[0m$ ls
+[?2004lAGENTS.md  [0m[01;34mapplications[0m  [01;34mautostart[0m  [01;34mdata[0m  [01;34mdesktop[0m  [01;34mevsieve[0m  [01;34mgnomeExtensions[0m  output.txt  [01;34mpipe[0m  [01;34mprofile[0m  README.md  [01;34msudoers[0m  [01;34msymlinks[0m  [01;34mterminal[0m  [01;34mtheRealPath[0m  [01;34mutilities[0m
+[?2004h]0;~/coding/automateLinux[1;34m~/coding/automateLinux[0m$ cd terminal/
+[?2004l[?2004h]0;~/coding/automateLinux/terminal[1;34m~/coding/automateLinux/terminal[0m$ [?2004l
+exit
+
+Script done on 2025-11-12 17:46:45+02:00 [COMMAND_EXIT_CODE="0"]
+EOF

@@ -93,3 +93,15 @@ catDir() {
     fi
 }
 export -f catDir
+
+heredoc() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        local outputFile=$(basename "${1%.*}").HereDoc
+        # echo "Creating here document file: $outputFile"
+        echo "bash <<'EOF'" > "$outputFile"
+        cat "$file" >> "$outputFile"
+        echo "EOF" >> "$outputFile"
+    fi
+}
+

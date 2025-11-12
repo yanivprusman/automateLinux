@@ -1,6 +1,193 @@
 ------------------------------------------
-2025-11-12 17:23:43 Exit code: 127 Command: ASDF Line: 118 Function: main PWD: /home/yaniv/coding/automateLinux
-Error message: bash: ASDF: command not found
+2025-11-12 17:57:32 Exit code: 127 Command: {basename "${1}"%.*} Line: 1 Function: heredoc PWD: /home/yaniv/coding/automateLinux/terminal/tests/101
+Error message: bash: {basename: command not found
 Stack:
   /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  main
+------------------------------------------
+2025-11-12 18:01:53 Exit code: 1 Command: [[ ${!2} == \$* ]] Line: 18 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests/101
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:01:53 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests/101
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:01:53 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 34 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests/101
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:01:54 Exit code: 1 Command: [[ ${!2} == \$* ]] Line: 18 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests/101
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:01:55 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests/101
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:01:55 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 34 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests/101
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:04:12 Exit code: 1 Command: [[ ${!2} == \$* ]] Line: 18 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:04:12 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:04:12 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 34 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:04:40 Exit code: 1 Command: read -r <<< "$REPLY" Line: 14 Function: __python_argcomplete_scan_head PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+------------------------------------------
+2025-11-12 18:04:40 Exit code: 1 Command: [[ -n $ret ]] Line: 33 Function: __python_argcomplete_scan_head PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+------------------------------------------
+2025-11-12 18:04:40 Exit code: 1 Command: [[ -n $ret ]] Line: 2 Function: __python_argcomplete_scan_head_noerr PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+------------------------------------------
+2025-11-12 18:04:40 Exit code: 1 Command: [[ -n $ret ]] Line: 56 Function: _python_argcomplete_global PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+------------------------------------------
+2025-11-12 18:04:40 Exit code: 124 Command: return 124 Line: 115 Function: _python_argcomplete_global PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+------------------------------------------
+2025-11-12 18:04:40 Exit code: 1 Command: [[ ${!2} == \$* ]] Line: 18 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share//bash-completion/completions/chmod
+------------------------------------------
+2025-11-12 18:04:40 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share//bash-completion/completions/chmod
+------------------------------------------
+2025-11-12 18:04:40 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 34 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share//bash-completion/completions/chmod
+------------------------------------------
+2025-11-12 18:04:41 Exit code: 1 Command: [[ ${!2} == \$* ]] Line: 18 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share//bash-completion/completions/chmod
+------------------------------------------
+2025-11-12 18:04:41 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share//bash-completion/completions/chmod
+------------------------------------------
+2025-11-12 18:04:41 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 34 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share//bash-completion/completions/chmod
+------------------------------------------
+2025-11-12 18:04:46 Exit code: 1 Command: [[ ${!2} == \$* ]] Line: 18 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share//bash-completion/completions/chmod
+------------------------------------------
+2025-11-12 18:04:46 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share//bash-completion/completions/chmod
+------------------------------------------
+2025-11-12 18:04:46 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 34 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share//bash-completion/completions/chmod
+------------------------------------------
+2025-11-12 18:08:32 Exit code: 1 Command: read -r <<< "$REPLY" Line: 14 Function: __python_argcomplete_scan_head PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+------------------------------------------
+2025-11-12 18:08:32 Exit code: 1 Command: [[ -n $ret ]] Line: 33 Function: __python_argcomplete_scan_head PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+------------------------------------------
+2025-11-12 18:08:32 Exit code: 1 Command: [[ -n $ret ]] Line: 2 Function: __python_argcomplete_scan_head_noerr PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+------------------------------------------
+2025-11-12 18:08:32 Exit code: 1 Command: [[ -n $ret ]] Line: 56 Function: _python_argcomplete_global PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+------------------------------------------
+2025-11-12 18:08:32 Exit code: 124 Command: return 124 Line: 115 Function: _python_argcomplete_global PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/lib/python3/dist-packages/argcomplete/bash_completion.d/_python-argcomplete
+------------------------------------------
+2025-11-12 18:08:32 Exit code: 1 Command: [[ ${!2} == \$* ]] Line: 18 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:08:32 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 18:08:32 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 34 Function: _filedir PWD: /home/yaniv/coding/automateLinux/terminal/tests
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
 ------------------------------------------

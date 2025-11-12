@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Shutdown
+Comment=Shutdown the system
+Exec=/home/yaniv/shutdown-system.sh
+Icon=/usr/share/icons/Humanity/actions/32/system-shutdown.svg
+Terminal=false
+Type=Application
+Categories=System;

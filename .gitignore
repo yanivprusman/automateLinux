@@ -4,6 +4,7 @@ utilities/termcontrol/build
 dirHistory
 errLog.txt
 terminal/tests/output.txt
-
+terminal/output.txt
+terminal/tests/terminaloutput*
 
 

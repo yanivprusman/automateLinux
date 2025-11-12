@@ -69,7 +69,7 @@ export -f cd
 touchDirectories() {
     local dir
     local automateLinuxVariable
-    compggen -v | grep '^AUTOMATE_LINUX_' | grep '_DIR$' | while read -r automateLinuxVariable; do
+    compgen -v | grep '^AUTOMATE_LINUX_' | grep '_DIR$' | while read -r automateLinuxVariable; do
         dir="${!automateLinuxVariable}"
         if [ ! -d "$dir" ]; then
             mkdir -p "$dir"

@@ -1,4 +1,6 @@
+
 exit_code=$?
+touch "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"
 # is_back_ground_process=$1
 # if [ ! $is_back_ground_process ] ; then
     cmd="${BASH_COMMAND}"

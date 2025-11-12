@@ -1,0 +1,1236 @@
+    1  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+    2  sourceb
+    3  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+    4  cd ..
+    5  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+    6  cd pipe/
+    7  cd ..
+    8  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+    9  existing_dir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
+   10  echo $existing_dir 
+   11  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   12  ${AUTOMATE_LINUX_DIR_HISTORY_POINTER}
+   13  echo ${AUTOMATE_LINUX_DIR_HISTORY_POINTER}
+   14  sourceb
+   15  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   16  cd ..
+   17  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   18  sourceb
+   19  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   20  cd pipe/
+   21  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   22  > "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   23  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   24  cd ..
+   25  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   26  sourceb
+   27  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   28  cd ..
+   29  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   30  > "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   31  sourceb
+   32  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   33  cd sudoers/
+   34  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   35  sourceb
+   36  cd ..
+   37  cd automateLinux/
+   38  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   39  pd
+   40  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   41  cd pipe/
+   42  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   43  pd
+   44  git a
+   45  git s
+   46  git m "pd working"
+   47  sourceb
+   48  cd pipe/
+   49  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   50  pd
+   51  pdd
+   52  pd
+   53  git a
+   54  git s
+   55  git m "wip pdd"
+   56  pd
+   57  compgen -v 
+   58  echo $AUTOMATE_LINUX_DIR_HISTORY_POINTER
+   59  pd
+   60  echo $AUTOMATE_LINUX_DIR_HISTORY_POINTER
+   61  echo echo $AUTOMATE_LINUX_DIR_HISTORY_POINTER
+   62  echo "echo echo $AUTOMATE_LINUX_DIR_HISTORY_POINTER"
+   63  $BASH_COMMAND
+   64  echo $BASH_COMMAND
+   65  echo "$BASH_COMMAND"
+   66  echo
+   67  echo asdf
+   68  sourceb
+   69  ls
+   70  cd ..
+   71  pdd
+   72  pd
+   73  pdd
+   74  LAST_COMMAND=""
+   75  # Trap DEBUG to update LAST_COMMAND and show current command
+   76  trap 'echo "Previous: $LAST_COMMAND"; LAST_COMMAND=$BASH_COMMAND' DEBUG
+   77  echo "Hello"
+   78  ls /nonexistent
+   79  echo "Done"
+   80  s
+   81  pd
+   82  exit
+   83  ls
+   84  pdd
+   85  sourceb
+   86  ls
+   87  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   88  pd
+   89  cd ..
+   90  pd
+   91  pdd
+   92  echo "$AUTOMATE_LINUX_BASH_COMMAND"
+   93  echo $AUTOMATE_LINUX_BASH_COMMAND
+   94  cd ..
+   95  echo $AUTOMATE_LINUX_BASH_COMMAND
+   96  pd
+   97  echo $AUTOMATE_LINUX_BASH_COMMAND
+   98  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   99  pd
+  100  pdd
+  101  code --status
+  102  code --status
+  103  ls /bin
+  104  ls /bin | wc
+  105  sourceb
+  106  cat "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+  107  pd
+  108  pdd
+  109  pd
+  110  pdd
+  111  git a
+  112  git s
+  113  git as
+  114  git alias
+  115  git config --help
+  116  git l
+  117  git m "pd and pdd working"
+  118  git push
+  119  push
+  120  cd theRealPath/
+  121  ./run.sh 
+  122  code ./run.sh 
+  123  tty
+  124  ./run.sh 
+  125  cd theRealPath/
+  126  ./run.sh 
+  127  exit
+  128  bash -x
+  129  sourceb
+  130  pd
+  131  pdd
+  132  cd coding/automateLinux/bashrc/
+  133  ls
+  134  mkdir dirHistory
+  135  cd ..
+  136  pd
+  137  sourceb
+  138  cd ..
+  139  pd
+  140  pdd
+  141  git config --help
+  142  git config alias --help
+  143  git config --alias --help
+  144  git config --global alias.a 'git add -A && git s'
+  145  git alias
+  146  git a
+  147  git config --global alias.a 'add -A && git s'
+  148  git a
+  149  git config --global alias.a 'add -A'
+  150  git a
+  151  git s
+  152  git alias
+  153  git config --global alias.a '! git add -A && git satus' 
+  154  git a
+  155  git config --global alias.a '! git add -A && git status' 
+  156  git a
+  157  ls
+  158  cat et
+  159  cls
+  160  cat et
+  161  rm et
+  162  ls
+  163  rm test.txt 
+  164  git a
+  165  rm bashrc/.bashMyBashrcTheRealPath 
+  166  git a
+  167  git m "cleanup"
+  168  git push
+  169  bind -X
+  170  bind -x
+  171  bind -X --help
+  172  bind -X -help
+  173  bind -X help
+  174  man bind
+  175  which bind
+  176  alias bind
+  177  bind
+  178  bind -x
+  179  bind -x '"\e[1;5A":pd'
+  180  bind -x '"\e[1;5B":pdd'
+  181  cd ..
+  182  pwd
+  183  bind -x '"\e[1;5A": "pd; printf '\''\e[0G\e[J'\''"'
+  184  bind -x '"\e[1;5B": "pdd; printf '\''\e[0G\e[J'\''"'
+  185  run_pd() { pd; }
+  186  run_pdd() { pdd; }
+  187  bind -x '"\e[1;5A":run_pd'
+  188  bind -x '"\e[1;5B":run_pdd'
+  189  run_pd() { pd; READLINE_LINE=""; READLINE_POINT=0; }
+  190  run_pdd() { pdd; READLINE_LINE=""; READLINE_POINT=0; }
+  191  bind -x '"\e[1;5A":"pd; echo -ne \"\n\""'   # Ctrl+Up
+  192  bind -x '"\e[1;5B":"pdd; echo -ne \"\n\""'  # Ctrl+Down
+  193  cd ..
+  194  bind -x '"\e[1;5A": "pd; printf '\''\e[0G\e[J'\''"'
+  195  bind -x '"\e[1;5B": "pdd; printf '\''\e[0G\e[J'\''"'
+  196  run_pd() { pd; }
+  197  run_pdd() { pdd; }
+  198  bind -x '"\e[1;5A":run_pd'
+  199  bind -x '"\e[1;5B":run_pdd'
+  200  git s
+  201  bind -x '"\e[1;5B":cat $AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY'
+  202  pdd
+  203  pd
+  204  git a
+  205  git m "added bashrc/bindings.sh"
+  206  git push
+  207  echo $PS1
+  208  PS1='\[\e]0;\W\a\]\[\033[5;34m\]\w\[\033[0m\]\$ '
+  209  ls
+  210  PS1='\[\e]0;\w\a\]\[\033[5;34m\]\w\[\033[0m\]\$ '
+  211  PS1='\[\e]0;\w\a\]\[\033[1;5;34m\]\w\[\033[0m\]\$ '
+  212  cls
+  213  PS1='\[\e]0;\w\a\]\[\033[1;5;34m\]\w\[\033[0m\]\$ '
+  214  PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '
+  215  cls
+  216  cd theRealPath/
+  217  tty
+  218  pdd
+  219  pd
+  220  echo $AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED
+  221  tty
+  222  cat $AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED 
+  223  pd
+  224  pd
+  225  cd ../bashrc/
+  226  ls
+  227  mkdir bindings
+  228  mv bindings.sh bindings
+  229  cd bindings/
+  230  ls
+  231  touch pd.sh
+  232  touch pdd.sh
+  233  chmod +x pd.sh pdd.sh 
+  234  echo $a
+  235  pd
+  236  pdd
+  237  echo $a
+  238  pdd
+  239  ${PROMPT_COMMAND:-:}
+  240  bind -x '"\e[1;5A":". ~/scripts/pdscript.sh; printf \"\r\033[K\"; ${PROMPT_COMMAND:-:}"'
+  241  bind -x '"\e[1;5A":"pd; printf \"\r\033[K\"; ${PROMPT_COMMAND:-:}"'
+  242  bind -x '"\e[1;5A":". $AUTOMATE_LINUX_BINDINGS_DIR/pd.sh; printf \"\r\033[K\"; ${PROMPT_COMMAND:-:}"'
+  243  pdd
+  244  sendKeys 
+  245  cd ../utilities/sendKeys/
+  246  ls
+  247  code sendKeys.c 
+  248  pd
+  249  pdd
+  250  cd bindings/
+  251  python3 inject_enter.py 
+  252  sudo python3 inject_enter.py 
+  253  ls 
+  254  ls  /home/yaniv/coding/automateLinux/utilities/sendKeys/
+  255  A
+  256  pdd
+  257  cd ../bashrc/bindings/
+  258  sudo python3 injectEnter.py 
+  259  sudo python3 "${AUTOMATE_LINUX_BINDINGS_DIR}injectEnter.py"
+  260  cd /dev/input/
+  261  cd ..
+  262  ls
+  263  cd /home/yaniv/coding/automateLinux/utilities/sendKeys
+  264  ls
+  265  cd ..
+  266  ls
+  267  mkdir sendKeysUInput
+  268  cd sendKeysUInput/
+  269  code sendKeysUInput.c
+  270  cp ../sendKeys/build.sh 
+  271  cp ../sendKeys/build.sh .
+  272  build
+  273  ls
+  274  ./build.sh 
+  275  ls
+  276  ./sendKeysUInput 
+  277  sudo ./sendKeysUInput 
+  278  ./build.sh 
+  279  sudo ./sendKeysUInput 
+  280  ls /dev/input/
+  281  ls /dev/input/by-id/
+  282  sudo ydotool type 'ls'
+  283  sudo ydotool key 28:1 28:0
+  284  wtype "ls\n"
+  285  sudo apt install wtype
+  286  wtype "ls\n"
+  287  swaymsg -t command "exec x-terminal-emulator -e ls"
+  288  cd ../../bashrc/bindings/
+  289  sudo evsieve     --output name="created by evsieve" create-link=/dev/input/by-id/createdByEvsieve repeat=disable
+  290  ls /dev/input/by-id/
+  291  ls -l /dev/input/by-id/ 
+  292  ls -l /dev/input/
+  293  evsievep
+  294  cd /dev/input/
+  295  ls
+  296  lstr
+  297  cp event11 event23
+  298  sudo cp event11 event23
+  299  compgen -v 
+  300  compgen -v | code -
+  301  echo $KEYBOARD_BY_ID
+  302  pd
+  303  sendKeys 
+  304  sendKeys -k $KEYBOARD_BY_ID keyA
+  305  ls /dev/input/by-id/
+  306  h ydoto
+  307  h key
+  308  sudo evsieve     --output name="created by evsieve" create-link=/dev/input/by-id/createdByEvsieve repeat=disable
+  309  h key
+  310  pd
+  311  ./build.sh 
+  312  ./sendKeysUInput 
+  313  sudo ./sendKeysUInput 
+  314  ls /dev/input/by-id/
+  315  ls /dev/input/
+  316  lstr /dev/input/
+  317  lstr '/dev/input/'
+  318  alias lstr
+  319  ( cd /dev/input/ && lstr )
+  320  ls /proc/bus/input/devices
+  321  cat /proc/bus/input/devices
+  322  cat /proc/bus/input/devices | less
+  323  ( cd /dev/input/ && ls -lt )
+  324  evtest
+  325  cat /proc/bus/input/devices | less
+  326  cat /proc/bus/input/devices | code -
+  327  ( cd /dev/input/ && ls -lt )
+  328  sendKeys -k $KEYBOARD_BY_ID keyA
+  329  sendKeys 
+  330  ls /dev/input/event24
+  331  sendKeys -k /dev/input/event24 keyA
+  332  sendKeys -k /dev/input/event24 keyA syn
+  333  pd
+  334  ./build.sh 
+  335  sendKeys -k /dev/input/event24 keyA syn
+  336  sendKeys -k /dev/input/event24 keyA 
+  337  sendKeys -k /dev/input/event24 keyA syn
+  338  git a
+  339  git m "improved sendKeys to all letters, crated a device with utilities/sendKeysUInput/sendKeysUInput"
+  340  git push
+  341  ./build.sh 
+  342  sendKeys keyL syn
+  343  sendKeys keyL kdys enter syn
+  344  l
+  345  sendKeys keyL kdys enter syn
+  346  l
+  347  sendKeys -k /dev/input/event24 keyA syn
+  348  sendKeys -k /dev/input/event24 keyl keys syn
+  349  ls
+  350  sendKeys -k /dev/input/event24 keyl keys enter syn
+  351  ls
+  352  sendKeys -k /dev/input/event24 keyl keys enter entersyn
+  353  ls
+  354  sendKeys -k /dev/input/event24 enter entersyn
+  355  ( sendKeys -k /dev/input/event24 enter entersyn )
+  356  ( sendKeys -k /dev/input/event24 keyl enter entersyn )
+  357  ( sendKeys -k /dev/input/event24 keyl enter enter syn )
+  358  l
+  359  ( sendKeys -k /dev/input/event24 keyl enter enter syn )
+  360  l
+  361  ( sendKeys -k /dev/input/event24 keyl keys enter enter syn )
+  362  ls
+  363  ( sendKeys -k /dev/input/event24 keyl keys enter syn enter syn )
+  364  ls
+  365  ( sendKeys -k /dev/input/event24 keyl keys enter syn enter syn )
+  366  evsievep
+  367  rm /dev/input/event23
+  368  rm -rf /dev/input/event23
+  369  sudo rm /dev/input/event23
+  370  evsievep
+  371  alias evsievep
+  372  sudo evsieve --input /dev/input/event* --print key format=direct
+  373  bash /home/yaniv/coding/automateLinux/utilities/sendKeysUInput/build.sh
+  374  ls -l /home/yaniv/coding/automateLinux/utilities/sendKeysUInput
+  375  sudo /home/yaniv/coding/automateLinux/utilities/sendKeysUInput/sendKeysUInput
+  376  bash /home/yaniv/coding/automateLinux/utilities/sendKeysUInput/build.sh
+  377  sudo /home/yaniv/coding/automateLinux/utilities/sendKeysUInput/sendKeysUInput -d
+  378  bash /home/yaniv/coding/automateLinux/utilities/sendKeysUInput/build.sh -d
+  379  ls -l /tmp/sendKeysUInput.* /tmp/sendKeysUInput.pid || true
+  380  cat /tmp/sendKeysUInput.pid || true
+  381  ps -p 2633038 -o pid,cmd || true
+  382  sudo sed -n '/N: Name="Virtual Corsair Keyboard"/,/^$/p' /proc/bus/input/devices
+  383  man awk
+  384  aek --help
+  385  aWk --help
+  386  awk --help
+  387  tty
+  388  pd
+  389  ls
+  390  ls ../
+  391  cd ../dirHistory/
+  392  ls
+  393  touch dirHistoryPointers.sh
+  394  ls
+  395  git a
+  396  git m "wip added dirHistoryPointers.sh"
+  397  git push
+  398  echo $TTY
+  399  git a
+  400  git m "added AUTOMATE_LINUX_TTY"
+  401  git push
+  402  pd
+  403  echo "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED"
+  404  tty
+  405  pd
+  406  echo "$AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED"
+  407  git l
+  408  git r
+  409  echo $AUTOMATE_LINUX_TTY 
+  410  tty
+  411  echo "$AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE"
+  412  echo $AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY
+  413  tty
+  414  cd ..
+  415  pd
+  416  ls -la /home/yaniv/coding/automateLinux/bashrc/dirHistory/dirHistory_*
+  417  sed -i 's/^dev_pts_/_dev_pts_/' /home/yaniv/coding/automateLinux/bashrc/dirHistory/dirHistoryPointers.sh
+  418  echo $AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED
+  419  echo "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}
+  420  \"
+  421  q
+  422  \
+  423  "
+  424  echo "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"
+  425  (ls -1t "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"* 2>/dev/null | head -n 1)
+  426  ls -1t "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"* 2>/dev/null | grep -Fxv "/home/yaniv/coding/automateLinux/bashrc/dirHistory/dirHistoryPointers.sh" | head -n 1
+  427  (ls -1t "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"* 2>/dev/null | head -n 1)
+  428  ls -1t "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"* 2>/dev/null | grep -Fxv "/home/yaniv/coding/automateLinux/bashrc/dirHistory/dirHistoryPointers.sh" | head -n 1
+  429  echo "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"
+  430  cd coding/automateLinux/
+  431  git a
+  432  git l
+  433  git m "wip"
+  434  git push
+  435  insertDirAtIndex
+  436  pd
+  437  ls
+  438  cd /home/yaniv/coding/automateLinux
+  439  pd
+  440  pdd
+  441  pd
+  442  pdd
+  443  tty
+  444  touch /home/yaniv/coding/automateLinux/bashrc/dirHistory/dirHistoryPointers.sh
+  445  tty
+  446  git r
+  447  cd bashrc/
+  448  ls
+  449  touch 101.sh
+  450  rm 101.txt 
+  451  chmod +x 101.sh 
+  452  code 101.sh 
+  453  ls "${AUTOMATE_LINUX_DIR_HISTORY_DIR}"* 2>/dev/null
+  454  sourceb
+  455  ls "${AUTOMATE_LINUX_DIR_HISTORY_DIR}"* 2>/dev/null
+  456  git l
+  457  git a
+  458  git m "wip debugging"
+  459  ./101.sh 
+  460  mkdir trap
+  461  git a
+  462  git m "wip"
+  463  git a
+  464  git m "wip"
+  465  cat $AUTOMATE_LINUX_TRAP_DEBUG_FILE 
+  466  ls $AUTOMATE_LINUX_TRAP_DEBUG_FILE 
+  467  touch /home/yaniv/coding/automateLinux/bashrc/trap/trapDebugLog.txt
+  468  ls trap/
+  469  chmod +x trap/trapDebugLog.txt 
+  470  chmod -x trap/trapDebugLog.txt 
+  471  chmod +x trap/trapDebugLog.txt 
+  472  cd trap/
+  473  ls
+  474  ls -l /home/yaniv/coding/automateLinux/bashrc/trap/trapDebugLog.txt
+  475  touch /home/yaniv/coding/automateLinux/bashrc/trap/trapGenerator.sh
+  476  chmod +x /home/yaniv/coding/automateLinux/bashrc/trap/trapGenerator.sh
+  477  git a
+  478  git m "wip"
+  479  echo $AUTOMATE_LINUX_TRAP_GENERATOR_FILE
+  480  ls -l $AUTOMATE_LINUX_TRAP_GENERATOR_FILE
+  481  cd ~
+  482  ls .*
+  483  ls -d .*
+  484  ls -dl .*
+  485  rm .bashrc 
+  486  ln -s /home/yaniv/coding/automateLinux/terminal/bashrc .bashrc
+  487  echo $AUTOMATE_LINUX_TRAP_GENERATOR_FILE
+  488  echo $AUTOMATE_LINUX_TERMINAL_DIR
+  489  echo "${AUTOMATE_LINUX_TERMINAL_DIR}myBashrc.sh"
+  490  ls "${AUTOMATE_LINUX_TERMINAL_DIR}myBashrc.sh"
+  491  ls -l "${AUTOMATE_LINUX_TERMINAL_DIR}myBashrc.sh"
+  492  git s
+  493  git a
+  494  git m "wip"
+  495  git push
+  496  git s
+  497  git l
+  498  git a
+  499  git m "improved err.sh error log"
+  500  git push
+  501  bash
+  502  git diff
+  503  git r
+  504  git a
+  505  git l
+  506  git m "fixed err trap by sourcing err.sh instead of subprocessing it"
+  507  git push
+  508  chmod +x /home/yaniv/coding/automateLinux/terminal/trap/test_trap.sh && /home/yaniv/coding/automateLinux/terminal/trap/test_trap.sh
+  509  ls -l "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"
+  510  /home/yaniv/coding/automateLinux/terminal/trap/test_trap.sh
+  511  cat "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"
+  512  /home/yaniv/coding/automateLinux/terminal/trap/test_trap.sh
+  513  cat "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"
+  514  cd ..
+  515  git s
+  516  git diff
+  517  git ls-files
+  518  clscode .gitignore 
+  519  code .gitignore 
+  520  git rm --cached bashrc/dirHistory
+  521  git rm --cached -r bashrc/dirHistory
+  522  git ls-files
+  523  git s
+  524  git add .gitignore 
+  525  git s
+  526  git rm --cached -r bashrc/trap/errLog.txt 
+  527  git s
+  528  mv bashrc/ terminal
+  529  git a
+  530  git m "renamed bashrc to terminal"
+  531  cls
+  532  gnome-terminal --tab &
+  533  gnome-terminal --tab > /dev/null & 
+  534  gnome-terminal --tab >/dev/null 2>&1 &
+  535  ( gnome-terminal --tab & )
+  536  ( gnome-terminal --tab & ) > /dev/null 
+  537  cls
+  538  ( gnome-terminal --tab & ) > /dev/null 
+  539  cls
+  540  ( gnome-terminal --tab & ) > /dev/null 
+  541  go
+  542  ls ~/coding/scripts/
+  543  rm -rf ~/coding/scripts/
+  544  ls ~/coding/scripts/
+  545  cd ..
+  546  pd
+  547  ls
+  548  lstr
+  549  touch exports.sh
+  550  git a
+  551  git m "added exports.sh"
+  552  git l
+  553  git a
+  554  git m "cat $AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"
+  555  go
+  556  echo $FREECAD_MACROS_DIR
+  557  echo "$AUTOMATE_LINUX_ENV_FILE"
+  558  code /home/yaniv/coding/automateLinux/terminal/env.sh
+  559  git a
+  560  git m "cleanup"
+  561  git a
+  562  git m "wip"
+  563  rm /home/yaniv/coding/automateLinux/terminal/dirHistory/*
+  564  tty
+  565  $
+  566  !
+  567  $$
+  568  alert
+  569  rm /home/yaniv/coding/automateLinux/terminal/dirHistory/*
+  570  git a
+  571  git m "added touch to dirHistoryPointers.sh"
+  572  git push
+  573  git a
+  574  git m "refactored myBashrc"
+  575  echo "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"
+  576  git diff
+  577  git l
+  578  git a
+  579  git m "wip stash"
+  580  git checkout 5df9ebb
+  581  git checkout 21c4ba5
+  582  git stash 
+  583  git checkout 21c4ba5
+  584  git branch 
+  585  ls
+  586  $
+  587  $$
+  588  $
+  589  ls
+  590  $$
+  591  ls
+  592  !
+  593  ls
+  594  $?
+  595  adsf
+  596  $?
+  597  theRealPath ./asdfg
+  598  $?
+  599  1restart 
+  600  $?
+  601  echo $?
+  602  ls
+  603  echo $?
+  604  adsf
+  605  echo $?
+  606  1restart 
+  607  echo $?
+  608  code /home/yaniv/coding/automateLinux/symlinks/restartCorsairKeyBoardLogiMouseService.sh
+  609  chmod +x /home/yaniv/coding/automateLinux/terminal/test_singleton.sh
+  610  /home/yaniv/coding/automateLinux/terminal/test_singleton.sh
+  611  git l
+  612  git l
+  613  git checkout functions.sh
+  614  git a
+  615  git m "wip"
+  616  code   /usr/share/code/resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-bash.sh
+  617  asdf
+  618  asdf &
+  619  asdf > >(tee /tmp/asdf.out) 2> >(tee /tmp/asdf.err >&2) &
+  620  ls
+  621  bash -c 'trap -p ERR'
+  622  trap -p ERR
+  623  (   trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR;   asdf; ) 
+  624  asdf
+  625  (   trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR;   asdf; ) 
+  626  (   trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR;   asdf; ) &
+  627  sudo grep -R "shellIntegration-bash.sh" /usr/share /etc /opt /usr/lib 2>/dev/null
+  628  cls
+  629  echo $AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY
+  630  ( echo $AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY)
+  631  cat $AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY
+  632  echo $AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED
+  633  echo $AUTOMATE_LINUX_DIR_HISTORY_FILE_LAST_CHANGED
+  634  cd coding/
+  635  cd automateLinux/
+  636  cd coding/
+  637  cd automateLinux/
+  638  echo $current_dir $AUTOMATE_LINUX_DIR_HISTORY_POINTER
+  639  pd
+  640  echo $current_dir $AUTOMATE_LINUX_DIR_HISTORY_POINTER
+  641  echo asdf
+  642  echo $current_dir $AUTOMATE_LINUX_DIR_HISTORY_POINTER
+  643  bash(1)
+  644  bash (1)
+  645  help test
+  646  /-n
+  647  help test
+  648  help test | less
+  649  help --help
+  650  help ls
+  651  help cd
+  652  echo $CDPATH
+  653  CDPATH=/home/yaniv/coding/automateLinux/
+  654  cd evsieve/
+  655  help cd |less
+  656  ls
+  657  cd log/
+  658  cd ..
+  659  help cd |less
+  660  shopt cdable_vars
+  661  help cd |less
+  662  pwd
+  663  pwd -L
+  664  pwd -P
+  665  help cd |less
+  666  tty
+  667  help test
+  668  help test |less
+  669  ls /tmp/
+  670  -n
+  671  test -n
+  672  test -E
+  673  help test
+  674  help test |less
+  675  test -o E
+  676  echo $?
+  677  chmod +x /tmp/test_dir_history.sh
+  678  /tmp/test_dir_history.sh
+  679  chmod +x /tmp/test_dir_history_debug.sh
+  680  /tmp/test_dir_history_debug.sh
+  681  chmod +x /tmp/test_dir_history_fresh.sh
+  682  /tmp/test_dir_history_fresh.sh
+  683  rm /tmp/test_dir_history_fresh.sh
+  684  chmod +x /tmp/test_dir_history_fresh.sh
+  685  /tmp/test_dir_history_fresh.sh
+  686  chmod +x /tmp/test_dir_history_fresh2.sh
+  687  /tmp/test_dir_history_fresh2.sh
+  688  ls
+  689  cd evsieve/
+  690  cd ..
+  691  pd
+  692  pdd
+  693  git a
+  694  git l
+  695  git  m "fixed error in dirHistory mechanism"
+  696  git push
+  697  git branch 
+  698  git branch -f theRelativePath HEAD
+  699  git s
+  700  git l
+  701  git switch theRelativePath 
+  702  git s
+  703  git l
+  704  git push
+  705  git l
+  706  if [[ $(set -o | grep errtrace) == *on* ]]; then     echo "-E (errtrace) is set"; else     echo "-E (errtrace) is not set"; fi
+  707  git s
+  708  pd
+  709  help test
+  710  git l
+  711  help test
+  712  git diff promptCommand.sh
+  713  git l
+  714  git s
+  715  git checkout 8d588cc -- promptCommand.sh
+  716  git s
+  717  git diff promptCommand.sh
+  718  git l
+  719  git diff HEAD -- promptCommand.sh
+  720  git --no-pager diff -U99 HEAD -- promptCommand.sh
+  721  cls
+  722  git --no-pager diff -U99 HEAD -- promptCommand.sh
+  723  cls
+  724  git --no-pager diff -U99 HEAD -- promptCommand.sh | less
+  725  git --no-pager diff -U99 promptCommand.sh HEAD
+  726  git --no-pager diff --reverse -U99 HEAD -- promptCommand.sh | less
+  727  cls
+  728  git --no-pager diff -U99 --reverse HEAD -- promptCommand.sh
+  729  git --no-pager diff -U99 HEAD -- promptCommand.sh
+  730  git --no-pager diff -U99 HEAD --reverse -- promptCommand.sh
+  731  git diff HEAD:terminal/promptCommand.sh terminal/promptCommand.sh
+  732  cd ..
+  733  git diff HEAD:terminal/promptCommand.sh terminal/promptCommand.sh
+  734  git diff terminal/promptCommand.sh HEAD:terminal/promptCommand.sh
+  735  git diff /terminal/promptCommand.sh HEAD:terminal/promptCommand.sh
+  736  git diff terminal/promptCommand.sh HEAD:terminal/promptCommand.sh 
+  737  ls terminal/promptCommand.sh 
+  738  git diff HEAD:terminal/promptCommand.sh terminal/promptCommand.sh
+  739  git diff terminal/promptCommand.sh HEAD:terminal/promptCommand.sh
+  740  git diff :terminal/promptCommand.sh HEAD:terminal/promptCommand.sh
+  741  cls
+  742  git diff :terminal/promptCommand.sh HEAD:terminal/promptCommand.sh
+  743  git reset
+  744  git l
+  745  git checkout bb4d135 -- terminal/promptCommand.sh
+  746  git reset
+  747  git checkout bb4d135 
+  748  git s
+  749  cd terminal/
+  750  git checkout  -- functions.sh
+  751  git s
+  752  git checkout bb4d135  -- functions.sh
+  753  git log -S'"/$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"' -- functions.sh
+  754  git log -S'"$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"' -- functions.sh
+  755  git s
+  756  git reset
+  757  git checkout 5df9ebbcdb0f3ca59d503d0e9236147cced4f0e7
+  758  git s
+  759  git reset
+  760  git s
+  761  git stash
+  762  git checkout 5df9ebbcdb0f3ca59d503d0e9236147cced4f0e7
+  763  git checkout 8d588cc0cae7c8c7d33ad3f6cd9e9c52827158ea
+  764  git switch  theRelativePath 
+  765  git dirr 8d588cc0cae7c8c7d33ad3f6cd9e9c52827158ea -- functions.sh
+  766  git diff 8d588cc0cae7c8c7d33ad3f6cd9e9c52827158ea -- functions.sh
+  767  git --no-pager diff -U99 8d588cc0cae7c8c7d33ad3f6cd9e9c52827158ea -- functions.sh
+  768  cls
+  769  git --no-pager diff -U99 8d588cc0cae7c8c7d33ad3f6cd9e9c52827158ea -- functions.sh
+  770  git --no-pager diff -U99 :functions.sh 8d588cc0cae7c8c7d33ad3f6cd9e9c52827158ea 
+  771  git --no-pager diff -U99 :terminal/functions.sh 8d588cc0cae7c8c7d33ad3f6cd9e9c52827158ea 
+  772  git diff :terminal/promptCommand.sh HEAD:terminal/promptCommand.sh
+  773  git --no-pager diff -U99 :terminal/functions.sh 8d588cc0cae7c8c7d33ad3f6cd9e9c52827158ea:terminal/functions.sh 
+  774  cls
+  775  git --no-pager diff -U99 :terminal/functions.sh 8d588cc0cae7c8c7d33ad3f6cd9e9c52827158ea:terminal/functions.sh 
+  776  git s
+  777  git a
+  778  git l
+  779  git m "cleanup"
+  780  cd pipe/
+  781  cd trap/
+  782  cls
+  783  cd ..
+  784  cd terminal/
+  785  git s
+  786  git l
+  787  git switch theRelativePath 
+  788  git s
+  789  git l
+  790  git diff :terminal/promptCommand.sh HEAD:terminal/promptCommand.sh
+  791  cd evsieve/
+  792  cd ..
+  793  git s
+  794  git l
+  795  git checkout 21c4ba5
+  796  git checkout 748bcf0
+  797  git l
+  798  cls
+  799  git l
+  800  git diff 42f2e3d:terminal/promptCommand.sh 21c4ba5:terminal/promptCommand.sh
+  801  git diff 748bcf0:terminal/promptCommand.sh 21c4ba5:terminal/promptCommand.sh
+  802  git diff bb4d135:terminal/promptCommand.sh 21c4ba5:terminal/promptCommand.sh
+  803  git diff 748bcf0:terminal/promptCommand.sh bb4d135:terminal/promptCommand.sh
+  804  git s
+  805  git checkout 21c4ba5 -- functions.sh
+  806  git s
+  807  git restore functions.sh
+  808  git s
+  809  git r
+  810  git s
+  811  git checkout 21c4ba5 -- promptCommand.sh
+  812  cd ..
+  813  cd pipe/
+  814  tty
+  815  pd
+  816  pdd
+  817  h asdf
+  818  setDirHistoryPointer
+  819  compgen
+  820  help compgen
+  821  help compgen -F
+  822  compgen -F
+  823  compgen -F setDirHistoryPointer
+  824  cd evsieve/
+  825  cd ..
+  826  grep compgen
+  827  grep "compgen"
+  828  grep -R compgen .
+  829  cat AGENTS.md 
+  830  cat profile/.profile 
+  831  grep "FREECAD_MACROS_DIR="
+  832  grep " -R "FREECAD_MACROS_DIR=" .
+  833  "
+  834  grep " -R "FREECAD_MACROS_DIR" .
+  835  :"
+  836  grep -R "FREECAD_MACROS_DIR" .
+  837  cd evsieve/
+  838  man sed
+  839  cd ../te
+  840  cd ../terminal/
+  841  tree asdf/
+  842  rm -rf asdf/
+  843  tree
+  844  cat bashrcLog.txt 
+  845  rm bashrcLog.txt 
+  846  mkdir functions
+  847  mv functions.sh functions
+  848  git s
+  849  git a
+  850  git m "added functions dir"
+  851  git push
+  852  cat ../profile/.profile 
+  853  sudo grep -R "shellIntegration-bash.sh" /usr/share /etc /opt /usr/lib 2>/dev/null
+  854  grep -R "FREECAD_MACROS_DIR=" .
+  855  grep -R "compgen" .
+  856  cat ./dirHistory/dirHistoryPointers.sh
+  857  compgen
+  858  grep -R "compgen" .
+  859  ls
+  860  chmod +x 101.sh 
+  861  ./101.sh 
+  862  git l
+  863  mkdir tests
+  864  ls
+  865  lstr
+  866  cd terminal/
+  867  cd tests/
+  868  mv ../101.sh .
+  869  ./101.sh 
+  870  cp 101.sh deleteDirHistory.sh
+  871  cp 101.sh printDirHistory.sh
+  872  ls
+  873  for f in *; do     echo "$f" ; done
+  874  for file in "${dirHistory_dev_pts[@]}"; do     echo "$file"; done
+  875  for file in "${dirHistory_dev_pts}"; do     echo "$file"; done
+  876  for file in "${dirHistory_dev_pts*}"; do     echo "$file"; done
+  877  ./printDirHistory.sh 
+  878  for f in "${AUTOMATE_LINUX_DIR_HISTORY_DIR}"*; do     [[ $f =~ ^dirHistory_ ]] && dirHistory_dev_pts+=("$f"); done
+  879  echo "$a"
+  880  echo "$a[@]"
+  881  echo "${a[@]}"
+  882  ls "${AUTOMATE_LINUX_DIR_HISTORY_DIR}"*
+  883  ./printDirHistory.sh 
+  884  sourceb
+  885  ./printDirHistory.sh 
+  886  clear && ./printDirHistory.sh 
+  887  ./printDirHistory.sh | less -R
+  888  cls
+  889  ./printDirHistory.sh | less -R
+  890  cd ../dirHistory/
+  891  ;s
+  892  ls
+  893  a=( ls )
+  894  echo @a
+  895  echo $a
+  896  a= ( ls )
+  897  a=$( ls )
+  898  echo $a
+  899  a=()
+  900  for f in *; do     [[ $f =~ ^dirHistory_ ]] && a+=("$f"); done
+  901  echo $a
+  902  echo echo "${a[@]}"$a[0]
+  903  echo "${a[@]}"
+  904  ./printDirHistory.sh | less -R
+  905  ./printDirHistory.sh | code -
+  906  ./printDirHistory.sh | output.txt
+  907  ./printDirHistory.sh > output.txt
+  908  code output.txt 
+  909  ./printDirHistory.sh > output.txt
+  910  cd .
+  911  cd ..
+  912  ./printDirHistory.sh > output.txt
+  913  git a
+  914  git l
+  915  git m "added tests"
+  916  pd
+  917  cd ..
+  918  ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh > output.txt
+  919  echo ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh
+  920  sourceb
+  921  ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh > output.txt
+  922  cd ..
+  923  ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh > output.txt
+  924  pd
+  925  ./deleteDirHistory.sh 
+  926  ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh > output.txt
+  927  cd ..
+  928  ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh > output.txt
+  929  pd
+  930  pdd
+  931  pd
+  932  pdd
+  933  ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh > output.txt
+  934  cd..
+  935  ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh > output.txt
+  936  cd ..
+  937  ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh > output.txt
+  938  ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}deleteDirHistory.sh 
+  939  sourceb
+  940  set -o
+  941  shlop
+  942  shelop
+  943  shellop
+  944  shopt
+  945  cls
+  946  shopt
+  947  man shopt
+  948  help shopt
+  949  shopt -s -E
+  950  set -E
+  951  sourceb
+  952  sourceb
+  953  sudo apt install bashdb
+  954  sourceb
+  955  git a
+  956  git m "wip"
+  957  sourceb
+  958  echo $AUTOMATE_LINUX_TRAP_ERR_FILE
+  959  sourceb
+  960  echo $AUTOMATE_LINUX_TRAP_ERR_FILE
+  961  sourceb
+  962  asdf
+  963  sourceb
+  964  echo $AUTOMATE_LINUX_TRAP_ERR_FILE
+  965  echo $AUTOMATE_LINUX_TRAP_GENERATOR_FILE
+  966  tree ../
+  967  ls /home/yaniv/coding/automateLinux/terminal/trap/trapGenerator.sh
+  968  sourceb
+  969  ls /home/yaniv/coding/automateLinux/terminal/trap/trapGenerator.sh
+  970  sourceb
+  971  ls /home/yaniv/coding/automateLinux/terminal/trap/trapGenerator.sh
+  972  sourceb
+  973  cat > /tmp/test_trap.sh << 'EOF'
+  974  #!/bin/bash
+  975  source /home/yaniv/coding/automateLinux/terminal/firstThing.sh
+  976  source /home/yaniv/coding/automateLinux/terminal/myBashrc.sh
+  977  # Count the errors in the log
+  978  echo "=== Error log entries ==="
+  979  grep -c "^2025" /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt || echo "0"
+  980  echo "=== Last 20 lines of error log ==="
+  981  tail -20 /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+  982  EOF
+  983  bash /tmp/test_trap.sh
+  984  tail -30 /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+  985  # Clear the error log first
+  986  echo "------------------------------------------" > /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+  987  # Now source the bashrc to trigger the error
+  988  bash -i -c "source /home/yaniv/coding/automateLinux/terminal/firstThing.sh && source /home/yaniv/coding/automateLinux/terminal/myBashrc.sh" 2>&1 | head -20
+  989  # Show how many errors were logged
+  990  echo ""
+  991  echo "=== Error count ==="
+  992  grep "^[0-9].*Exit code:" /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt | wc -l
+  993  echo ""
+  994  echo "=== Error log content ==="
+  995  cat /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+  996  tail -20 /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+  997  cat /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+  998  bash -i -c "alias sourceb='source ~/.bashrc'; sourceb" 2>&1 | tail -20
+  999  echo "=== Before sourceb ===" && wc -l /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt && echo "" && echo "=== Running sourceb ===" && cd /home/yaniv/coding/automateLinux/terminal/tests && bash -i -c "source ~/.bashrc" 2>&1 && echo "" && echo "=== After sourceb ===" && wc -l /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1000  # Clear the log
+ 1001  echo "------------------------------------------" > /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1002  # Test sourceb
+ 1003  cd /home/yaniv/coding/automateLinux/terminal/tests
+ 1004  bash -i -c "source ~/.bashrc" 2>&1
+ 1005  echo ""
+ 1006  echo "=== Error log ==="
+ 1007  cat /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1008  # Clear the log
+ 1009  echo "------------------------------------------" > /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1010  # Test sourceb
+ 1011  cd /home/yaniv/coding/automateLinux/terminal/tests
+ 1012  bash -i -c "source ~/.bashrc 2>&1" 
+ 1013  echo ""
+ 1014  echo "=== Error log ==="
+ 1015  cat /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1016  # Clear the log
+ 1017  echo "------------------------------------------" > /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1018  # Test sourceb
+ 1019  cd /home/yaniv/coding/automateLinux/terminal/tests
+ 1020  bash -i -c "source ~/.bashrc 2>&1"
+ 1021  echo ""
+ 1022  echo "=== Error log ==="
+ 1023  tail -30 /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1024  # Clear the log
+ 1025  echo "------------------------------------------" > /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1026  # Test sourceb
+ 1027  cd /home/yaniv/coding/automateLinux/terminal/tests
+ 1028  bash -i -c "source ~/.bashrc"
+ 1029  echo ""
+ 1030  echo "=== Error log ==="
+ 1031  cat /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1032  # Clear the log
+ 1033  echo "------------------------------------------" > /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1034  # Test sourceb
+ 1035  cd /home/yaniv/coding/automateLinux/terminal/tests
+ 1036  bash -i -c "source ~/.bashrc" 2>&1 | head -5
+ 1037  echo ""
+ 1038  echo "=== Error log ==="
+ 1039  cat /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1040  # Clear the log
+ 1041  echo "------------------------------------------" > /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1042  # Test opening a terminal (source bashrc)
+ 1043  cd /home/yaniv/coding/automateLinux/terminal/tests
+ 1044  bash -i -c "source ~/.bashrc && echo 'Shell started successfully'"
+ 1045  echo ""
+ 1046  echo "=== Error log ==="
+ 1047  cat /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1048  # Clear the log
+ 1049  echo "------------------------------------------" > /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1050  # Test opening a terminal
+ 1051  cd /home/yaniv/coding/automateLinux/terminal/tests
+ 1052  bash -i -c "source ~/.bashrc && echo 'SUCCESS: Shell started'"
+ 1053  echo ""
+ 1054  echo "=== Error log ==="
+ 1055  cat /home/yaniv/coding/automateLinux/terminal/trap/errLog.txt
+ 1056  ./deleteDirHistory.sh 
+ 1057  set -x
+ 1058  set +x
+ 1059  set -x
+ 1060  set +x
+ 1061  git r
+ 1062  ( gnome-terminal --tab & ) > /dev/null 
+ 1063  touch openTerminal.sh
+ 1064  chmod +x openTerminal.sh 
+ 1065  ./openTerminal.sh 
+ 1066  ( gnome-terminal --tab & ) > /dev/null 
+ 1067  > ./openTerminal.sh 
+ 1068  echo "( gnome-terminal --tab & ) > /dev/null " > ./openTerminal.sh 
+ 1069  ./openTerminal.sh 
+ 1070  cd ~/.local/share/applications/
+ 1071  ls
+ 1072  rm freecad-d*
+ 1073  ls
+ 1074  mv * ~/coding/automateLinux/applications/
+ 1075  ls
+ 1076  cd ..
+ 1077  rm -rf applications/
+ 1078  ln -s /home/yaniv/coding/automateLinux/applications/ applications
+ 1079  ls
+ 1080  cp openTerminal.sh testDirHistory.sh
+ 1081  chmod +x testDirHistory.sh 
+ 1082  ./printDirHistory.sh 
+ 1083  gsettings get org.gnome.nautilus.preferences executable-text-activation
+ 1084  gsettings list-keys org.gnome.nautilus.preferences | grep exec
+ 1085  gsettings list-keys org.gnome.nautilus.preferences 
+ 1086  touch ./testDirHistory.desktop
+ 1087  code ./testDirHistory.desktop 
+ 1088  chmod +x ./testDirHistory.desktop 
+ 1089  cd ..
+ 1090  ls
+ 1091  mkdir applications
+ 1092  mv terminal/tests/testDirHistory.desktop applications/
+ 1093  pd
+ 1094  ln -s testDirHistory.desktop /home/yaniv/coding/automateLinux/applications/testDirHistory.desktop 
+ 1095  ls
+ 1096  ln -s /home/yaniv/coding/automateLinux/applications/testDirHistory.desktop testDirHistory.desktop
+ 1097  ls
+ 1098  ls ~/shutdown-system.sh 
+ 1099  ls -l ~/shutdown-system.sh 
+ 1100  ls -l ~/shutdown-system.sh testDirHistory.sh 
+ 1101  cat /home/yaniv/shutdown-system.sh
+ 1102  ls
+ 1103  cd ../../applications/
+ 1104  ls
+ 1105  cat freecad.desktop
+ 1106  cat testDirHistory.desktop 
+ 1107  git a
+ 1108  git m "symlinked applications, testing dirHistory"
+ 1109  git push
+ 1110  ls -l
+ 1111  ls -l freecad.desktop testDirHistory.desktop 
+ 1112  chmod -x testDirHistory.desktop 
+ 1113  ls -l freecad.desktop testDirHistory.desktop 
+ 1114  cd ~/Desktop/
+ 1115  ls -l
+ 1116  chmod +x testDirHistory.desktop 
+ 1117  ls -l
+ 1118  ls
+ 1119  rm testDirHistory.desktop 
+ 1120  ls
+ 1121  mv shutdown.desktop /home/yaniv/coding/automateLinux/
+ 1122  mv /home/yaniv/coding/automateLinux/shutdown.desktop /home/yaniv/coding/automateLinux/desktop/
+ 1123  cd ..
+ 1124  rm -rf Desktop/
+ 1125  ln -s /home/yaniv/coding/automateLinux/desktop/ Desktop
+ 1126  pd
+ 1127  ls
+ 1128  realpah
+ 1129  realpath
+ 1130  realpath .
+ 1131  readlink .
+ 1132  readlink 
+ 1133  pd
+ 1134  git a
+ 1135  git l
+ 1136  git m "symlinked desktop"
+ 1137  git push 
+ 1138  cd ..
+ 1139  cd  desktop/
+ 1140  ls
+ 1141  cp shutdown.desktop testDirHistory.desktop
+ 1142  echo $XDG_DESKTOP_DIR
+ 1143  compgen -v
+ 1144  cat ~/.config/user-dirs.dirs
+ 1145  cd ../../applications/
+ 1146  ls
+ 1147  cd ..
+ 1148  ls
+ 1149  lstr
+ 1150  mkdir desktop
+ 1151  cd ~/.config/
+ 1152  ls
+ 1153  ls -a
+ 1154  cat user-dirs.locale 
+ 1155  cat user-dirs.dirs 
+ 1156  code /usr/share/icons/ubuntu-mono-light/actions/16/system-shutdown-panel.svg
+ 1157  ls $XDG_DATA_DIRS/icons/
+ 1158  echo $XDG_DATA_DIRS/icons/
+ 1159  ls /usr/share/pixmaps/
+ 1160  ls /usr/share/icons/
+ 1161  tree
+ 1162  cls
+ 1163  tree
+ 1164  cd  /usr/share/icons/
+ 1165  cls
+ 1166  tree
+ 1167  tree *.svg
+ 1168  find . -name "system-shutdown"
+ 1169  find . -name "system-shutdown*"
+ 1170  find . -name "system-shutdown*" | wc -l
+ 1171  find . -name "system-shutdown.svg" | wc -l
+ 1172  find . -name "system-shutdown.svg" 
+ 1173  code ./LoginIcons/apps/24/system-shutdown.svg
+ 1174  code ./LoginIcons/apps/48/system-shutdown.svg
+ 1175  code ./LoginIcons/apps/22/system-shutdown.svg
+ 1176  code ./Tango/scalable/actions/system-shutdown.svg
+ 1177  code ./Humanity/apps/48/system-shutdown.svg
+ 1178  ./Humanity/apps/48/system-shutdown.svg
+ 1179  code ./Humanity/apps/32/system-shutdown.svg
+ 1180  code ./Humanity/actions/16/system-shutdown.svg
+ 1181  code ./hicolor/scalable/actions/system-shutdown.svg
+ 1182  code ./HighContrast/scalable/actions/system-shutdown.svg
+ 1183  code ./Humanity/actions/24/system-shutdown.svg
+ 1184  code ./Humanity/actions/48/system-shutdown.svg
+ 1185  find /usr/share/icons -name "system-shutdown.svg" -exec code {} +
+ 1186  echo $AUTOMATE_LINUX_DIR_HISTORY_POINTER
+ 1187  awk -v ptr="$AUTOMATE_LINUX_DIR_HISTORY_POINTER" '\''{if (NR==ptr) printf "\033[33m%s\033[0m\n",$0; else print $0}'\'' "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"'
+ 1188  awk -v ptr="$AUTOMATE_LINUX_DIR_HISTORY_POINTER" '{if (NR==ptr) printf "\033[33m%s\033[0m\n",$0; else print $0}' "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+ 1189  pdd
+ 1190  awk -v ptr="$AUTOMATE_LINUX_DIR_HISTORY_POINTER" '{if (NR==ptr) printf "\033[33m%s\033[0m\n",$0; else print $0}' "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+ 1191  print
+ 1192  awk -v ptr="$AUTOMATE_LINUX_DIR_HISTORY_POINTER" '{print (NR==ptr ? "\033[33m"$0"\033[0m" : $0)}' "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+ 1193  feh
+ 1194  ls /usr/share/icons/
+ 1195  ls ~/.icons/
+ 1196  find ~/ -name "system-shutdown*"
+ 1197  find ~/ -name "system-shutdown*" 2> /dev/null
+ 1198  find / -name "system-shutdown*" 2> /dev/null
+ 1199  cd ..
+ 1200  ch -u root
+ 1201  code /home/yaniv/coding/automateLinux/symlinks/restartCorsairKeyBoardLogiMouseService.sh
+ 1202  systemctl restart gdm
+ 1203  pdd
+ 1204  cd ..
+ 1205  pd
+ 1206  history
+ 1207  find . -name "system-shutdown.svg" | wc -l
+ 1208  find . -name "*.svg" | wc -l
+ 1209  find . -name "system-shutdown.svg" | wc -l
+ 1210  find . -name "system-shutdown.svg"
+ 1211  find . -name "*.svg" | sed -n '10p'
+ 1212  code ./ubuntu-mono-light/status/16/unity-gpm-battery-040.svg
+ 1213  find . -name "*.svg" | sed -n '100p'
+ 1214  code $(find . -name "*.svg" | sed -n '100p')
+ 1215  code $(find . -name "*.svg" | sed -n '1000p')
+ 1216  code $(find . -name "*.svg" | sed -n '10000p')
+ 1217  code $(find . -name "*.svg" | sed -n '10000p' | tee /dev/tty)
+ 1218  pdd
+ 1219  pd
+ 1220  tty
+ 1221  pd
+ 1222  git a
+ 1223  git reset
+ 1224  git a
+ 1225  git reset
+ 1226  git add ../../.gitignore 
+ 1227  git s
+ 1228  git m "added to gitignore"
+ 1229  git a
+ 1230  git rm --cached -r terminal/tests/output.txt
+ 1231  cd ..
+ 1232  cls
+ 1233  ls
+ 1234  cls
+ 1235  ./101.sh
+ 1236  history > 102.txt

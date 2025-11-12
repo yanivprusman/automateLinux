@@ -1,0 +1,6 @@
+------------------------------------------
+2025-11-12 17:23:43 Exit code: 127 Command: ASDF Line: 118 Function: main PWD: /home/yaniv/coding/automateLinux
+Error message: bash: ASDF: command not found
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+------------------------------------------

@@ -1,4 +1,3 @@
-touchDirectories
 myBashSourceFiles=(
     "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
     "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh"
@@ -13,6 +12,7 @@ for file in "${myBashSourceFiles[@]}"; do
         echo "No file found at $file"
     fi
 done
+touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E
 # "$AUTOMATE_LINUX_TRAP_GENERATOR_FILE"

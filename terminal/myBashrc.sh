@@ -1,3 +1,4 @@
+green='\e[32m' yellow='\e[33m' NC='\e[0m' 
 myBashSourceFiles=(
     "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
     "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh"

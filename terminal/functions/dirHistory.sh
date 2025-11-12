@@ -92,6 +92,7 @@ setDirHistoryPointer() {
     local pointerValue="$2"
     if [ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" ]; then
         touch "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+        AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
     fi
     if grep -q "^$ttyPath " "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"; then
         awk -v tty="$ttyPath" -v p="$pointerValue" \

@@ -82,9 +82,9 @@ catDir() {
     local dir="$1"
     if [ -z "$dir" ]; then dir="."; fi
     if [ -d "$dir" ]; then
-        for file in "$dir"/*; do
+        for file in "$dir"*; do
             if [ -f "$file" ]; then
-                echo "----- Contents of $file -----"
+                echo -e "${green}----- Contents of $file:${NC}"
                 cat "$file"
             fi
         done

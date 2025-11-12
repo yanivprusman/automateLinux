@@ -1,7 +1,14 @@
 #pd and pdd commands
 current_dir=$(pwd)
-existing_dir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
-if [ "$current_dir" != "$existing_dir" ]; then #in pd case this evaluates to false since pwd will return the same directory that's at the current history pointer
+if [ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
+   touch "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+   AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+fi
+pointedToDir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
+if [ -z "$pointedToDir" ]; then
+   AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+fi
+if [ "$current_dir" != "$pointedToDir" ]; then #in pd case this evaluates to false since pwd will return the same directory that's at the current history pointer
     insertDirAfterIndex $current_dir $AUTOMATE_LINUX_DIR_HISTORY_POINTER
     AUTOMATE_LINUX_DIR_HISTORY_POINTER=$((AUTOMATE_LINUX_DIR_HISTORY_POINTER + 1))
     setDirHistoryPointer "$AUTOMATE_LINUX_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"

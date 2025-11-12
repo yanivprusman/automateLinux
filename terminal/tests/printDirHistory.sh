@@ -10,6 +10,10 @@ for file in "${dirHistory_dev_pts[@]}"; do
     cat "$file"
     echo -e "${yellow}$AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR${NC}"
 done
-echo -e "${green}$(basename "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"):${NC}"
-cat "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+echo -e "${green}$"$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE":${NC}"
+if [[ -f "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" ]]; then
+    cat "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+# else
+#     echo "File not found: $AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+fi
 echo -e "${yellow}$AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR${NC}"

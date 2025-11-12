@@ -1,1 +1,36 @@
 ------------------------------------------
+2025-11-12 21:52:27 Exit code: 1 Command: return 1 Line: 63 Function: insertDirAfterIndex PWD: /home/yaniv
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /home/yaniv/coding/automateLinux/terminal/functions/dirHistory.sh
+  /home/yaniv/coding/automateLinux/terminal/promptCommand.sh
+------------------------------------------
+2025-11-12 21:52:27 Exit code: 1 Command: return 1 Line: 12 Function: main PWD: /home/yaniv
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /home/yaniv/coding/automateLinux/terminal/promptCommand.sh
+------------------------------------------
+2025-11-12 21:53:09 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding/automateLinux
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 21:53:09 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 10 Function: _filedir PWD: /home/yaniv/coding/automateLinux
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 21:53:10 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding/automateLinux
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-12 21:53:10 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 10 Function: _filedir PWD: /home/yaniv/coding/automateLinux
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
+------------------------------------------

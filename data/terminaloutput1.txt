@@ -1,4 +1,4 @@
-+ rm /home/yaniv/coding/automateLinux/data/dirHistory/dirHistory_dev_pts_3.sh /home/yaniv/coding/automateLinux/data/dirHistory/dirHistoryPointers.sh
++ rm /home/yaniv/coding/automateLinux/data/dirHistory/dirHistory_dev_pts_0.sh /home/yaniv/coding/automateLinux/data/dirHistory/dirHistory_dev_pts_1.sh /home/yaniv/coding/automateLinux/data/dirHistory/dirHistory_dev_pts_2.sh /home/yaniv/coding/automateLinux/data/dirHistory/dirHistory_dev_pts_3.sh /home/yaniv/coding/automateLinux/data/dirHistory/dirHistoryPointers.sh
 + cd /home/yaniv/
 + '[' /home/yaniv/ = ... ']'
 + builtin cd /home/yaniv/
@@ -11,9 +11,50 @@
 + cd ..
 + '[' .. = ... ']'
 + builtin cd ..
-+ /home/yaniv/coding/automateLinux/terminal/tests/printDirHistory.sh
-[32mdirHistoryPointers.sh:[0m
-cat: /home/yaniv/coding/automateLinux/data/dirHistory/dirHistoryPointers.sh: No such file or directory
++ echo -e '\e[33m------------------------------------------\e[0m'
 [33m------------------------------------------[0m
-+ echo ----
-----
++ echo -e '\e[32mdir history folder:\e[0m'
+[32mdir history folder:[0m
++ /home/yaniv/coding/automateLinux/terminal/tests/printDirHistory.sh
+[32m$/home/yaniv/coding/automateLinux/data/dirHistory/dirHistoryPointers.sh:[0m
+[33m------------------------------------------[0m
++ echo -e '\e[32mexecuting promptCommand.sh:\e[0m'
+[32mexecuting promptCommand.sh:[0m
++ . /home/yaniv/coding/automateLinux/terminal/promptCommand.sh
++++ pwd
+++ current_dir=/home/yaniv/coding/automateLinux
+++ '[' '!' -f /home/yaniv/coding/automateLinux/data/dirHistory/dirHistory_dev_pts_0.sh ']'
+++ touch /home/yaniv/coding/automateLinux/data/dirHistory/dirHistory_dev_pts_0.sh
+++ AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
++++ sed -n 1p /home/yaniv/coding/automateLinux/data/dirHistory/dirHistory_dev_pts_0.sh
+++ pointedToDir=
+++ '[' -z '' ']'
+++ AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+++ '[' /home/yaniv/coding/automateLinux '!=' '' ']'
+++ insertDirAfterIndex /home/yaniv/coding/automateLinux 1
+++ insertDir /home/yaniv/coding/automateLinux 1 a
+++ local dir=/home/yaniv/coding/automateLinux
+++ local index=1
+++ local sedICommand=a
+++ [[ -z /home/yaniv/coding/automateLinux ]]
+++ [[ -z 1 ]]
+++ '[' -s /home/yaniv/coding/automateLinux/data/dirHistory/dirHistory_dev_pts_0.sh ']'
+++ echo /home/yaniv/coding/automateLinux
+++ AUTOMATE_LINUX_DIR_HISTORY_POINTER=2
+++ setDirHistoryPointer _dev_pts_0 2
+++ local ttyPath=_dev_pts_0
+++ local pointerValue=2
+++ '[' '!' -f /home/yaniv/coding/automateLinux/data/dirHistory/dirHistoryPointers.sh ']'
+++ touch /home/yaniv/coding/automateLinux/data/dirHistory/dirHistoryPointers.sh
+++ AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+++ grep --color=auto -q '^_dev_pts_0 ' /home/yaniv/coding/automateLinux/data/dirHistory/dirHistoryPointers.sh
+++ echo '_dev_pts_0 pointer:2'
++ echo -e '\e[32mdir history folder after promptCommand.sh:\e[0m'
+[32mdir history folder after promptCommand.sh:[0m
++ /home/yaniv/coding/automateLinux/terminal/tests/printDirHistory.sh
+[32mdirHistory_dev_pts_0.sh:[0m
+/home/yaniv/coding/automateLinux
+[33m------------------------------------------[0m
+[32m$/home/yaniv/coding/automateLinux/data/dirHistory/dirHistoryPointers.sh:[0m
+_dev_pts_0 pointer:2
+[33m------------------------------------------[0m

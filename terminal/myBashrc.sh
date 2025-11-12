@@ -1,3 +1,4 @@
+touchDirectories
 myBashSourceFiles=(
     "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
     "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh"

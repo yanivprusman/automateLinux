@@ -9,7 +9,6 @@ resetPromptColor() {
     echo -en "\033[00m"
 }
 export -f resetPromptColor
-trap 'resetPromptColor' DEBUG
 
 printEmojis(){
     for code in $(seq 0x1F300 0x1FAFF); do
@@ -67,4 +66,30 @@ cd() {
 }
 export -f cd
 
+touchDirectories() {
+    local dir
+    local automateLinuxVariable
+    compggen -v | grep '^AUTOMATE_LINUX_' | grep '_DIR$' | while read -r automateLinuxVariable; do
+        dir="${!automateLinuxVariable}"
+        if [ ! -d "$dir" ]; then
+            mkdir -p "$dir"
+        fi
+    done
+}
+export -f touchDirectories
 
+catDir() {
+    local dir="$1"
+    if [ -z "$dir" ]; then dir="."; fi
+    if [ -d "$dir" ]; then
+        for file in "$dir"/*; do
+            if [ -f "$file" ]; then
+                echo "----- Contents of $file -----"
+                cat "$file"
+            fi
+        done
+    else
+        echo "$dir is not a directory."
+    fi
+}
+export -f catDir

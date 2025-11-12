@@ -1,16 +1,17 @@
-if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh" ]; then
-    . "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
-    else echo "No aliases file found at ${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
-fi
-if [ -f "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh" ]; then
-    . "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh"
-fi
-if [ -f "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh" ]; then
-    . "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"
-fi
-if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}exports.sh" ]; then
-    . "${AUTOMATE_LINUX_TERMINAL_DIR}exports.sh"
-fi
+myBashSourceFiles=(
+    "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
+    "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh"
+    "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"
+    "${AUTOMATE_LINUX_TERMINAL_DIR}exports.sh"
+    "${AUTOMATE_LINUX_TERMINAL_DIR}gSettings.sh"
+)
+for file in "${myBashSourceFiles[@]}"; do
+    if [ -f "$file" ]; then
+        . "$file"
+    else
+        echo "No file found at $file"
+    fi
+done
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E
 # "$AUTOMATE_LINUX_TRAP_GENERATOR_FILE"

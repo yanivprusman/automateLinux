@@ -105,3 +105,22 @@ heredoc() {
     fi
 }
 export -f heredoc
+
+showArrays() {
+    for array in $(compgen -A arrayvar); do
+        echo -e "${green}$array${nc}"
+        eval echo "\${${array}[@]}"
+        echo "----"
+    done
+}
+export -f showArrays
+
+showVars() {
+    for var in $(compgen -v); do
+        echo -e "${green}$var${NC} = ${!var}"
+    done
+        # ${!var}
+        # eval echo "\${${var}}"
+        # echo "----"
+}
+export -f showVars

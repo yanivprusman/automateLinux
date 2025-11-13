@@ -1,4 +1,6 @@
 green='\e[32m' yellow='\e[33m' NC='\e[0m' 
+# echo line no ${BASH_LINENO[0]} in file ${BASH_SOURCE[0]}
+echo $BASH_LINENO
 myBashSourceFiles=(
     "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
     "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh"
@@ -17,7 +19,7 @@ touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E
 # "$AUTOMATE_LINUX_TRAP_GENERATOR_FILE"
-initializeDirHistoryFileTty
+initializeDirHistory
 goToDirPointer
 PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '
 # runSingleton "$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"

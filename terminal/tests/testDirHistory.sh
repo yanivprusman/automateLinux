@@ -10,8 +10,8 @@ cd ..
 echo -e "${yellow}$AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR${NC}"
 echo -e "${green}dir history folder:${NC}"
 ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh 
-echo -e "${green}executing promptCommand.sh:${NC}"
-. /home/yaniv/coding/automateLinux/terminal/promptCommand.sh
-echo -e "${green}dir history folder after promptCommand.sh:${NC}"
-${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh 
+# echo -e "${green}executing promptCommand.sh:${NC}"
+# . /home/yaniv/coding/automateLinux/terminal/promptCommand.sh
+# echo -e "${green}dir history folder after promptCommand.sh:${NC}"
+# ${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh 
 

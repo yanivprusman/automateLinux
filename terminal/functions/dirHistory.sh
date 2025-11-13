@@ -1,63 +1,99 @@
-resetDirHistory() {
+# when ! -v AUTOMATE_LINUX_SUBSEQUENT_SOURCE 
+# promptCommand
+# pd
+# pdd
+
+truncatePointersFile() { 
+    > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" 
+}
+
+resetWithDefaultDir() {
+    echo "$AUTOMATE_LINUX_DIR_HISTORY_DEFAULT_DIR">"$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"
+}
+
+
+getEscapedTty() {
+    echo $(basename "${1#${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}}" .sh)
+}
+export -f getEscapedTty
+
+testIfProper() {
+    local ttyFile totalLines pointer
+    ttyFile="$1"
+    tty=$(getEscapedTty "$ttyFile")
+    if [ -f "$ttyFile" ]; then
+        totalLines=$(wc -l < "$ttyFile" | tr -d ' ')
+        pointer=$(getDirHistoryPointer "$tty")
+        if ! [[ $pointer =~ ^[0-9]+$ ]]; then
+            return 1
+        else
+            if [ "$pointer" -lt 1 ] || [ "$pointer" -gt "$totalLines" ]; then
+                return 1
+            else
+                return 0
+            fi
+        fi
+    else
+        return 1
+    fi
+}
+
+resetDirHistoryToBeginningState() {
     rm "${AUTOMATE_LINUX_DATA_DIR}dirHistory/"* 2>/dev/null
+    resetWithDefaultDir
+    AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+    setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
 }
 
 initializeDirHistory() { 
-    local lastChanged
+    # set -x
+    local lastChanged tty pointer totalLines
+    if [[ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" ]]; then
+        resetDirHistoryToBeginningState
+        return
+    fi
     lastChanged=$(ls -1t "${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}"* 2>/dev/null | grep -Fxv "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" | head -n 1)
-    if [[ -f "$lastChanged" ]]; then
-        if [ "$lastChanged" != "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
-            cp "$lastChanged" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-            # lastChangedTty=${${lastChanged#${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}}%.*}
-            lastChangedTty=$(basename "${lastChanged#${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}}" .*)
-            local savedPointer=$(getDirHistoryPointer "$lastChangedTty")
-            if [[ $savedPointer =~ pointer:([0-9]+) ]]; then
-                AUTOMATE_LINUX_DIR_HISTORY_POINTER="${BASH_REMATCH[1]}"
-            else
-                AUTOMATE_LINUX_DIR_HISTORY_POINTER=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
-            fi
-            if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
-                AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
-            fi
-            local totalLines=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
-            if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -gt "$totalLines" ]; then
-                AUTOMATE_LINUX_DIR_HISTORY_POINTER=$totalLines
-            fi
+    if [[ ! -f "$lastChanged" ]]; then
+        resetDirHistoryToBeginningState
+        return
+    else
+        if [[ "$lastChanged" == "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE" ]]; then
+            AUTOMATE_LINUX_DIR_HISTORY_POINTER=$(getDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY")
         else
-            # lastChanged="$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-            AUTOMATE_LINUX_DIR_HISTORY_POINTER=
+            tty=$(getEscapedTty "$lastChanged")
+            cp "$lastChanged" "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"
+            AUTOMATE_LINUX_DIR_HISTORY_POINTER=$(getDirHistoryPointer "$tty")
+            setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
         fi
-    else 
-        AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
-
-        # > "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-        # > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
-        # lastChanged="$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
-    fi 
-    setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
+    fi
+    if ! testIfProper "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"; then
+        resetDirHistoryToBeginningState
+    fi
+    set +x
 }
 export -f initializeDirHistory
 
-goToDirPointer(){
+cdToPointer(){
+    local lastDir
     # echo "Going to dir pointer $AUTOMATE_LINUX_DIR_HISTORY_POINTER"
-    if [ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ] && [ -n "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" ]; then
-        lastDir=$(awk "NR==${AUTOMATE_LINUX_DIR_HISTORY_POINTER}" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
+    if [ -f "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE" ] && [ -n "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" ]; then
+        lastDir=$(awk "NR==${AUTOMATE_LINUX_DIR_HISTORY_POINTER}" "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE")
         if [ -d "$lastDir" ]; then
             cd "$lastDir" >/dev/null 2>&1
         fi
     fi
 }
-export -f goToDirPointer
+export -f cdToPointer
 
 insertDir(){
     local dir="$1" index="$2" sedICommand="$3"
     if [[ -z "$dir" || -z "$index" ]]; then
         return 1
     fi
-    if [ -s "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
-        sed -i "${index}$sedICommand$dir" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+    if [ -s "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE" ]; then
+        sed -i "${index}$sedICommand$dir" "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"
     else
-        echo "$dir" > "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY"
+        echo "$dir" > "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"
     fi
 }
 export -f insertDir
@@ -78,19 +114,19 @@ pd() {
         AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
     fi  
     setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
-    goToDirPointer     
+    cdToPointer     
 }
 export -f pd
 
 pdd() {
-    if [ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
+    if [ -f "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE" ]; then
         AUTOMATE_LINUX_DIR_HISTORY_POINTER=$((AUTOMATE_LINUX_DIR_HISTORY_POINTER + 1))
-        totalLines=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" | tr -d ' ')
+        totalLines=$(wc -l < "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE" | tr -d ' ')
         if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -ge "$totalLines" ]; then
             AUTOMATE_LINUX_DIR_HISTORY_POINTER=$totalLines
         fi
         setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
-        goToDirPointer
+        cdToPointer
     fi
 }
 export -f pdd

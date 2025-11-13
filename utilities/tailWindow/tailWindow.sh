@@ -4,7 +4,7 @@ cleanup() {
     exit 0
 }
 
-trap cleanup QUIT
+# trap cleanup QUIT
 
 # Function to display usage information
 show_help() {

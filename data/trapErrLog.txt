@@ -1,19 +1,13 @@
 ------------------------------------------
-2025-11-13 10:38:58 Exit code: 1 Command: basename "${lastChanged#${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}}" .* Line: 12 Function: initializeDirHistory PWD: /home/yaniv/coding/automateLinux
-Error message: basename: extra operand ‘.gitignore’
-Try 'basename --help' for more information.
+2025-11-13 22:58:31 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding
 Stack:
   /home/yaniv/coding/automateLinux/terminal/trap/err.sh
-  /home/yaniv/coding/automateLinux/terminal/functions/dirHistory.sh
-  /home/yaniv/coding/automateLinux/terminal/myBashrc.sh
-  /home/yaniv/.bashrc
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
 ------------------------------------------
-2025-11-13 10:38:58 Exit code: 1 Command: lastChangedTty=$(basename "${lastChanged#${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}}" .*) Line: 12 Function: initializeDirHistory PWD: /home/yaniv/coding/automateLinux
-Error message: basename: extra operand ‘.gitignore’
-Try 'basename --help' for more information.
+2025-11-13 22:58:31 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 10 Function: _filedir PWD: /home/yaniv/coding
 Stack:
   /home/yaniv/coding/automateLinux/terminal/trap/err.sh
-  /home/yaniv/coding/automateLinux/terminal/functions/dirHistory.sh
-  /home/yaniv/coding/automateLinux/terminal/myBashrc.sh
-  /home/yaniv/.bashrc
+  /usr/share/bash-completion/bash_completion
+  /usr/share/bash-completion/bash_completion
 ------------------------------------------

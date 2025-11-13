@@ -17,13 +17,11 @@ touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E # "$AUTOMATE_LINUX_TRAP_GENERATOR_FILE"
 if [[ ! -v "$AUTOMATE_LINUX_SUBSEQUENT_SOURCE" ]]; then :
-    # copyLastChangedDirHistoryIfExists
-
+    initializeDirHistory
 fi
 if [[ -v "$AUTOMATE_LINUX_SUBSEQUENT_SOURCE" ]]; then
     AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
 fi
-initializeDirHistory
 goToDirPointer
 PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '
 # runSingleton "$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"

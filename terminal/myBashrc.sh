@@ -1,7 +1,5 @@
-green='\e[32m' yellow='\e[33m' NC='\e[0m' 
-# echo line no ${BASH_LINENO[0]} in file ${BASH_SOURCE[0]}
-echo $BASH_LINENO
 myBashSourceFiles=(
+    "${AUTOMATE_LINUX_TERMINAL_DIR}colors.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
     "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh"
     "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"
@@ -17,18 +15,17 @@ for file in "${myBashSourceFiles[@]}"; do
 done
 touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
-set -E
-# "$AUTOMATE_LINUX_TRAP_GENERATOR_FILE"
+set -E # "$AUTOMATE_LINUX_TRAP_GENERATOR_FILE"
+if [[ ! -v "$AUTOMATE_LINUX_SUBSEQUENT_SOURCE" ]]; then :
+    # copyLastChangedDirHistoryIfExists
+
+fi
+if [[ -v "$AUTOMATE_LINUX_SUBSEQUENT_SOURCE" ]]; then
+    AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
+fi
 initializeDirHistory
 goToDirPointer
 PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '
 # runSingleton "$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
+AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
 PROMPT_COMMAND=". $AUTOMATE_LINUX_PROMPT_COMMAND_SCRIPT_FILE"
-# if [ $(wc -l < "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE") -gt 1 ]; then
-#     cat $AUTOMATE_LINUX_TRAP_ERR_LOG_FILE
-# fi
-# if [ $(wc -l < "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE_BACKGROUND") -gt 1 ]; then
-#     sleep 1
-#     cat $AUTOMATE_LINUX_TRAP_ERR_LOG_FILE_BACKGROUND
-# fi
-# CDPATH=/home/yaniv/coding/automateLinux/

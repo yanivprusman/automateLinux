@@ -40,8 +40,8 @@ export -f initializeDirHistory
 
 goToDirPointer(){
     # echo "Going to dir pointer $AUTOMATE_LINUX_DIR_HISTORY_POINTER"
-    if [ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ]; then
-        lastDir=$(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
+    if [ -f "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY" ] && [ -n "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" ]; then
+        lastDir=$(awk "NR==${AUTOMATE_LINUX_DIR_HISTORY_POINTER}" "$AUTOMATE_LINUX_DIR_HISTORY_FILE_TTY")
         if [ -d "$lastDir" ]; then
             cd "$lastDir" >/dev/null 2>&1
         fi

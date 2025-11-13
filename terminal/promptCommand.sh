@@ -24,5 +24,9 @@ else
 fi 
 
 #ps1
+tty=$(tty | sed 's/\/dev\/pts\///')
 
+ 
+# PS1='\[\e]0;$tty \w\a\]${_red}\w\[\033[0m\]\'
+PS1='\[\e]0;\w\a\]'"${_yellow}\w${_NC}\$ "
 

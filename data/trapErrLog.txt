@@ -1,24 +1,19 @@
 ------------------------------------------
-2025-11-13 02:56:42 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding
-Stack:
-  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
-  /usr/share/bash-completion/bash_completion
-  /usr/share/bash-completion/bash_completion
-------------------------------------------
-2025-11-13 02:56:42 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 10 Function: _filedir PWD: /home/yaniv/coding
-Stack:
-  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
-  /usr/share/bash-completion/bash_completion
-  /usr/share/bash-completion/bash_completion
-------------------------------------------
-2025-11-13 02:56:44 Exit code: 1 Command: return 1 Line: 71 Function: insertDirAfterIndex PWD: /home/yaniv/coding/automateLinux
+2025-11-13 10:38:58 Exit code: 1 Command: basename "${lastChanged#${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}}" .* Line: 12 Function: initializeDirHistory PWD: /home/yaniv/coding/automateLinux
+Error message: basename: extra operand ‘.gitignore’
+Try 'basename --help' for more information.
 Stack:
   /home/yaniv/coding/automateLinux/terminal/trap/err.sh
   /home/yaniv/coding/automateLinux/terminal/functions/dirHistory.sh
-  /home/yaniv/coding/automateLinux/terminal/promptCommand.sh
+  /home/yaniv/coding/automateLinux/terminal/myBashrc.sh
+  /home/yaniv/.bashrc
 ------------------------------------------
-2025-11-13 02:56:44 Exit code: 1 Command: return 1 Line: 15 Function: main PWD: /home/yaniv/coding/automateLinux
+2025-11-13 10:38:58 Exit code: 1 Command: lastChangedTty=$(basename "${lastChanged#${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}}" .*) Line: 12 Function: initializeDirHistory PWD: /home/yaniv/coding/automateLinux
+Error message: basename: extra operand ‘.gitignore’
+Try 'basename --help' for more information.
 Stack:
   /home/yaniv/coding/automateLinux/terminal/trap/err.sh
-  /home/yaniv/coding/automateLinux/terminal/promptCommand.sh
+  /home/yaniv/coding/automateLinux/terminal/functions/dirHistory.sh
+  /home/yaniv/coding/automateLinux/terminal/myBashrc.sh
+  /home/yaniv/.bashrc
 ------------------------------------------

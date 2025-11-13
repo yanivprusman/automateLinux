@@ -176,6 +176,8 @@ updateDirHistory() {
             insertDirAfterIndex "${PWD}/" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
             ((AUTOMATE_LINUX_DIR_HISTORY_POINTER++))
             setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
+        else
+         touch "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"
         fi
     fi
 }

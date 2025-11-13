@@ -109,7 +109,7 @@ insertDirAfterIndex(){
 export -f insertDirAfterIndex
 
 pd() {
-    AUTOMATE_LINUX_DIR_HISTORY_POINTER=$((AUTOMATE_LINUX_DIR_HISTORY_POINTER - 1))
+    ((AUTOMATE_LINUX_DIR_HISTORY_POINTER--)) 
     if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
         AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
     fi  
@@ -151,3 +151,20 @@ getDirHistoryPointer() {
 }
 export -f getDirHistoryPointer
 
+getDirFromHistory() {
+    $(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE")
+}
+export -f getDirFromHistory
+
+resetDirHistoryToBeginningStateIfError() {
+    if [[ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE" || ! -f "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" ]]; then
+        resetDirHistoryToBeginningState
+        return 1
+    fi
+    if ! testIfProper "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"; then
+        resetDirHistoryToBeginningState
+        return 1
+    fi
+    return 0
+}
+export -f resetDirHistoryToBeginningStateIfError

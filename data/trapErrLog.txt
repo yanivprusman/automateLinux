@@ -1,13 +1,23 @@
 ------------------------------------------
-2025-11-13 22:58:31 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding
+2025-11-13 23:10:39 Exit code: 126 Command: $PWD Line: 2 Function: main PWD: /home/yaniv/coding
+Error message: bash: /home/yaniv/coding: Is a directory
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
+------------------------------------------
+2025-11-13 23:36:53 Exit code: 1 Command: shopt -po noglob Line: 1 Function: _filedir PWD: /home/yaniv/coding
 Stack:
   /home/yaniv/coding/automateLinux/terminal/trap/err.sh
   /usr/share/bash-completion/bash_completion
   /usr/share/bash-completion/bash_completion
 ------------------------------------------
-2025-11-13 22:58:31 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 10 Function: _filedir PWD: /home/yaniv/coding
+2025-11-13 23:36:53 Exit code: 1 Command: reset=$(shopt -po noglob) Line: 10 Function: _filedir PWD: /home/yaniv/coding
 Stack:
   /home/yaniv/coding/automateLinux/terminal/trap/err.sh
   /usr/share/bash-completion/bash_completion
   /usr/share/bash-completion/bash_completion
+------------------------------------------
+2025-11-13 23:36:56 Exit code: 127 Command: got s Line: 4 Function: main PWD: /home/yaniv/coding/automateLinux
+Error message: bash: got: command not found
+Stack:
+  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
 ------------------------------------------

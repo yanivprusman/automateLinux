@@ -1,8 +1,3 @@
-# when ! -v AUTOMATE_LINUX_SUBSEQUENT_SOURCE 
-# promptCommand
-# pd
-# pdd
-
 truncatePointersFile() { 
     > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" 
 }

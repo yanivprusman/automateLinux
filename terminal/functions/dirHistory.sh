@@ -152,7 +152,7 @@ getDirHistoryPointer() {
 export -f getDirHistoryPointer
 
 getDirFromHistory() {
-    $(sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE")
+    sed -n "${AUTOMATE_LINUX_DIR_HISTORY_POINTER}p" "$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"
 }
 export -f getDirFromHistory
 
@@ -168,3 +168,15 @@ resetDirHistoryToBeginningStateIfError() {
     return 0
 }
 export -f resetDirHistoryToBeginningStateIfError
+
+updateDirHistory() {
+    if [[ resetDirHistoryToBeginningStateIfError ]] ; then
+        dir=$(getDirFromHistory)
+        if [[ "${PWD}/" != "$dir" ]]; then
+            insertDirAfterIndex "${PWD}/" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
+            ((AUTOMATE_LINUX_DIR_HISTORY_POINTER++))
+            setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
+        fi
+    fi
+}
+export -f updateDirHistory

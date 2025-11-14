@@ -1,12 +1,12 @@
 unset file 
 unset myBashSourceFiles
-b=()
+varsFromMyBashrc=()
 for var in $(compgen -v); do
-    if [[ ! " ${varsIAdded[@]} " =~ " $var " ]]; then
-        b+=("$var")
+    if [[ ! " ${varsUntilMyBashrc[@]} " =~ " $var " ]]; then
+        varsFromMyBashrc+=("$var")
     fi
 done
-remove=(varsIAdded b var )
-b=($(printf "%s\n" "${b[@]}" | grep -vxF -f <(printf "%s\n" "${remove[@]}")))
-# echo ${b[@]} | tr " " "\n" | sort
-unset var varsIAdded b remove
+remove=(varsUntilMyBashrc varsFromMyBashrc var )
+varsFromMyBashrc=($(printf "%s\n" "${varsFromMyBashrc[@]}" | grep -vxF -f <(printf "%s\n" "${remove[@]}")))
+echo ${varsFromMyBashrc[@]} | tr " " "\n" | sort
+unset var varsUntilMyBashrc varsFromMyBashrc remove

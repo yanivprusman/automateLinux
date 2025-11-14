@@ -1,4 +1,4 @@
-readarray -t varsIAdded <<< "$(compgen -v)"
+readarray -t varsUntilMyBashrc <<< "$(compgen -v)"
 myBashSourceFiles=(
     "${AUTOMATE_LINUX_TERMINAL_DIR}colors.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"

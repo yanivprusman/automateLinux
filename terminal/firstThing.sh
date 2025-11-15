@@ -1,9 +1,9 @@
-deleteFunctions() {
-    for f in $(declare -F | awk '{print $3}'); do
-        unset -f "$f"
-    done
-}
-deleteFunctions
+# deleteFunctions() {
+#     for f in $(declare -F | awk '{print $3}'); do
+#         unset -f "$f"
+#     done
+# }
+# deleteFunctions
 export AUTOMATE_LINUX_PATH_END=/ #or ''?
 export AUTOMATE_LINUX_DIR="/home/yaniv/coding/automateLinux$AUTOMATE_LINUX_PATH_END"
 export AUTOMATE_LINUX_TERMINAL_DIR="${AUTOMATE_LINUX_DIR}terminal$AUTOMATE_LINUX_PATH_END"

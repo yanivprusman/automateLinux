@@ -124,3 +124,16 @@ showVars() {
         # echo "----"
 }
 export -f showVars
+
+printArray() {
+    local arr_name=$1
+    local keys
+    eval "keys=(\"\${!${arr_name}[@]}\")"
+    for key in "${keys[@]}"; do
+        eval "echo \"$key='\${${arr_name}[${key}]}'\""
+    done
+}
+export -f printArray
+
+
+#  do not delete empty rows above this line

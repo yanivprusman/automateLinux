@@ -6,6 +6,7 @@ myBashSourceFiles=(
     "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}exports.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}gSettings.sh"
+    "${AUTOMATE_LINUX_TERMINAL_DIR}theRealPath.sh"
 )
 for file in "${myBashSourceFiles[@]}"; do
     if [ -f "$file" ]; then
@@ -29,3 +30,4 @@ PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '
 AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
 PROMPT_COMMAND=". $AUTOMATE_LINUX_PROMPT_COMMAND_SCRIPT_FILE"
 . "${AUTOMATE_LINUX_TERMINAL_DIR}unset.sh"
+

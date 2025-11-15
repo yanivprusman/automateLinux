@@ -2,16 +2,48 @@ theRealPath() {
     local botomMostElement="${FUNCNAME[-1]}" 
     if [[ "$botomMostElement" == "main" ]]; then
         # subprocessed
-        realpath ${BASH_SOURCE[1]}
+        if [[ -z "$1" ]]; then
+            printf "%s" "$(realpath "${BASH_SOURCE[1]}")"
+        else
+            printf "%s" "$(realpath "${BASH_SOURCE[1]}$1")"
+        fi
     elif [[ "$botomMostElement" == "source" ]]; then
         # sourced
-        realpath ${BASH_SOURCE[1]}
+        if [[ -z "$1" ]]; then
+            printf "%s" "$(realpath "${BASH_SOURCE[1]}")"
+        else
+            printf "%s" "$(realpath "${BASH_SOURCE[1]}$1")"
+        fi
     else
         # called from terminal
         if [[ $1 == /* ]]; then
-            realpath "$1"
+            if [[ $1 == "/" ]]; then
+                printf "/\n"
+                return 0
+            fi
+            p=$(realpath "$1" 2>/dev/null)
+            if [[ -f "$p" ]]; then
+                printf "%s\n" "$p"
+                return 0
+            elif [[ -d "$p" ]]; then
+                printf "%s\n" "$p/"
+                return 0
+            else
+                printf "%s\n" "$1"
+                return 1
+            fi
         else
-            realpath "${PWD}/$1"
+            p=$(realpath "${PWD}/$1" 2>/dev/null)
+            if [[ -f $p ]]; then
+                printf "%s\n" "$p"
+                return 0
+            elif [[ -d $p ]]; then
+                printf "%s/\n" "$p"
+                return 0
+            else
+                printf "%s\n" "${PWD}/$1"
+                return 1
+            fi
         fi
     fi
 }

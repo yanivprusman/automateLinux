@@ -1,11 +1,52 @@
-# deleteFunctions() {
-#     for f in $(declare -F | awk '{print $3}'); do
-#         unset -f "$f"
+# theRealPath() {
+#     local botomMostElement="${FUNCNAME[-1]}" 
+#     if [[ "$botomMostElement" == "main" ]]; then
+#         # subprocessed
+#         realpath "${BASH_SOURCE[1]}
+#     elif [[ "$botomMostElement" == "source" ]]; then
+#         # sourced
+#         realpath "${BASH_SOURCE[1]}
+#     else
+#         # called from terminal
+#         if [[ $1 == /* ]]; then
+#             realpath "$1"
+#         else
+#             realpath "${PWD}/$1"
+#         fi
+#     fi
+# }
+# export -f theRealPath
+
+
+# printTheRealPath() {
+#     local botomMostElement="${FUNCNAME[-1]}" 
+#     if [[ "$botomMostElement" == "main" ]]; then
+#         echo "subprocessed"
+#     elif [[ "$botomMostElement" == "source" ]]; then
+#         echo "sourced"
+#     else
+#         echo "called from terminal"
+#     fi
+#     echo -e "${GREEN}FUNCNAME array:${NC}"
+#     for i in "${!FUNCNAME[@]}"; do
+#         printf "\t%d: %s\n" "$i" "${FUNCNAME[i]}"
+#     done
+#     echo -e "${GREEN}BASH_SOURCE array:${NC}"
+#     for i in "${!BASH_SOURCE[@]}"; do
+#         printf "\t%d: %s\n" "$i" "${BASH_SOURCE[i]}"
+#     done
+#     echo -e "${GREEN}BASH_LINENO array:${NC}"
+#     for i in "${!BASH_LINENO[@]}"; do
+#         printf "\t%d: %s\n" "$i" "${BASH_LINENO[i]}"
 #     done
 # }
-# deleteFunctions
+# export -f printTheRealPath
+
 export AUTOMATE_LINUX_PATH_END=/ #or ''?
+# export AUTOMATE_LINUX_DIR="/home/yaniv/coding/automateLinux$AUTOMATE_LINUX_PATH_END"
 export AUTOMATE_LINUX_DIR="/home/yaniv/coding/automateLinux$AUTOMATE_LINUX_PATH_END"
+# echo "AUTOMATE_LINUX_DIR is set to: $AUTOMATE_LINUX_DIR"
+# theRealPath ../
 export AUTOMATE_LINUX_TERMINAL_DIR="${AUTOMATE_LINUX_DIR}terminal$AUTOMATE_LINUX_PATH_END"
 export AUTOMATE_LINUX_ENV_FILE="${AUTOMATE_LINUX_TERMINAL_DIR}env.sh"
 export AUTOMATE_LINUX_SYMLINK_DIR="${AUTOMATE_LINUX_DIR}symlinks"

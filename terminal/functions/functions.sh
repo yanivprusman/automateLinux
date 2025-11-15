@@ -135,22 +135,11 @@ printArray() {
 }
 export -f printArray
 
-theRealPath() {
-    local botomMostElement="${FUNCNAME[-1]}" 
-    if [[ "$botomMostElement" == "main" ]]; then
-        # subprocessed
-        realpath ${BASH_SOURCE[1]}
-    elif [[ "$botomMostElement" == "source" ]]; then
-        # sourced
-        realpath ${BASH_SOURCE[1]}
-    else
-        # called from terminal
-        if [[ $1 == /* ]]; then
-            realpath "$1"
-        else
-            realpath "${PWD}/$1"
-        fi
-    fi
+
+deleteFunctions() {
+    for f in $(declare -F | awk '{print $3}'); do
+        unset -f "$f"
+    done
 }
-export -f theRealPath
+export -f deleteFunctions
 #  do not delete empty rows above this line

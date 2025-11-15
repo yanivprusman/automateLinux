@@ -7,5 +7,5 @@ terminal/tests/output.txt
 terminal/output.txt
 terminal/tests/terminaloutput*
 *.hereDoc
-
+data/*
 

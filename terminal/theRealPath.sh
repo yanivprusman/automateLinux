@@ -1,47 +1,59 @@
-theRealPath() {
+CALL_TYPE_SUBPROCESSED="subprocessed"
+CALL_TYPE_SOURCED="sourced"
+CALL_TYPE_TERMINAL="terminal"
+getCallType () {
     local botomMostElement="${FUNCNAME[-1]}" 
     if [[ "$botomMostElement" == "main" ]]; then
-        # subprocessed
-        if [[ -z "$1" ]]; then
-            printf "%s" "$(realpath "${BASH_SOURCE[1]}")"
-        else
-            printf "%s" "$(realpath "${BASH_SOURCE[1]}$1")"
-        fi
+        echo "$CALL_TYPE_SUBPROCESSED"
     elif [[ "$botomMostElement" == "source" ]]; then
-        # sourced
-        if [[ -z "$1" ]]; then
-            printf "%s" "$(realpath "${BASH_SOURCE[1]}")"
-        else
-            printf "%s" "$(realpath "${BASH_SOURCE[1]}$1")"
-        fi
+        echo "$CALL_TYPE_SOURCED"
     else
-        # called from terminal
-        if [[ $1 == /* ]]; then
-            if [[ $1 == "/" ]]; then
-                printf "/\n"
-                return 0
-            fi
-            p=$(realpath "$1" 2>/dev/null)
-            if [[ -f "$p" ]]; then
-                printf "%s\n" "$p"
-                return 0
-            elif [[ -d "$p" ]]; then
-                printf "%s\n" "$p/"
-                return 0
-            else
-                printf "%s\n" "$1"
-                return 1
-            fi
+        echo "$CALL_TYPE_TERMINAL"
+    fi
+}
+export -f getCallType
+
+printFileOrDirRealPath() {
+    local path="$1"
+    if [[ -f "$path" ]]; then
+        printf "%s\n" "$path"
+        return 0
+    elif [[ -d "$path" ]]; then
+        printf "%s/\n" "$path"
+        return 0
+    fi
+    return 1
+}
+export -f printFileOrDirRealPath
+
+theRealPath() {
+    local callType="$(getCallType)"
+    # echo "Call type: $callType" >&2
+    local callingScript target
+    if [[ $1 == "/" ]]; then
+        printf "/\n"
+        return 0
+    fi
+    if [[ $1 == /* ]]; then
+        target="$(realpath "$1" 2>/dev/null)"
+        if ! printFileOrDirRealPath "$target"; then
+            printf "%s\n" "$1"
+            return 1
+        fi
+    elif [[ "$callType" ==  "$CALL_TYPE_TERMINAL" ]]; then
+        target="$(realpath "${PWD}/$1" 2>/dev/null)"
+        if ! printFileOrDirRealPath "$target"; then
+            printf "%s\n" "${PWD}/$1"
+            return 1
+        fi
+    elif [[ "$callType" == "$CALL_TYPE_SUBPROCESSED" ]] || [[ "$callType" == "$CALL_TYPE_SOURCED" ]]; then
+        callingScript="$(realpath "${BASH_SOURCE[1]}$1" 2>/dev/null)"
+        if [[ -z "$1" ]]; then
+            printf "%s\n" "$callingScript"
         else
-            p=$(realpath "${PWD}/$1" 2>/dev/null)
-            if [[ -f $p ]]; then
-                printf "%s\n" "$p"
-                return 0
-            elif [[ -d $p ]]; then
-                printf "%s/\n" "$p"
-                return 0
-            else
-                printf "%s\n" "${PWD}/$1"
+            target="$(realpath "$(dirname "$callingScript")/$1")"
+            if ! printFileOrDirRealPath "$target"; then
+                printf "%s\n" "$(dirname "$callingScript")/$1"
                 return 1
             fi
         fi
@@ -49,34 +61,34 @@ theRealPath() {
 }
 export -f theRealPath
 
-printTheRealPath() {
-    local botomMostElement="${FUNCNAME[-1]}" 
-    if [[ "$botomMostElement" == "main" ]]; then
-        echo "subprocessed"
-    elif [[ "$botomMostElement" == "source" ]]; then
-        echo "sourced"
-    else
-        echo "called from terminal"
-    fi
-    echo -e "${GREEN}FUNCNAME array:${NC}"
-    for i in "${!FUNCNAME[@]}"; do
-        printf "\t%d: %s\n" "$i" "${FUNCNAME[i]}"
-    done
-    echo -e "${GREEN}BASH_SOURCE array:${NC}"
-    for i in "${!BASH_SOURCE[@]}"; do
-        printf "\t%d: %s\n" "$i" "${BASH_SOURCE[i]}"
-    done
-    echo -e "${GREEN}BASH_LINENO array:${NC}"
-    for i in "${!BASH_LINENO[@]}"; do
-        printf "\t%d: %s\n" "$i" "${BASH_LINENO[i]}"
-    done
-}
-export -f printTheRealPath
+# printTheRealPath() {
+#     local botomMostElement="${FUNCNAME[-1]}" 
+#     if [[ "$botomMostElement" == "main" ]]; then
+#         echo "subprocessed"
+#     elif [[ "$botomMostElement" == "source" ]]; then
+#         echo "sourced"
+#     else
+#         echo "called from terminal"
+#     fi
+#     echo -e "${GREEN}FUNCNAME array:${NC}"
+#     for i in "${!FUNCNAME[@]}"; do
+#         printf "\t%d: %s\n" "$i" "${FUNCNAME[i]}"
+#     done
+#     echo -e "${GREEN}BASH_SOURCE array:${NC}"
+#     for i in "${!BASH_SOURCE[@]}"; do
+#         printf "\t%d: %s\n" "$i" "${BASH_SOURCE[i]}"
+#     done
+#     echo -e "${GREEN}BASH_LINENO array:${NC}"
+#     for i in "${!BASH_LINENO[@]}"; do
+#         printf "\t%d: %s\n" "$i" "${BASH_LINENO[i]}"
+#     done
+# }
+# export -f printTheRealPath
 
-sudoTheRealPath() {
-:
-}
-export -f sudoTheRealPath
+# sudoTheRealPath() {
+# :
+# }
+# export -f sudoTheRealPath
 
 # FUNCNAME
 #         An  array  variable containing the names of all shell functions currently in the execution call stack.  The element with index 0

@@ -1,5 +1,0 @@
-------------------------------------------
-2025-11-15 18:42:05 Exit code: 1 Command: return 1 Line: 19 Function: main PWD: /home/yaniv/coding/automateLinux
-Stack:
-  /home/yaniv/coding/automateLinux/terminal/trap/err.sh
-------------------------------------------

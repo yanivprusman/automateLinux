@@ -1,16 +1,31 @@
 theRealPath() {
     local botomMostElement="${FUNCNAME[-1]}" 
     if [[ "$botomMostElement" == "main" ]]; then
+        # subprocessed
+        realpath ${BASH_SOURCE[1]}
+    elif [[ "$botomMostElement" == "source" ]]; then
+        # sourced
+        realpath ${BASH_SOURCE[1]}
+    else
+        # called from terminal
+        if [[ $1 == /* ]]; then
+            realpath "$1"
+        else
+            realpath "${PWD}/$1"
+        fi
+    fi
+}
+export -f theRealPath
+
+printTheRealPath() {
+    local botomMostElement="${FUNCNAME[-1]}" 
+    if [[ "$botomMostElement" == "main" ]]; then
         echo "subprocessed"
     elif [[ "$botomMostElement" == "source" ]]; then
         echo "sourced"
     else
         echo "called from terminal"
     fi
-}
-export -f theRealPath
-
-printTheRealPath() {
     echo -e "${GREEN}FUNCNAME array:${NC}"
     for i in "${!FUNCNAME[@]}"; do
         printf "\t%d: %s\n" "$i" "${FUNCNAME[i]}"

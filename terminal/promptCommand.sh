@@ -1,3 +1,4 @@
+# set +x
 updateDirHistory
 
 #ps1

@@ -1,15 +1,28 @@
-CALL_TYPE_SUBPROCESSED="subprocessed"
-CALL_TYPE_SOURCED="sourced"
-CALL_TYPE_TERMINAL="terminal"
-getCallType () {
-    local botomMostElement="${FUNCNAME[-1]}" 
-    if [[ "$botomMostElement" == "main" ]]; then
-        echo "$CALL_TYPE_SUBPROCESSED"
-    elif [[ "$botomMostElement" == "source" ]]; then
-        echo "$CALL_TYPE_SOURCED"
+#!/bin/bash
+# added shebang so when run with sudo and uses different shell it knows to use bash
+export CALL_TYPE_SUBPROCESSED="subprocessed"
+export CALL_TYPE_SOURCED="sourced"
+export CALL_TYPE_TERMINAL="terminal"
+# getCallType () {
+#     local botomMostElement="${FUNCNAME[-1]}" 
+#     if [[ "$botomMostElement" == "main" ]]; then
+#         echo "$CALL_TYPE_SUBPROCESSED"
+#     elif [[ "$botomMostElement" == "source" ]]; then
+#         echo "$CALL_TYPE_SOURCED"
+#     else
+#         echo "$CALL_TYPE_TERMINAL"
+#     fi
+# }
+getCallType() {
+    local bottom="${FUNCNAME[-1]}"
+    if [[ "$bottom" == "main" ]]; then
+        printf "%s\n" "$CALL_TYPE_SUBPROCESSED"
+    elif [[ "$bottom" == "source" ]]; then
+        printf "%s\n" "$CALL_TYPE_SOURCED"
     else
-        echo "$CALL_TYPE_TERMINAL"
+        printf "%s\n" "$CALL_TYPE_TERMINAL"
     fi
+    # printf "%s" "getCallType called"
 }
 export -f getCallType
 
@@ -17,19 +30,27 @@ printFileOrDirRealPath() {
     local path="$1"
     if [[ -f "$path" ]]; then
         printf "%s\n" "$path"
+        # echo "printFileOrDirRealPath1"
         return 0
     elif [[ -d "$path" ]]; then
         printf "%s/\n" "$path"
+        # echo "printFileOrDirRealPath2"
         return 0
     fi
+    # echo "printFileOrDirRealPath3"
     return 1
 }
 export -f printFileOrDirRealPath
 
 theRealPath() {
     local callType="$(getCallType)"
-    # echo "Call type: $callType" >&2
+    # echo "Call type: $callType" 
     local callingScript target
+    if [[ $1 == "-sudoCommand" ]]; then
+        shift
+        local script="$1"
+        shift
+    fi    
     if [[ $1 == "/" ]]; then
         printf "/\n"
         return 0
@@ -48,6 +69,11 @@ theRealPath() {
         fi
     elif [[ "$callType" == "$CALL_TYPE_SUBPROCESSED" ]] || [[ "$callType" == "$CALL_TYPE_SOURCED" ]]; then
         callingScript="$(realpath "${BASH_SOURCE[1]}$1" 2>/dev/null)"
+        if [[ ! -z "$script" ]]; then
+            # echo "aaa"
+            # return 0
+            callingScript="$script"
+        fi 
         if [[ -z "$1" ]]; then
             printf "%s\n" "$callingScript"
         else
@@ -60,6 +86,10 @@ theRealPath() {
     fi
 }
 export -f theRealPath
+
+if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
+    theRealPath -sudoCommand $(realpath $SUDO_COMMAND) "$@"
+fi
 
 # printTheRealPath() {
 #     local botomMostElement="${FUNCNAME[-1]}" 
@@ -86,7 +116,17 @@ export -f theRealPath
 # export -f printTheRealPath
 
 # sudoTheRealPath() {
-# :
+#     sudo bash -c '
+#         . theRealPathFile
+#         "$@"
+#     ' _ "$@"
+# }
+
+# sudoTheRealPath() {
+#     sudo bash -c '
+#         # . theRealPathFile
+#         "$@"
+#     ' _ "$@"
 # }
 # export -f sudoTheRealPath
 

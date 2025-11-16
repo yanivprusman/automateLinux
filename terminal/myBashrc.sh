@@ -6,7 +6,7 @@ myBashSourceFiles=(
     "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}exports.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}gSettings.sh"
-    "${AUTOMATE_LINUX_TERMINAL_DIR}theRealPath.sh"
+    # "${AUTOMATE_LINUX_TERMINAL_DIR}theRealPath.sh"
 )
 for file in "${myBashSourceFiles[@]}"; do
     if [ -f "$file" ]; then

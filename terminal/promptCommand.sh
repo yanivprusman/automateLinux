@@ -1,5 +1,5 @@
 # set +x
-updateDirHistory
+# updateDirHistory
 
 #ps1
 tty=$(tty | sed 's/\/dev\/pts\///')

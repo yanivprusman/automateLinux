@@ -2,11 +2,6 @@ truncatePointersFile() {
     > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" 
 }
 
-resetWithDefaultDir() {
-    echo "$AUTOMATE_LINUX_DIR_HISTORY_DEFAULT_DIR">"$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"
-}
-
-
 getEscapedTty() {
     echo $(basename "${1#${AUTOMATE_LINUX_DIR_HISTORY_FILE_BASE}}" .sh)
 }
@@ -35,13 +30,14 @@ testIfProper() {
 
 resetDirHistoryToBeginningState() {
     rm "${AUTOMATE_LINUX_DATA_DIR}dirHistory/"* 2>/dev/null
-    resetWithDefaultDir
+    echo "$AUTOMATE_LINUX_DIR_HISTORY_DEFAULT_DIR">"$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"
     AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
     setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
 }
 
 initializeDirHistory() { 
-    # set -x
+    # resetDirHistoryToBeginningState
+    
     local lastChanged tty pointer totalLines
     if [[ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" ]]; then
         resetDirHistoryToBeginningState
@@ -104,10 +100,11 @@ insertDirAfterIndex(){
 export -f insertDirAfterIndex
 
 pd() {
-    ((AUTOMATE_LINUX_DIR_HISTORY_POINTER--)) 
-    if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 1 ]; then
+    if [ "$AUTOMATE_LINUX_DIR_HISTORY_POINTER" -lt 2 ]; then
         AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+        return
     fi  
+    ((AUTOMATE_LINUX_DIR_HISTORY_POINTER--)) 
     setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
     cdToPointer     
 }
@@ -168,6 +165,7 @@ updateDirHistory() {
     if [[ resetDirHistoryToBeginningStateIfError ]] ; then
         dir=$(getDirFromHistory)
         if [[ "${PWD}/" != "$dir" ]]; then
+            ((AUTOMATE_LINUX_DIR_HISTORY_POINTER++))
             insertDirAfterIndex "${PWD}/" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
             ((AUTOMATE_LINUX_DIR_HISTORY_POINTER++))
             setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
@@ -177,3 +175,7 @@ updateDirHistory() {
     fi
 }
 export -f updateDirHistory
+
+printDirHistory(){
+    "${AUTOMATE_LINUX_DIR_HISTORY_TESTS_DIR}printDirHistory.sh"
+}

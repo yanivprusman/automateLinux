@@ -1,0 +1,17 @@
+cmd_foo() {
+    echo "foo"
+}
+
+cmd_bar() {
+    echo "bar"
+}
+
+main() {
+    case "$1" in
+        foo) cmd_foo "${@:2}" ;;
+        bar) cmd_bar "${@:2}" ;;
+        *) echo "unknown command: $1" ;;
+    esac
+}
+
+main "$@"

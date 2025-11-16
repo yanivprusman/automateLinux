@@ -28,11 +28,37 @@ testIfProper() {
     fi
 }
 
+f(){
+    grep "^$AUTOMATE_LINUX_ESCAPED_TTY " "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" | awk '{print $2}'
+
+    if [[ "$value" =~ ^[0-9]+$ ]]; then
+}
+
+setPointer() {
+    if [ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" ]; then
+        echo "$AUTOMATE_LINUX_ESCAPED_TTY $1" > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+}
+
+# setDirHistoryPointer() {
+#     local escapedTty="$1"
+#     local pointer="$2"
+#     if [ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" ]; then
+#         > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+#     fi
+#     if grep -q "^$escapedTty " "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"; then
+#         sed -i "s|^$escapedTty .*|$escapedTty $pointer|" "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+#     else
+#         echo "$escapedTty $pointer" >> "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+#     fi
+# }
+# export -f setDirHistoryPointer
+
 resetDirHistoryToBeginningState() {
     rm "${AUTOMATE_LINUX_DATA_DIR}dirHistory/"* 2>/dev/null
     echo "$AUTOMATE_LINUX_DIR_HISTORY_DEFAULT_DIR">"$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"
-    AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
-    setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
+    # AUTOMATE_LINUX_DIR_HISTORY_POINTER=1
+    # setDirHistoryPointer "$AUTOMATE_LINUX_ESCAPED_TTY" "$AUTOMATE_LINUX_DIR_HISTORY_POINTER"
+    setPointer 1
 }
 
 initializeDirHistory() { 
@@ -123,19 +149,19 @@ pdd() {
 }
 export -f pdd
 
-setDirHistoryPointer() {
-    local escapedTty="$1"
-    local pointer="$2"
-    if [ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" ]; then
-        > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
-    fi
-    if grep -q "^$escapedTty " "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"; then
-        sed -i "s|^$escapedTty .*|$escapedTty $pointer|" "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
-    else
-        echo "$escapedTty $pointer" >> "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
-    fi
-}
-export -f setDirHistoryPointer
+# setDirHistoryPointer() {
+#     local escapedTty="$1"
+#     local pointer="$2"
+#     if [ ! -f "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" ]; then
+#         > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+#     fi
+#     if grep -q "^$escapedTty " "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"; then
+#         sed -i "s|^$escapedTty .*|$escapedTty $pointer|" "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+#     else
+#         echo "$escapedTty $pointer" >> "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE"
+#     fi
+# }
+# export -f setDirHistoryPointer
 
 getDirHistoryPointer() {
     local escapedTty="$1"

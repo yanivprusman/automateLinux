@@ -3,16 +3,6 @@
 export CALL_TYPE_SUBPROCESSED="subprocessed"
 export CALL_TYPE_SOURCED="sourced"
 export CALL_TYPE_TERMINAL="terminal"
-# getCallType () {
-#     local botomMostElement="${FUNCNAME[-1]}" 
-#     if [[ "$botomMostElement" == "main" ]]; then
-#         echo "$CALL_TYPE_SUBPROCESSED"
-#     elif [[ "$botomMostElement" == "source" ]]; then
-#         echo "$CALL_TYPE_SOURCED"
-#     else
-#         echo "$CALL_TYPE_TERMINAL"
-#     fi
-# }
 getCallType() {
     local bottom="${FUNCNAME[-1]}"
     if [[ "$bottom" == "main" ]]; then
@@ -22,7 +12,6 @@ getCallType() {
     else
         printf "%s\n" "$CALL_TYPE_TERMINAL"
     fi
-    # printf "%s" "getCallType called"
 }
 export -f getCallType
 
@@ -30,21 +19,17 @@ printFileOrDirRealPath() {
     local path="$1"
     if [[ -f "$path" ]]; then
         printf "%s\n" "$path"
-        # echo "printFileOrDirRealPath1"
         return 0
     elif [[ -d "$path" ]]; then
         printf "%s/\n" "$path"
-        # echo "printFileOrDirRealPath2"
         return 0
     fi
-    # echo "printFileOrDirRealPath3"
     return 1
 }
 export -f printFileOrDirRealPath
 
 theRealPath() {
     local callType="$(getCallType)"
-    # echo "Call type: $callType" 
     local callingScript target
     if [[ $1 == "-sudoCommand" ]]; then
         shift
@@ -70,8 +55,6 @@ theRealPath() {
     elif [[ "$callType" == "$CALL_TYPE_SUBPROCESSED" ]] || [[ "$callType" == "$CALL_TYPE_SOURCED" ]]; then
         callingScript="$(realpath "${BASH_SOURCE[1]}$1" 2>/dev/null)"
         if [[ ! -z "$script" ]]; then
-            # echo "aaa"
-            # return 0
             callingScript="$script"
         fi 
         if [[ -z "$1" ]]; then
@@ -114,21 +97,6 @@ fi
 #     done
 # }
 # export -f printTheRealPath
-
-# sudoTheRealPath() {
-#     sudo bash -c '
-#         . theRealPathFile
-#         "$@"
-#     ' _ "$@"
-# }
-
-# sudoTheRealPath() {
-#     sudo bash -c '
-#         # . theRealPathFile
-#         "$@"
-#     ' _ "$@"
-# }
-# export -f sudoTheRealPath
 
 # FUNCNAME
 #         An  array  variable containing the names of all shell functions currently in the execution call stack.  The element with index 0

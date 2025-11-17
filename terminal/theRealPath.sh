@@ -71,7 +71,17 @@ theRealPath() {
 export -f theRealPath
 
 if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
-    theRealPath -sudoCommand $(realpath $SUDO_COMMAND) "$@"
+    # caller
+    # echo ${BASH_SOURCE[@]}
+    # exit 0
+    # if [ ! -z "$SUDO_COMMAND" ]; then
+        theRealPath -sudoCommand "$(realpath $SUDO_COMMAND)" "$@"
+    # else
+        # theRealPath "$@"
+    # fi
+    # echo after asdf
+    # theRealPath -sudoCommand $(realpath $SUDO_COMMAND) "$@"
+    # echo after asdf
 fi
 
 # printTheRealPath() {

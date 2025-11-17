@@ -167,5 +167,12 @@ printDir(){
     done
 }
 
+b(){
+    ./build.sh "$@"
+}
+
+m(){
+    build/main "$@"
+}
 
 #  do not delete empty rows above this line

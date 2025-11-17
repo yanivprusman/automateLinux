@@ -1,3 +1,4 @@
+# echo in commandPrompt: $PWD
 # set +x
 updateDirHistory
 

@@ -142,4 +142,30 @@ deleteFunctions() {
     done
 }
 export -f deleteFunctions
+
+printDir(){
+    local dirs=()
+    local dir f
+    if [ $# -eq 0 ]; then
+        dirs=(".")
+    else
+        while [ $# -gt 0 ]; do
+            dirs+=("$1")
+            shift
+        done
+    fi
+    for dir in "${dirs[@]}"; do
+        if [ -d "$dir" ]; then
+            for f in "${dir%/}/"*; do
+                if [ -f "$f" ]; then
+                    echo -e "${GREEN}$(basename "$f"):${NC}"
+                    cat "$f"
+                    echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
+                fi
+            done
+        fi
+    done
+}
+
+
 #  do not delete empty rows above this line

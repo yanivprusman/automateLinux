@@ -72,6 +72,7 @@ theRealPath() {
 export -f theRealPath
 
 printTheRealPath() {
+    # echo got
     local callType="$(getCallType)"
     local callingScript target
     if [[ $1 == "-sudoCommand" ]]; then
@@ -118,8 +119,8 @@ printTheRealPath() {
 export -f printTheRealPath
 
 if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
-    # echo debug log test if called not from sudo
-    theRealPath -sudoCommand "$(realpath $SUDO_COMMAND)" "$@"
+    sudoCommandWithoutParamaters=${SUDO_COMMAND%% *}
+    theRealPath -sudoCommand "$(realpath $sudoCommandWithoutParamaters)" "$@"
 fi
 
 

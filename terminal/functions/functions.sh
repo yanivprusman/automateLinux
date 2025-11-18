@@ -184,4 +184,17 @@ copyToClipboard(){
     (xclip -selection clipboard)
 }
 export -f copyToClipboard
+
+isFile(){
+    local file="$1"
+    if [ -f "$file" ]; then
+        echo true
+    else
+        echo false
+    fi
+}
+export -f isFile
+
+
+
 #  do not delete empty rows above this line

@@ -3,7 +3,7 @@ myBashSourceFiles=(
     "${AUTOMATE_LINUX_TERMINAL_DIR}colors.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
     "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}functions.sh"
-    "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"
+    "${AUTOMATE_LINUX_TERMINAL_DIR}bindings.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}exports.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}gSettings.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}completion.sh"

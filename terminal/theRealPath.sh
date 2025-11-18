@@ -62,6 +62,7 @@ theRealPath() {
         else
             target="$(realpath "$(dirname "$callingScript")/$1")"
             if ! printFileOrDirRealPath "$target"; then
+                # printf "%s\n" "$(dirname ${BASH_SOURCE[1]})/$1" TODO fix to this line
                 printf "%s\n" "$(dirname "$callingScript")/$1"
                 return 1
             fi
@@ -117,7 +118,7 @@ printTheRealPath() {
 export -f printTheRealPath
 
 if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
-    echo debug log test if called not from sudo
+    # echo debug log test if called not from sudo
     theRealPath -sudoCommand "$(realpath $SUDO_COMMAND)" "$@"
 fi
 

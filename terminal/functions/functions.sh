@@ -48,12 +48,9 @@ export -f setEmoji
 runSingleton() {
     local SCRIPT="$1"
     if [ -f "$SCRIPT" ] && ! pgrep -f "$SCRIPT" > /dev/null; then
-        # bash "$SCRIPT" &
         "$SCRIPT" &
-        # echo "Started $SCRIPT"
     else
         :
-        # echo "$SCRIPT is already running or does not exist."
     fi
 }
 

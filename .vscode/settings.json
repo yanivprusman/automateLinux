@@ -2,6 +2,6 @@
     "files.associations": {
         "instructions.txt": "shellscript",
         "assumptions.txt": "shellscript",
-
+        "iostream": "cpp"
     }
 }

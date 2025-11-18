@@ -163,13 +163,25 @@ printDir(){
         fi
     done
 }
+export -f printDir
 
 b(){
     ./build.sh "$@"
 }
+export -f b
 
 m(){
     build/main "$@"
 }
+export -f m
 
+outputToSelf(){
+    exec 1>/dev/pts/$(tty | sed 's:/dev/pts/::')
+}
+export -f outputToSelf
+
+copyToClipboard(){
+    (xclip -selection clipboard)
+}
+export -f copyToClipboard
 #  do not delete empty rows above this line

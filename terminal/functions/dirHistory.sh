@@ -165,6 +165,7 @@ resetDirHistoryToBeginningStateIfError() {
 export -f resetDirHistoryToBeginningStateIfError
 
 updateDirHistory() {
+    # echo "Updating dir history...$PWD"
     if [[ resetDirHistoryToBeginningStateIfError ]] ; then
         dir=$(getDirFromHistory)
         if [[ "${PWD}/" != "$dir" ]]; then

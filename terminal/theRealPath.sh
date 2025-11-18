@@ -53,7 +53,7 @@ theRealPath() {
             return 1
         fi
     elif [[ "$callType" == "$CALL_TYPE_SUBPROCESSED" ]] || [[ "$callType" == "$CALL_TYPE_SOURCED" ]]; then
-        callingScript="$(realpath "${BASH_SOURCE[1]}$1" 2>/dev/null)"
+        callingScript="$(realpath "${BASH_SOURCE[1]}" 2>/dev/null)"
         if [[ ! -z "$script" ]]; then
             callingScript="$script"
         fi 
@@ -70,43 +70,57 @@ theRealPath() {
 }
 export -f theRealPath
 
+printTheRealPath() {
+    local callType="$(getCallType)"
+    local callingScript target
+    if [[ $1 == "-sudoCommand" ]]; then
+        shift
+        local script="$1"
+        shift
+    fi    
+    if [[ $1 == "/" ]]; then
+        printf "/\n"
+        return 0
+    fi
+    if [[ $1 == /* ]]; then
+        target="$(realpath "$1" 2>/dev/null)"
+        if ! printFileOrDirRealPath "$target"; then
+            printf "%s\n" "$1"
+            return 1
+        fi
+    elif [[ "$callType" ==  "$CALL_TYPE_TERMINAL" ]]; then
+        echo test1
+        target="$(realpath "${PWD}/$1" 2>/dev/null)"
+        if ! printFileOrDirRealPath "$target"; then
+            printf "%s\n" "${PWD}/$1"
+            return 1
+        fi
+    elif [[ "$callType" == "$CALL_TYPE_SUBPROCESSED" ]] || [[ "$callType" == "$CALL_TYPE_SOURCED" ]]; then
+        # callingScript="$(realpath "${BASH_SOURCE[1]}$1" 2>/dev/null)"
+        callingScript="$(realpath "${BASH_SOURCE[1]}" 2>/dev/null)"
+        echo $callingScript
+        if [[ ! -z "$script" ]]; then
+            callingScript="$script"
+        fi 
+        if [[ -z "$1" ]]; then
+            printf "%s\n" "$callingScript"
+        else
+            target="$(realpath "$(dirname "$callingScript")/$1")"
+            if ! printFileOrDirRealPath "$target"; then
+                # printf "%s\n" "$(dirname "$callingScript")/$1"
+                printf "%s\n" "$(dirname ${BASH_SOURCE[1]})/$1"
+                return 1
+            fi
+        fi
+    fi
+}
+export -f printTheRealPath
+
 if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
-    # caller
-    # echo ${BASH_SOURCE[@]}
-    # exit 0
-    # if [ ! -z "$SUDO_COMMAND" ]; then
-        theRealPath -sudoCommand "$(realpath $SUDO_COMMAND)" "$@"
-    # else
-        # theRealPath "$@"
-    # fi
-    # echo after asdf
-    # theRealPath -sudoCommand $(realpath $SUDO_COMMAND) "$@"
-    # echo after asdf
+    echo debug log test if called not from sudo
+    theRealPath -sudoCommand "$(realpath $SUDO_COMMAND)" "$@"
 fi
 
-# printTheRealPath() {
-#     local botomMostElement="${FUNCNAME[-1]}" 
-#     if [[ "$botomMostElement" == "main" ]]; then
-#         echo "subprocessed"
-#     elif [[ "$botomMostElement" == "source" ]]; then
-#         echo "sourced"
-#     else
-#         echo "called from terminal"
-#     fi
-#     echo -e "${GREEN}FUNCNAME array:${NC}"
-#     for i in "${!FUNCNAME[@]}"; do
-#         printf "\t%d: %s\n" "$i" "${FUNCNAME[i]}"
-#     done
-#     echo -e "${GREEN}BASH_SOURCE array:${NC}"
-#     for i in "${!BASH_SOURCE[@]}"; do
-#         printf "\t%d: %s\n" "$i" "${BASH_SOURCE[i]}"
-#     done
-#     echo -e "${GREEN}BASH_LINENO array:${NC}"
-#     for i in "${!BASH_LINENO[@]}"; do
-#         printf "\t%d: %s\n" "$i" "${BASH_LINENO[i]}"
-#     done
-# }
-# export -f printTheRealPath
 
 # FUNCNAME
 #         An  array  variable containing the names of all shell functions currently in the execution call stack.  The element with index 0

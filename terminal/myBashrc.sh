@@ -6,6 +6,7 @@ myBashSourceFiles=(
     "${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}exports.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}gSettings.sh"
+    "${AUTOMATE_LINUX_TERMINAL_DIR}completion.sh"
 )
 for file in "${myBashSourceFiles[@]}"; do
     if [ -f "$file" ]; then
@@ -14,12 +15,14 @@ for file in "${myBashSourceFiles[@]}"; do
         echo "No file found at $file"
     fi
 done
+# dirHistory --complete
+
 touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E 
 if [[ ! -v AUTOMATE_LINUX_SUBSEQUENT_SOURCE ]]; then :
     initializeDirHistory # refactoring will be replaced with dirHistory
-    dirHistory -ttyOpened
+    dirHistory ttyOpened
     cdToPointer
     AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
 fi

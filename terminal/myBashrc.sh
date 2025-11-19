@@ -22,7 +22,7 @@ trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E 
 if [[ ! -v AUTOMATE_LINUX_SUBSEQUENT_SOURCE ]]; then :
     initializeDirHistory # refactoring will be replaced with dirHistory
-    dirHistory ttyOpened
+    deamon ttyOpened
     cdToPointer
     AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
 fi

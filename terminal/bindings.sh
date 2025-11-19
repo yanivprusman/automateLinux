@@ -1,5 +1,5 @@
 # control+b     source bindings.sh
-bind -x '"\C-b":". ${AUTOMATE_LINUX_BINDINGS_DIR}bindings.sh"'
+bind -x '"\C-b":". ${AUTOMATE_LINUX_TERMINAL_DIR}bindings.sh"'
 # control+n     new terminal tab
 bind -x '"\C-n":"gnome-terminal --tab "'
 # control+down  forward a directory

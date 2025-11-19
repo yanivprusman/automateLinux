@@ -2,3 +2,6 @@ ln -s /home/yaniv/coding/automateLinux/autostart/ ~/.config/autostart
 ln -s /home/yaniv/coding/automateLinux/bashrc/bashrc ~/.bashrc
 ln -s /home/yaniv/.local/share/applications /home/yaniv/coding/automateLinux/applications
 not working ln -s /home/yaniv/coding/automateLinux/desktop/ /home/yaniv/Desktop
+ln -snfr /home/yaniv/coding/automateLinux/desktop/shutDown.desktop shutDown.desktop
+ln -snfr ../deamon/deamon deamon
+

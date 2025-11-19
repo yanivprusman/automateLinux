@@ -195,6 +195,9 @@ isFile(){
 }
 export -f isFile
 
+ter(){
+    terminal "$@"
+}
 
 
 #  do not delete empty rows above this line

@@ -19,5 +19,6 @@ alias treec='tree -C | less -R'
 alias lsc='ls --color=always | less -R'
 alias ther='theRealPath'
 alias sb='source ~/.bashrc'
-alias phone='/snap/bin/scrcpy --video-bit-rate 8M --max-size 1920 --fullscreen'
+alias phone='/snap/bin/scrcpy --video-bit-rate 8M --max-size 1920'
+alias phoneFullScreen='/snap/bin/scrcpy --video-bit-rate 8M --max-size 1920 --fullscreen'
 

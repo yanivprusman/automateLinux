@@ -1,9 +1,10 @@
 [Desktop Entry]
 Version=1.0
-Name=Shutdown
+Name=ShutdownRight screen
 Comment=Shutdown the system
 Exec=/home/yaniv/shutdown-system.sh
-Icon=/usr/share/icons/Humanity/actions/32/system-shutdown.svg
+#Icon=/usr/share/icons/Humanity/actions/32/system-shutdown.svg
+Icon=/home/yaniv/Downloads/humberger-svgrepo-com.svg
 Terminal=false
 Type=Application
 Categories=System;

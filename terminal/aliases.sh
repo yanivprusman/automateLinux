@@ -20,5 +20,5 @@ alias lsc='ls --color=always | less -R'
 alias ther='theRealPath'
 alias sb='source ~/.bashrc'
 alias phone='/snap/bin/scrcpy --video-bit-rate 8M --max-size 1920'
-alias phoneFullScreen='/snap/bin/scrcpy --video-bit-rate 8M --max-size 1920 --fullscreen'
+alias phoneFullScreen=' adb connect 10.0.0.142:5555 && /snap/bin/scrcpy --video-bit-rate 8M --max-size 1920 --fullscreen'
 

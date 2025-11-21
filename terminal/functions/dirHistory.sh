@@ -1,6 +1,6 @@
-truncatePointersFile() { 
-    > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" 
-}
+# truncatePointersFile() { 
+#     > "$AUTOMATE_LINUX_DIR_HISTORY_POINTERS_FILE" 
+# }
 
 resetWithDefaultDir() {
     echo "$AUTOMATE_LINUX_DIR_HISTORY_DEFAULT_DIR">"$AUTOMATE_LINUX_DIR_HISTORY_TTY_FILE"

@@ -1,6 +1,7 @@
 # echo in commandPrompt: $PWD
 # set +x
-updateDirHistory
+# updateDirHistory
+deamon updateDirHistory
 
 #ps1
 tty=$(tty | sed 's/\/dev\/pts\///')

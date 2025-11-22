@@ -143,6 +143,8 @@ export -f deleteFunctions
 printDir(){
     local dirs=()
     local dir f
+    local -A excluded_files=()
+    local exclude_file=".printDir.sh"
     if [ $# -eq 0 ]; then
         dirs=(".")
     else
@@ -152,10 +154,24 @@ printDir(){
         done
     fi
     for dir in "${dirs[@]}"; do
+        if [ -d "$dir" ] && [ -f "$dir/$exclude_file" ]; then
+            while IFS= read -r line || [ -n "$line" ]; do
+                line="${line%%#*}"
+                line="${line%"${line##*[![:space:]]}"}"
+                line="${line#"${line%%[![:space:]]*}"}"
+                [ -z "$line" ] && continue
+                excluded_files["$line"]=1
+            done < "$dir/$exclude_file"
+        fi
+    done
+    for dir in "${dirs[@]}"; do
         if [ -d "$dir" ]; then
             for f in "${dir%/}/"*; do
                 if [ -f "$f" ]; then
-                    echo -e "${GREEN}$(basename "$f"):${NC}"
+                    local basename_f
+                    basename_f=$(basename "$f")
+                    [ -z "${excluded_files[$basename_f]}" ] || continue
+                    echo -e "${GREEN}$basename_f:${NC}"
                     cat "$f"
                     echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
                 fi

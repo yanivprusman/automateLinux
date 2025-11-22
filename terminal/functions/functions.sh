@@ -195,9 +195,36 @@ isFile(){
 }
 export -f isFile
 
-ter(){
-    terminal "$@"
+d(){
+    echo "in d function"
+    deamon "$@"
 }
+export -f d
 
+deamon(){
+    local executable output
+    executable=$(type -P deamon )
+    # output=$(gdbserver localhost:2345 "$executable" "$@")
+    output=$("$executable" "$@")
+    echo "> $output"
+    # if [[ -n "$output" ]]; then 
+    #     echo executing
+    #     (echo "$output")
+    # else
+    #     echo not executing
+    # fi
+}
+export -f deamon
+
+    # echo "in deamon function, called from "
+    # caller | awk '{print "line no:" $1 ": script path:" $2 ": function name:" $3}'
+    # caller 0
+    # external=$(command -v deamon)
+    # echo $external
+    # $($external "$@")
+    # "$external" "$@"
+    # $(command -p deamon "$@")
+    # $(\deamon "$@")
+    # \deamon "$@"
 
 #  do not delete empty rows above this line

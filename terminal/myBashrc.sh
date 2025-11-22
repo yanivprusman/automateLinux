@@ -15,22 +15,25 @@ for file in "${myBashSourceFiles[@]}"; do
         echo "No file found at $file"
     fi
 done
-# dirHistory --complete
-
+deamon() {
+local socketPath="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/automatelinux-deamon.sock"
+if [ ! -S "$socketPath" ]; then
+return 0
+fi
+(echo "$@" | nc -U "$socketPath" 2>/dev/null &)
+}
+export -f deamon
 touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E 
 if [[ ! -v AUTOMATE_LINUX_SUBSEQUENT_SOURCE ]]; then :
-    # initializeDirHistory # refactoring will be replaced with deamon
-    deamon ttyOpened
-    # cdToPointer
-    # deamon initializeDirHistory
-    deamon cdToPointer
-    AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
+deamon ttyOpened
+deamon cdToPointer
+AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
 fi
 PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '
-# runSingleton "$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
 cp ~/coding/automateLinux/desktop/*.desktop ~/Desktop/
+# runSingleton "$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
 AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
 PROMPT_COMMAND=". $AUTOMATE_LINUX_PROMPT_COMMAND_SCRIPT_FILE"
 . "${AUTOMATE_LINUX_TERMINAL_DIR}unset.sh"

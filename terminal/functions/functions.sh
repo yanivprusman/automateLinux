@@ -217,20 +217,20 @@ d(){
 }
 export -f d
 
-deamon(){
-    local executable output
-    executable=$(type -P deamon )
-    # output=$(gdbserver localhost:2345 "$executable" "$@")
-    output=$("$executable" "$@")
-    echo "> $output"
-    # if [[ -n "$output" ]]; then 
-    #     echo executing
-    #     (echo "$output")
-    # else
-    #     echo not executing
-    # fi
-}
-export -f deamon
+# deamon(){
+#     local executable output
+#     executable=$(type -P deamon )
+#     # output=$(gdbserver localhost:2345 "$executable" "$@")
+#     output=$("$executable" "$@")
+#     echo "> $output"
+#     # if [[ -n "$output" ]]; then 
+#     #     echo executing
+#     #     (echo "$output")
+#     # else
+#     #     echo not executing
+#     # fi
+# }
+# export -f deamon
 
     # echo "in deamon function, called from "
     # caller | awk '{print "line no:" $1 ": script path:" $2 ": function name:" $3}'

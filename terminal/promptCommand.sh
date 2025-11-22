@@ -1,9 +1,4 @@
-# echo in commandPrompt: $PWD
-# set +x
-# updateDirHistory
-# deamon updateDirHistory
-
-#ps1
+deamon updateDirHistory
 tty=$(tty | sed 's/\/dev\/pts\///')
 PS1='\[\e]0;'$tty'\w\a\]'"${_yellow}\w${_nc}\$ "
 unset tty

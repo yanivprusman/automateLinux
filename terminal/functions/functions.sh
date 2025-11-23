@@ -139,6 +139,7 @@ deleteFunctions() {
     done
 }
 export -f deleteFunctions
+
 printDir(){
     local dirs=()
     local files=()
@@ -244,7 +245,8 @@ export -f d
 
 deamon() {
     # echo in deamon function
-    local socketPath="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/automatelinux-deamon.sock"
+    # local socketPath="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/automatelinux-deamon.sock"
+    local socketPath="/run/automatelinux-deamon.sock"
     if [ ! -S "$socketPath" ]; then
         return 0
     fi

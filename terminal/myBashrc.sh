@@ -6,14 +6,14 @@ myBashSourceFiles=(
     "${AUTOMATE_LINUX_TERMINAL_DIR}bindings.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}exports.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}gSettings.sh"
-    "${AUTOMATE_LINUX_TERMINAL_DIR}completion.sh"
+    "${AUTOMATE_LINUX_TERMINAL_DIR}/completions/completion.sh"
 )
 for file in "${myBashSourceFiles[@]}"; do
-    if [ -f "$file" ]; then
+    # if [ -f "$file" ]; then
         . "$file"
-    else
-        echo "No file found at $file"
-    fi
+    # else
+    #     echo "No file found at $file"
+    # fi
 done
 touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR

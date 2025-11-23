@@ -15,14 +15,6 @@ for file in "${myBashSourceFiles[@]}"; do
         echo "No file found at $file"
     fi
 done
-deamon() {
-local socketPath="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/automatelinux-deamon.sock"
-if [ ! -S "$socketPath" ]; then
-return 0
-fi
-(echo "$@" | nc -U "$socketPath" 2>/dev/null &)
-}
-export -f deamon
 touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E 

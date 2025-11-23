@@ -139,19 +139,30 @@ deleteFunctions() {
     done
 }
 export -f deleteFunctions
-
 printDir(){
     local dirs=()
+    local files=()
     local dir f
     local -A excluded_files=()
     local exclude_file=".printDir.sh"
-    if [ $# -eq 0 ]; then
-        dirs=(".")
-    else
-        while [ $# -gt 0 ]; do
+    local mode="dirs"
+    while [ $# -gt 0 ]; do
+        if [ "$1" = "-d" ]; then
+            mode="dirs"
+            shift
+        elif [ "$1" = "-f" ]; then
+            mode="files"
+            shift
+        elif [ "$mode" = "dirs" ]; then
             dirs+=("$1")
             shift
-        done
+        else
+            files+=("$1")
+            shift
+        fi
+    done
+    if [ ${#dirs[@]} -eq 0 ] && [ ${#files[@]} -eq 0 ]; then
+        dirs=(".")
     fi
     for dir in "${dirs[@]}"; do
         if [ -d "$dir" ] && [ -f "$dir/$exclude_file" ]; then
@@ -164,20 +175,34 @@ printDir(){
             done < "$dir/$exclude_file"
         fi
     done
-    for dir in "${dirs[@]}"; do
-        if [ -d "$dir" ]; then
-            for f in "${dir%/}/"*; do
-                if [ -f "$f" ]; then
-                    local basename_f
-                    basename_f=$(basename "$f")
-                    [ -z "${excluded_files[$basename_f]}" ] || continue
-                    echo -e "${GREEN}$basename_f:${NC}"
-                    cat "$f"
-                    echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
-                fi
-            done
-        fi
-    done
+    if [ ${#dirs[@]} -gt 0 ]; then
+        for dir in "${dirs[@]}"; do
+            if [ -d "$dir" ]; then
+                for f in "${dir%/}/"*; do
+                    if [ -f "$f" ]; then
+                        local basename_f
+                        basename_f=$(basename "$f")
+                        [ -z "${excluded_files[$basename_f]}" ] || continue
+                        echo -e "${GREEN}$basename_f:${NC}"
+                        cat "$f"
+                        echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
+                    fi
+                done
+            fi
+        done
+    fi
+    if [ ${#files[@]} -gt 0 ]; then
+        for f in "${files[@]}"; do
+            if [ -f "$f" ]; then
+                local basename_f
+                basename_f=$(basename "$f")
+                [ -z "${excluded_files[$basename_f]}" ] || continue
+                echo -e "${GREEN}$basename_f:${NC}"
+                cat "$f"
+                echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
+            fi
+        done
+    fi
 }
 export -f printDir
 
@@ -217,6 +242,17 @@ d(){
 }
 export -f d
 
+deamon() {
+    # echo in deamon function
+    local socketPath="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/automatelinux-deamon.sock"
+    if [ ! -S "$socketPath" ]; then
+        return 0
+    fi
+    (echo "$@" | nc -U "$socketPath" 2>/dev/null &)
+    # nc -U "$socketPath" <<< "$@"
+}
+export -f deamon
+
 # deamon(){
 #     local executable output
 #     executable=$(type -P deamon )
@@ -232,15 +268,20 @@ export -f d
 # }
 # export -f deamon
 
-    # echo "in deamon function, called from "
-    # caller | awk '{print "line no:" $1 ": script path:" $2 ": function name:" $3}'
-    # caller 0
-    # external=$(command -v deamon)
-    # echo $external
-    # $($external "$@")
-    # "$external" "$@"
-    # $(command -p deamon "$@")
-    # $(\deamon "$@")
-    # \deamon "$@"
+# echo "in deamon function, called from "
+# caller | awk '{print "line no:" $1 ": script path:" $2 ": function name:" $3}'
+# caller 0
+# external=$(command -v deamon)
+# echo $external
+# $($external "$@")
+# "$external" "$@"
+# $(command -p deamon "$@")
+# $(\deamon "$@")
+# \deamon "$@"
+alias time=showTime
+showTime(){
+    date +%H:%M
+}
+export -f showTime
 
 #  do not delete empty rows above this line

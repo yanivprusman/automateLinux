@@ -19,8 +19,8 @@ touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E 
 if [[ ! -v AUTOMATE_LINUX_SUBSEQUENT_SOURCE ]]; then :
-deamon ttyOpened
-deamon cdToPointer
+# deamon ttyOpened
+# deamon cdToPointer
 AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
 fi
 PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '

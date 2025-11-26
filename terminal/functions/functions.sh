@@ -244,14 +244,13 @@ d(){
 export -f d
 
 deamon() {
-    # echo in deamon function
-    # local socketPath="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/automatelinux-deamon.sock"
-    local socketPath="/run/automatelinux-deamon.sock"
-    if [ ! -S "$socketPath" ]; then
+    # local AUTOMATE_LINUX_SOCKET_PATH="/run/automatelinux-deamon.sock"
+    if [ ! -S "$AUTOMATE_LINUX_SOCKET_PATH" ]; then
         return 0
     fi
-    (echo "$@" | nc -U "$socketPath" 2>/dev/null &)
-    # nc -U "$socketPath" <<< "$@"
+    # (echo "$@" | nc -U "$AUTOMATE_LINUX_SOCKET_PATH" 2>/dev/null &)
+    # (echo "$@" | nc -U "$AUTOMATE_LINUX_SOCKET_PATH" 2>/dev/null )
+    (echo "$@" | nc -U "$AUTOMATE_LINUX_SOCKET_PATH" )
 }
 export -f deamon
 
@@ -285,5 +284,27 @@ showTime(){
     date +%H:%M
 }
 export -f showTime
+
+status(){
+    systemctl status "$@"
+}
+export -f status
+
+start(){
+    systemctl start "$@"
+}
+export -f start
+
+reload(){
+    systemctl daemon-reload
+}
+export -f reload
+
+toSymbolic() {
+    local oct="$1"
+    python3 -c "import stat; print(stat.filemode(int('$oct', 8)))"
+}
+export -f toSymbolic
+
 
 #  do not delete empty rows above this line

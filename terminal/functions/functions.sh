@@ -306,5 +306,9 @@ toSymbolic() {
 }
 export -f toSymbolic
 
+echoBlockSeparator() {
+    echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
+}
+export -f echoBlockSeparator    
 
 #  do not delete empty rows above this line

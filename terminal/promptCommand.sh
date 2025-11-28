@@ -1,4 +1,2 @@
 # deamon updateDirHistory
-tty=$(tty | sed 's/\/dev\/pts\///')
-PS1='\[\e]0;'$tty'\w\a\]'"${_yellow}\w${_nc}\$ "
-unset tty
+# PS1='\[\e]0;'$AUTOMATE_LINUX_TTY_NUMBER'\w\a\]'"${_yellow}\w${_nc}\$ "

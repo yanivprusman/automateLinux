@@ -23,7 +23,7 @@ if [[ ! -v AUTOMATE_LINUX_SUBSEQUENT_SOURCE ]]; then :
 # deamon cdToPointer
 AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
 fi
-PS1='\[\e]0;\w\a\]\[\033[1;34m\]\w\[\033[0m\]\$ '
+PS1='\[\e]0;'$AUTOMATE_LINUX_TTY_NUMBER'\w\a\]'"${_yellow}\w${_nc}\$ "
 cp ~/coding/automateLinux/desktop/*.desktop ~/Desktop/
 # runSingleton "$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
 AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true

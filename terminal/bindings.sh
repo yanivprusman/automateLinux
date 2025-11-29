@@ -4,13 +4,13 @@ bind -x '"\C-b":". ${AUTOMATE_LINUX_TERMINAL_DIR}bindings.sh"'
 bind -x '"\C-n":"gnome-terminal --tab "'
 # control+down  forward a directory
 doCdForward() {
-    deamon cdForward
+    daemon cdForward
     echo -ne "\033[2K\033[1A\033[2K"
 }
 bind -s '"\e[1;5B": "doCdForward\n"' >/dev/null
 # control+up    backword a directory
 doCdBack() {
-    deamon cdBackward
+    daemon cdBackward
     echo -ne "\033[2K\033[1A\033[2K"
 }
 bind -s '"\e[1;5A": "doCdBack\n"' >/dev/null

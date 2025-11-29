@@ -2,7 +2,7 @@ evsieve/log/*
 utilities/theRealPath/theRealPath
 utilities/termcontrol/build
 dirHistory
-deamon
+daemon
 errLog.txt
 terminal/tests/output.txt
 terminal/output.txt

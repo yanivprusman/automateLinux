@@ -239,11 +239,11 @@ export -f isFile
 
 d(){
     echo "in d function"
-    deamon "$@"
+    daemon "$@"
 }
 export -f d
 
-deamon() {
+daemon() {
     if [ ! -S "$AUTOMATE_LINUX_SOCKET_PATH" ]; then
         return 0
     fi
@@ -269,7 +269,7 @@ deamon() {
     # echo "$json" | nc -U "$AUTOMATE_LINUX_SOCKET_PATH"
     # echo "$json" | jq . | nc -U "$AUTOMATE_LINUX_SOCKET_PATH"
 }
-export -f deamon
+export -f daemon
 
 # alias time=showTime
 showTime(){

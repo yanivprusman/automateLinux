@@ -243,6 +243,22 @@ d(){
 }
 export -f d
 
+# daemon() {
+#     if [ ! -S "$AUTOMATE_LINUX_SOCKET_PATH" ]; then
+#         return 0
+#     fi
+#     local COMMAND="$1" key value response
+#     shift
+#     printf '{\n  "command": "%s"' "$COMMAND" >&"${DAEMON_CO[1]}"
+#     for arg in "$@"; do
+#         key="${arg%%=*}"
+#         value="${arg#*=}"
+#         printf ',\n  "%s": "%s"' "$key" "$value" >&"${DAEMON_CO[1]}"
+#     done
+#     printf '\n}\n' >&"${DAEMON_CO[1]}"
+#     read -r response <&"${DAEMON_CO[0]}"
+#     echo "$response"
+# }
 daemon() {
     if [ ! -S "$AUTOMATE_LINUX_SOCKET_PATH" ]; then
         return 0
@@ -256,20 +272,21 @@ daemon() {
         json+=",\"$key\":\"$value\""
     done
     json+="}"
-    echo "$json" >&"${DAEMON_CO[1]}"
+    printf '%s\n' "$json" >&"${DAEMON_CO[1]}"
     read -r response <&"${DAEMON_CO[0]}"
     echo "$response"
-    # echo "$json" >&3
-    # read -r response <&3
-    # echo "$response"
-    # echo "$json" > "$PIPE"
-    # ./sendJson "$AUTOMATE_LINUX_SOCKET_PATH" "$json"
-    # echo "$json" > /proc/$NC_PID/fd/0
-    # echo "$json" >& /proc/$NC_PID/fd/0
-    # echo "$json" | nc -U "$AUTOMATE_LINUX_SOCKET_PATH"
-    # echo "$json" | jq . | nc -U "$AUTOMATE_LINUX_SOCKET_PATH"
 }
 export -f daemon
+
+# echo "$json" >&3
+# read -r response <&3
+# echo "$response"
+# echo "$json" > "$PIPE"
+# ./sendJson "$AUTOMATE_LINUX_SOCKET_PATH" "$json"
+# echo "$json" > /proc/$NC_PID/fd/0
+# echo "$json" >& /proc/$NC_PID/fd/0
+# echo "$json" | nc -U "$AUTOMATE_LINUX_SOCKET_PATH"
+# echo "$json" | jq . | nc -U "$AUTOMATE_LINUX_SOCKET_PATH"
 
 # alias time=showTime
 showTime(){
@@ -320,14 +337,13 @@ export -f killAllJobs
 #     coproc DAEMON_CO { nc -U "$AUTOMATE_LINUX_SOCKET_PATH"; }
 # }
 initCoproc() {
-    # kill any previous background coproc process
     if [[ -n "${DAEMON_CO_PID-}" ]] && kill -0 "$DAEMON_CO_PID" 2>/dev/null; then
-        kill "$DAEMON_CO_PID" 2>/dev/null
-        wait "$DAEMON_CO_PID" 2>/dev/null
+        exec {DAEMON_CO[0]}<&- {DAEMON_CO[1]}>&- 2>/dev/null
+        sleep 0.1
+        kill -9 "$DAEMON_CO_PID" 2>/dev/null
+        wait "$DAEMON_CO_PID" 2>/dev/null || true
     fi
-    # remove old coproc variables
     unset DAEMON_CO DAEMON_CO_PID
-    # start new coproc
     coproc DAEMON_CO { nc -U "$AUTOMATE_LINUX_SOCKET_PATH"; }
     DAEMON_CO_PID=$!
 }

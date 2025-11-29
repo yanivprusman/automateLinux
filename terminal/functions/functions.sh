@@ -244,42 +244,34 @@ d(){
 export -f d
 
 deamon() {
-    # local AUTOMATE_LINUX_SOCKET_PATH="/run/automatelinux-deamon.sock"
     if [ ! -S "$AUTOMATE_LINUX_SOCKET_PATH" ]; then
         return 0
     fi
-    # (echo "$@" | nc -U "$AUTOMATE_LINUX_SOCKET_PATH" 2>/dev/null &)
-    # (echo "$@" | nc -U "$AUTOMATE_LINUX_SOCKET_PATH" 2>/dev/null )
-    (echo "$@" | nc -U "$AUTOMATE_LINUX_SOCKET_PATH" )
+    local COMMAND="$1" json key value response
+    shift
+    json="{\"command\":\"$COMMAND\""
+    for arg in "$@"; do
+        key="${arg%%=*}"
+        value="${arg#*=}"
+        json+=",\"$key\":\"$value\""
+    done
+    json+="}"
+    echo "$json" >&"${DAEMON_CO[1]}"
+    read -r response <&"${DAEMON_CO[0]}"
+    echo "$response"
+    # echo "$json" >&3
+    # read -r response <&3
+    # echo "$response"
+    # echo "$json" > "$PIPE"
+    # ./sendJson "$AUTOMATE_LINUX_SOCKET_PATH" "$json"
+    # echo "$json" > /proc/$NC_PID/fd/0
+    # echo "$json" >& /proc/$NC_PID/fd/0
+    # echo "$json" | nc -U "$AUTOMATE_LINUX_SOCKET_PATH"
+    # echo "$json" | jq . | nc -U "$AUTOMATE_LINUX_SOCKET_PATH"
 }
 export -f deamon
 
-# deamon(){
-#     local executable output
-#     executable=$(type -P deamon )
-#     # output=$(gdbserver localhost:2345 "$executable" "$@")
-#     output=$("$executable" "$@")
-#     echo "> $output"
-#     # if [[ -n "$output" ]]; then 
-#     #     echo executing
-#     #     (echo "$output")
-#     # else
-#     #     echo not executing
-#     # fi
-# }
-# export -f deamon
-
-# echo "in deamon function, called from "
-# caller | awk '{print "line no:" $1 ": script path:" $2 ": function name:" $3}'
-# caller 0
-# external=$(command -v deamon)
-# echo $external
-# $($external "$@")
-# "$external" "$@"
-# $(command -p deamon "$@")
-# $(\deamon "$@")
-# \deamon "$@"
-alias time=showTime
+# alias time=showTime
 showTime(){
     date +%H:%M
 }
@@ -311,4 +303,33 @@ echoBlockSeparator() {
 }
 export -f echoBlockSeparator    
 
+killAllJobs() {
+    # for job in $(jobs -p; jobs | awk '/Stopped/ {print $1}' | tr -d '[]+%'); do
+    #     kill -CONT %$job 2>/dev/null   # resume if stopped
+    #     kill -9 %$job 2>/dev/null      # then force kill
+    # done
+    for job in $(jobs -p); do
+        kill -9 $job 2>/dev/null
+    done
+
+}
+export -f killAllJobs
+
+# initCoproc() {
+#     jobs -p | xargs kill 2>/dev/null
+#     coproc DAEMON_CO { nc -U "$AUTOMATE_LINUX_SOCKET_PATH"; }
+# }
+initCoproc() {
+    # kill any previous background coproc process
+    if [[ -n "${DAEMON_CO_PID-}" ]] && kill -0 "$DAEMON_CO_PID" 2>/dev/null; then
+        kill "$DAEMON_CO_PID" 2>/dev/null
+        wait "$DAEMON_CO_PID" 2>/dev/null
+    fi
+    # remove old coproc variables
+    unset DAEMON_CO DAEMON_CO_PID
+    # start new coproc
+    coproc DAEMON_CO { nc -U "$AUTOMATE_LINUX_SOCKET_PATH"; }
+    DAEMON_CO_PID=$!
+}
+export -f initCoproc
 #  do not delete empty rows above this line

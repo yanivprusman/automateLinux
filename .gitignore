@@ -2,11 +2,11 @@ evsieve/log/*
 utilities/theRealPath/theRealPath
 utilities/termcontrol/build
 dirHistory
-daemon
 errLog.txt
 terminal/tests/output.txt
 terminal/output.txt
 terminal/tests/terminaloutput*
 *.hereDoc
 data/*
+build/
 

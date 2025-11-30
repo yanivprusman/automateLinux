@@ -1,0 +1,18 @@
+[Unit]
+Description=Automate Daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/yaniv/coding/automateLinux/daemon/daemon
+Restart=on-failure
+RestartSec=2
+User=yaniv
+Group=yaniv
+StandardOutput=journal
+StandardError=journal
+RuntimeDirectory=automatelinux
+RuntimeDirectoryMode=0750
+
+[Install]
+WantedBy=multi-user.target

@@ -147,24 +147,63 @@ printDir(){
     local -A excluded_files=()
     local exclude_file=".printDir.sh"
     local mode="dirs"
+    local use_color=true
+    
     while [ $# -gt 0 ]; do
-        if [ "$1" = "-d" ]; then
-            mode="dirs"
-            shift
-        elif [ "$1" = "-f" ]; then
-            mode="files"
-            shift
-        elif [ "$mode" = "dirs" ]; then
-            dirs+=("$1")
-            shift
-        else
-            files+=("$1")
-            shift
-        fi
+        case "$1" in
+            --help|-h)
+                cat <<'EOF'
+Usage: printDir [OPTIONS] [DIRECTORIES] [-f FILES]
+
+Print contents of files in directories or individual files with colored output.
+
+Options:
+  -d              Process directories (default mode)
+  -f              Process files
+  --no-color      Disable colored output
+  --help, -h      Display this help message
+
+Features:
+  - Prints file contents with colored headers and separators
+  - Respects .printDir.sh exclude file (lines are comments or filenames to skip)
+  - Default behavior: prints all files in current directory
+
+Examples:
+  printDir /path/to/dir
+  printDir -f file1.txt file2.txt
+  printDir /dir1 /dir2 --no-color
+  printDir /dir -f file.txt --no-color
+EOF
+                return 0
+                ;;
+            --no-color)
+                use_color=false
+                shift
+                ;;
+            -d)
+                mode="dirs"
+                shift
+                ;;
+            -f)
+                mode="files"
+                shift
+                ;;
+            *)
+                if [ "$mode" = "dirs" ]; then
+                    dirs+=("$1")
+                    shift
+                else
+                    files+=("$1")
+                    shift
+                fi
+                ;;
+        esac
     done
+    
     if [ ${#dirs[@]} -eq 0 ] && [ ${#files[@]} -eq 0 ]; then
         dirs=(".")
     fi
+    
     for dir in "${dirs[@]}"; do
         if [ -d "$dir" ] && [ -f "$dir/$exclude_file" ]; then
             while IFS= read -r line || [ -n "$line" ]; do
@@ -176,6 +215,7 @@ printDir(){
             done < "$dir/$exclude_file"
         fi
     done
+    
     if [ ${#dirs[@]} -gt 0 ]; then
         for dir in "${dirs[@]}"; do
             if [ -d "$dir" ]; then
@@ -184,23 +224,40 @@ printDir(){
                         local basename_f
                         basename_f=$(basename "$f")
                         [ -z "${excluded_files[$basename_f]}" ] || continue
-                        echo -e "${GREEN}$basename_f:${NC}"
+                        if [ "$use_color" = true ]; then
+                            echo -e "${GREEN}$basename_f:${NC}"
+                        else
+                            echo "$basename_f:"
+                        fi
                         cat "$f"
-                        echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
+                        if [ "$use_color" = true ]; then
+                            echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
+                        else
+                            echo "${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}"
+                        fi
                     fi
                 done
             fi
         done
     fi
+    
     if [ ${#files[@]} -gt 0 ]; then
         for f in "${files[@]}"; do
             if [ -f "$f" ]; then
                 local basename_f
                 basename_f=$(basename "$f")
                 [ -z "${excluded_files[$basename_f]}" ] || continue
-                echo -e "${GREEN}$basename_f:${NC}"
+                if [ "$use_color" = true ]; then
+                    echo -e "${GREEN}$basename_f:${NC}"
+                else
+                    echo "$basename_f:"
+                fi
                 cat "$f"
-                echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
+                if [ "$use_color" = true ]; then
+                    echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
+                else
+                    echo "${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}"
+                fi
             fi
         done
     fi
@@ -247,23 +304,26 @@ export -f d
 #     if [ ! -S "$AUTOMATE_LINUX_SOCKET_PATH" ]; then
 #         return 0
 #     fi
-#     local COMMAND="$1" key value response
+#     local COMMAND="$1" json key value response
 #     shift
-#     printf '{\n  "command": "%s"' "$COMMAND" >&"${DAEMON_CO[1]}"
+#     json="{\"command\":\"$COMMAND\""
 #     for arg in "$@"; do
 #         key="${arg%%=*}"
 #         value="${arg#*=}"
-#         printf ',\n  "%s": "%s"' "$key" "$value" >&"${DAEMON_CO[1]}"
+#         json+=",\"$key\":\"$value\""
 #     done
-#     printf '\n}\n' >&"${DAEMON_CO[1]}"
-#     read -r response <&"${DAEMON_CO[0]}"
+#     json+="}"
+#     echo "$json" >&"$AUTOMATE_LINUX_FD"
+#     read -t 2 -r response <&"$AUTOMATE_LINUX_FD"
+#     # read -r response <&"$AUTOMATE_LINUX_FD"
 #     echo "$response"
 # }
 daemon() {
-    if [ ! -S "$AUTOMATE_LINUX_SOCKET_PATH" ]; then
+    if [ ! -p "$AUTOMATE_LINUX_FIFO_IN" ] || [ ! -p "$AUTOMATE_LINUX_FIFO_OUT" ]; then
         return 0
     fi
-    local COMMAND="$1" json key value response
+    
+    local COMMAND="$1" json key value
     shift
     json="{\"command\":\"$COMMAND\""
     for arg in "$@"; do
@@ -272,12 +332,17 @@ daemon() {
         json+=",\"$key\":\"$value\""
     done
     json+="}"
-    printf '%s\n' "$json" >&"${DAEMON_CO[1]}"
-    read -r response <&"${DAEMON_CO[0]}"
-    echo "$response"
+    
+    # Send request and read response
+    echo "$json" > "$AUTOMATE_LINUX_FIFO_IN"
+    timeout 2 head -n 1 "$AUTOMATE_LINUX_FIFO_OUT"
 }
 export -f daemon
-
+# response=$(echo "$json" | socat - UNIX-CONNECT:"$AUTOMATE_LINUX_SOCKET_PATH")
+# echo "$response"
+# printf '%s\n' "$json" >&"${DAEMON_CO[1]}"
+# read -r response <&"${DAEMON_CO[0]}"
+# echo "$response"
 # echo "$json" >&3
 # read -r response <&3
 # echo "$response"
@@ -348,4 +413,21 @@ initCoproc() {
     DAEMON_CO_PID=$!
 }
 export -f initCoproc
+
+firstFreeFd() {
+    local fd
+    for fd in {3..255}; do
+        if ! { : >&"$fd"; } >/dev/null 2>&1; then 
+            printf '%s\n' "$fd"
+            return 0
+        fi
+    done
+    return 1
+}
+export -f firstFreeFd
+
+lsd(){
+    ls -d */
+}
+export -f lsd
 #  do not delete empty rows above this line

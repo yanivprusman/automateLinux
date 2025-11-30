@@ -319,11 +319,11 @@ export -f d
 #     echo "$response"
 # }
 daemon() {
-    if [ ! -p "$AUTOMATE_LINUX_FIFO_IN" ] || [ ! -p "$AUTOMATE_LINUX_FIFO_OUT" ]; then
-        return 0
+    if [ -z "$AUTOMATE_LINUX_DAEMON_IN_FD" ] || [ -z "$AUTOMATE_LINUX_DAEMON_OUT_FD" ]; then
+        return 1
     fi
     
-    local COMMAND="$1" json key value
+    local COMMAND="$1" json key value reply
     shift
     json="{\"command\":\"$COMMAND\""
     for arg in "$@"; do
@@ -333,9 +333,10 @@ daemon() {
     done
     json+="}"
     
-    # Send request and read response
-    echo "$json" > "$AUTOMATE_LINUX_FIFO_IN"
-    timeout 2 head -n 1 "$AUTOMATE_LINUX_FIFO_OUT"
+    # Write to FD (flush with printf which auto-flushes) and read response
+    printf '%s\n' "$json" >&"$AUTOMATE_LINUX_DAEMON_IN_FD"
+    read -t 2 -r reply <&"$AUTOMATE_LINUX_DAEMON_OUT_FD"
+    printf '%s\n' "$reply"
 }
 export -f daemon
 # response=$(echo "$json" | socat - UNIX-CONNECT:"$AUTOMATE_LINUX_SOCKET_PATH")

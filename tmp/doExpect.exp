@@ -1,9 +1,0 @@
-#!/usr/bin/expect -f
-
-# spawn bash
-expect "$ "          ;# wait for prompt
-send "ls -l\r"       ;# send command
-expect "$ "
-send "echo Hello\r"
-expect "$ "
-send "exit\r"

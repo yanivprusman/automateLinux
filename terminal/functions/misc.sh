@@ -8,7 +8,12 @@ h() {
 export -f h
 
 rmr() {
-    rm -r *
+    local dir="${1:-.}"
+    rm -r "$dir"/*
 }
 export -f rmr
 
+lstr(){
+    ls --color=always "$@" | tr " " "\n"
+}
+export -f lstr

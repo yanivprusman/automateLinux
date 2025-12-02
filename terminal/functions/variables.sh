@@ -32,3 +32,15 @@ deleteFunctions() {
     done
 }
 export -f deleteFunctions
+
+isSet() {
+    local var_name="$1"
+    if [ -z "${!var_name+x}" ]; then
+        echo false
+        return 1
+    else
+        echo true
+        return 0
+    fi
+}
+

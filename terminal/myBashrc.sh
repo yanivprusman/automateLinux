@@ -15,6 +15,7 @@ touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 set -E 
 if [[ ! -v AUTOMATE_LINUX_SUBSEQUENT_SOURCE ]]; then
+    
     AUTOMATE_LINUX_RELAY_DIR="/tmp/automatelinux-relay-$$"
     mkdir -p "$AUTOMATE_LINUX_RELAY_DIR"
     AUTOMATE_LINUX_DAEMON_IN="$AUTOMATE_LINUX_RELAY_DIR/in"

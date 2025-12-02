@@ -122,6 +122,7 @@ if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
     sudoCommandWithoutParamaters=${SUDO_COMMAND%% *}
     theRealPath -sudoCommand "$(realpath $sudoCommandWithoutParamaters)" "$@"
 fi
+unset a
 
 
 # FUNCNAME

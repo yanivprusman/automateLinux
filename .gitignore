@@ -9,4 +9,5 @@ terminal/tests/terminaloutput*
 *.hereDoc
 data/*
 build/
+tmp/
 

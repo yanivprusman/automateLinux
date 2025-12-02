@@ -1,8 +1,14 @@
 # Miscellaneous utilities
 
-generatePassword() { python3 ~/generatePassword.py; }
+password() { python3 ~/generatePassword.py; }
 
 h() {
     history | grep "$@"
 }
 export -f h
+
+rmr() {
+    rm -r *
+}
+export -f rmr
+

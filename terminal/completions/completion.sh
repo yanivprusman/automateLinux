@@ -3,3 +3,5 @@
 . $(theRealPath ../../daemon/daemon-completion.bash)
 . $(theRealPath build.bash)
 . $(theRealPath printDir.bash)
+. $(theRealPath prepareBuild.bash)
+

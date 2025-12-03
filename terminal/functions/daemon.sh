@@ -55,7 +55,7 @@
 # export -f firstFreeFd
 
 daemon() {
-    if [ -z "$AUTOMATE_LINUX_DAEMON_FD" ]; then
+    if [ -z "$AUTOMATE_LINUX_DAEMON_FD_IN" ] || [ -z "$AUTOMATE_LINUX_DAEMON_FD_OUT" ]; then
         return 1
     fi
     local COMMAND="$1" json key value reply
@@ -69,8 +69,10 @@ daemon() {
     done
     json+="}"
     echo "in daemon function, sending json: $json" >&2
-    printf '%s\n' "$json" >&"$AUTOMATE_LINUX_DAEMON_FD"
-    read -t 2 -r reply <&"$AUTOMATE_LINUX_DAEMON_FD"
+    # printf '%s\n' "$json" >&"$AUTOMATE_LINUX_DAEMON_FD"
+    # read -t 2 -r reply <&"$AUTOMATE_LINUX_DAEMON_FD"
+    printf '%s\n' "$json" >&"$AUTOMATE_LINUX_DAEMON_FD_IN"
+    read -t 2 -r reply <&"$AUTOMATE_LINUX_DAEMON_FD_OUT"
     printf '%s\n' "$reply"
 }
 export -f daemon

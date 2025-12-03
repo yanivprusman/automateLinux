@@ -1,10 +1,12 @@
-#include "dirHistory.h"
+// #include "dirHistory.h"
 
-int DirHistory::numberOfPointers() {
-    return kvTable.countKeysByPrefix(DIR_HISTORY_POINTER_PREFIX);
-}
+// string DirHistory::defaultDir = "/home/yaniv/coding";
 
-void DirHistory::resetToBeginningState() {
+// int DirHistory::numberOfPointers() {
+//     return kvTable.countKeysByPrefix(DIR_HISTORY_POINTER_PREFIX);
+// }
+
+// void DirHistory::resetToBeginningState() {
     
 
-}
+// }

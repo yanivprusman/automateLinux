@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <nlohmann/json.hpp>
+#include <set>
 
 using std::string;
 using std::cout;
@@ -20,4 +21,6 @@ using std::strlen;
 using std::perror;
 using json = nlohmann::json;
 using ordered_json = nlohmann::ordered_json;
+using std::set;
+
 #endif // USIND_STD_H

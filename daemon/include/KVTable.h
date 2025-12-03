@@ -5,14 +5,15 @@
 #include "common.h"
 
 class KVTable {
+    private:
+        static sqlite3* db;
+        static int create();
 public:
     explicit KVTable();
-    int upsert(const string& key, const string& value);
-    int createDB();
-    int countKeysByPrefix(const string& prefix);
-private:
-    sqlite3* db;
-    int create();
+    static int upsert(const string& key, const string& value);
+    static int createDB();
+    static int countKeysByPrefix(const string& prefix);
+    static string get(const string& key);
 };
 
 #endif // KVTABLE_H

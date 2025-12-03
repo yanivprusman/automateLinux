@@ -1,8 +1,20 @@
 #include "mainCommand.h"
-#include "system.h"
+
+int openedTty(const json& command){
+    // kvTable.countKeysByPrefix
+    // dirHistory
+    Terminal::openedTty(command);
+    return 0;
+}
+
 int mainCommand(const json& command, int client_sock, ucred cred) {   
-    string result;    
-    result = "return anything until implemented\n";
+    string result; 
+    if (command[COMMAND_KEY] == COMMAND_OPENED_TTY) {
+        result = openedTty(command);
+    } else {
+        result= "unknown command " + command[COMMAND_KEY].get<string>() + "\n";
+    }   
+    // result = "return anything until implemented\n";
     write(client_sock, result.c_str(), result.length());
     return 0;
 }

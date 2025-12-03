@@ -9,8 +9,6 @@
 class DirHistory {
     
 public:
-    string defaultDir = "/home/yaniv/coding";
-    int numberOfPointers();
-    void resetToBeginningState();
+    static string defaultDir;
 };
 #endif // DIRHISTORY_H

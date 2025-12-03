@@ -1,9 +1,13 @@
 #include "KVTable.h"
 
+sqlite3* KVTable::db = nullptr; 
+
 KVTable::KVTable() {
-    int rc = create();
-    if(rc != SQLITE_OK) {
-        cerr << "Failed to create KVTable DB, SQLite error code: " << rc << endl;
+    if (db == nullptr) {
+        int rc = create();
+        if(rc != SQLITE_OK) {
+            cerr << "Failed to create KVTable DB, SQLite error code: " << rc << endl;
+        }
     }
 }
 
@@ -66,3 +70,28 @@ int KVTable::countKeysByPrefix(const string& prefix) {
     return count;
 }
 
+string KVTable::get(const string& key) {
+    if (db == nullptr) {
+        int rc = create();
+        if (rc != SQLITE_OK) {
+            return "";
+        }
+    }
+    const char* sql = "SELECT value FROM kv WHERE key = ?";
+    sqlite3_stmt* stmt;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) {
+        return "";
+    }
+    sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
+    rc = sqlite3_step(stmt);
+    string value;
+    if (rc == SQLITE_ROW) {
+        const unsigned char* text = sqlite3_column_text(stmt, 0);
+        if (text) {
+            value = reinterpret_cast<const char*>(text);
+        }
+    }
+    sqlite3_finalize(stmt);
+    return value;
+}

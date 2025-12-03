@@ -8,6 +8,7 @@ daemon() {
     local COMMAND="$1" json key value reply
     shift
     json="{\"command\":\"$COMMAND\""
+    json+=",\"tty\":\"$AUTOMATE_LINUX_TTY_NUMBER\""
     for arg in "$@"; do
         key="${arg%%=*}"
         value="${arg#*=}"

@@ -98,7 +98,6 @@ EOF
             fi
         done
     fi
-    
     if [ ${#files[@]} -gt 0 ]; then
         for f in "${files[@]}"; do
             if [ -f "$f" ]; then
@@ -111,6 +110,7 @@ EOF
                     echo "$basename_f:"
                 fi
                 cat "$f"
+                [ -n "$(tail -c1 "$f")" ] && echo
                 if [ "$use_color" = true ]; then
                     echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
                 else

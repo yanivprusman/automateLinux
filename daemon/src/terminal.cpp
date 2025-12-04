@@ -26,7 +26,7 @@ CmdResult Terminal::_openedTty(const json& command) {
         return result;
     }
     int index = atoi (value.c_str());
-    result.message = "myDir";
+    result.message = "myDir\n";
     return result;
 }
 

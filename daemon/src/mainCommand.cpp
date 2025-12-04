@@ -9,7 +9,12 @@ int mainCommand(const json& command, int client_sock, ucred cred) {
     CmdResult result;   
     try {
         if (command[COMMAND_KEY] == COMMAND_OPENED_TTY) {
+            auto start = std::chrono::high_resolution_clock::now();
             result = openedTty(command);
+            auto end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = end - start;
+            // result.message += "/* Time taken: " + std::to_string(elapsed.count()) + " seconds */\n";
+            // result.status = 1;
         } else {
             result.status = 1;
             result.message = "unknown command " + command[COMMAND_KEY].get<string>() + "\n";

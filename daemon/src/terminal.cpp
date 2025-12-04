@@ -10,23 +10,24 @@ Terminal::~Terminal() {
     instances.erase(this);
 }
 
-int Terminal::openedTty(const json& command) {
+CmdResult Terminal::openedTty(const json& command) {
     Terminal* terminal = new Terminal();
-    terminal->_openedTty(command);
-    return 0;
+    return terminal->_openedTty(command);
 }
 
-string Terminal::_openedTty(const json& command) {
-    tty = command[TTY_KEY].get<int>();   
+CmdResult Terminal::_openedTty(const json& command) {
+    CmdResult result;
+    tty = command[TTY_KEY].get<int>();
     string value = kvTable.get(IDNEX_OF_LAST_TOUCHED_DIR_KEY);
     if (value.empty()) {
         kvTable.upsert(IDNEX_OF_LAST_TOUCHED_DIR_KEY, "0");
         kvTable.upsert(dirHistoryKey(0), DIR_HISTORY_DEFAULT_DIR);
-        return DIR_HISTORY_DEFAULT_DIR;
+        result.message = DIR_HISTORY_DEFAULT_DIR;
+        return result;
     }
     int index = atoi (value.c_str());
-
-    return "myDir";
+    result.message = "myDir";
+    return result;
 }
 
 string Terminal::dirHistoryKey(int index) {

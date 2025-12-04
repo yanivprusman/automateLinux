@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [       
+        {
+            "name": "Launch Daemon",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/daemon/daemon",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/daemon/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "Attach to Daemon",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceFolder}/daemon/daemon",
+            "processId": "${command:pickProcess}",
+            "MIMode": "gdb"
+        }
+    ]
+}

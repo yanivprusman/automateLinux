@@ -9,8 +9,8 @@ class Terminal {
         Terminal();
         ~Terminal();
         static set<Terminal*> instances;
-        static int openedTty(const json& command);
-        string _openedTty(const json& command);
+        static CmdResult openedTty(const json& command);
+        CmdResult _openedTty(const json& command);
         int tty;
         string dirHistoryKey(int index);
 };

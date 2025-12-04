@@ -35,6 +35,14 @@ struct Directories {
         data = base + "data/";
     }
 };
+
+struct CmdResult {
+    int status;         
+    std::string message;
+    CmdResult(int s = 0, const std::string& msg = "") 
+        : status(s), message(msg) {}
+};
+
 extern Directories& directories;
 extern string socketPath;
 class KVTable;

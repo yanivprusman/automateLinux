@@ -1,21 +1,24 @@
 #include "mainCommand.h"
 
-int openedTty(const json& command){
+CmdResult openedTty(const json& command){
     // kvTable.countKeysByPrefix
-    // dirHistory
-    Terminal::openedTty(command);
-    return 0;
+    return Terminal::openedTty(command);
 }
 
 int mainCommand(const json& command, int client_sock, ucred cred) {   
-    string result; 
-    if (command[COMMAND_KEY] == COMMAND_OPENED_TTY) {
-        result = openedTty(command);
-    } else {
-        result= "unknown command " + command[COMMAND_KEY].get<string>() + "\n";
-    }   
-    // result = "return anything until implemented\n";
-    write(client_sock, result.c_str(), result.length());
+    CmdResult result;   
+    try {
+        if (command[COMMAND_KEY] == COMMAND_OPENED_TTY) {
+            result = openedTty(command);
+        } else {
+            result.status = 1;
+            result.message = "unknown command " + command[COMMAND_KEY].get<string>() + "\n";
+        }   
+    } catch (const std::exception& e) {
+        result.status = 1;
+        result.message = std::string("error: ") + e.what() + "\n";
+    }
+    write(client_sock, result.message.c_str(), result.message.length());
     return 0;
 }
 

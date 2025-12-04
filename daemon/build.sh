@@ -10,3 +10,4 @@ cmake .. > /dev/null && \
 make > /dev/null && \
 echo -e "${GREEN}Build complete!${NC}" && \
 sudo systemctl restart daemon.service
+

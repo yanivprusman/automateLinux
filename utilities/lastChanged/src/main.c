@@ -1,4 +1,4 @@
-#include "gitignore.h"
+#include <gitignore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

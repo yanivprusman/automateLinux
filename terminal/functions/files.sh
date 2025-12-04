@@ -68,7 +68,22 @@ touchDirectories() {
 }
 export -f touchDirectories
 
-lastChanged() {
+lastChangedFiles() {
     $(theRealPath "${AUTOMATE_LINUX_DIR}/utilities/lastChanged/lastChanged" "$@")
 }
 export -f lastChanged
+
+lastChanged() {
+    lastChangedFiles | 
+    sed "s|$PWD/||" |
+    while IFS= read -r f; do
+        ls -l --color=always --time-style="+%d/%m/%Y %H:%M" -- "$f"
+    done | 
+    awk '{print $8 "\t" $6, $7}' | 
+    column -t -s $'\t'
+}
+export -f lastChanged
+
+# lastChanged() {
+#     ls -l --color=always --time-style="+%d/%m/%Y %H:%M" $(lastChangedFiles) | awk '{print $8 "\t" $6, $7}' | column -t -s $'\t'
+# }

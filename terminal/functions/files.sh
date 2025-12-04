@@ -68,19 +68,6 @@ touchDirectories() {
 }
 export -f touchDirectories
 
-# lastChanged() {
-#     local n="${1:-10}"
-#     find . -type f | while read -r f; do
-#         if git check-ignore -q "$f"; then
-#             continue
-#         fi
-#         printf "%s %s\n" "$(stat -c %Y "$f")" "$f"
-#     done |
-#     sort -nr |
-#     head -n "$n" |
-#     cut -d' ' -f2-
-# }
-
 lastChanged() {
     $(theRealPath "${AUTOMATE_LINUX_DIR}/utilities/lastChanged/lastChanged" "$@")
 }

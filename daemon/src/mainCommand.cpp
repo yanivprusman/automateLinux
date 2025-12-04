@@ -23,23 +23,9 @@ int mainCommand(const json& command, int client_sock, ucred cred) {
         result.message += "daemon must end in \\n\n";
     }
     if (isMultiline(result.message)) {
-        result.message = toJsonSingleLine(result.message);
+        result.message = toJsonSingleLine(result.message) + "\n";
     }    
     write(client_sock, result.message.c_str(), result.message.length());
     return 0;
 }
 
-// if (command == "ttyOpened") {
-//     result= "Known command " + System::getTty() + "\n";
-    
-// } else {
-//     result = "ERROR: Unknown command\n";
-// }
-
-
-
-// if (dirHistory.numberOfPointers() == 0) {
-//     dirHistory.resetToBeginningState();
-
-// result= "Known command " + string(ttyname(client_sock)) + "\n";
-// result= "Known command " + to_string(cred.pid) + "\n";

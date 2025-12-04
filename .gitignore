@@ -10,4 +10,5 @@ terminal/tests/terminaloutput*
 data/**
 build/
 tmp/
+utilities/lastChanged/lastChanged
 

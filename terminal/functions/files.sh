@@ -1,21 +1,5 @@
 # File and directory utilities
 
-catDir() {
-    local dir="$1"
-    if [ -z "$dir" ]; then dir="."; fi
-    if [ -d "$dir" ]; then
-        for file in "$dir"*; do
-            if [ -f "$file" ]; then
-                echo -e "${green}----- Contents of $file:${NC}"
-                cat "$file"
-            fi
-        done
-    else
-        echo "$dir is not a directory."
-    fi
-}
-export -f catDir
-
 heredoc() {
     local file="$1"
     if [ -f "$file" ]; then
@@ -83,3 +67,21 @@ touchDirectories() {
     done
 }
 export -f touchDirectories
+
+# lastChanged() {
+#     local n="${1:-10}"
+#     find . -type f | while read -r f; do
+#         if git check-ignore -q "$f"; then
+#             continue
+#         fi
+#         printf "%s %s\n" "$(stat -c %Y "$f")" "$f"
+#     done |
+#     sort -nr |
+#     head -n "$n" |
+#     cut -d' ' -f2-
+# }
+
+lastChanged() {
+    $(theRealPath "${AUTOMATE_LINUX_DIR}/utilities/lastChanged/lastChanged" "$@")
+}
+export -f lastChanged

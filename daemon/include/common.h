@@ -26,6 +26,7 @@
 #define DIR_HISTORY_DEFAULT_DIR "/home/yaniv/coding/"
 #define COMMAND_KEY "command"
 #define COMMAND_OPENED_TTY "openedTty"
+#define mustEndWithNewLine "\n"
 
 struct Directories {
     string base;

@@ -5,6 +5,13 @@
       "label": "Open Symlink Target",
       "type": "shell",
       "command": "code $(readlink -f ${file})"
-    }
+    },
+    // {
+    //   "label": "getDaemonPID",
+    //   "type": "shell",
+    //   // "command": "./daemon/getDaemonPID.sh",
+    //   "command": "export DAEMON_PID=$(./daemon/getDaemonPID.sh) && echo $DAEMON_PID",
+    //   "problemMatcher": []
+    // }
   ]
 }

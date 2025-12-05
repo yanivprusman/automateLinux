@@ -25,8 +25,11 @@
             "type": "cppdbg",
             "request": "attach",
             "program": "${workspaceFolder}/daemon/daemon",
-            "processId": "${command:pickProcess}",
-            "MIMode": "gdb"
+            "processId": "${env:AUTOMATE_LINUX_DAEMON_PID}",
+            "MIMode": "gdb",
+            "setupCommands": [
+                { "text": "-enable-pretty-printing" }
+            ]
         }
     ]
 }

@@ -2,14 +2,13 @@
 
 int mainCommand(const json& command, int client_sock, ucred cred) {   
     (void)cred;  // unused
+    string commandStr = command.dump();
     CmdResult result;   
     try {
         if (command[COMMAND_KEY] == COMMAND_OPENED_TTY) {
             result = Terminal::openedTty(command);
         }else if (command[COMMAND_KEY] == COMMAND_CLOSED_TTY) {
             result = Terminal::closedTty(command);
-        }else if (command[COMMAND_KEY] == "asdf") {
-            // result = Terminal::closedTty(command);
         } else if (command[COMMAND_KEY] == COMMAND_UPDATE_DIR_HISTORY) {
             result = Terminal::updateDirHistory(command);
         } else if (command[COMMAND_KEY] == "cdForward") {

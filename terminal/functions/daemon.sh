@@ -35,7 +35,7 @@ daemon() {
     if [ "$formatOutput" = "true" ]; then
         # Parse the response and format it nicely
         # Convert literal \n to actual newlines
-        printf '%s\n' "$reply" | sed 's/\\n/\n/g'
+        printf '%s' "$reply" | sed 's/\\n/\n/g'
     else
         # Output raw response as-is
         printf '%s\n' "$reply"

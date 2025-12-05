@@ -1,5 +1,5 @@
-#ifndef USIND_STD_H
-#define USIND_STD_H
+#ifndef USIND_H
+#define USIND_H
 
 #include <string>
 #include <iostream>
@@ -22,5 +22,6 @@ using std::perror;
 using json = nlohmann::json;
 using ordered_json = nlohmann::ordered_json;
 using std::set;
+using std::stoi;   
 
-#endif // USIND_STD_H
+#endif // USIND_H

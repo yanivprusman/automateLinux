@@ -1,4 +1,6 @@
 #include "KVTable.h"
+#include <vector>
+#include <algorithm>
 
 sqlite3* KVTable::db = nullptr; 
 
@@ -95,3 +97,65 @@ string KVTable::get(const string& key) {
     sqlite3_finalize(stmt);
     return value;
 }
+
+int KVTable::insertAt(const string& keyPrefix, int index, const string& value) {
+    // First, insert the new entry at the given index
+    string newKey = keyPrefix + to_string(index);
+    int rc = upsert(newKey, value);
+    if (rc != SQLITE_OK) return rc;
+    
+    // Then shift all keys with this prefix that have indices >= insertion point
+    const string likePattern = keyPrefix + "%";
+    const char* sql = "SELECT key FROM kv WHERE key LIKE ?";
+    sqlite3_stmt* stmt;
+    rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) return rc;
+    
+    sqlite3_bind_text(stmt, 1, likePattern.c_str(), -1, SQLITE_TRANSIENT);
+    
+    std::vector<std::pair<int, string>> keysToShift; // {oldIndex, key}
+    
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char* key_str = (const char*)sqlite3_column_text(stmt, 0);
+        string key(key_str);
+        
+        // Extract index from key (everything after keyPrefix)
+        if (key.substr(0, keyPrefix.length()) == keyPrefix) {
+            try {
+                int keyIndex = stoi(key.substr(keyPrefix.length()));
+                if (keyIndex >= index) {
+                    keysToShift.push_back({keyIndex, key});
+                }
+            } catch (...) {
+                // Skip keys that don't end with a valid number
+            }
+        }
+    }
+    sqlite3_finalize(stmt);
+    
+    // Shift keys in reverse order to avoid conflicts
+    std::sort(keysToShift.rbegin(), keysToShift.rend());
+    
+    for (const auto& p : keysToShift) {
+        int oldIndex = p.first;
+        string oldKey = p.second;
+        string newKeyShifted = keyPrefix + to_string(oldIndex + 1);
+        string oldValue = get(oldKey);
+        
+        // Delete old key
+        string deleteSQL = "DELETE FROM kv WHERE key = ?";
+        sqlite3_stmt* deleteStmt;
+        rc = sqlite3_prepare_v2(db, deleteSQL.c_str(), -1, &deleteStmt, nullptr);
+        if (rc == SQLITE_OK) {
+            sqlite3_bind_text(deleteStmt, 1, oldKey.c_str(), -1, SQLITE_TRANSIENT);
+            sqlite3_step(deleteStmt);
+            sqlite3_finalize(deleteStmt);
+        }
+        
+        // Insert with new index
+        upsert(newKeyShifted, oldValue);
+    }
+    
+    return SQLITE_OK;
+}
+

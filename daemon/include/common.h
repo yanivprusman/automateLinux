@@ -22,10 +22,12 @@
 #define DIR_HISTORY_POINTER_PREFIX "pointerDevPts"
 #define INDEX_OF_LAST_TOUCHED_DIR_KEY "indexOfLastTouchedDir"
 #define TTY_KEY "tty"
+#define PWD_KEY "pwd"
 #define DIR_HISTORY_PREFIX "dirHistory"
 #define DIR_HISTORY_DEFAULT_DIR "/home/yaniv/coding/"
 #define COMMAND_KEY "command"
 #define COMMAND_OPENED_TTY "openedTty"
+#define COMMAND_UPDATE_DIR_HISTORY "updateDirHistory"
 #define mustEndWithNewLine "\n"
 
 struct Directories {

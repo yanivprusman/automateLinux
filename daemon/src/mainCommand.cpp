@@ -5,10 +5,17 @@ CmdResult openedTty(const json& command){
 }
 
 int mainCommand(const json& command, int client_sock, ucred cred) {   
+    (void)cred;  // unused
     CmdResult result;   
     try {
         if (command[COMMAND_KEY] == COMMAND_OPENED_TTY) {
             result = openedTty(command);
+        } else if (command[COMMAND_KEY] == COMMAND_UPDATE_DIR_HISTORY) {
+            result = Terminal::updateDirHistory(command);
+        } else if (command[COMMAND_KEY] == "cdForward") {
+            result = Terminal::cdForward(command);
+        } else if (command[COMMAND_KEY] == "cdBackward") {
+            result = Terminal::cdBackward(command);
         } else {
             result.status = 1;
             result.message = "unknown command " + command[COMMAND_KEY].get<string>() + "\n";

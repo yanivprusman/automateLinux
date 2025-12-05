@@ -14,6 +14,7 @@ done
 touchDirectories
 trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
 trap ". $AUTOMATE_LINUX_TRAP_EXIT_FILE" EXIT
+trap ". $AUTOMATE_LINUX_TRAP_HUP_FILE" HUP
 set -E 
 if [[ ! -v AUTOMATE_LINUX_SUBSEQUENT_SOURCE ]]; then
     . $(theRealPath firstTime.sh)

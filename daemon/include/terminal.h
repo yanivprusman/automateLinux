@@ -12,6 +12,8 @@ class Terminal {
         static string dirHistoryEntryKey(int index);
         static CmdResult openedTty(const json& command);
         CmdResult _openedTty(const json& command);
+        static CmdResult closedTty(const json& command);
+        CmdResult _closedTty(const json& command);
         static CmdResult updateDirHistory(const json& command);
         CmdResult _updateDirHistory(const json& command);
         static CmdResult cdForward(const json& command);

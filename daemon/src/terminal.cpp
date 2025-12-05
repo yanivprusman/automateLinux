@@ -49,6 +49,30 @@ CmdResult Terminal::_openedTty(const json& command) {
     return result;
 }
 
+CmdResult Terminal::closedTty(const json& command) {
+    int tty = command[TTY_KEY].get<int>();
+    for (Terminal* terminal : instances) {
+        if (terminal->tty == tty) {
+            return terminal->_closedTty(command);
+        }
+    }
+    CmdResult result;
+    result.status = 1;
+    result.message = "Terminal instance not found for tty " + to_string(tty) + "\n";
+    return result;
+}
+
+CmdResult Terminal::_closedTty(const json& command) {
+    (void)command;  
+    CmdResult result;
+    instances.erase(this);
+    kvTable.deleteEntry(dirHistoryPointerKey);
+    result.status = 0;
+    result.message = "\n";
+    delete this;
+    return result;
+}
+
 string Terminal::dirHistoryEntryKey(int index) {
     return DIR_HISTORY_PREFIX + to_string(index);
 }

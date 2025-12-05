@@ -1,15 +1,15 @@
 #include "mainCommand.h"
 
-CmdResult openedTty(const json& command){
-    return Terminal::openedTty(command);
-}
-
 int mainCommand(const json& command, int client_sock, ucred cred) {   
     (void)cred;  // unused
     CmdResult result;   
     try {
         if (command[COMMAND_KEY] == COMMAND_OPENED_TTY) {
-            result = openedTty(command);
+            result = Terminal::openedTty(command);
+        }else if (command[COMMAND_KEY] == COMMAND_CLOSED_TTY) {
+            result = Terminal::closedTty(command);
+        }else if (command[COMMAND_KEY] == "asdf") {
+            // result = Terminal::closedTty(command);
         } else if (command[COMMAND_KEY] == COMMAND_UPDATE_DIR_HISTORY) {
             result = Terminal::updateDirHistory(command);
         } else if (command[COMMAND_KEY] == "cdForward") {

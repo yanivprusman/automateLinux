@@ -26,7 +26,11 @@ daemon() {
     if [ "$formatOutput" = "true" ]; then
         printf '%s' "$reply" | sed 's/\\n/\n/g'
     else
-        printf '%s\n' "$reply"
+        # printf %q "$reply" > /tmp/test.txt
+        printf '%s' "$reply"
+        if [[ "$reply" != "" ]]; then
+            printf '\n'
+        fi
     fi
 }
 export -f daemon

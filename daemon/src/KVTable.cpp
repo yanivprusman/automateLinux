@@ -173,3 +173,13 @@ int KVTable::deleteByPrefix(const string& prefix) {
     return (rc == SQLITE_DONE) ? SQLITE_OK : rc;
 }
 
+int KVTable::deleteEntry(const string& key) {
+    const char* sql = "DELETE FROM kv WHERE key = ?";
+    sqlite3_stmt* stmt;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) return rc;
+    sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
+    rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    return (rc == SQLITE_DONE) ? SQLITE_OK : rc;
+}

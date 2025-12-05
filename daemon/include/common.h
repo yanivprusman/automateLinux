@@ -27,6 +27,7 @@
 #define DIR_HISTORY_DEFAULT_DIR "/home/yaniv/coding/"
 #define COMMAND_KEY "command"
 #define COMMAND_OPENED_TTY "openedTty"
+#define COMMAND_CLOSED_TTY "closedTty"
 #define COMMAND_UPDATE_DIR_HISTORY "updateDirHistory"
 #define mustEndWithNewLine "\n"
 
@@ -42,7 +43,7 @@ struct Directories {
 struct CmdResult {
     int status;         
     std::string message;
-    CmdResult(int s = 0, const std::string& msg = "") 
+    CmdResult(int s = 0, const std::string& msg = "\n") 
         : status(s), message(msg) {}
 };
 

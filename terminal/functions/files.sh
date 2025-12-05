@@ -71,7 +71,7 @@ export -f touchDirectories
 lastChangedFiles() {
     $(theRealPath "${AUTOMATE_LINUX_DIR}/utilities/lastChanged/lastChanged" "$@")
 }
-export -f lastChanged
+export -f lastChangedFiles 
 
 lastChanged() {
     lastChangedFiles | 
@@ -84,6 +84,3 @@ lastChanged() {
 }
 export -f lastChanged
 
-# lastChanged() {
-#     ls -l --color=always --time-style="+%d/%m/%Y %H:%M" $(lastChangedFiles) | awk '{print $8 "\t" $6, $7}' | column -t -s $'\t'
-# }

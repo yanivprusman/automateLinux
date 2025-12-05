@@ -133,3 +133,14 @@ unset a
 #         This  variable can be used with BASH_LINENO and BASH_SOURCE.  Each element of FUNCNAME has corresponding elements in BASH_LINENO
 #         and BASH_SOURCE to describe the call stack.  For instance, ${FUNCNAME[$i]} was called from the file ${BASH_SOURCE[$i+1]} at line
 #         number ${BASH_LINENO[$i]}.  The caller builtin displays the current call stack using this information.
+
+# onlySourced() {
+#     local callType="$(getCallType)"
+#     echo "callType is $callType" >&2
+#     if [[ "$callType" != $CALL_TYPE_SOURCED ]]; then
+#         echo -e "${RED}Error: build.sh must be sourced, not executed directly.${NC}"
+#         # return 1
+#         exit 1
+#     fi
+# }
+# export -f onlySourced

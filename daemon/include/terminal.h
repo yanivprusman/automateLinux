@@ -6,13 +6,14 @@
 
 class Terminal {
     public:
-        Terminal();
+        Terminal( int tty );
         ~Terminal();
         static set<Terminal*> instances;
         static CmdResult openedTty(const json& command);
         CmdResult _openedTty(const json& command);
         int tty;
-        string dirHistoryKey(int index);
+        string dirHistoryEntryKey(int index);
+        string dirHistoryPointerKey(int index);
 };
 
 #endif // TERMINAL_H

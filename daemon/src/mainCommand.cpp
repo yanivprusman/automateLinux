@@ -1,7 +1,6 @@
 #include "mainCommand.h"
 
 CmdResult openedTty(const json& command){
-    // kvTable.countKeysByPrefix
     return Terminal::openedTty(command);
 }
 
@@ -10,7 +9,6 @@ int mainCommand(const json& command, int client_sock, ucred cred) {
     try {
         if (command[COMMAND_KEY] == COMMAND_OPENED_TTY) {
             result = openedTty(command);
-            // result.message += "another line\n";
         } else {
             result.status = 1;
             result.message = "unknown command " + command[COMMAND_KEY].get<string>() + "\n";

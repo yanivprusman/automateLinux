@@ -1,6 +1,21 @@
 
-b(){
-    ./build.sh "$@"
+b() {
+    local args=()
+    local source_flag=false
+
+    for arg in "$@"; do
+        if [[ "$arg" == "-source" ]]; then
+            source_flag=true
+        else
+            args+=("$arg")
+        fi
+    done
+
+    if $source_flag; then
+        source ./build.sh "${args[@]}"
+    else
+        ./build.sh "${args[@]}"
+    fi
 }
 export -f b
 

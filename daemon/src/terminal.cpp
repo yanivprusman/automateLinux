@@ -54,15 +54,15 @@ string Terminal::dirHistoryEntryKey(int index) {
 }
 
 CmdResult Terminal::updateDirHistory(const json& command) {
+    int tty = command[TTY_KEY].get<int>();
     for (Terminal* terminal : instances) {
-        if (terminal->tty == command[TTY_KEY].get<int>()) {
+        if (terminal->tty == tty) {
             return terminal->_updateDirHistory(command);
         }
     }
-    CmdResult result;
-    result.status = 1;
-    result.message = "Terminal instance not found for tty " + to_string(command[TTY_KEY].get<int>()) + "\n";
-    return result;  
+    // Terminal not found, create it (auto-register on first updateDirHistory)
+    Terminal* terminal = new Terminal(tty);
+    return terminal->_updateDirHistory(command);
 }
 
 CmdResult Terminal::_updateDirHistory(const json& command) {

@@ -1,5 +1,5 @@
 _daemon_completion() {
-    local cur prev opts commands
+    local cur prev opts commands words
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
@@ -8,12 +8,20 @@ _daemon_completion() {
     commands="openedTty updateDirHistory cdForward cdBackward showIndex deleteAllDirEntries listAllEntries"
     
     # Main options
-    opts="-h --help"
+    opts="--json -h --help"
     
     case "$prev" in
         daemon|d)
-            # Complete with commands and options
+            # After daemon/d, suggest commands and options
             COMPREPLY=( $(compgen -W "$commands $opts" -- "$cur") )
+            ;;
+        --json)
+            # After --json flag, complete with commands
+            COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
+            ;;
+        openedTty|updateDirHistory|cdForward|cdBackward|showIndex|deleteAllDirEntries|listAllEntries)
+            # After a command, suggest --json flag
+            COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
             ;;
         *)
             # For other cases, check if we're looking at an option
@@ -23,9 +31,12 @@ _daemon_completion() {
                     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
                     ;;
                 *)
-                    # Default: suggest commands if at a position where they're expected
-                    if [[ $COMP_CWORD -eq 1 ]]; then
-                        COMPREPLY=( $(compgen -W "$commands $opts" -- "$cur") )
+                    # Default: check context
+                    if [[ $COMP_CWORD -eq 1 || ( $COMP_CWORD -eq 2 && "${COMP_WORDS[1]}" == "--json" ) ]]; then
+                        COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
+                    else
+                        # Suggest options/flags for any position after command
+                        COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
                     fi
                     ;;
             esac

@@ -1,10 +1,4 @@
 (return 0 2>/dev/null) || { echo "Script must be sourced"; exit 1; }
-
-# Ensure socket path is set
-if [ -z "$AUTOMATE_LINUX_SOCKET_PATH" ]; then
-    export AUTOMATE_LINUX_SOCKET_PATH="/run/automatelinux/automatelinux-daemon.sock"
-fi
-
 if [[ " $@ " =~ " -rebuild " ]]; then
     rm -rf build
 fi

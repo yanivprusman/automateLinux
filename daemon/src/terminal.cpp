@@ -65,6 +65,31 @@ CmdResult Terminal::updateDirHistory(const json& command) {
     return result;  
 }
 
+CmdResult Terminal::_updateDirHistory(const json& command) {
+    CmdResult result;
+    int index = getIndex();
+    string pwd = getPWD(command);
+    string currentDir = getDirHistoryEntry(index);
+    string nextDir = getDirHistoryEntry(index+1);
+    kvTable.upsert(INDEX_OF_LAST_TOUCHED_DIR_KEY, to_string(index));
+    result.status = 0;
+    result.message = "\n";
+    if (pwd.empty()) {
+        result.status = 1;
+        result.message = "No directory provided to updateDirHistory\n";
+        return result;
+    }else if (currentDir == pwd) {
+    }else if (nextDir == pwd) {
+        kvTable.upsert(dirHistoryPointerKey, to_string(index+1));
+    }else{
+        int insertIndex = index + 1;
+        kvTable.insertAt(dirHistoryKeyPrefix(), insertIndex, pwd);
+        kvTable.upsert(dirHistoryPointerKey, to_string(insertIndex));
+        kvTable.upsert(INDEX_OF_LAST_TOUCHED_DIR_KEY, to_string(index + 1));
+    }
+    return result;
+}
+
 int Terminal::getIndex() {
     return stoi(kvTable.get(dirHistoryPointerKey));
 }
@@ -79,35 +104,6 @@ string Terminal::getDirHistoryEntry(int index) {
 
 string Terminal::dirHistoryKeyPrefix() {
     return DIR_HISTORY_PREFIX;
-}
-
-CmdResult Terminal::_updateDirHistory(const json& command) {
-    CmdResult result;
-    int index = getIndex();
-    string pwd = getPWD(command);
-    string currentDir = getDirHistoryEntry(index);
-    string nextDir = getDirHistoryEntry(index+1);
-    if (pwd.empty()) {
-        result.status = 1;
-        result.message = "No directory provided to updateDirHistory\n";
-        return result;
-    }else if (currentDir == pwd) {
-        result.status = 0;
-        result.message = pwd + "\n";
-        return result;
-    }else if (nextDir == pwd) {
-        kvTable.upsert(dirHistoryPointerKey, to_string(index+1));
-        result.status = 0;
-        result.message = pwd + "\n";
-        return result;
-    }else{
-        int insertIndex = index + 1;
-        kvTable.insertAt(dirHistoryKeyPrefix(), insertIndex, pwd);
-        kvTable.upsert(dirHistoryPointerKey, to_string(insertIndex));
-        result.status = 0;
-        result.message = pwd + "\n";
-        return result;
-    }
 }
 
 CmdResult Terminal::cdForward(const json& command) {

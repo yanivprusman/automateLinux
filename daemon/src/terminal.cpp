@@ -26,14 +26,31 @@ CmdResult Terminal::openedTty(const json& command) {
 CmdResult Terminal::_openedTty(const json& command) {
     (void)command;  // unused
     CmdResult result;
-    int index = stoi(kvTable.get(dirHistoryPointerKey));
-    result.message = kvTable.get(dirHistoryEntryKey(index)) + mustEndWithNewLine;
-    result.status = 0;
+    try {
+        string indexStr = kvTable.get(dirHistoryPointerKey);
+        if (indexStr.empty()) {
+            result.status = 1;
+            result.message = "No directory history found\n";
+            return result;
+        }
+        int index = stoi(indexStr);
+        string dir = kvTable.get(dirHistoryEntryKey(index));
+        if (dir.empty()) {
+            result.status = 1;
+            result.message = "Directory not found at index " + to_string(index) + "\n";
+            return result;
+        }
+        result.message = dir + mustEndWithNewLine;
+        result.status = 0;
+    } catch (const std::exception& e) {
+        result.status = 1;
+        result.message = "Error in openedTty: " + std::string(e.what()) + "\n";
+    }
     return result;
 }
 
 string Terminal::dirHistoryEntryKey(int index) {
-    return DIR_HISTORY_POINTER_PREFIX + to_string(index);
+    return DIR_HISTORY_PREFIX + to_string(index);
 }
 
 CmdResult Terminal::updateDirHistory(const json& command) {
@@ -61,7 +78,7 @@ string Terminal::getDirHistoryEntry(int index) {
 }
 
 string Terminal::dirHistoryKeyPrefix() {
-    return DIR_HISTORY_POINTER_PREFIX;
+    return DIR_HISTORY_PREFIX;
 }
 
 CmdResult Terminal::_updateDirHistory(const json& command) {
@@ -76,19 +93,19 @@ CmdResult Terminal::_updateDirHistory(const json& command) {
         return result;
     }else if (currentDir == pwd) {
         result.status = 0;
-        result.message = "Directory is the same as the last one, not updating\n";
+        result.message = pwd + "\n";
         return result;
     }else if (nextDir == pwd) {
         kvTable.upsert(dirHistoryPointerKey, to_string(index+1));
         result.status = 0;
-        result.message = "Moved forward in directory history\n";
+        result.message = pwd + "\n";
         return result;
     }else{
         int insertIndex = index + 1;
         kvTable.insertAt(dirHistoryKeyPrefix(), insertIndex, pwd);
         kvTable.upsert(dirHistoryPointerKey, to_string(insertIndex));
         result.status = 0;
-        result.message = "New directory inserted in history\n";
+        result.message = pwd + "\n";
         return result;
     }
 }
@@ -149,6 +166,65 @@ CmdResult Terminal::_cdBackward(const json& command) {
     string prevDir = getDirHistoryEntry(index - 1);
     kvTable.upsert(dirHistoryPointerKey, to_string(index - 1));
     result.message = prevDir + mustEndWithNewLine;
+    result.status = 0;
+    return result;
+}
+
+CmdResult Terminal::showIndex(const json& command) {
+    for (Terminal* terminal : instances) {
+        if (terminal->tty == command[TTY_KEY].get<int>()) {
+            CmdResult result;
+            int index = terminal->getIndex();
+            string dir = terminal->getDirHistoryEntry(index);
+            result.message = "Index: " + to_string(index) + "\nDirectory: " + dir + "\n";
+            result.status = 0;
+            return result;
+        }
+    }
+    CmdResult result;
+    result.status = 1;
+    result.message = "Terminal instance not found for tty " + to_string(command[TTY_KEY].get<int>()) + "\n";
+    return result;
+}
+
+CmdResult Terminal::deleteAllDirEntries(const json& command) {
+    (void)command;  // unused
+    kvTable.deleteByPrefix(DIR_HISTORY_POINTER_PREFIX);
+    kvTable.deleteByPrefix(DIR_HISTORY_PREFIX);
+    // Reset to initial state
+    kvTable.upsert(string(DIR_HISTORY_PREFIX) + "0", DIR_HISTORY_DEFAULT_DIR);
+    kvTable.upsert(INDEX_OF_LAST_TOUCHED_DIR_KEY, "0");
+    CmdResult result;
+    result.status = 0;
+    result.message = "All directory entries deleted\n";
+    return result;
+}
+
+CmdResult Terminal::listAllEntries(const json& command) {
+    (void)command;  // unused
+    // List all dirHistory entries from database
+    CmdResult result;
+    result.message = "dirHistory entries:\n";
+    
+    bool foundAny = false;
+    // Iterate through all possible indices and collect entries
+    for (int i = 0; i < 1000; i++) {  // Assume max 1000 entries
+        string entry = getDirHistoryEntry(i);
+        if (entry.empty()) {
+            if (i == 0) {
+                // No entries at all
+                result.message += "(empty)\n";
+            }
+            break;
+        }
+        foundAny = true;
+        result.message += to_string(i) + ": " + entry + "\n";
+    }
+    
+    if (!foundAny) {
+        result.message = "No directory entries found\n";
+    }
+    
     result.status = 0;
     return result;
 }

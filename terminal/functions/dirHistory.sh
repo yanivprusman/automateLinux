@@ -178,3 +178,95 @@ updateDirHistory() {
     fi
 }
 export -f updateDirHistory
+
+# Directory history navigation wrapper functions
+# These wrap the daemon commands and provide nice formatted output
+
+dirHistoryShowIndex() {
+    local output
+    output=$(daemon showIndex)
+    # Unescape JSON multiline strings
+    output="${output//\\n/$'\n'}"
+    output="${output//\\\"/\"}"
+    if [[ $? -eq 0 ]]; then
+        echo "$output"
+    else
+        echo "Error: $output" >&2
+        return 1
+    fi
+}
+
+dirHistoryListAll() {
+    local output
+    output=$(daemon listAllEntries)
+    # Unescape JSON multiline strings
+    output="${output//\\n/$'\n'}"
+    output="${output//\\\"/\"}"
+    if [[ $? -eq 0 ]]; then
+        echo "$output"
+    else
+        echo "Error: $output" >&2
+        return 1
+    fi
+}
+
+dirHistoryDeleteAll() {
+    local output
+    output=$(daemon deleteAllDirEntries)
+    # Unescape JSON multiline strings
+    output="${output//\\n/$'\n'}"
+    output="${output//\\\"/\"}"
+    if [[ $? -eq 0 ]]; then
+        echo "$output"
+    else
+        echo "Error: $output" >&2
+        return 1
+    fi
+}
+
+dirHistoryForward() {
+    local output dir
+    output=$(daemon cdForward)
+    # Unescape JSON multiline strings
+    output="${output//\\n/$'\n'}"
+    output="${output//\\\"/\"}"
+    if [[ $? -eq 0 ]]; then
+        dir=$(echo "$output" | head -1)
+        # Just output the directory, don't cd here
+        echo "$dir"
+        return 0
+    else
+        echo "Error: $output" >&2
+        return 1
+    fi
+}
+
+dirHistoryBackward() {
+    local output dir
+    output=$(daemon cdBackward)
+    # Unescape JSON multiline strings
+    output="${output//\\n/$'\n'}"
+    output="${output//\\\"/\"}"
+    if [[ $? -eq 0 ]]; then
+        dir=$(echo "$output" | head -1)
+        # Just output the directory, don't cd here
+        echo "$dir"
+        return 0
+    else
+        echo "Error: $output" >&2
+        return 1
+    fi
+}
+
+# Aliases for convenience
+alias dhow="dirHistoryShowIndex"
+alias dhlist="dirHistoryListAll"
+alias dhdelete="dirHistoryDeleteAll"
+alias dhforward="dirHistoryForward"
+alias dhbackward="dirHistoryBackward"
+
+export -f dirHistoryShowIndex
+export -f dirHistoryListAll
+export -f dirHistoryDeleteAll
+export -f dirHistoryForward
+export -f dirHistoryBackward

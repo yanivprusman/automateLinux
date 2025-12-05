@@ -1,4 +1,10 @@
 (return 0 2>/dev/null) || { echo "Script must be sourced"; exit 1; }
+
+# Ensure socket path is set
+if [ -z "$AUTOMATE_LINUX_SOCKET_PATH" ]; then
+    export AUTOMATE_LINUX_SOCKET_PATH="/run/automatelinux/automatelinux-daemon.sock"
+fi
+
 if [[ " $@ " =~ " -rebuild " ]]; then
     rm -rf build
 fi
@@ -15,6 +21,7 @@ if [[ -n "$DAEMON_COPROC_PID" ]]; then
     DAEMON_COPROC_PID=
 fi
 sudo systemctl restart daemon.service
+sleep 0.5
 coproc DAEMON_COPROC { socat - UNIX-CONNECT:"$AUTOMATE_LINUX_SOCKET_PATH" 2>/dev/null; }
 export AUTOMATE_LINUX_DAEMON_FD_IN=${DAEMON_COPROC[1]}
 export AUTOMATE_LINUX_DAEMON_FD_OUT=${DAEMON_COPROC[0]}

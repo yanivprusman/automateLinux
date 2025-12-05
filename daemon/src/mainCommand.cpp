@@ -16,6 +16,12 @@ int mainCommand(const json& command, int client_sock, ucred cred) {
             result = Terminal::cdForward(command);
         } else if (command[COMMAND_KEY] == "cdBackward") {
             result = Terminal::cdBackward(command);
+        } else if (command[COMMAND_KEY] == "showIndex") {
+            result = Terminal::showIndex(command);
+        } else if (command[COMMAND_KEY] == "deleteAllDirEntries") {
+            result = Terminal::deleteAllDirEntries(command);
+        } else if (command[COMMAND_KEY] == "listAllEntries") {
+            result = Terminal::listAllEntries(command);
         } else {
             result.status = 1;
             result.message = "unknown command " + command[COMMAND_KEY].get<string>() + "\n";

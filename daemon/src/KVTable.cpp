@@ -99,16 +99,12 @@ string KVTable::get(const string& key) {
 }
 
 int KVTable::insertAt(const string& keyPrefix, int index, const string& value) {
-    // First, insert the new entry at the given index
-    string newKey = keyPrefix + to_string(index);
-    int rc = upsert(newKey, value);
-    if (rc != SQLITE_OK) return rc;
-    
-    // Then shift all keys with this prefix that have indices >= insertion point
+    // First, shift all keys with this prefix that have indices >= insertion point
+    // Do this BEFORE inserting the new entry to avoid conflicts
     const string likePattern = keyPrefix + "%";
     const char* sql = "SELECT key FROM kv WHERE key LIKE ?";
     sqlite3_stmt* stmt;
-    rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
     if (rc != SQLITE_OK) return rc;
     
     sqlite3_bind_text(stmt, 1, likePattern.c_str(), -1, SQLITE_TRANSIENT);
@@ -156,6 +152,24 @@ int KVTable::insertAt(const string& keyPrefix, int index, const string& value) {
         upsert(newKeyShifted, oldValue);
     }
     
-    return SQLITE_OK;
+    // Finally, insert the new entry at the given index
+    string newKey = keyPrefix + to_string(index);
+    rc = upsert(newKey, value);
+    
+    return rc;
+}
+
+int KVTable::deleteByPrefix(const string& prefix) {
+    const string likePattern = prefix + "%";
+    const char* sql = "DELETE FROM kv WHERE key LIKE ?";
+    sqlite3_stmt* stmt;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) return rc;
+    
+    sqlite3_bind_text(stmt, 1, likePattern.c_str(), -1, SQLITE_TRANSIENT);
+    rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    
+    return (rc == SQLITE_DONE) ? SQLITE_OK : rc;
 }
 

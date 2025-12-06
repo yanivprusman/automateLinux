@@ -208,44 +208,5 @@ CmdResult Terminal::showIndex(const json& command) {
     return result;
 }
 
-CmdResult Terminal::deleteAllDirEntries(const json& command) {
-    (void)command;  // unused
-    kvTable.deleteByPrefix(DIR_HISTORY_POINTER_PREFIX);
-    kvTable.deleteByPrefix(DIR_HISTORY_PREFIX);
-    // Reset to initial state
-    kvTable.upsert(string(DIR_HISTORY_PREFIX) + "0", DIR_HISTORY_DEFAULT_DIR);
-    kvTable.upsert(INDEX_OF_LAST_TOUCHED_DIR_KEY, "0");
-    CmdResult result;
-    result.status = 0;
-    result.message = "All directory entries deleted\n";
-    return result;
-}
 
-CmdResult Terminal::listAllEntries(const json& command) {
-    (void)command;  // unused
-    // List all dirHistory entries from database
-    CmdResult result;
-    result.message = "dirHistory entries:\n";
-    
-    bool foundAny = false;
-    // Iterate through all possible indices and collect entries
-    for (int i = 0; i < 1000; i++) {  // Assume max 1000 entries
-        string entry = getDirHistoryEntry(i);
-        if (entry.empty()) {
-            if (i == 0) {
-                // No entries at all
-                result.message += "(empty)\n";
-            }
-            break;
-        }
-        foundAny = true;
-        result.message += to_string(i) + ": " + entry + "\n";
-    }
-    
-    if (!foundAny) {
-        result.message = "No directory entries found\n";
-    }
-    
-    result.status = 0;
-    return result;
-}
+

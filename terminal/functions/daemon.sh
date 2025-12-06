@@ -3,6 +3,10 @@ daemon() {
         return 1
     fi
     local formatOutput="false"
+    local formatOutputTrueFunctions=("showIndex" "showDB")
+    if [[ " ${formatOutputTrueFunctions[*]} " == *" $1 "* ]]; then
+        formatOutput="true"
+    fi
     local args=()
     for arg in "$@"; do
         if [ "$arg" = "--json" ]; then

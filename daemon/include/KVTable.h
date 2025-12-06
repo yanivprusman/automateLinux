@@ -17,6 +17,7 @@ public:
     static int createDB();
     static int countKeysByPrefix(const string& prefix);
     static string get(const string& key);
+    static std::vector<std::pair<string, string>> getAll();
 };
 
 #endif // KVTABLE_H

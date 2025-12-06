@@ -16,6 +16,7 @@
 #include <sstream>
 #include <cerrno>
 #include <sqlite3.h>
+#include <utility>
 
 #define OUTPUT_FILE "/home/yaniv/coding/automateLinux/daemon/output.txt"
 #define SOCKET_PATH "/run/automatelinux/automatelinux-daemon.sock"
@@ -25,17 +26,42 @@
 #define PWD_KEY "pwd"
 #define DIR_HISTORY_PREFIX "dirHistory"
 #define DIR_HISTORY_DEFAULT_DIR "/home/yaniv/coding/"
+#define mustEndWithNewLine "\n"
 #define COMMAND_KEY "command"
 #define COMMAND_OPENED_TTY "openedTty"
 #define COMMAND_CLOSED_TTY "closedTty"
 #define COMMAND_UPDATE_DIR_HISTORY "updateDirHistory"
-#define COMMAND_DELETE_ENTRY "deleteEntry"
-#define COMMAND_CDFORWARD "cdForward"
-#define COMMAND_CDBACKWARD "cdBackward"
+#define COMMAND_CD_FORWARD "cdForward"
+#define COMMAND_CD_BACKWARD "cdBackward"
 #define COMMAND_SHOW_INDEX "showIndex"
-#define COMMAND_DELETE_ALL_DIR_ENTRIES "deleteAllDirEntries"
-#define COMMAND_LIST_ALL_ENTRIES "listAllEntries"
-#define mustEndWithNewLine "\n"
+#define COMMAND_DELETE_ENTRY "deleteEntry"
+#define COMMAND_DELETE_ENTRIES_BY_PREFIX "deleteEntriesByPrefix"
+#define COMMAND_SHOW_DB "showDB"
+#define COMMAND_ARG_TTY "tty"
+#define COMMAND_ARG_PWD "pwd"
+#define COMMAND_ARG_KEY "key"
+#define COMMAND_ARG_PREFIX "prefix"
+
+struct CommandSignature {
+    string name;
+    vector<string> requiredArgs;
+    CommandSignature(const string& n, const vector<string>& args) 
+        : name(n), requiredArgs(args) {}
+};
+
+static const CommandSignature COMMAND_REGISTRY[] = {
+    CommandSignature(COMMAND_OPENED_TTY, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_CLOSED_TTY, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_UPDATE_DIR_HISTORY, {COMMAND_ARG_TTY, COMMAND_ARG_PWD}),
+    CommandSignature(COMMAND_CD_FORWARD, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_CD_BACKWARD, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_SHOW_INDEX, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_DELETE_ENTRY, {COMMAND_ARG_KEY}),
+    CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
+    CommandSignature(COMMAND_SHOW_DB, {})
+};
+
+static const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
 
 struct Directories {
     string base;
@@ -49,7 +75,7 @@ struct Directories {
 struct CmdResult {
     int status;         
     std::string message;
-    CmdResult(int s = 0, const std::string& msg = "\n") 
+    CmdResult(int s = 0, const std::string& msg = "") 
         : status(s), message(msg) {}
 };
 
@@ -85,17 +111,6 @@ inline std::string toJsonSingleLine(const std::string& s) {
     }
     return out;
 }
-
-// inline std::string wrapJsonResponse(const std::string& message, int status = 0) {
-//     json response;
-//     if (isMultiline(message)) {
-//         response["message"] = toJsonSingleLine(message);
-//     } else {
-//         response["message"] = message;
-//     }
-//     response["status"] = status;
-//     return response.dump() + "\n";
-// }
 
 extern Directories& directories;
 extern string socketPath;

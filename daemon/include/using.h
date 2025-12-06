@@ -9,6 +9,7 @@
 #include <cstring>
 #include <nlohmann/json.hpp>
 #include <set>
+#include <vector>
 
 using std::string;
 using std::cout;
@@ -22,6 +23,7 @@ using std::perror;
 using json = nlohmann::json;
 using ordered_json = nlohmann::ordered_json;
 using std::set;
+using std::vector;
 using std::stoi;   
 
 #endif // USIND_H

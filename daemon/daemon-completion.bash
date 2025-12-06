@@ -5,10 +5,10 @@ _daemon_completion() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     
     # Define available commands
-    commands="openedTty closedTty updateDirHistory cdForward cdBackward showIndex deleteAllDirEntries deleteEntry listAllEntries"
+    commands="openedTty closedTty updateDirHistory cdForward cdBackward showIndex deleteEntry deleteEntriesByPrefix showDB "
     
     # Main options
-    opts="--json -h --help"
+    opts="-h --help"
     
     case "$prev" in
         daemon|d)

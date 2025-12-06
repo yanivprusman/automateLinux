@@ -6,7 +6,8 @@
 #include "dirHistory.h"
 #include "terminal.h"
 
-int mainCommand(const json& command, int client_sock, ucred cred);
+CmdResult testIntegrity(const json& command);
+int mainCommand(const json& command, int client_sock);
 #endif // MAINCOMMAND_H
 
 

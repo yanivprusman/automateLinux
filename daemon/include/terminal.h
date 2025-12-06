@@ -21,8 +21,6 @@ class Terminal {
         static CmdResult cdBackward(const json& command);
         CmdResult _cdBackward(const json& command);
         static CmdResult showIndex(const json& command);
-        static CmdResult deleteAllDirEntries(const json& command);
-        static CmdResult listAllEntries(const json& command);
         int tty;
         string dirHistoryPointerKey;
         int getIndex();

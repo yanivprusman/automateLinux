@@ -129,7 +129,7 @@ int handle_client_data(int client_fd) {
             prettyJson += "\n}";
             cerr << "Processing command from FD " << client_fd
                  << ": " << prettyJson << endl;
-            mainCommand(j, client_fd, state.cred);
+            mainCommand(j, client_fd);
         }
     }
     return 0;

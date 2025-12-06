@@ -36,6 +36,9 @@ int mainCommand(const json& command, int client_sock, ucred cred) {
         result.message = toJsonSingleLine(result.message);
         result.message += "\n";
     }    
+    if (command[COMMAND_KEY] == COMMAND_CLOSED_TTY) {
+        return 0;
+    }
     write(client_sock, result.message.c_str(), result.message.length());
     return 0;
 }

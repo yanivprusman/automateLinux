@@ -16,6 +16,7 @@ Terminal::Terminal(int tty) : tty(tty) {
 
 Terminal::~Terminal() {
     instances.erase(this);
+    kvTable.deleteEntry(dirHistoryPointerKey);
 }
 
 CmdResult Terminal::openedTty(const json& command) {

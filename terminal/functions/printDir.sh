@@ -130,8 +130,8 @@ EOF
         fi
     } | if [ "$copy_to_clipboard" = true ]; then
         xclip -selection clipboard
-    # else
-    #     cat
+    else
+        cat
     fi
 }
 export -f printDir

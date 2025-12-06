@@ -21,6 +21,10 @@ daemon() {
         json+=",\"$key\":\"$value\""
     done
     json+="}"
+    if [ "$COMMAND" = closedTty ]; then
+        echo $json | nc -U -q 1 "$AUTOMATE_LINUX_SOCKET_PATH"
+        return 0
+    fi
     printf '%s\n' "$json" >&"$AUTOMATE_LINUX_DAEMON_FD_IN"
     read -t 2 -r reply <&"$AUTOMATE_LINUX_DAEMON_FD_OUT"
     if [ "$formatOutput" = "true" ]; then

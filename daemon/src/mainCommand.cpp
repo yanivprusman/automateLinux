@@ -13,11 +13,11 @@ CmdResult testIntegrity(const json& command) {
         }
     }
     if (!foundCommand) {
-        return CmdResult(1, "Unknown command: " + commandName);
+        return CmdResult(1, "Unknown command: " + commandName + mustEndWithNewLine);
     }
     for (const string& arg : foundCommand->requiredArgs) {
         if (!command.contains(arg)) {
-            return CmdResult(1, "Missing required arg: " + arg);
+            return CmdResult(1, "Missing required arg: " + arg + mustEndWithNewLine);
         }
     }
     return CmdResult(0, "");

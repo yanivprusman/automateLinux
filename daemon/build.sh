@@ -16,6 +16,7 @@ if [[ -n "$DAEMON_COPROC_PID" ]]; then
 fi
 sudo systemctl restart daemon.service
 sleep 0.5
+AUTOMATE_LINUX_DAEMON_PID=$(${AUTOMATE_LINUX_DAEMON_DIR}getDaemonPID.sh)
 coproc DAEMON_COPROC { socat - UNIX-CONNECT:"$AUTOMATE_LINUX_SOCKET_PATH" 2>/dev/null; }
 export AUTOMATE_LINUX_DAEMON_FD_IN=${DAEMON_COPROC[1]}
 export AUTOMATE_LINUX_DAEMON_FD_OUT=${DAEMON_COPROC[0]}

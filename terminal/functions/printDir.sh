@@ -6,6 +6,7 @@ printDir(){
     local exclude_file=".printDir.sh"
     local mode="dirs"
     local use_color=true
+    local copy_to_clipboard=false
     
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -19,6 +20,7 @@ Options:
   -d              Process directories (default mode)
   -f              Process files
   --no-color      Disable colored output
+  -copy           Copy output to clipboard (implies --no-color)
   --help, -h      Display this help message
 
 Features:
@@ -30,11 +32,16 @@ Examples:
   printDir /path/to/dir
   printDir -f file1.txt file2.txt
   printDir /dir1 /dir2 --no-color
-  printDir /dir -f file.txt --no-color
+  printDir /dir -f file.txt -copy
 EOF
                 return 0
                 ;;
             --no-color)
+                use_color=false
+                shift
+                ;;
+            -copy)
+                copy_to_clipboard=true
                 use_color=false
                 shift
                 ;;
@@ -74,50 +81,57 @@ EOF
         fi
     done
     
-    if [ ${#dirs[@]} -gt 0 ]; then
-        for dir in "${dirs[@]}"; do
-            if [ -d "$dir" ]; then
-                for f in "${dir%/}/"*; do
-                    if [ -f "$f" ]; then
-                        local basename_f
-                        basename_f=$(basename "$f")
-                        [ -z "${excluded_files[$basename_f]}" ] || continue
-                        if [ "$use_color" = true ]; then
-                            echo -e "${GREEN}$basename_f:${NC}"
-                        else
-                            echo "$basename_f:"
+    local output
+    {
+        if [ ${#dirs[@]} -gt 0 ]; then
+            for dir in "${dirs[@]}"; do
+                if [ -d "$dir" ]; then
+                    for f in "${dir%/}/"*; do
+                        if [ -f "$f" ]; then
+                            local basename_f
+                            basename_f=$(basename "$f")
+                            [ -z "${excluded_files[$basename_f]}" ] || continue
+                            if [ "$use_color" = true ]; then
+                                echo -e "${GREEN}$basename_f:${NC}"
+                            else
+                                echo "$basename_f:"
+                            fi
+                            cat "$f"
+                            if [ "$use_color" = true ]; then
+                                echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
+                            else
+                                echo "${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}"
+                            fi
                         fi
-                        cat "$f"
-                        if [ "$use_color" = true ]; then
-                            echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
-                        else
-                            echo "${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}"
-                        fi
+                    done
+                fi
+            done
+        fi
+        if [ ${#files[@]} -gt 0 ]; then
+            for f in "${files[@]}"; do
+                if [ -f "$f" ]; then
+                    local basename_f
+                    basename_f=$(basename "$f")
+                    [ -z "${excluded_files[$basename_f]}" ] || continue
+                    if [ "$use_color" = true ]; then
+                        echo -e "${GREEN}$basename_f:${NC}"
+                    else
+                        echo "$basename_f:"
                     fi
-                done
-            fi
-        done
-    fi
-    if [ ${#files[@]} -gt 0 ]; then
-        for f in "${files[@]}"; do
-            if [ -f "$f" ]; then
-                local basename_f
-                basename_f=$(basename "$f")
-                [ -z "${excluded_files[$basename_f]}" ] || continue
-                if [ "$use_color" = true ]; then
-                    echo -e "${GREEN}$basename_f:${NC}"
-                else
-                    echo "$basename_f:"
+                    cat "$f"
+                    [ -n "$(tail -c1 "$f")" ] && echo
+                    if [ "$use_color" = true ]; then
+                        echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
+                    else
+                        echo "${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}"
+                    fi
                 fi
-                cat "$f"
-                [ -n "$(tail -c1 "$f")" ] && echo
-                if [ "$use_color" = true ]; then
-                    echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
-                else
-                    echo "${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}"
-                fi
-            fi
-        done
+            done
+        fi
+    } | if [ "$copy_to_clipboard" = true ]; then
+        xclip -selection clipboard
+    # else
+    #     cat
     fi
 }
 export -f printDir

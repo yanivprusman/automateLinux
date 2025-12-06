@@ -33,7 +33,8 @@ int mainCommand(const json& command, int client_sock, ucred cred) {
         result.message += "daemon must end in \\n\n";
     }
     if (isMultiline(result.message)) {
-        result.message = toJsonSingleLine(result.message) + "\n";
+        result.message = toJsonSingleLine(result.message);
+        result.message += "\n";
     }    
     write(client_sock, result.message.c_str(), result.message.length());
     return 0;

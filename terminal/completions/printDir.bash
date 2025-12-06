@@ -3,7 +3,7 @@ _printDir_completion() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts="-d -f --no-color --help -h"
+    opts="--help -h -d -f --no-color -copy"
     if [[ "$cur" == --* ]]; then
         COMPREPLY=( $(compgen -W "--no-color --help" -- "$cur") )
         return 0

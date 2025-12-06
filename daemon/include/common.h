@@ -28,6 +28,11 @@
 #define DIR_HISTORY_DEFAULT_DIR "/home/yaniv/coding/"
 #define mustEndWithNewLine "\n"
 #define COMMAND_KEY "command"
+#define COMMAND_EMPTY ""
+#define COMMAND_HELP "help"
+#define COMMAND_HELP_DASH "-help"
+#define COMMAND_HELP_DDASH "--help"
+#define COMMAND_HELP_H "-h"
 #define COMMAND_OPENED_TTY "openedTty"
 #define COMMAND_CLOSED_TTY "closedTty"
 #define COMMAND_UPDATE_DIR_HISTORY "updateDirHistory"
@@ -50,6 +55,10 @@ struct CommandSignature {
 };
 
 static const CommandSignature COMMAND_REGISTRY[] = {
+    CommandSignature(COMMAND_EMPTY, {}),
+    CommandSignature(COMMAND_HELP, {}),
+    CommandSignature(COMMAND_HELP_DASH, {}),
+    CommandSignature(COMMAND_HELP_DDASH, {}),
     CommandSignature(COMMAND_OPENED_TTY, {COMMAND_ARG_TTY}),
     CommandSignature(COMMAND_CLOSED_TTY, {COMMAND_ARG_TTY}),
     CommandSignature(COMMAND_UPDATE_DIR_HISTORY, {COMMAND_ARG_TTY, COMMAND_ARG_PWD}),

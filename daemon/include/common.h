@@ -29,6 +29,12 @@
 #define COMMAND_OPENED_TTY "openedTty"
 #define COMMAND_CLOSED_TTY "closedTty"
 #define COMMAND_UPDATE_DIR_HISTORY "updateDirHistory"
+#define COMMAND_DELETE_ENTRY "deleteEntry"
+#define COMMAND_CDFORWARD "cdForward"
+#define COMMAND_CDBACKWARD "cdBackward"
+#define COMMAND_SHOW_INDEX "showIndex"
+#define COMMAND_DELETE_ALL_DIR_ENTRIES "deleteAllDirEntries"
+#define COMMAND_LIST_ALL_ENTRIES "listAllEntries"
 #define mustEndWithNewLine "\n"
 
 struct Directories {

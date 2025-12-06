@@ -178,8 +178,14 @@ int KVTable::deleteEntry(const string& key) {
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
     if (rc != SQLITE_OK) return rc;
+
     sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
-    return (rc == SQLITE_DONE) ? SQLITE_OK : rc;
+    if (rc != SQLITE_DONE) return rc;
+    int changes = sqlite3_changes(db);
+    if (changes == 0) {
+        return SQLITE_ERROR; 
+    }
+    return SQLITE_OK;  
 }

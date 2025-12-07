@@ -91,17 +91,15 @@ int mainCommand(const json& command, int client_sock) {
                 result.message = "Missing required arg: prefix\n";
             }
         } else if (command[COMMAND_KEY] == COMMAND_DELETE_ENTRIES_BY_PREFIX) {
-            if (command.contains(COMMAND_ARG_PREFIX)) {
-                string prefix = command[COMMAND_ARG_PREFIX].get<string>();
-                auto entries = kvTable.getByPrefix(prefix);
-                result.message = formatEntriesAsText(entries);
+            string prefix = command[COMMAND_ARG_PREFIX].get<string>();
+            int rc = kvTable.deleteByPrefix(prefix);
+            if (rc == SQLITE_OK) {
                 result.status = 0;
+                result.message = "Entries deleted\n";
             } else {
                 result.status = 1;
-                result.message = "Missing required arg: prefix\n";
+                result.message = "Error deleting entries with prefix: " + prefix + "\n";
             }
-        } else if (command[COMMAND_KEY] == COMMAND_DELETE_ENTRIES_BY_PREFIX) {
-            result = KVTable::deleteByPrefix(command);
         } else if (command[COMMAND_KEY] == COMMAND_SHOW_DB) {
             result.message = formatEntriesAsText(kvTable.getAll());
             result.status = 0;

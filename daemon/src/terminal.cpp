@@ -1,6 +1,6 @@
 #include "terminal.h"
 
-set<Terminal*> Terminal::instances;
+vector<Terminal*> Terminal::instances;
 
 
 Terminal* Terminal::getInstanceByTTY(int tty) {
@@ -13,7 +13,7 @@ Terminal* Terminal::getInstanceByTTY(int tty) {
 }
 
 Terminal::Terminal(int tty) : tty(tty) {
-    instances.insert(this);
+    instances.push_back(this);
     string indexString = kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
     if (indexString.empty()) {
         kvTable.upsert(dirHistoryEntryKey(0), DIR_HISTORY_DEFAULT_DIR);
@@ -25,7 +25,10 @@ Terminal::Terminal(int tty) : tty(tty) {
 }
 
 Terminal::~Terminal() {
-    instances.erase(this);
+    auto it = std::find(instances.begin(), instances.end(), this);
+    if (it != instances.end()) {
+        instances.erase(it);
+    }
     kvTable.deleteEntry(dirHistoryPointerKey);
 }
 
@@ -75,7 +78,10 @@ CmdResult Terminal::closedTty(const json& command) {
 CmdResult Terminal::_closedTty(const json& command) {
     (void)command;  
     CmdResult result;
-    instances.erase(this);
+    auto it = std::find(instances.begin(), instances.end(), this);
+    if (it != instances.end()) {
+        instances.erase(it);
+    }
     kvTable.deleteEntry(dirHistoryPointerKey);
     result.status = 0;
     result.message = "\n";

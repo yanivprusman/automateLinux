@@ -8,7 +8,7 @@ class Terminal {
     public:
         Terminal( int tty );
         ~Terminal();
-        static set<Terminal*> instances;
+        static vector<Terminal*> instances;
         static Terminal* getInstanceByTTY(int tty);
         static string dirHistoryEntryKey(int index);
         static CmdResult openedTty(const json& command);

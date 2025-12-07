@@ -34,16 +34,26 @@ int mainCommand(const json& command, int client_sock) {
                    command[COMMAND_KEY] == COMMAND_HELP_DDASH ){
             result.status = 0;
             result.message =
-                "Available commands:\n"
-                "1. openedTty - Notify daemon that a terminal has been opened.\n"
-                "2. closedTty - Notify daemon that a terminal has been closed.\n"
-                "3. updateDirHistory - Update the directory history for a terminal.\n"
-                "4. cdForward - Move forward in the directory history for a terminal.\n"
-                "5. cdBackward - Move backward in the directory history for a terminal.\n"
-                "6. showTerminalInstance - Show the current terminal instance.\n"
-                "7. deleteEntry - Delete a specific entry from the database by key.\n"
-                "8. deleteEntriesByPrefix - Delete all entries from the database with a specific prefix.\n"
-                "9. showDB - Display all entries in the database.\n";
+                "Usage: daemon [OPTIONS] <COMMAND>\n\n"
+                "Manage terminal history and database entries.\n\n"
+                "Commands:\n"
+                "  openedTty               Notify daemon that a terminal has been opened.\n"
+                "  closedTty               Notify daemon that a terminal has been closed.\n"
+                "  updateDirHistory        Update the directory history for a terminal.\n"
+                "  cdForward               Move forward in the directory history.\n"
+                "  cdBackward              Move backward in the directory history.\n"
+                "  showTerminalInstance    Show the current terminal instance.\n"
+                "  deleteEntry             Delete a specific entry from the database by key.\n"
+                "  deleteEntriesByPrefix   Delete all entries with a specific prefix.\n"
+                "  showDB                  Display all entries in the database.\n\n"
+                "Options:\n"
+                "  --help                  Display this help message.\n"
+                "  --json                  Output results in JSON format.\n\n"
+                "Examples:\n"
+                "  daemon openedTty\n"
+                "  daemon cdForward\n"
+                "  daemon deleteEntriesByPrefix session_\n"
+                "  daemon showDB --json\n";
         } else if (command[COMMAND_KEY] == COMMAND_OPENED_TTY) {
             result = Terminal::openedTty(command);
         } else if (command[COMMAND_KEY] == COMMAND_CLOSED_TTY) {

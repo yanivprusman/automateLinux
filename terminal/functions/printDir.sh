@@ -1,4 +1,4 @@
-printDir(){
+print(){
     local dirs=()
     local files=()
     local dir f
@@ -134,4 +134,4 @@ EOF
         cat
     fi
 }
-export -f printDir
+export -f print

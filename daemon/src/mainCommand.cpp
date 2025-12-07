@@ -56,8 +56,8 @@ int mainCommand(const json& command, int client_sock) {
             result = Terminal::cdBackward(command);
         } else if (command[COMMAND_KEY] == COMMAND_SHOW_TERMINAL_INSTANCE) {
             result = Terminal::showTerminalInstance(command);
-        // } else if (command[COMMAND_KEY] == COMMAND_SHOW_ALL_TERMINAL_INSTANCES) {
-        //     result = Terminal::showAllTerminalInstances(command);
+        } else if (command[COMMAND_KEY] == COMMAND_SHOW_ALL_TERMINAL_INSTANCES) {
+            result = Terminal::showAllTerminalInstances(command);
         } else if (command[COMMAND_KEY] == COMMAND_DELETE_ENTRIES_BY_PREFIX) {
             result = KVTable::deleteByPrefix(command);
         } else if (command[COMMAND_KEY] == COMMAND_SHOW_DB) {

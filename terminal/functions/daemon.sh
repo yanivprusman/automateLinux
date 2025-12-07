@@ -32,9 +32,10 @@ daemon() {
     printf '%s\n' "$json" >&"$AUTOMATE_LINUX_DAEMON_FD_IN"
     read -t 2 -r reply <&"$AUTOMATE_LINUX_DAEMON_FD_OUT"
     if [ "$formatOutput" = "true" ]; then
-        printf '%s' "$reply" | sed 's/\\n/\n/g'
+        printf '%s' "$reply" | awk '
+        {gsub(/\\n/,"\n"); printf "%s", $0} 
+        END {if (substr($0,length,1)!="\n") printf "\n"}'
     else
-        # printf %q "$reply" > /tmp/test.txt
         printf '%s' "$reply"
         if [[ "$reply" != "" ]]; then
             printf '\n'

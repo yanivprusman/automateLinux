@@ -3,44 +3,33 @@ _daemon_completion() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    
-    # Define available commands
-    commands="openedTty closedTty updateDirHistory cdForward cdBackward showIndex deleteEntry deleteEntriesByPrefix showDB "
-    
-    # Main options
-    opts="-h --help"
+    commands="openedTty closedTty updateDirHistory cdForward cdBackward showTerminalInstance showAllTerminalInstances deleteEntry deleteEntriesByPrefix showDB "
+    opts="--help"
     
     case "$prev" in
         daemon|d)
-            # After daemon/d, suggest commands and options
             COMPREPLY=( $(compgen -W "$commands $opts" -- "$cur") )
             ;;
         --json)
-            # After --json flag, complete with commands
             COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
             ;;
-        openedTty|updateDirHistory|cdForward|cdBackward|showIndex|deleteAllDirEntries|listAllEntries)
-            # After a command, suggest --json flag
+        openedTty|updateDirHistory|cdForward|cdBackward|showTerminalInstance|deleteAllDirEntries|listAllEntries)
             COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
             ;;
         *)
-            # For other cases, check if we're looking at an option
-            case "$cur" in
-                -*)
-                    # Complete with options
+        case "$cur" in
+            -*)
+                COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
+                ;;
+            *)
+                if [[ $COMP_CWORD -eq 1 || ( $COMP_CWORD -eq 2 && "${COMP_WORDS[1]}" == "--json" ) ]]; then
+                    COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
+                else
                     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
-                    ;;
-                *)
-                    # Default: check context
-                    if [[ $COMP_CWORD -eq 1 || ( $COMP_CWORD -eq 2 && "${COMP_WORDS[1]}" == "--json" ) ]]; then
-                        COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
-                    else
-                        # Suggest options/flags for any position after command
-                        COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
-                    fi
-                    ;;
-            esac
-            ;;
+                fi
+                ;;
+        esac
+        ;;
     esac
 }
 

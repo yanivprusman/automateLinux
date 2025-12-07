@@ -2,6 +2,16 @@
 
 set<Terminal*> Terminal::instances;
 
+
+Terminal* Terminal::getInstanceByTTY(int tty) {
+    for (Terminal* terminal : instances) {
+        if (terminal->tty == tty) {
+            return terminal;
+        }
+    }
+    return nullptr;
+}
+
 Terminal::Terminal(int tty) : tty(tty) {
     instances.insert(this);
     string indexString = kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
@@ -52,14 +62,13 @@ CmdResult Terminal::_openedTty(const json& command) {
 
 CmdResult Terminal::closedTty(const json& command) {
     int tty = command[TTY_KEY].get<int>();
-    for (Terminal* terminal : instances) {
-        if (terminal->tty == tty) {
-            return terminal->_closedTty(command);
-        }
+    Terminal* terminal = getInstanceByTTY(tty);
+    if (terminal) {
+        return terminal->_closedTty(command);
     }
     CmdResult result;
     result.status = 1;
-    result.message = "Terminal instance not found for tty " + to_string(tty) + "\n";
+    result.message = string("Terminal instance not found for tty ") + to_string(tty) + mustEndWithNewLine;
     return result;
 }
 
@@ -80,13 +89,12 @@ string Terminal::dirHistoryEntryKey(int index) {
 
 CmdResult Terminal::updateDirHistory(const json& command) {
     int tty = command[TTY_KEY].get<int>();
-    for (Terminal* terminal : instances) {
-        if (terminal->tty == tty) {
-            return terminal->_updateDirHistory(command);
-        }
+    Terminal* terminal = getInstanceByTTY(tty);
+    if (terminal) {
+        return terminal->_updateDirHistory(command);
     }
     // Terminal not found, create it (auto-register on first updateDirHistory)
-    Terminal* terminal = new Terminal(tty);
+    terminal = new Terminal(tty);
     return terminal->_updateDirHistory(command);
 }
 
@@ -132,14 +140,14 @@ string Terminal::dirHistoryKeyPrefix() {
 }
 
 CmdResult Terminal::cdForward(const json& command) {
-    for (Terminal* terminal : instances) {
-        if (terminal->tty == command[TTY_KEY].get<int>()) {
-            return terminal->_cdForward(command);
-        }
+    int tty = command[TTY_KEY].get<int>();
+    Terminal* terminal = getInstanceByTTY(tty);
+    if (terminal) {
+        return terminal->_cdForward(command);
     }
     CmdResult result;
     result.status = 1;
-    result.message = "Terminal instance not found for tty " + to_string(command[TTY_KEY].get<int>()) + "\n";
+    result.message = string("Terminal instance not found for tty ") + to_string(command[TTY_KEY].get<int>()) + mustEndWithNewLine;
     return result;
 }
 
@@ -162,14 +170,14 @@ CmdResult Terminal::_cdForward(const json& command) {
 }
 
 CmdResult Terminal::cdBackward(const json& command) {
-    for (Terminal* terminal : instances) {
-        if (terminal->tty == command[TTY_KEY].get<int>()) {
-            return terminal->_cdBackward(command);
-        }
+    int tty = command[TTY_KEY].get<int>();
+    Terminal* terminal = getInstanceByTTY(tty);
+    if (terminal) {
+        return terminal->_cdBackward(command);
     }
     CmdResult result;
     result.status = 1;
-    result.message = "Terminal instance not found for tty " + to_string(command[TTY_KEY].get<int>()) + "\n";
+    result.message = string("Terminal instance not found for tty ") + to_string(command[TTY_KEY].get<int>()) +  mustEndWithNewLine;
     return result;
 }
 
@@ -191,20 +199,38 @@ CmdResult Terminal::_cdBackward(const json& command) {
     return result;
 }
 
-CmdResult Terminal::showIndex(const json& command) {
-    for (Terminal* terminal : instances) {
-        if (terminal->tty == command[TTY_KEY].get<int>()) {
-            CmdResult result;
-            int index = terminal->getIndex();
-            string dir = terminal->getDirHistoryEntry(index);
-            result.message = "Index: " + to_string(index) + "\nDirectory: " + dir + "\n";
-            result.status = 0;
-            return result;
-        }
-    }
+string Terminal::toString() {
+    int index = getIndex();
+    string dir = getDirHistoryEntry(index);
+    return "tty: " + to_string(tty) + "\nDir history index: " + to_string(index) + "\ncwd: " + dir + mustEndWithNewLine;
+}
+
+CmdResult Terminal::showTerminalInstance(const json& command) {
+    int tty = command[TTY_KEY].get<int>();
     CmdResult result;
+    Terminal* terminal = getInstanceByTTY(tty);
+    if (terminal) {
+        result.message = terminal->toString();
+        result.status = 0;
+        return result;
+    }
     result.status = 1;
-    result.message = "Terminal instance not found for tty " + to_string(command[TTY_KEY].get<int>()) + "\n";
+    result.message = string("Terminal instance not found for tty ") + to_string(command[TTY_KEY].get<int>()) + mustEndWithNewLine;
+    return result;
+}
+
+CmdResult Terminal::showAllTerminalInstances(const json& command) {
+    (void)command;  
+    CmdResult result;
+    result.status = 0;
+    if (instances.empty()) {
+        result.message = "No terminal instances found\n";
+        return result;
+    }
+    for (Terminal* terminal : instances) {
+        result.message += terminal->toString() + "\n";
+    }
+    result.message.pop_back();
     return result;
 }
 

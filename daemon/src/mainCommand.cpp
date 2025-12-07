@@ -13,11 +13,11 @@ CmdResult testIntegrity(const json& command) {
         }
     }
     if (!foundCommand) {
-        return CmdResult(1, "Unknown command: " + commandName + mustEndWithNewLine);
+        return CmdResult(1, string("Unknown command: ") + commandName + mustEndWithNewLine);
     }
     for (const string& arg : foundCommand->requiredArgs) {
         if (!command.contains(arg)) {
-            return CmdResult(1, "Missing required arg: " + arg + mustEndWithNewLine);
+            return CmdResult(1, string("Missing required arg: ") + arg + mustEndWithNewLine);
         }
     }
     return CmdResult(0, "");
@@ -31,10 +31,7 @@ int mainCommand(const json& command, int client_sock) {
         if (integrityCheck.status != 0) {
             result = integrityCheck;
         } else if (command[COMMAND_KEY] == COMMAND_EMPTY ||
-                   command[COMMAND_KEY] == COMMAND_HELP ||
-                   command[COMMAND_KEY] == COMMAND_HELP_DASH ||
-                   command[COMMAND_KEY] == COMMAND_HELP_DDASH ||
-                   command[COMMAND_KEY] == COMMAND_HELP_H) {
+                   command[COMMAND_KEY] == COMMAND_HELP_DDASH ){
             result.status = 0;
             result.message =
                 "Available commands:\n"
@@ -43,7 +40,7 @@ int mainCommand(const json& command, int client_sock) {
                 "3. updateDirHistory - Update the directory history for a terminal.\n"
                 "4. cdForward - Move forward in the directory history for a terminal.\n"
                 "5. cdBackward - Move backward in the directory history for a terminal.\n"
-                "6. showIndex - Show the current index in the directory history for a terminal.\n"
+                "6. showTerminalInstance - Show the current terminal instance.\n"
                 "7. deleteEntry - Delete a specific entry from the database by key.\n"
                 "8. deleteEntriesByPrefix - Delete all entries from the database with a specific prefix.\n"
                 "9. showDB - Display all entries in the database.\n";
@@ -57,8 +54,10 @@ int mainCommand(const json& command, int client_sock) {
             result = Terminal::cdForward(command);
         } else if (command[COMMAND_KEY] == COMMAND_CD_BACKWARD) {
             result = Terminal::cdBackward(command);
-        } else if (command[COMMAND_KEY] == COMMAND_SHOW_INDEX) {
-            result = Terminal::showIndex(command);
+        } else if (command[COMMAND_KEY] == COMMAND_SHOW_TERMINAL_INSTANCE) {
+            result = Terminal::showTerminalInstance(command);
+        // } else if (command[COMMAND_KEY] == COMMAND_SHOW_ALL_TERMINAL_INSTANCES) {
+        //     result = Terminal::showAllTerminalInstances(command);
         } else if (command[COMMAND_KEY] == COMMAND_DELETE_ENTRIES_BY_PREFIX) {
             result = KVTable::deleteByPrefix(command);
         } else if (command[COMMAND_KEY] == COMMAND_SHOW_DB) {
@@ -80,7 +79,10 @@ int mainCommand(const json& command, int client_sock) {
                 result.status = 1;
                 result.message = "Entry not found for key " + command[COMMAND_ARG_KEY].get<string>() + "\n";
             }
-        }   
+        } else {
+            result.status = 1;
+            result.message = string("Unhandled command: ") + commandStr + mustEndWithNewLine;
+        }  
     } catch (const std::exception& e) {
         result.status = 1;
         result.message = std::string("error: ") + e.what() + "\n";

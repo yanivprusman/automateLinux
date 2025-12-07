@@ -29,16 +29,14 @@
 #define mustEndWithNewLine "\n"
 #define COMMAND_KEY "command"
 #define COMMAND_EMPTY ""
-#define COMMAND_HELP "help"
-#define COMMAND_HELP_DASH "-help"
 #define COMMAND_HELP_DDASH "--help"
-#define COMMAND_HELP_H "-h"
 #define COMMAND_OPENED_TTY "openedTty"
 #define COMMAND_CLOSED_TTY "closedTty"
 #define COMMAND_UPDATE_DIR_HISTORY "updateDirHistory"
 #define COMMAND_CD_FORWARD "cdForward"
 #define COMMAND_CD_BACKWARD "cdBackward"
-#define COMMAND_SHOW_INDEX "showIndex"
+#define COMMAND_SHOW_TERMINAL_INSTANCE "showTerminalInstance"
+#define COMMAND_SHOW_ALL_TERMINAL_INSTANCES "showAllTerminalInstances"
 #define COMMAND_DELETE_ENTRY "deleteEntry"
 #define COMMAND_DELETE_ENTRIES_BY_PREFIX "deleteEntriesByPrefix"
 #define COMMAND_SHOW_DB "showDB"
@@ -56,15 +54,14 @@ struct CommandSignature {
 
 static const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_EMPTY, {}),
-    CommandSignature(COMMAND_HELP, {}),
-    CommandSignature(COMMAND_HELP_DASH, {}),
     CommandSignature(COMMAND_HELP_DDASH, {}),
     CommandSignature(COMMAND_OPENED_TTY, {COMMAND_ARG_TTY}),
     CommandSignature(COMMAND_CLOSED_TTY, {COMMAND_ARG_TTY}),
     CommandSignature(COMMAND_UPDATE_DIR_HISTORY, {COMMAND_ARG_TTY, COMMAND_ARG_PWD}),
     CommandSignature(COMMAND_CD_FORWARD, {COMMAND_ARG_TTY}),
     CommandSignature(COMMAND_CD_BACKWARD, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_SHOW_INDEX, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_SHOW_TERMINAL_INSTANCE , {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_SHOW_ALL_TERMINAL_INSTANCES , {}),
     CommandSignature(COMMAND_DELETE_ENTRY, {COMMAND_ARG_KEY}),
     CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
     CommandSignature(COMMAND_SHOW_DB, {})

@@ -24,6 +24,7 @@ CmdResult testIntegrity(const json& command) {
 }
 
 int mainCommand(const json& command, int client_sock) {   
+    // asdf
     string commandStr = command.dump();
     CmdResult result;   
     try {

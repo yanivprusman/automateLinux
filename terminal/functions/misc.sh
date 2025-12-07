@@ -32,3 +32,9 @@ setCdc() {
     alias cdc="cd \"$newDir\""
 }
 export -f setCdc
+
+restartGnomeExtensions() {
+    gnome-extensions disable clock@ya-niv.com
+    gnome-extensions enable clock@ya-niv.com
+}
+export -f restartGnomeExtensions

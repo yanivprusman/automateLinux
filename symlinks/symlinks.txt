@@ -6,6 +6,7 @@ ln -snfr ../daemon/daemon daemon
 #ln -sf /home/yaniv/coding/automateLinux/daemon/daemon.service /home/yaniv/.config/systemd/user
 ln -sf /home/yaniv/coding/automateLinux/daemon/daemon.socket /etc/systemd/system stopped using it
 ln -sf /home/yaniv/coding/automateLinux/daemon/daemon.service /etc/systemd/system
+~/.local/share/gnome-shell/extensions$ ln -s /home/yaniv/coding/automateLinux/gnomeExtensions/clock@ya-niv.com
 not working: 
 ln -s /home/yaniv/coding/automateLinux/desktop/ /home/yaniv/Desktop
 ln -snfr /home/yaniv/coding/automateLinux/desktop/shutDown.desktop shutDown.desktop

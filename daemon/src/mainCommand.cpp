@@ -1,5 +1,16 @@
 #include "mainCommand.h"
 
+static string formatEntriesAsText(const vector<std::pair<string, string>>& entries) {
+    if (entries.empty()) {
+        return "Database is empty\n";
+    }
+    string result;
+    for (const auto& pair : entries) {
+        result += pair.first + "|" + pair.second + "\n";
+    }
+    return result;
+}
+
 CmdResult testIntegrity(const json& command) {
     if (!command.contains(COMMAND_KEY)) {
         return CmdResult(1, "Missing command key");
@@ -69,26 +80,44 @@ int mainCommand(const json& command, int client_sock) {
             result = Terminal::showTerminalInstance(command);
         } else if (command[COMMAND_KEY] == COMMAND_SHOW_ALL_TERMINAL_INSTANCES) {
             result = Terminal::showAllTerminalInstances(command);
+        } else if (command[COMMAND_KEY] == COMMAND_SHOW_ENTRIES_BY_PREFIX) {
+            if (command.contains(COMMAND_ARG_PREFIX)) {
+                string prefix = command[COMMAND_ARG_PREFIX].get<string>();
+                auto entries = kvTable.getByPrefix(prefix);
+                result.message = formatEntriesAsText(entries);
+                result.status = 0;
+            } else {
+                result.status = 1;
+                result.message = "Missing required arg: prefix\n";
+            }
+        } else if (command[COMMAND_KEY] == COMMAND_DELETE_ENTRIES_BY_PREFIX) {
+            if (command.contains(COMMAND_ARG_PREFIX)) {
+                string prefix = command[COMMAND_ARG_PREFIX].get<string>();
+                auto entries = kvTable.getByPrefix(prefix);
+                result.message = formatEntriesAsText(entries);
+                result.status = 0;
+            } else {
+                result.status = 1;
+                result.message = "Missing required arg: prefix\n";
+            }
         } else if (command[COMMAND_KEY] == COMMAND_DELETE_ENTRIES_BY_PREFIX) {
             result = KVTable::deleteByPrefix(command);
         } else if (command[COMMAND_KEY] == COMMAND_SHOW_DB) {
-            auto allEntries = kvTable.getAll();
+            result.message = formatEntriesAsText(kvTable.getAll());
             result.status = 0;
-            if (allEntries.empty()) {
-                result.message = "Database is empty\n";
-            } else {
-                for (const auto& pair : allEntries) {
-                    result.message += pair.first + "|" + pair.second + "\n";
-                }
-            }
         } else if (command[COMMAND_KEY] == COMMAND_DELETE_ENTRY) {
-            int keyExists = kvTable.deleteEntry(command[COMMAND_ARG_KEY].get<string>());
-            if (keyExists == SQLITE_OK) {
-                result.status = 0;
-                result.message = "Entry deleted\n";
-            }else {
+            if (command.contains(COMMAND_ARG_KEY)) {
+                int keyExists = kvTable.deleteEntry(command[COMMAND_ARG_KEY].get<string>());
+                if (keyExists == SQLITE_OK) {
+                    result.status = 0;
+                    result.message = "Entry deleted\n";
+                } else {
+                    result.status = 1;
+                    result.message = "Entry not found for key " + command[COMMAND_ARG_KEY].get<string>() + "\n";
+                }
+            } else {
                 result.status = 1;
-                result.message = "Entry not found for key " + command[COMMAND_ARG_KEY].get<string>() + "\n";
+                result.message = "Missing required arg: key\n";
             }
         } else {
             result.status = 1;

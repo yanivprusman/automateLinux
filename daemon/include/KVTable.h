@@ -18,6 +18,7 @@ public:
     static int countKeysByPrefix(const string& prefix);
     static string get(const string& key);
     static std::vector<std::pair<string, string>> getAll();
+    static std::vector<std::pair<string, string>> getByPrefix(const string& prefix);
 };
 
 #endif // KVTABLE_H

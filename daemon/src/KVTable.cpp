@@ -159,6 +159,25 @@ int KVTable::insertAt(const string& keyPrefix, int index, const string& value) {
     return rc;
 }
 
+std::vector<std::pair<string, string>> KVTable::getByPrefix(const string& prefix) {
+    std::vector<std::pair<string, string>> result;
+    const string likePattern = prefix + "%";
+    const char* sql = "SELECT key, value FROM kv WHERE key LIKE ?";
+    sqlite3_stmt* stmt;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK) return result;
+    sqlite3_bind_text(stmt, 1, likePattern.c_str(), -1, SQLITE_TRANSIENT);
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        const unsigned char* key_text = sqlite3_column_text(stmt, 0);
+        const unsigned char* value_text = sqlite3_column_text(stmt, 1);
+        string key = key_text ? reinterpret_cast<const char*>(key_text) : "";
+        string value = value_text ? reinterpret_cast<const char*>(value_text) : "";
+        result.push_back({key, value});
+    }
+    sqlite3_finalize(stmt);
+    return result;
+}
+
 int KVTable::deleteByPrefix(const string& prefix) {
     const string likePattern = prefix + "%";
     const char* sql = "DELETE FROM kv WHERE key LIKE ?";
@@ -178,7 +197,6 @@ int KVTable::deleteEntry(const string& key) {
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
     if (rc != SQLITE_OK) return rc;
-
     sqlite3_bind_text(stmt, 1, key.c_str(), -1, SQLITE_TRANSIENT);
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);

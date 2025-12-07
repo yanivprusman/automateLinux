@@ -39,6 +39,7 @@
 #define COMMAND_SHOW_ALL_TERMINAL_INSTANCES "showAllTerminalInstances"
 #define COMMAND_DELETE_ENTRY "deleteEntry"
 #define COMMAND_DELETE_ENTRIES_BY_PREFIX "deleteEntriesByPrefix"
+#define COMMAND_SHOW_ENTRIES_BY_PREFIX "showEntriesByPrefix"
 #define COMMAND_SHOW_DB "showDB"
 #define COMMAND_ARG_TTY "tty"
 #define COMMAND_ARG_PWD "pwd"
@@ -63,6 +64,7 @@ static const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_SHOW_TERMINAL_INSTANCE , {COMMAND_ARG_TTY}),
     CommandSignature(COMMAND_SHOW_ALL_TERMINAL_INSTANCES , {}),
     CommandSignature(COMMAND_DELETE_ENTRY, {COMMAND_ARG_KEY}),
+    CommandSignature(COMMAND_SHOW_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
     CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
     CommandSignature(COMMAND_SHOW_DB, {})
 };

@@ -41,6 +41,7 @@
 #define COMMAND_DELETE_ENTRIES_BY_PREFIX "deleteEntriesByPrefix"
 #define COMMAND_SHOW_ENTRIES_BY_PREFIX "showEntriesByPrefix"
 #define COMMAND_SHOW_DB "showDB"
+#define COMMAND_PRINT_DIR_HISTORY "printDirHistory"
 #define COMMAND_ARG_TTY "tty"
 #define COMMAND_ARG_PWD "pwd"
 #define COMMAND_ARG_KEY "key"
@@ -66,7 +67,8 @@ static const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_DELETE_ENTRY, {COMMAND_ARG_KEY}),
     CommandSignature(COMMAND_SHOW_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
     CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
-    CommandSignature(COMMAND_SHOW_DB, {})
+    CommandSignature(COMMAND_SHOW_DB, {}),
+    CommandSignature(COMMAND_PRINT_DIR_HISTORY, {}),
 };
 
 static const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);

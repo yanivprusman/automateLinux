@@ -2,7 +2,6 @@
 #define MAIN_H
 
 #include "common.h"
-#include "cli.h"
 #include "system.h"
 #include "KVTable.h"
 #include "dirHistory.h"

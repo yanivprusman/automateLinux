@@ -3,7 +3,7 @@ daemon() {
         return 1
     fi
     local formatOutput="false"
-    local formatOutputTrueFunctions=("" "--help" "showDB" "showTerminalInstance" "showAllTerminalInstances" "showEntriesByPrefix" )
+    local formatOutputTrueFunctions=("" "--help" "showDB" "showTerminalInstance" "showAllTerminalInstances" "showEntriesByPrefix" "printDirHistory")
     if [[ " ${formatOutputTrueFunctions[*]} " == *" $1 "* ]]; then
         formatOutput="true"
     fi

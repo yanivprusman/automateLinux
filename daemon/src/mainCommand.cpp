@@ -117,7 +117,18 @@ int mainCommand(const json& command, int client_sock) {
                 result.status = 1;
                 result.message = "Missing required arg: key\n";
             }
-        } else {
+        } else if (command[COMMAND_KEY] == COMMAND_PRINT_DIR_HISTORY) {
+            result.message = "directories:\n";
+            vector<std::pair<string, string>> dirs = kvTable.getByPrefix(DIR_HISTORY_PREFIX);
+            std::sort(dirs.begin(), dirs.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
+            result.message += formatEntriesAsText(dirs);
+            vector<std::pair<string, string>> ptsPointers = kvTable.getByPrefix(DIR_HISTORY_POINTER_PREFIX);
+            std::sort(ptsPointers.begin(), ptsPointers.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
+            result.message += "Pointers:\n";
+            result.message += formatEntriesAsText(ptsPointers);
+            result.status = 0;
+        }
+        else {
             result.status = 1;
             result.message = string("Unhandled command: ") + commandStr + mustEndWithNewLine;
         }  

@@ -1,5 +1,5 @@
 #!/bin/bash
-DB="../data/daemon.db"
+DB="${AUTOMATE_LINUX_DATA_DIR}daemon.db"
 echo "Tables:"
 sqlite3 "$DB" ".tables"
 echoBlockSeparator

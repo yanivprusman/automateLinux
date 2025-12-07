@@ -8,4 +8,4 @@
 . $(theRealPath misc.sh)
 . $(theRealPath build.sh)
 . $(theRealPath printDir.sh)
-
+. $(theRealPath db.sh)

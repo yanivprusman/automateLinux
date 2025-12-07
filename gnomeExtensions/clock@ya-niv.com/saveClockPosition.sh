@@ -10,7 +10,9 @@ if [ -z "$X" ] || [ -z "$Y" ]; then
     exit 1
 fi
 
-SOCKET_PATH="/run/automatelinux/automatelinux-daemon.sock"
-
-echo "{\"command\":\"upsertEntry\", \"key\":\"clockPositionX\", \"value\":\"$X\"}" | nc -U -q 1 "$SOCKET_PATH"
-echo "{\"command\":\"upsertEntry\", \"key\":\"clockPositionY\", \"value\":\"$Y\"}" | nc -U -q 1 "$SOCKET_PATH"
+# SOCKET_PATH="/run/automatelinux/automatelinux-daemon.sock"
+# echo "{\"command\":\"upsertEntry\", \"key\":\"clockPositionX\", \"value\":\"$X\"}" | nc -U -q 1 "$SOCKET_PATH"
+# echo "{\"command\":\"upsertEntry\", \"key\":\"clockPositionY\", \"value\":\"$Y\"}" | nc -U -q 1 "$SOCKET_PATH"
+# AUTOMATE_LINUX_SOCKET_PATH="/run/automatelinux/automatelinux-daemon.sock"
+echo "{\"command\":\"upsertEntry\", \"key\":\"clockPositionX\", \"value\":\"$X\"}" | nc -U -q 1 "$AUTOMATE_LINUX_SOCKET_PATH"
+echo "{\"command\":\"upsertEntry\", \"key\":\"clockPositionY\", \"value\":\"$Y\"}" | nc -U -q 1 "$AUTOMATE_LINUX_SOCKET_PATH"

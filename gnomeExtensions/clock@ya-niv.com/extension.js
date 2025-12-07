@@ -11,121 +11,83 @@ export default class ClockExtension extends Extension {
         super(metadata);
         this._label = null;
         this._timeoutId = 0;
-        this._saveTimeoutId = 0;
-        this._pendingX = null;
-        this._pendingY = null;
-        
-        // Load socket path from daemon helper script
-        try {
-            const [success, stdout] = GLib.spawn_command_line_sync('bash /home/yaniv/coding/automateLinux/daemon/getSocketPath.sh');
-            this._socketPath = success ? new TextDecoder().decode(stdout).trim() : '/run/automatelinux/automatelinux-daemon.sock';
-        } catch (e) {
-            console.warn('Failed to load socket path from script, using default:', e);
-            this._socketPath = '/run/automatelinux/automatelinux-daemon.sock';
-        }
-    }
-
-    _savePosition(x, y) {
-        // Store pending position
-        this._pendingX = Math.round(x);
-        this._pendingY = Math.round(y);
-        
-        // Clear any existing timeout
-        if (this._saveTimeoutId) {
-            GLib.source_remove(this._saveTimeoutId);
-        }
-        
-        // Debounce: save after 500ms of inactivity
-        this._saveTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
-            this._doSavePosition();
-            this._saveTimeoutId = 0;
-            return GLib.SOURCE_REMOVE;
-        });
-    }
-
-    _doSavePosition() {
-        if (this._pendingX === null || this._pendingY === null) {
-            return;
-        }
-        
-        const xJson = JSON.stringify({command: 'upsertEntry', key: 'clockPositionX', value: String(this._pendingX)});
-        const yJson = JSON.stringify({command: 'upsertEntry', key: 'clockPositionY', value: String(this._pendingY)});
-        
-        try {
-            GLib.spawn_command_line_sync(`echo '${xJson}' | nc -U -q 1 ${this._socketPath}`);
-            GLib.spawn_command_line_sync(`echo '${yJson}' | nc -U -q 1 ${this._socketPath}`);
-            console.log(`Saved clock position: X=${this._pendingX}, Y=${this._pendingY}`);
-        } catch (e) {
-            console.warn('Failed to save clock position:', e);
-        }
-    }
-
-    _loadPosition() {
-        try {
-            const procX = GLib.spawn_command_line_sync(`echo '{"command":"getEntry", "key":"clockPositionX"}' | nc -U -q 1 ${this._socketPath}`);
-            const procY = GLib.spawn_command_line_sync(`echo '{"command":"getEntry", "key":"clockPositionY"}' | nc -U -q 1 ${this._socketPath}`);
-            
-            let x = null, y = null;
-            if (procX[0]) {
-                const valueX = new TextDecoder().decode(procX[1]).trim();
-                x = valueX ? parseInt(valueX) : null;
-            }
-            if (procY[0]) {
-                const valueY = new TextDecoder().decode(procY[1]).trim();
-                y = valueY ? parseInt(valueY) : null;
-            }
-            return {x, y};
-        } catch (e) {
-            console.log('Failed to load position from daemon:', e);
-        }
-        return {x: null, y: null};
+        this._lastX = null;
+        this._lastY = null;
+        console.log('ClockExtension constructor called');
     }
 
     enable() {
-        const monitorIndex = 1;
-        const monitor = Main.layoutManager.monitors[monitorIndex];
-        
-        if (!monitor) {
-            console.error(`Monitor ${monitorIndex} not found`);
-            return;
-        }
-
-        this._label = new St.Label({
-            style_class: 'clock-label',
-            y_align: Clutter.ActorAlign.START,
-            x_align: Clutter.ActorAlign.START,
-            reactive: true,
-            track_hover: true
-        });
-
-        Main.uiGroup.add_child(this._label);
-        
-        const savedPos = this._loadPosition();
-        let posX = savedPos.x !== null ? savedPos.x : monitor.x + 30;
-        let posY = savedPos.y !== null ? savedPos.y : monitor.y + 30;
-        
-        this._label.set_position(posX, posY);
-
-        this._updateClock();
-        
-        this._timeoutId = GLib.timeout_add_seconds(
-            GLib.PRIORITY_DEFAULT,
-            1,
-            () => {
-                this._updateClock();
-                return GLib.SOURCE_CONTINUE;
+        console.log('ClockExtension.enable() called');
+        try {
+            this._label = new St.Label({
+                text: '00:00',
+                style_class: 'clock-label',
+                reactive: true,
+                track_hover: true
+            });
+            console.log('Label created');
+            
+            Main.uiGroup.add_child(this._label);
+            console.log('Label added to stage');
+            
+            // Load saved position or use default
+            let {x, y} = this._loadPosition();
+            if (x === null || y === null) {
+                x = 50;
+                y = 50;
             }
-        );
+            this._label.set_position(x, y);
+            this._lastX = x;
+            this._lastY = y;
+            console.log(`Label positioned at ${x},${y}`);
+            
+            this._label.show();
+            console.log('Label shown');
+            
+            this._updateClock();
+            
+            this._timeoutId = GLib.timeout_add_seconds(
+                GLib.PRIORITY_DEFAULT,
+                1,
+                () => {
+                    this._updateClock();
+                    
+                    // Periodically save position
+                    const x = this._label.get_x();
+                    const y = this._label.get_y();
+                    if (x !== this._lastX || y !== this._lastY) {
+                        this._savePosition(x, y);
+                        this._lastX = x;
+                        this._lastY = y;
+                    }
+                    
+                    return GLib.SOURCE_CONTINUE;
+                }
+            );
+            console.log('Clock update timer started');
+            
+            // Setup dragging
+            this._setupDragging();
+            
+        } catch (e) {
+            console.error('Error in enable():', e);
+            console.error('Stack:', e.stack);
+        }
+    }
 
-        // Dragging support
+    _setupDragging() {
         let dragData = { dragging: false, offsetX: 0, offsetY: 0 };
 
         this._label.connect('button-press-event', (_, event) => {
             if (event.get_button() === 1) {
+                console.log('Button pressed on label');
                 dragData.dragging = true;
-                const [x, y] = event.get_coords();
-                dragData.offsetX = x - this._label.x;
-                dragData.offsetY = y - this._label.y;
+                const [stageX, stageY] = event.get_coords();
+                const actorX = this._label.get_x();
+                const actorY = this._label.get_y();
+                dragData.offsetX = stageX - actorX;
+                dragData.offsetY = stageY - actorY;
+                console.log(`Drag start: stage(${stageX},${stageY}), offset(${dragData.offsetX},${dragData.offsetY})`);
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
@@ -133,7 +95,12 @@ export default class ClockExtension extends Extension {
 
         this._label.connect('button-release-event', (_, event) => {
             if (event.get_button() === 1) {
+                console.log('Button released');
                 dragData.dragging = false;
+                const x = this._label.get_x();
+                const y = this._label.get_y();
+                console.log(`Drag end: position(${x},${y})`);
+                this._savePosition(x, y);
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
@@ -141,26 +108,64 @@ export default class ClockExtension extends Extension {
 
         this._label.connect('motion-event', (_, event) => {
             if (dragData.dragging) {
-                const [x, y] = event.get_coords();
-                this._label.set_position(x - dragData.offsetX, y - dragData.offsetY);
-                this._savePosition(x - dragData.offsetX, y - dragData.offsetY);
+                const [stageX, stageY] = event.get_coords();
+                const newX = stageX - dragData.offsetX;
+                const newY = stageY - dragData.offsetY;
+                this._label.set_position(newX, newY);
+                console.log(`Dragging: new position(${newX},${newY})`);
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
         });
     }
 
+    _loadPosition() {
+        try {
+            const [success, stdout] = GLib.spawn_command_line_sync(`bash /home/yaniv/coding/automateLinux/gnomeExtensions/clock@ya-niv.com/loadClockPosition.sh`);
+            if (success && stdout) {
+                const output = new TextDecoder().decode(stdout).trim();
+                const lines = output.split('\n');
+                let x = null, y = null;
+                
+                if (lines[0]) {
+                    const xVal = parseInt(lines[0]);
+                    if (!isNaN(xVal)) {
+                        x = xVal;
+                    }
+                }
+                if (lines[1]) {
+                    const yVal = parseInt(lines[1]);
+                    if (!isNaN(yVal)) {
+                        y = yVal;
+                    }
+                }
+                
+                console.log(`Loaded position: X=${x}, Y=${y}`);
+                return {x, y};
+            }
+        } catch (e) {
+            console.log('Failed to load position:', e);
+        }
+        return {x: null, y: null};
+    }
+
+    _savePosition(x, y) {
+        console.log(`Saving position: X=${Math.round(x)}, Y=${Math.round(y)}`);
+        
+        try {
+            const cmd = `bash /home/yaniv/coding/automateLinux/gnomeExtensions/clock@ya-niv.com/saveClockPosition.sh ${Math.round(x)} ${Math.round(y)}`;
+            console.log(`Running: ${cmd}`);
+            GLib.spawn_command_line_async(cmd);
+        } catch (e) {
+            console.warn('Failed to save position:', e);
+        }
+    }
+
     disable() {
+        console.log('ClockExtension.disable() called');
         if (this._timeoutId) {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
-        }
-
-        if (this._saveTimeoutId) {
-            GLib.source_remove(this._saveTimeoutId);
-            this._saveTimeoutId = 0;
-            // Flush any pending saves before disabling
-            this._doSavePosition();
         }
 
         if (this._label) {
@@ -178,7 +183,6 @@ export default class ClockExtension extends Extension {
         this._label.text = t.toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
-            // second: '2-digit',
             hour12: false
         });
     }

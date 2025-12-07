@@ -14,6 +14,7 @@ KVTable::KVTable() {
 }
 
 int KVTable::createDB() {
+    std::filesystem::create_directories(directories.data); 
     int rc = sqlite3_open((directories.data + "daemon.db").c_str(), &db);
     if (rc != SQLITE_OK) {
         return rc;

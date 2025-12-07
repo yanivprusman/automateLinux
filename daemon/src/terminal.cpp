@@ -2,16 +2,6 @@
 
 vector<Terminal*> Terminal::instances;
 
-
-Terminal* Terminal::getInstanceByTTY(int tty) {
-    for (Terminal* terminal : instances) {
-        if (terminal->tty == tty) {
-            return terminal;
-        }
-    }
-    return nullptr;
-}
-
 Terminal::Terminal(int tty) : tty(tty) {
     instances.push_back(this);
     string indexString = kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
@@ -32,20 +22,28 @@ Terminal::~Terminal() {
     kvTable.deleteEntry(dirHistoryPointerKey);
 }
 
+Terminal* Terminal::getInstanceByTTY(int tty) {
+    for (Terminal* terminal : instances) {
+        if (terminal->tty == tty) {
+            return terminal;
+        }
+    }
+    return nullptr;
+}
+
 CmdResult Terminal::openedTty(const json& command) {
     Terminal* terminal = new Terminal(command[TTY_KEY].get<int>());
     return terminal->_openedTty(command);
 }
 
 CmdResult Terminal::_openedTty(const json& command) {
-    (void)command;  // unused
+    (void)command;
     CmdResult result;
     try {
         string indexStr = kvTable.get(dirHistoryPointerKey);
         if (indexStr.empty()) {
-            result.status = 1;
-            result.message = "No directory history found\n";
-            return result;
+            indexStr = "0";  // Fall back to default index
+            kvTable.upsert(dirHistoryPointerKey, "0");
         }
         int index = stoi(indexStr);
         string dir = kvTable.get(dirHistoryEntryKey(index));

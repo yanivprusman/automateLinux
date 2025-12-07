@@ -42,10 +42,13 @@
 #define COMMAND_SHOW_ENTRIES_BY_PREFIX "showEntriesByPrefix"
 #define COMMAND_SHOW_DB "showDB"
 #define COMMAND_PRINT_DIR_HISTORY "printDirHistory"
+#define COMMAND_UPSERT_ENTRY "upsertEntry"
+#define COMMAND_GET_ENTRY "getEntry"
 #define COMMAND_ARG_TTY "tty"
 #define COMMAND_ARG_PWD "pwd"
 #define COMMAND_ARG_KEY "key"
 #define COMMAND_ARG_PREFIX "prefix"
+#define COMMAND_ARG_VALUE "value"
 
 struct CommandSignature {
     string name;
@@ -69,6 +72,8 @@ static const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
     CommandSignature(COMMAND_SHOW_DB, {}),
     CommandSignature(COMMAND_PRINT_DIR_HISTORY, {}),
+    CommandSignature(COMMAND_UPSERT_ENTRY, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
+    CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY}),
 };
 
 static const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);

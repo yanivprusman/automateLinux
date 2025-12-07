@@ -11,6 +11,74 @@ export default class ClockExtension extends Extension {
         super(metadata);
         this._label = null;
         this._timeoutId = 0;
+        this._saveTimeoutId = 0;
+        this._pendingX = null;
+        this._pendingY = null;
+        
+        // Load socket path from daemon helper script
+        try {
+            const [success, stdout] = GLib.spawn_command_line_sync('bash /home/yaniv/coding/automateLinux/daemon/getSocketPath.sh');
+            this._socketPath = success ? new TextDecoder().decode(stdout).trim() : '/run/automatelinux/automatelinux-daemon.sock';
+        } catch (e) {
+            console.warn('Failed to load socket path from script, using default:', e);
+            this._socketPath = '/run/automatelinux/automatelinux-daemon.sock';
+        }
+    }
+
+    _savePosition(x, y) {
+        // Store pending position
+        this._pendingX = Math.round(x);
+        this._pendingY = Math.round(y);
+        
+        // Clear any existing timeout
+        if (this._saveTimeoutId) {
+            GLib.source_remove(this._saveTimeoutId);
+        }
+        
+        // Debounce: save after 500ms of inactivity
+        this._saveTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
+            this._doSavePosition();
+            this._saveTimeoutId = 0;
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    _doSavePosition() {
+        if (this._pendingX === null || this._pendingY === null) {
+            return;
+        }
+        
+        const xJson = JSON.stringify({command: 'upsertEntry', key: 'clockPositionX', value: String(this._pendingX)});
+        const yJson = JSON.stringify({command: 'upsertEntry', key: 'clockPositionY', value: String(this._pendingY)});
+        
+        try {
+            GLib.spawn_command_line_sync(`echo '${xJson}' | nc -U -q 1 ${this._socketPath}`);
+            GLib.spawn_command_line_sync(`echo '${yJson}' | nc -U -q 1 ${this._socketPath}`);
+            console.log(`Saved clock position: X=${this._pendingX}, Y=${this._pendingY}`);
+        } catch (e) {
+            console.warn('Failed to save clock position:', e);
+        }
+    }
+
+    _loadPosition() {
+        try {
+            const procX = GLib.spawn_command_line_sync(`echo '{"command":"getEntry", "key":"clockPositionX"}' | nc -U -q 1 ${this._socketPath}`);
+            const procY = GLib.spawn_command_line_sync(`echo '{"command":"getEntry", "key":"clockPositionY"}' | nc -U -q 1 ${this._socketPath}`);
+            
+            let x = null, y = null;
+            if (procX[0]) {
+                const valueX = new TextDecoder().decode(procX[1]).trim();
+                x = valueX ? parseInt(valueX) : null;
+            }
+            if (procY[0]) {
+                const valueY = new TextDecoder().decode(procY[1]).trim();
+                y = valueY ? parseInt(valueY) : null;
+            }
+            return {x, y};
+        } catch (e) {
+            console.log('Failed to load position from daemon:', e);
+        }
+        return {x: null, y: null};
     }
 
     enable() {
@@ -26,16 +94,17 @@ export default class ClockExtension extends Extension {
             style_class: 'clock-label',
             y_align: Clutter.ActorAlign.START,
             x_align: Clutter.ActorAlign.START,
-            reactive: true,       // make it respond to pointer events
+            reactive: true,
             track_hover: true
         });
 
         Main.uiGroup.add_child(this._label);
         
-        this._label.set_position(
-            monitor.x + 30,
-            monitor.y + 30
-        );
+        const savedPos = this._loadPosition();
+        let posX = savedPos.x !== null ? savedPos.x : monitor.x + 30;
+        let posY = savedPos.y !== null ? savedPos.y : monitor.y + 30;
+        
+        this._label.set_position(posX, posY);
 
         this._updateClock();
         
@@ -74,6 +143,7 @@ export default class ClockExtension extends Extension {
             if (dragData.dragging) {
                 const [x, y] = event.get_coords();
                 this._label.set_position(x - dragData.offsetX, y - dragData.offsetY);
+                this._savePosition(x - dragData.offsetX, y - dragData.offsetY);
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
@@ -84,6 +154,13 @@ export default class ClockExtension extends Extension {
         if (this._timeoutId) {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
+        }
+
+        if (this._saveTimeoutId) {
+            GLib.source_remove(this._saveTimeoutId);
+            this._saveTimeoutId = 0;
+            // Flush any pending saves before disabling
+            this._doSavePosition();
         }
 
         if (this._label) {

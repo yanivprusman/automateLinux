@@ -127,6 +127,27 @@ int mainCommand(const json& command, int client_sock) {
             result.message += "Pointers:\n";
             result.message += formatEntriesAsText(ptsPointers);
             result.status = 0;
+        } else if (command[COMMAND_KEY] == COMMAND_UPSERT_ENTRY) {
+            if (command.contains(COMMAND_ARG_KEY) && command.contains(COMMAND_ARG_VALUE)) {
+                string key = command[COMMAND_ARG_KEY].get<string>();
+                string value = command[COMMAND_ARG_VALUE].get<string>();
+                kvTable.upsert(key, value);
+                result.status = 0;
+                result.message = "Entry upserted\n";
+            } else {
+                result.status = 1;
+                result.message = "Missing required args: key, value\n";
+            }
+        } else if (command[COMMAND_KEY] == COMMAND_GET_ENTRY) {
+            if (command.contains(COMMAND_ARG_KEY)) {
+                string key = command[COMMAND_ARG_KEY].get<string>();
+                string value = kvTable.get(key);
+                result.status = value.empty() ? 1 : 0;
+                result.message = value.empty() ? "" : value + "\n";
+            } else {
+                result.status = 1;
+                result.message = "Missing required arg: key\n";
+            }
         }
         else {
             result.status = 1;

@@ -1,6 +1,5 @@
-# theRealPath ../utilities/termcontrol/termcontrol-completion.bash
-. ~/coding/automateLinux/utilities/sendKeys/sendkeys-completion.bash
-. $(theRealPath ../../daemon/daemon-completion.bash)
+. $(theRealPath sendKeys.bash)
+. $(theRealPath daemon.bash)
 . $(theRealPath build.bash)
 . $(theRealPath printDir.bash)
 . $(theRealPath prepareBuild.bash)

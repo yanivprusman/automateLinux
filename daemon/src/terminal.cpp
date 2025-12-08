@@ -88,7 +88,7 @@ CmdResult Terminal::_closedTty(const json& command) {
 }
 
 string Terminal::dirHistoryEntryKey(int index) {
-    return DIR_HISTORY_PREFIX + to_string(index);
+    return DIR_HISTORY_ENTRY_PREFIX + to_string(index);
 }
 
 CmdResult Terminal::updateDirHistory(const json& command) {
@@ -140,7 +140,7 @@ string Terminal::getDirHistoryEntry(int index) {
 }
 
 string Terminal::dirHistoryKeyPrefix() {
-    return DIR_HISTORY_PREFIX;
+    return DIR_HISTORY_ENTRY_PREFIX;
 }
 
 CmdResult Terminal::cdForward(const json& command) {

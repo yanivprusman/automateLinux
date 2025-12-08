@@ -2,7 +2,7 @@
 
 static string formatEntriesAsText(const vector<std::pair<string, string>>& entries) {
     if (entries.empty()) {
-        return "Database is empty\n";
+        return "<no entries>\n";
     }
     string result;
     for (const auto& pair : entries) {
@@ -119,13 +119,15 @@ int mainCommand(const json& command, int client_sock) {
             }
         } else if (command[COMMAND_KEY] == COMMAND_PRINT_DIR_HISTORY) {
             result.message = "directories:\n";
-            vector<std::pair<string, string>> dirs = kvTable.getByPrefix(DIR_HISTORY_PREFIX);
+            vector<std::pair<string, string>> dirs = kvTable.getByPrefix(DIR_HISTORY_ENTRY_PREFIX);
             std::sort(dirs.begin(), dirs.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
             result.message += formatEntriesAsText(dirs);
             vector<std::pair<string, string>> ptsPointers = kvTable.getByPrefix(DIR_HISTORY_POINTER_PREFIX);
             std::sort(ptsPointers.begin(), ptsPointers.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
             result.message += "Pointers:\n";
             result.message += formatEntriesAsText(ptsPointers);
+            string lastTouched = string(DIR_HISTORY_ENTRY_PREFIX) + kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
+            result.message += string("last touched ") +   lastTouched + " " + kvTable.get(lastTouched) + mustEndWithNewLine; 
             result.status = 0;
         } else if (command[COMMAND_KEY] == COMMAND_UPSERT_ENTRY) {
             if (command.contains(COMMAND_ARG_KEY) && command.contains(COMMAND_ARG_VALUE)) {

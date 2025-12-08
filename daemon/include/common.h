@@ -24,7 +24,7 @@
 #define INDEX_OF_LAST_TOUCHED_DIR_KEY "indexOfLastTouchedDir"
 #define TTY_KEY "tty"
 #define PWD_KEY "pwd"
-#define DIR_HISTORY_PREFIX "dirHistory"
+#define DIR_HISTORY_ENTRY_PREFIX "dirHistory"
 #define DIR_HISTORY_DEFAULT_DIR "/home/yaniv/coding/"
 #define mustEndWithNewLine "\n"
 #define COMMAND_KEY "command"

@@ -4,6 +4,7 @@ import St from 'gi://St';
 import GLib from 'gi://GLib';
 import Clutter from 'gi://Clutter';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
 export default class ClockExtension extends Extension {
@@ -13,6 +14,7 @@ export default class ClockExtension extends Extension {
         this._timeoutId = 0;
         this._lastX = null;
         this._lastY = null;
+        this._menu = null;
         console.log('ClockExtension constructor called');
     }
 

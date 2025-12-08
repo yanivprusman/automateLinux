@@ -28,3 +28,4 @@ echoBlockSeparator() {
     echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
 }
 export -f echoBlockSeparator
+

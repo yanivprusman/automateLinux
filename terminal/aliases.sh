@@ -21,3 +21,4 @@ alias sb='source ~/.bashrc'
 alias phone='/snap/bin/scrcpy --video-bit-rate 8M --max-size 1920'
 alias phoneFullScreen=' adb connect 10.0.0.142:5555 && /snap/bin/scrcpy --video-bit-rate 8M --max-size 1920 --fullscreen'
 alias bs='b -source'
+

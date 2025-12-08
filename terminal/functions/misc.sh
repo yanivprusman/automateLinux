@@ -18,6 +18,12 @@ lstr(){
 }
 export -f lstr
 
+alias ls='ls_my'
+ls_my() {
+    command ls --color=always "$@" | tr " " "\n"
+}
+export -f ls_my
+
 copyToClipboard(){
     (xclip -selection clipboard)
 }

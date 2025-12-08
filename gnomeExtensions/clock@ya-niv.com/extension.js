@@ -44,6 +44,7 @@ export default class ClockExtension extends Extension {
             console.log(`Label positioned at ${x},${y}`);
             
             this._label.show();
+            this._label.set_layer(Clutter.Layer.TOP);
             console.log('Label shown');
             
             this._updateClock();

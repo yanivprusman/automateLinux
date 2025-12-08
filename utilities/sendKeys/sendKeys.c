@@ -57,12 +57,25 @@ void print_usage() {
     printf("  key<X>               Press and release any letter key (A-Z)\n");
     printf("  key<X>Down           Press any letter key (A-Z)\n");
     printf("  key<X>Up             Release any letter key (A-Z)\n");
+    printf("  keycode:N            Send raw key code N (e.g., keycode:30 for KEY_A)\n");
+    printf("  period/dot           Send period/dot key\n");
+    printf("  slash                Send forward slash key\n");
+    printf("  minus/dash           Send minus/dash key\n");
+    printf("  space                Send space key\n");
+    printf("  comma                Send comma key\n");
+    printf("  equals/equal         Send equals key\n");
+    printf("  semicolon            Send semicolon key\n");
+    printf("  apostrophe/quote     Send apostrophe/quote key\n");
+    printf("  backslash            Send backslash key\n");
+    printf("  bracket_left         Send left bracket key\n");
+    printf("  bracket_right        Send right bracket key\n");
+    printf("  backtick/grave       Send backtick/grave key\n");
     printf("  numlock              Toggle numlock\n");
+    printf("  enter                Send enter key\n");
+    printf("  syn                  Send sync report\n");
     printf("  Code                 Send Code app signal\n");
     printf("  gnome-terminal-server  Send terminal app signal\n");
     printf("  google-chrome        Send Chrome app signal\n");
-    printf("  syn                  Send sync report\n");
-    printf("  enter                Send enter key\n");
 }
 
 static int get_key_code(char letter) {
@@ -125,7 +138,79 @@ void handle_command(const char *cmd) {
             }
             return;
         }
-    } else if (strcmp(cmd, "numlock") == 0) {
+    }
+    /* Handle raw keycode commands: keycode:30 */
+    else if (strncmp(cmd, "keycode:", 8) == 0) {
+        int keycode = atoi(cmd + 8);
+        if (keycode > 0) {
+            send_event(EV_KEY, keycode, 1);
+            send_event(EV_KEY, keycode, 0);
+            send_event(EV_SYN, SYN_REPORT, 0);
+            return;
+        }
+    }
+    /* Handle special characters */
+    else if (strcmp(cmd, "period") == 0 || strcmp(cmd, "dot") == 0) {
+        send_key_event(KEY_DOT, 1);
+        send_key_event(KEY_DOT, 0);
+        return;
+    }
+    else if (strcmp(cmd, "slash") == 0) {
+        send_key_event(KEY_SLASH, 1);
+        send_key_event(KEY_SLASH, 0);
+        return;
+    }
+    else if (strcmp(cmd, "minus") == 0 || strcmp(cmd, "dash") == 0) {
+        send_key_event(KEY_MINUS, 1);
+        send_key_event(KEY_MINUS, 0);
+        return;
+    }
+    else if (strcmp(cmd, "space") == 0) {
+        send_key_event(KEY_SPACE, 1);
+        send_key_event(KEY_SPACE, 0);
+        return;
+    }
+    else if (strcmp(cmd, "comma") == 0) {
+        send_key_event(KEY_COMMA, 1);
+        send_key_event(KEY_COMMA, 0);
+        return;
+    }
+    else if (strcmp(cmd, "equals") == 0 || strcmp(cmd, "equal") == 0) {
+        send_key_event(KEY_EQUAL, 1);
+        send_key_event(KEY_EQUAL, 0);
+        return;
+    }
+    else if (strcmp(cmd, "semicolon") == 0) {
+        send_key_event(KEY_SEMICOLON, 1);
+        send_key_event(KEY_SEMICOLON, 0);
+        return;
+    }
+    else if (strcmp(cmd, "apostrophe") == 0 || strcmp(cmd, "quote") == 0) {
+        send_key_event(KEY_APOSTROPHE, 1);
+        send_key_event(KEY_APOSTROPHE, 0);
+        return;
+    }
+    else if (strcmp(cmd, "backslash") == 0) {
+        send_key_event(KEY_BACKSLASH, 1);
+        send_key_event(KEY_BACKSLASH, 0);
+        return;
+    }
+    else if (strcmp(cmd, "bracket_left") == 0 || strcmp(cmd, "leftbracket") == 0) {
+        send_key_event(KEY_LEFTBRACE, 1);
+        send_key_event(KEY_LEFTBRACE, 0);
+        return;
+    }
+    else if (strcmp(cmd, "bracket_right") == 0 || strcmp(cmd, "rightbracket") == 0) {
+        send_key_event(KEY_RIGHTBRACE, 1);
+        send_key_event(KEY_RIGHTBRACE, 0);
+        return;
+    }
+    else if (strcmp(cmd, "backtick") == 0 || strcmp(cmd, "grave") == 0) {
+        send_key_event(KEY_GRAVE, 1);
+        send_key_event(KEY_GRAVE, 0);
+        return;
+    }
+    else if (strcmp(cmd, "numlock") == 0) {
         // Send scan code first (0x45 is the standard scan code for numlock)
         send_event(EV_MSC, MSC_SCAN, 0x45);
         // Send key press

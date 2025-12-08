@@ -58,20 +58,20 @@ void print_usage() {
     printf("  key<X>Down           Press any letter key (A-Z)\n");
     printf("  key<X>Up             Release any letter key (A-Z)\n");
     printf("  keycode:N            Send raw key code N (e.g., keycode:30 for KEY_A)\n");
-    printf("  period/dot           Send period/dot key\n");
-    printf("  slash                Send forward slash key\n");
-    printf("  minus/dash           Send minus/dash key\n");
-    printf("  space                Send space key\n");
-    printf("  comma                Send comma key\n");
-    printf("  equals/equal         Send equals key\n");
-    printf("  semicolon            Send semicolon key\n");
-    printf("  apostrophe/quote     Send apostrophe/quote key\n");
-    printf("  backslash            Send backslash key\n");
-    printf("  bracket_left         Send left bracket key\n");
-    printf("  bracket_right        Send right bracket key\n");
-    printf("  backtick/grave       Send backtick/grave key\n");
-    printf("  numlock              Toggle numlock\n");
-    printf("  enter                Send enter key\n");
+    printf("  period/dot[Down/Up]  Send period/dot key\n");
+    printf("  slash[Down/Up]       Send forward slash key\n");
+    printf("  minus/dash[Down/Up]  Send minus/dash key\n");
+    printf("  space[Down/Up]       Send space key\n");
+    printf("  comma[Down/Up]       Send comma key\n");
+    printf("  equals/equal[Down/Up] Send equals key\n");
+    printf("  semicolon[Down/Up]   Send semicolon key\n");
+    printf("  apostrophe/quote[Down/Up] Send apostrophe/quote key\n");
+    printf("  backslash[Down/Up]   Send backslash key\n");
+    printf("  bracket_left[Down/Up] Send left bracket key\n");
+    printf("  bracket_right[Down/Up] Send right bracket key\n");
+    printf("  backtick/grave[Down/Up] Send backtick/grave key\n");
+    printf("  enter[Down/Up]       Send enter key with optional Down/Up\n");
+    printf("  numlock[Down/Up]     Toggle numlock or send Down/Up separately\n");
     printf("  syn                  Send sync report\n");
     printf("  Code                 Send Code app signal\n");
     printf("  gnome-terminal-server  Send terminal app signal\n");
@@ -149,10 +149,19 @@ void handle_command(const char *cmd) {
             return;
         }
     }
-    /* Handle special characters */
+    /* Handle special characters with Down/Up support */
     else if (strcmp(cmd, "period") == 0 || strcmp(cmd, "dot") == 0) {
         send_key_event(KEY_DOT, 1);
         send_key_event(KEY_DOT, 0);
+        return;
+    }
+    else if (strcmp(cmd, "periodDown") == 0 || strcmp(cmd, "dotDown") == 0) {
+        send_event(EV_KEY, KEY_DOT, 1);
+        return;
+    }
+    else if (strcmp(cmd, "periodUp") == 0 || strcmp(cmd, "dotUp") == 0) {
+        send_event(EV_KEY, KEY_DOT, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
         return;
     }
     else if (strcmp(cmd, "slash") == 0) {
@@ -160,9 +169,27 @@ void handle_command(const char *cmd) {
         send_key_event(KEY_SLASH, 0);
         return;
     }
+    else if (strcmp(cmd, "slashDown") == 0) {
+        send_event(EV_KEY, KEY_SLASH, 1);
+        return;
+    }
+    else if (strcmp(cmd, "slashUp") == 0) {
+        send_event(EV_KEY, KEY_SLASH, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
     else if (strcmp(cmd, "minus") == 0 || strcmp(cmd, "dash") == 0) {
         send_key_event(KEY_MINUS, 1);
         send_key_event(KEY_MINUS, 0);
+        return;
+    }
+    else if (strcmp(cmd, "minusDown") == 0 || strcmp(cmd, "dashDown") == 0) {
+        send_event(EV_KEY, KEY_MINUS, 1);
+        return;
+    }
+    else if (strcmp(cmd, "minusUp") == 0 || strcmp(cmd, "dashUp") == 0) {
+        send_event(EV_KEY, KEY_MINUS, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
         return;
     }
     else if (strcmp(cmd, "space") == 0) {
@@ -170,9 +197,27 @@ void handle_command(const char *cmd) {
         send_key_event(KEY_SPACE, 0);
         return;
     }
+    else if (strcmp(cmd, "spaceDown") == 0) {
+        send_event(EV_KEY, KEY_SPACE, 1);
+        return;
+    }
+    else if (strcmp(cmd, "spaceUp") == 0) {
+        send_event(EV_KEY, KEY_SPACE, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
     else if (strcmp(cmd, "comma") == 0) {
         send_key_event(KEY_COMMA, 1);
         send_key_event(KEY_COMMA, 0);
+        return;
+    }
+    else if (strcmp(cmd, "commaDown") == 0) {
+        send_event(EV_KEY, KEY_COMMA, 1);
+        return;
+    }
+    else if (strcmp(cmd, "commaUp") == 0) {
+        send_event(EV_KEY, KEY_COMMA, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
         return;
     }
     else if (strcmp(cmd, "equals") == 0 || strcmp(cmd, "equal") == 0) {
@@ -180,9 +225,27 @@ void handle_command(const char *cmd) {
         send_key_event(KEY_EQUAL, 0);
         return;
     }
+    else if (strcmp(cmd, "equalsDown") == 0 || strcmp(cmd, "equalDown") == 0) {
+        send_event(EV_KEY, KEY_EQUAL, 1);
+        return;
+    }
+    else if (strcmp(cmd, "equalsUp") == 0 || strcmp(cmd, "equalUp") == 0) {
+        send_event(EV_KEY, KEY_EQUAL, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
     else if (strcmp(cmd, "semicolon") == 0) {
         send_key_event(KEY_SEMICOLON, 1);
         send_key_event(KEY_SEMICOLON, 0);
+        return;
+    }
+    else if (strcmp(cmd, "semicolonDown") == 0) {
+        send_event(EV_KEY, KEY_SEMICOLON, 1);
+        return;
+    }
+    else if (strcmp(cmd, "semicolonUp") == 0) {
+        send_event(EV_KEY, KEY_SEMICOLON, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
         return;
     }
     else if (strcmp(cmd, "apostrophe") == 0 || strcmp(cmd, "quote") == 0) {
@@ -190,9 +253,27 @@ void handle_command(const char *cmd) {
         send_key_event(KEY_APOSTROPHE, 0);
         return;
     }
+    else if (strcmp(cmd, "apostropheDown") == 0 || strcmp(cmd, "quoteDown") == 0) {
+        send_event(EV_KEY, KEY_APOSTROPHE, 1);
+        return;
+    }
+    else if (strcmp(cmd, "apostropheUp") == 0 || strcmp(cmd, "quoteUp") == 0) {
+        send_event(EV_KEY, KEY_APOSTROPHE, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
     else if (strcmp(cmd, "backslash") == 0) {
         send_key_event(KEY_BACKSLASH, 1);
         send_key_event(KEY_BACKSLASH, 0);
+        return;
+    }
+    else if (strcmp(cmd, "backslashDown") == 0) {
+        send_event(EV_KEY, KEY_BACKSLASH, 1);
+        return;
+    }
+    else if (strcmp(cmd, "backslashUp") == 0) {
+        send_event(EV_KEY, KEY_BACKSLASH, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
         return;
     }
     else if (strcmp(cmd, "bracket_left") == 0 || strcmp(cmd, "leftbracket") == 0) {
@@ -200,14 +281,56 @@ void handle_command(const char *cmd) {
         send_key_event(KEY_LEFTBRACE, 0);
         return;
     }
+    else if (strcmp(cmd, "bracket_leftDown") == 0 || strcmp(cmd, "leftbracketDown") == 0) {
+        send_event(EV_KEY, KEY_LEFTBRACE, 1);
+        return;
+    }
+    else if (strcmp(cmd, "bracket_leftUp") == 0 || strcmp(cmd, "leftbracketUp") == 0) {
+        send_event(EV_KEY, KEY_LEFTBRACE, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
     else if (strcmp(cmd, "bracket_right") == 0 || strcmp(cmd, "rightbracket") == 0) {
         send_key_event(KEY_RIGHTBRACE, 1);
         send_key_event(KEY_RIGHTBRACE, 0);
         return;
     }
+    else if (strcmp(cmd, "bracket_rightDown") == 0 || strcmp(cmd, "rightbracketDown") == 0) {
+        send_event(EV_KEY, KEY_RIGHTBRACE, 1);
+        return;
+    }
+    else if (strcmp(cmd, "bracket_rightUp") == 0 || strcmp(cmd, "rightbracketUp") == 0) {
+        send_event(EV_KEY, KEY_RIGHTBRACE, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
     else if (strcmp(cmd, "backtick") == 0 || strcmp(cmd, "grave") == 0) {
         send_key_event(KEY_GRAVE, 1);
         send_key_event(KEY_GRAVE, 0);
+        return;
+    }
+    else if (strcmp(cmd, "backtickDown") == 0 || strcmp(cmd, "graveDown") == 0) {
+        send_event(EV_KEY, KEY_GRAVE, 1);
+        return;
+    }
+    else if (strcmp(cmd, "backtickUp") == 0 || strcmp(cmd, "graveUp") == 0) {
+        send_event(EV_KEY, KEY_GRAVE, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
+    else if (strcmp(cmd, "enter") == 0) {
+        send_key_event(KEY_ENTER, 1);
+        send_key_event(KEY_ENTER, 0);
+        return;
+    }
+    else if (strcmp(cmd, "enterDown") == 0) {
+        send_event(EV_KEY, KEY_ENTER, 1);
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
+    else if (strcmp(cmd, "enterUp") == 0) {
+        send_event(EV_KEY, KEY_ENTER, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
         return;
     }
     else if (strcmp(cmd, "numlock") == 0) {
@@ -225,11 +348,21 @@ void handle_command(const char *cmd) {
         send_event(EV_KEY, KEY_NUMLOCK, 0);
         // Final sync
         send_event(EV_SYN, SYN_REPORT, 0);
-    } else if (strcmp(cmd, "syn") == 0) {
+    } 
+    else if (strcmp(cmd, "numlockDown") == 0) {
+        send_event(EV_MSC, MSC_SCAN, 0x45);
+        send_event(EV_KEY, KEY_NUMLOCK, 1);
         send_event(EV_SYN, SYN_REPORT, 0);
-    } else if (strcmp(cmd, "enter") == 0) {
-        send_key_event(KEY_ENTER, 1);
-        send_key_event(KEY_ENTER, 0);
+        return;
+    }
+    else if (strcmp(cmd, "numlockUp") == 0) {
+        send_event(EV_MSC, MSC_SCAN, 0x45);
+        send_event(EV_KEY, KEY_NUMLOCK, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
+    else if (strcmp(cmd, "syn") == 0) {
+        send_event(EV_SYN, SYN_REPORT, 0);
     } else {
         int appCode = isApp(cmd);
         if (appCode) {

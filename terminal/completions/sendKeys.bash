@@ -11,8 +11,22 @@ _sendkeys_completion() {
     commands="keyA keyB keyC keyD keyE keyF keyG keyH keyI keyJ keyK keyL keyM keyN keyO keyP keyQ keyR keyS keyT keyU keyV keyW keyX keyY keyZ
               keyADown keyBDown keyCDown keyDDown keyEDown keyFDown keyGDown keyHDown keyIDown keyJDown keyKDown keyLDown keyMDown keyNDown keyODown keyPDown keyQDown keyRDown keySDown keyTDown keyUDown keyVDown keyWDown keyXDown keyYDown keyZDown
               keyAUp keyBUp keyCUp keyDUp keyEUp keyFUp keyGUp keyHUp keyIUp keyJUp keyKUp keyLUp keyMUp keyNUp keyOUp keyPUp keyQUp keyRUp keySUp keyTUp keyUUp keyVUp keyWUp keyXUp keyYUp keyZUp
-              keycode period dot slash minus dash space comma equals equal semicolon apostrophe quote backslash bracket_left leftbracket bracket_right rightbracket backtick grave
-              numlock enter syn
+              keycode 
+              period dot periodDown dotDown periodUp dotUp
+              slash slashDown slashUp
+              minus dash minusDown dashDown minusUp dashUp
+              space spaceDown spaceUp
+              comma commaDown commaUp
+              equals equal equalsDown equalDown equalsUp equalUp
+              semicolon semicolonDown semicolonUp
+              apostrophe quote apostropheDown quoteDown apostropheUp quoteUp
+              backslash backslashDown backslashUp
+              bracket_left leftbracket bracket_leftDown leftbracketDown bracket_leftUp leftbracketUp
+              bracket_right rightbracket bracket_rightDown rightbracketDown bracket_rightUp rightbracketUp
+              backtick grave backtickDown graveDown backtickUp graveUp
+              numlock numlockDown numlockUp
+              enter enterDown enterUp
+              syn
               Code gnome-terminal-server google-chrome"
 
     # Handle option arguments

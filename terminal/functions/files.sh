@@ -84,3 +84,6 @@ lastChanged() {
 }
 export -f lastChanged
 
+cleanBetween() {
+    $(theRealPath "${AUTOMATE_LINUX_DIR}/utilities/cleanBetween/cleanBetween" "$@")
+}

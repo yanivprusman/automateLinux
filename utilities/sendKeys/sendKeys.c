@@ -124,11 +124,22 @@ void handle_command(const char *cmd) {
     const char *suffix = NULL;
     int key_code = lookup_key(cmd, &suffix);
     if (key_code != -1) {
+        // if (*suffix == '\0') {
+        //     send_event(EV_KEY, key_code, 1);
+        //     send_event(EV_KEY, key_code, 0);
+        // } else if (strcmp(suffix, "Down") == 0) {
+        //     send_event(EV_KEY, key_code, 1);
+        // } else if (strcmp(suffix, "Up") == 0) {
+        //     send_event(EV_KEY, key_code, 0);
+        //     send_event(EV_SYN, SYN_REPORT, 0);
+        // }
         if (*suffix == '\0') {
             send_event(EV_KEY, key_code, 1);
             send_event(EV_KEY, key_code, 0);
+            send_event(EV_SYN, SYN_REPORT, 0);
         } else if (strcmp(suffix, "Down") == 0) {
             send_event(EV_KEY, key_code, 1);
+            send_event(EV_SYN, SYN_REPORT, 0);
         } else if (strcmp(suffix, "Up") == 0) {
             send_event(EV_KEY, key_code, 0);
             send_event(EV_SYN, SYN_REPORT, 0);

@@ -13,3 +13,5 @@ tmp/
 utilities/lastChanged/lastChanged
 symlinks/daemon
 utilities/cleanBetween/cleanBetween
+chrome/
+utilities/sendKeys/autoSend.sh

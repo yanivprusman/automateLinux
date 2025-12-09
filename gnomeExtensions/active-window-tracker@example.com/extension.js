@@ -40,6 +40,7 @@ export default class ActiveWindowTracker {
         }
         this.#windowTracker = null;
     }
+
     #onActiveWindowChanged() {
         const window = global.display.focus_window;
         const wmClass = window.get_wm_class() || 'unknown';
@@ -53,5 +54,63 @@ export default class ActiveWindowTracker {
         } catch (error) {
             logError(error, 'Failed to execute test command');
         }
+        if (wmClass.toLowerCase().includes('chrome') || wmClass.toLowerCase().includes('chromium')) {
+            this.#checkChromeTab();
+        }
+    }
+    
+    #checkChromeTab() {
+        try {
+            console.log('Checking Chrome tab...');
+            const cmd = `curl -s http://localhost:9222/json | jq -r 'map(select(.type=="page")) | max_by(.lastAccessed) | .url'`;
+            const subprocess = new Gio.Subprocess({
+                argv: ['/bin/bash', '-c', cmd],
+                flags: Gio.SubprocessFlags.STDOUT_PIPE,
+            });
+            subprocess.init(null);
+            subprocess.wait_async(null, (proc, result) => {
+                try {
+                    proc.wait_finish(result);
+                    const stdout = proc.get_stdout_pipe();
+                    const reader = new Gio.DataInputStream({
+                        base_stream: stdout,
+                    });
+                    const [line] = reader.read_line_utf8(null);
+                    
+                    console.log('Chrome tab URL:', line);
+                    
+                    if (line && line.trim().length > 0 && line.includes('chatgpt.com')) {
+                        console.log('ChatGPT tab found:', line);
+                        this.#logToFile('chrome', `ChatGPT active: ${line}`);
+                    } else if (line) {
+                        console.log('Active tab is not ChatGPT:', line);
+                    } else {
+                        console.log('No active page tabs found');
+                    }
+                } catch (e) {
+                    console.warn('Failed to read Chrome tab URL:', e);
+                }
+            });
+        } catch (error) {
+            console.warn('Chrome debugging not available:', error);
+        }
     }    
-}
+
+    #logToFile(category, message) {
+        try {
+            const dataDir = '/home/yaniv/coding/automateLinux/data';
+            const file = Gio.File.new_for_path(`${dataDir}/chrome.log`);
+            const timestamp = new Date().toISOString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            const outputStream = file.append_to(Gio.FileCreateFlags.NONE, null);
+            const dataStream = new Gio.DataOutputStream({ base_stream: outputStream });
+            dataStream.put_string(logEntry, null);
+            dataStream.flush(null);
+            dataStream.close(null);
+            outputStream.close(null);
+        } catch (error) {
+            console.warn('Failed to log to file:', error);
+        }
+    }
+}   
+

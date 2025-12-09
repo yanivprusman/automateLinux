@@ -44,7 +44,6 @@ export default class ClockExtension extends Extension {
             console.log(`Label positioned at ${x},${y}`);
             
             this._label.show();
-            this._label.set_layer(Clutter.Layer.TOP);
             console.log('Label shown');
             
             this._updateClock();
@@ -82,7 +81,13 @@ export default class ClockExtension extends Extension {
         let dragData = { dragging: false, offsetX: 0, offsetY: 0 };
 
         this._label.connect('button-press-event', (_, event) => {
-            if (event.get_button() === 1) {
+            if (event.get_button() === 3) {
+                // Right-click - show menu
+                console.log('Right-click on label');
+                this._showMenu();
+                return Clutter.EVENT_STOP;
+            } else if (event.get_button() === 1) {
+                // Left-click - start dragging
                 console.log('Button pressed on label');
                 dragData.dragging = true;
                 const [stageX, stageY] = event.get_coords();
@@ -120,6 +125,34 @@ export default class ClockExtension extends Extension {
             }
             return Clutter.EVENT_PROPAGATE;
         });
+    }
+
+    _showMenu() {
+        if (!this._menu) {
+            this._menu = new PopupMenu.PopupMenu(this._label, 0.5, St.Side.TOP);
+            
+            // Add shutdown option
+            const shutdownItem = this._menu.addAction('Shutdown', () => {
+                console.log('Shutdown selected');
+                try {
+                    GLib.spawn_command_line_async('/usr/bin/systemctl poweroff');
+                } catch (e) {
+                    console.error('Failed to execute shutdown:', e);
+                }
+            });
+            
+            // Add separator
+            this._menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            
+            // Add close menu option
+            this._menu.addAction('Close', () => {
+                this._menu.close();
+            });
+            
+            Main.uiGroup.add_child(this._menu.actor);
+        }
+        
+        this._menu.open();
     }
 
     _loadPosition() {
@@ -169,6 +202,12 @@ export default class ClockExtension extends Extension {
         if (this._timeoutId) {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
+        }
+
+        if (this._menu) {
+            this._menu.close();
+            this._menu.destroy();
+            this._menu = null;
         }
 
         if (this._label) {

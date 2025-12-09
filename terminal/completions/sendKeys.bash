@@ -18,6 +18,7 @@ _sendkeys_completion() {
               space spaceDown spaceUp
               comma commaDown commaUp
               equals equal equalsDown equalDown equalsUp equalUp
+              backspace backspaceDown backspaceUp
               semicolon semicolonDown semicolonUp
               apostrophe quote apostropheDown quoteDown apostropheUp quoteUp
               backslash backslashDown backslashUp

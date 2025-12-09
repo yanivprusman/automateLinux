@@ -67,6 +67,7 @@ void print_usage() {
     printf("  semicolon[Down/Up]   Send semicolon key\n");
     printf("  apostrophe/quote[Down/Up] Send apostrophe/quote key\n");
     printf("  backslash[Down/Up]   Send backslash key\n");
+    printf("  backspace[Down/Up]   Send backspace key\n");
     printf("  bracket_left[Down/Up] Send left bracket key\n");
     printf("  bracket_right[Down/Up] Send right bracket key\n");
     printf("  backtick/grave[Down/Up] Send backtick/grave key\n");
@@ -78,300 +79,131 @@ void print_usage() {
     printf("  google-chrome        Send Chrome app signal\n");
 }
 
-static int get_key_code(char letter) {
-    /* Convert letter to uppercase for consistency */
-    letter = toupper(letter);
-    
-    /* Check if it's A-Z */
-    if (letter >= 'A' && letter <= 'Z') {
-        /* Linux input.h defines KEY_A as 30, KEY_B as 48, etc. 
-           Map ASCII A-Z to the correct key codes */
-        switch (letter) {
-            case 'A': return KEY_A;
-            case 'B': return KEY_B;
-            case 'C': return KEY_C;
-            case 'D': return KEY_D;
-            case 'E': return KEY_E;
-            case 'F': return KEY_F;
-            case 'G': return KEY_G;
-            case 'H': return KEY_H;
-            case 'I': return KEY_I;
-            case 'J': return KEY_J;
-            case 'K': return KEY_K;
-            case 'L': return KEY_L;
-            case 'M': return KEY_M;
-            case 'N': return KEY_N;
-            case 'O': return KEY_O;
-            case 'P': return KEY_P;
-            case 'Q': return KEY_Q;
-            case 'R': return KEY_R;
-            case 'S': return KEY_S;
-            case 'T': return KEY_T;
-            case 'U': return KEY_U;
-            case 'V': return KEY_V;
-            case 'W': return KEY_W;
-            case 'X': return KEY_X;
-            case 'Y': return KEY_Y;
-            case 'Z': return KEY_Z;
+/* Key mapping table - maps key names to their KEY_* codes */
+struct KeyMapping {
+    const char *name1;      /* Primary name */
+    const char *name2;      /* Alternate name (or NULL) */
+    int key_code;           /* KEY_* constant */
+};
+
+static const struct KeyMapping KEY_MAP[] = {
+    /* Letter keys */
+    {"keyA", NULL, KEY_A}, {"keyB", NULL, KEY_B}, {"keyC", NULL, KEY_C},
+    {"keyD", NULL, KEY_D}, {"keyE", NULL, KEY_E}, {"keyF", NULL, KEY_F},
+    {"keyG", NULL, KEY_G}, {"keyH", NULL, KEY_H}, {"keyI", NULL, KEY_I},
+    {"keyJ", NULL, KEY_J}, {"keyK", NULL, KEY_K}, {"keyL", NULL, KEY_L},
+    {"keyM", NULL, KEY_M}, {"keyN", NULL, KEY_N}, {"keyO", NULL, KEY_O},
+    {"keyP", NULL, KEY_P}, {"keyQ", NULL, KEY_Q}, {"keyR", NULL, KEY_R},
+    {"keyS", NULL, KEY_S}, {"keyT", NULL, KEY_T}, {"keyU", NULL, KEY_U},
+    {"keyV", NULL, KEY_V}, {"keyW", NULL, KEY_W}, {"keyX", NULL, KEY_X},
+    {"keyY", NULL, KEY_Y}, {"keyZ", NULL, KEY_Z},
+    /* Symbol keys */
+    {"period", "dot", KEY_DOT},
+    {"slash", NULL, KEY_SLASH},
+    {"minus", "dash", KEY_MINUS},
+    {"space", NULL, KEY_SPACE},
+    {"comma", NULL, KEY_COMMA},
+    {"equals", "equal", KEY_EQUAL},
+    {"backspace", NULL, KEY_BACKSPACE},
+    {"semicolon", NULL, KEY_SEMICOLON},
+    {"apostrophe", "quote", KEY_APOSTROPHE},
+    {"backslash", NULL, KEY_BACKSLASH},
+    {"bracket_left", "leftbracket", KEY_LEFTBRACE},
+    {"bracket_right", "rightbracket", KEY_RIGHTBRACE},
+    {"backtick", "grave", KEY_GRAVE},
+    {"enter", NULL, KEY_ENTER},
+};
+
+static const int KEY_MAP_SIZE = sizeof(KEY_MAP) / sizeof(KEY_MAP[0]);
+
+/* Lookup key code from command string, returns -1 if not found */
+static int lookup_key(const char *cmd, const char **suffix) {
+    for (int i = 0; i < KEY_MAP_SIZE; i++) {
+        const char *name1 = KEY_MAP[i].name1;
+        const char *name2 = KEY_MAP[i].name2;
+        
+        /* Try primary name */
+        if (strncmp(cmd, name1, strlen(name1)) == 0) {
+            *suffix = cmd + strlen(name1);
+            return KEY_MAP[i].key_code;
+        }
+        /* Try alternate name if present */
+        if (name2 && strncmp(cmd, name2, strlen(name2)) == 0) {
+            *suffix = cmd + strlen(name2);
+            return KEY_MAP[i].key_code;
         }
     }
-    return -1;  /* Invalid or unsupported key */
+    return -1;
 }
 
 void handle_command(const char *cmd) {
-    /* Handle letter key commands in the format key<X>, key<X>Up, key<X>Down */
-    if (strncmp(cmd, "key", 3) == 0 && strlen(cmd) >= 4) {
-        char letter = cmd[3];
-        int key_code = get_key_code(letter);
-        
-        if (key_code != -1) {
-            const char *action = cmd + 4;  /* Points to either '\0' or "Up"/"Down" */
-            
-            if (*action == '\0') {
-                /* Simple press and release */
-                send_event(EV_KEY, key_code, 1);
-                send_event(EV_KEY, key_code, 0);
-            } else if (strcmp(action, "Down") == 0) {
-                send_event(EV_KEY, key_code, 1);
-            } else if (strcmp(action, "Up") == 0) {
-                send_event(EV_KEY, key_code, 0);
-            }
-            return;
+    const char *suffix = NULL;
+    int key_code = lookup_key(cmd, &suffix);
+    
+    /* Try table lookup first */
+    if (key_code != -1) {
+        if (*suffix == '\0') {
+            /* Simple press and release */
+            send_event(EV_KEY, key_code, 1);
+            send_event(EV_KEY, key_code, 0);
+        } else if (strcmp(suffix, "Down") == 0) {
+            send_event(EV_KEY, key_code, 1);
+        } else if (strcmp(suffix, "Up") == 0) {
+            send_event(EV_KEY, key_code, 0);
+            send_event(EV_SYN, SYN_REPORT, 0);
         }
+        return;
     }
+    
     /* Handle raw keycode commands: keycode:30 */
-    else if (strncmp(cmd, "keycode:", 8) == 0) {
+    if (strncmp(cmd, "keycode:", 8) == 0) {
         int keycode = atoi(cmd + 8);
         if (keycode > 0) {
             send_event(EV_KEY, keycode, 1);
             send_event(EV_KEY, keycode, 0);
             send_event(EV_SYN, SYN_REPORT, 0);
-            return;
         }
-    }
-    /* Handle special characters with Down/Up support */
-    else if (strcmp(cmd, "period") == 0 || strcmp(cmd, "dot") == 0) {
-        send_key_event(KEY_DOT, 1);
-        send_key_event(KEY_DOT, 0);
         return;
     }
-    else if (strcmp(cmd, "periodDown") == 0 || strcmp(cmd, "dotDown") == 0) {
-        send_event(EV_KEY, KEY_DOT, 1);
-        return;
-    }
-    else if (strcmp(cmd, "periodUp") == 0 || strcmp(cmd, "dotUp") == 0) {
-        send_event(EV_KEY, KEY_DOT, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "slash") == 0) {
-        send_key_event(KEY_SLASH, 1);
-        send_key_event(KEY_SLASH, 0);
-        return;
-    }
-    else if (strcmp(cmd, "slashDown") == 0) {
-        send_event(EV_KEY, KEY_SLASH, 1);
-        return;
-    }
-    else if (strcmp(cmd, "slashUp") == 0) {
-        send_event(EV_KEY, KEY_SLASH, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "minus") == 0 || strcmp(cmd, "dash") == 0) {
-        send_key_event(KEY_MINUS, 1);
-        send_key_event(KEY_MINUS, 0);
-        return;
-    }
-    else if (strcmp(cmd, "minusDown") == 0 || strcmp(cmd, "dashDown") == 0) {
-        send_event(EV_KEY, KEY_MINUS, 1);
-        return;
-    }
-    else if (strcmp(cmd, "minusUp") == 0 || strcmp(cmd, "dashUp") == 0) {
-        send_event(EV_KEY, KEY_MINUS, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "space") == 0) {
-        send_key_event(KEY_SPACE, 1);
-        send_key_event(KEY_SPACE, 0);
-        return;
-    }
-    else if (strcmp(cmd, "spaceDown") == 0) {
-        send_event(EV_KEY, KEY_SPACE, 1);
-        return;
-    }
-    else if (strcmp(cmd, "spaceUp") == 0) {
-        send_event(EV_KEY, KEY_SPACE, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "comma") == 0) {
-        send_key_event(KEY_COMMA, 1);
-        send_key_event(KEY_COMMA, 0);
-        return;
-    }
-    else if (strcmp(cmd, "commaDown") == 0) {
-        send_event(EV_KEY, KEY_COMMA, 1);
-        return;
-    }
-    else if (strcmp(cmd, "commaUp") == 0) {
-        send_event(EV_KEY, KEY_COMMA, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "equals") == 0 || strcmp(cmd, "equal") == 0) {
-        send_key_event(KEY_EQUAL, 1);
-        send_key_event(KEY_EQUAL, 0);
-        return;
-    }
-    else if (strcmp(cmd, "equalsDown") == 0 || strcmp(cmd, "equalDown") == 0) {
-        send_event(EV_KEY, KEY_EQUAL, 1);
-        return;
-    }
-    else if (strcmp(cmd, "equalsUp") == 0 || strcmp(cmd, "equalUp") == 0) {
-        send_event(EV_KEY, KEY_EQUAL, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "semicolon") == 0) {
-        send_key_event(KEY_SEMICOLON, 1);
-        send_key_event(KEY_SEMICOLON, 0);
-        return;
-    }
-    else if (strcmp(cmd, "semicolonDown") == 0) {
-        send_event(EV_KEY, KEY_SEMICOLON, 1);
-        return;
-    }
-    else if (strcmp(cmd, "semicolonUp") == 0) {
-        send_event(EV_KEY, KEY_SEMICOLON, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "apostrophe") == 0 || strcmp(cmd, "quote") == 0) {
-        send_key_event(KEY_APOSTROPHE, 1);
-        send_key_event(KEY_APOSTROPHE, 0);
-        return;
-    }
-    else if (strcmp(cmd, "apostropheDown") == 0 || strcmp(cmd, "quoteDown") == 0) {
-        send_event(EV_KEY, KEY_APOSTROPHE, 1);
-        return;
-    }
-    else if (strcmp(cmd, "apostropheUp") == 0 || strcmp(cmd, "quoteUp") == 0) {
-        send_event(EV_KEY, KEY_APOSTROPHE, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "backslash") == 0) {
-        send_key_event(KEY_BACKSLASH, 1);
-        send_key_event(KEY_BACKSLASH, 0);
-        return;
-    }
-    else if (strcmp(cmd, "backslashDown") == 0) {
-        send_event(EV_KEY, KEY_BACKSLASH, 1);
-        return;
-    }
-    else if (strcmp(cmd, "backslashUp") == 0) {
-        send_event(EV_KEY, KEY_BACKSLASH, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "bracket_left") == 0 || strcmp(cmd, "leftbracket") == 0) {
-        send_key_event(KEY_LEFTBRACE, 1);
-        send_key_event(KEY_LEFTBRACE, 0);
-        return;
-    }
-    else if (strcmp(cmd, "bracket_leftDown") == 0 || strcmp(cmd, "leftbracketDown") == 0) {
-        send_event(EV_KEY, KEY_LEFTBRACE, 1);
-        return;
-    }
-    else if (strcmp(cmd, "bracket_leftUp") == 0 || strcmp(cmd, "leftbracketUp") == 0) {
-        send_event(EV_KEY, KEY_LEFTBRACE, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "bracket_right") == 0 || strcmp(cmd, "rightbracket") == 0) {
-        send_key_event(KEY_RIGHTBRACE, 1);
-        send_key_event(KEY_RIGHTBRACE, 0);
-        return;
-    }
-    else if (strcmp(cmd, "bracket_rightDown") == 0 || strcmp(cmd, "rightbracketDown") == 0) {
-        send_event(EV_KEY, KEY_RIGHTBRACE, 1);
-        return;
-    }
-    else if (strcmp(cmd, "bracket_rightUp") == 0 || strcmp(cmd, "rightbracketUp") == 0) {
-        send_event(EV_KEY, KEY_RIGHTBRACE, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "backtick") == 0 || strcmp(cmd, "grave") == 0) {
-        send_key_event(KEY_GRAVE, 1);
-        send_key_event(KEY_GRAVE, 0);
-        return;
-    }
-    else if (strcmp(cmd, "backtickDown") == 0 || strcmp(cmd, "graveDown") == 0) {
-        send_event(EV_KEY, KEY_GRAVE, 1);
-        return;
-    }
-    else if (strcmp(cmd, "backtickUp") == 0 || strcmp(cmd, "graveUp") == 0) {
-        send_event(EV_KEY, KEY_GRAVE, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "enter") == 0) {
-        send_key_event(KEY_ENTER, 1);
-        send_key_event(KEY_ENTER, 0);
-        return;
-    }
-    else if (strcmp(cmd, "enterDown") == 0) {
-        send_event(EV_KEY, KEY_ENTER, 1);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "enterUp") == 0) {
-        send_event(EV_KEY, KEY_ENTER, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "numlock") == 0) {
-        // Send scan code first (0x45 is the standard scan code for numlock)
-        send_event(EV_MSC, MSC_SCAN, 0x45);
-        // Send key press
-        send_event(EV_KEY, KEY_NUMLOCK, 1);
-        // Send sync after press
-        send_event(EV_SYN, SYN_REPORT, 0);
-        // Send release after a small delay
-        usleep(50000); // 50ms delay
-        // Send scan code again for release
-        send_event(EV_MSC, MSC_SCAN, 0x45);
-        // Send key release
-        send_event(EV_KEY, KEY_NUMLOCK, 0);
-        // Final sync
-        send_event(EV_SYN, SYN_REPORT, 0);
-    } 
-    else if (strcmp(cmd, "numlockDown") == 0) {
+    
+    /* Handle numlock (special case with delay) */
+    if (strcmp(cmd, "numlock") == 0) {
         send_event(EV_MSC, MSC_SCAN, 0x45);
         send_event(EV_KEY, KEY_NUMLOCK, 1);
         send_event(EV_SYN, SYN_REPORT, 0);
-        return;
-    }
-    else if (strcmp(cmd, "numlockUp") == 0) {
+        usleep(50000);
         send_event(EV_MSC, MSC_SCAN, 0x45);
         send_event(EV_KEY, KEY_NUMLOCK, 0);
         send_event(EV_SYN, SYN_REPORT, 0);
         return;
     }
-    else if (strcmp(cmd, "syn") == 0) {
+    if (strcmp(cmd, "numlockDown") == 0) {
+        send_event(EV_MSC, MSC_SCAN, 0x45);
+        send_event(EV_KEY, KEY_NUMLOCK, 1);
         send_event(EV_SYN, SYN_REPORT, 0);
-    } else {
-        int appCode = isApp(cmd);
-        if (appCode) {
-            for (int i = 0; i < 3; i++) {
-                send_event(EV_MSC, MSC_SCAN, 100);
-            }
-            send_event(EV_MSC, MSC_SCAN, appCode);
-            send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
+    if (strcmp(cmd, "numlockUp") == 0) {
+        send_event(EV_MSC, MSC_SCAN, 0x45);
+        send_event(EV_KEY, KEY_NUMLOCK, 0);
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
+    
+    /* Handle sync */
+    if (strcmp(cmd, "syn") == 0) {
+        send_event(EV_SYN, SYN_REPORT, 0);
+        return;
+    }
+    
+    /* Handle app signals */
+    int appCode = isApp(cmd);
+    if (appCode) {
+        for (int i = 0; i < 3; i++) {
+            send_event(EV_MSC, MSC_SCAN, 100);
         }
+        send_event(EV_MSC, MSC_SCAN, appCode);
+        send_event(EV_SYN, SYN_REPORT, 0);
     }
 }
 

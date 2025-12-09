@@ -15,3 +15,4 @@ symlinks/daemon
 utilities/cleanBetween/cleanBetween
 chrome/
 utilities/sendKeys/autoSend.sh
+images/grub.png

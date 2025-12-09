@@ -11,15 +11,11 @@ int fd;
 const int codeForCode = 101;
 const int codeForGnomeTerminal = 102;
 const int codeForGoogleChrome = 103;
-
-// Default keyboard device path
 const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 
-// Get keyboard path from environment variable or use default
 const char* get_keyboard_path() {
     static char full_path[256];
     const char* env_path = getenv("KEYBOARD_BY_ID");
-    
     if (env_path != NULL && *env_path != '\0') {
         snprintf(full_path, sizeof(full_path), "/dev/input/by-id/%s", env_path);
         return full_path;
@@ -58,19 +54,19 @@ void print_usage() {
     printf("  key<X>Down           Press any letter key (A-Z)\n");
     printf("  key<X>Up             Release any letter key (A-Z)\n");
     printf("  keycode:N            Send raw key code N (e.g., keycode:30 for KEY_A)\n");
-    printf("  period/dot[Down/Up]  Send period/dot key\n");
+    printf("  period[Down/Up]      Send period key\n");
     printf("  slash[Down/Up]       Send forward slash key\n");
-    printf("  minus/dash[Down/Up]  Send minus/dash key\n");
+    printf("  minus[Down/Up]       Send minus key\n");
     printf("  space[Down/Up]       Send space key\n");
     printf("  comma[Down/Up]       Send comma key\n");
-    printf("  equals/equal[Down/Up] Send equals key\n");
+    printf("  equals[Down/Up]      Send equals key\n");
     printf("  semicolon[Down/Up]   Send semicolon key\n");
-    printf("  apostrophe/quote[Down/Up] Send apostrophe/quote key\n");
+    printf("  apostrophe[Down/Up]  Send apostrophe key\n");
     printf("  backslash[Down/Up]   Send backslash key\n");
     printf("  backspace[Down/Up]   Send backspace key\n");
     printf("  bracket_left[Down/Up] Send left bracket key\n");
     printf("  bracket_right[Down/Up] Send right bracket key\n");
-    printf("  backtick/grave[Down/Up] Send backtick/grave key\n");
+    printf("  backtick[Down/Up]    Send backtick key\n");
     printf("  enter[Down/Up]       Send enter key with optional Down/Up\n");
     printf("  numlock[Down/Up]     Toggle numlock or send Down/Up separately\n");
     printf("  syn                  Send sync report\n");
@@ -79,57 +75,45 @@ void print_usage() {
     printf("  google-chrome        Send Chrome app signal\n");
 }
 
-/* Key mapping table - maps key names to their KEY_* codes */
 struct KeyMapping {
-    const char *name1;      /* Primary name */
-    const char *name2;      /* Alternate name (or NULL) */
-    int key_code;           /* KEY_* constant */
+    const char *name;
+    int key_code;
 };
 
 static const struct KeyMapping KEY_MAP[] = {
-    /* Letter keys */
-    {"keyA", NULL, KEY_A}, {"keyB", NULL, KEY_B}, {"keyC", NULL, KEY_C},
-    {"keyD", NULL, KEY_D}, {"keyE", NULL, KEY_E}, {"keyF", NULL, KEY_F},
-    {"keyG", NULL, KEY_G}, {"keyH", NULL, KEY_H}, {"keyI", NULL, KEY_I},
-    {"keyJ", NULL, KEY_J}, {"keyK", NULL, KEY_K}, {"keyL", NULL, KEY_L},
-    {"keyM", NULL, KEY_M}, {"keyN", NULL, KEY_N}, {"keyO", NULL, KEY_O},
-    {"keyP", NULL, KEY_P}, {"keyQ", NULL, KEY_Q}, {"keyR", NULL, KEY_R},
-    {"keyS", NULL, KEY_S}, {"keyT", NULL, KEY_T}, {"keyU", NULL, KEY_U},
-    {"keyV", NULL, KEY_V}, {"keyW", NULL, KEY_W}, {"keyX", NULL, KEY_X},
-    {"keyY", NULL, KEY_Y}, {"keyZ", NULL, KEY_Z},
+    {"keyA", KEY_A}, {"keyB", KEY_B}, {"keyC", KEY_C},
+    {"keyD", KEY_D}, {"keyE", KEY_E}, {"keyF", KEY_F},
+    {"keyG", KEY_G}, {"keyH", KEY_H}, {"keyI", KEY_I},
+    {"keyJ", KEY_J}, {"keyK", KEY_K}, {"keyL", KEY_L},
+    {"keyM", KEY_M}, {"keyN", KEY_N}, {"keyO", KEY_O},
+    {"keyP", KEY_P}, {"keyQ", KEY_Q}, {"keyR", KEY_R},
+    {"keyS", KEY_S}, {"keyT", KEY_T}, {"keyU", KEY_U},
+    {"keyV", KEY_V}, {"keyW", KEY_W}, {"keyX", KEY_X},
+    {"keyY", KEY_Y}, {"keyZ", KEY_Z},
     /* Symbol keys */
-    {"period", "dot", KEY_DOT},
-    {"slash", NULL, KEY_SLASH},
-    {"minus", "dash", KEY_MINUS},
-    {"space", NULL, KEY_SPACE},
-    {"comma", NULL, KEY_COMMA},
-    {"equals", "equal", KEY_EQUAL},
-    {"backspace", NULL, KEY_BACKSPACE},
-    {"semicolon", NULL, KEY_SEMICOLON},
-    {"apostrophe", "quote", KEY_APOSTROPHE},
-    {"backslash", NULL, KEY_BACKSLASH},
-    {"bracket_left", "leftbracket", KEY_LEFTBRACE},
-    {"bracket_right", "rightbracket", KEY_RIGHTBRACE},
-    {"backtick", "grave", KEY_GRAVE},
-    {"enter", NULL, KEY_ENTER},
+    {"period", KEY_DOT},
+    {"slash", KEY_SLASH},
+    {"minus", KEY_MINUS},
+    {"space", KEY_SPACE},
+    {"comma", KEY_COMMA},
+    {"equals", KEY_EQUAL},
+    {"backspace", KEY_BACKSPACE},
+    {"semicolon", KEY_SEMICOLON},
+    {"apostrophe", KEY_APOSTROPHE},
+    {"backslash", KEY_BACKSLASH},
+    {"bracket_left", KEY_LEFTBRACE},
+    {"bracket_right", KEY_RIGHTBRACE},
+    {"backtick", KEY_GRAVE},
+    {"enter", KEY_ENTER},
 };
 
 static const int KEY_MAP_SIZE = sizeof(KEY_MAP) / sizeof(KEY_MAP[0]);
 
-/* Lookup key code from command string, returns -1 if not found */
 static int lookup_key(const char *cmd, const char **suffix) {
     for (int i = 0; i < KEY_MAP_SIZE; i++) {
-        const char *name1 = KEY_MAP[i].name1;
-        const char *name2 = KEY_MAP[i].name2;
-        
-        /* Try primary name */
-        if (strncmp(cmd, name1, strlen(name1)) == 0) {
-            *suffix = cmd + strlen(name1);
-            return KEY_MAP[i].key_code;
-        }
-        /* Try alternate name if present */
-        if (name2 && strncmp(cmd, name2, strlen(name2)) == 0) {
-            *suffix = cmd + strlen(name2);
+        const char *name = KEY_MAP[i].name;
+        if (strncmp(cmd, name, strlen(name)) == 0) {
+            *suffix = cmd + strlen(name);
             return KEY_MAP[i].key_code;
         }
     }
@@ -139,11 +123,8 @@ static int lookup_key(const char *cmd, const char **suffix) {
 void handle_command(const char *cmd) {
     const char *suffix = NULL;
     int key_code = lookup_key(cmd, &suffix);
-    
-    /* Try table lookup first */
     if (key_code != -1) {
         if (*suffix == '\0') {
-            /* Simple press and release */
             send_event(EV_KEY, key_code, 1);
             send_event(EV_KEY, key_code, 0);
         } else if (strcmp(suffix, "Down") == 0) {
@@ -154,8 +135,6 @@ void handle_command(const char *cmd) {
         }
         return;
     }
-    
-    /* Handle raw keycode commands: keycode:30 */
     if (strncmp(cmd, "keycode:", 8) == 0) {
         int keycode = atoi(cmd + 8);
         if (keycode > 0) {
@@ -165,8 +144,6 @@ void handle_command(const char *cmd) {
         }
         return;
     }
-    
-    /* Handle numlock (special case with delay) */
     if (strcmp(cmd, "numlock") == 0) {
         send_event(EV_MSC, MSC_SCAN, 0x45);
         send_event(EV_KEY, KEY_NUMLOCK, 1);
@@ -189,14 +166,10 @@ void handle_command(const char *cmd) {
         send_event(EV_SYN, SYN_REPORT, 0);
         return;
     }
-    
-    /* Handle sync */
     if (strcmp(cmd, "syn") == 0) {
         send_event(EV_SYN, SYN_REPORT, 0);
         return;
     }
-    
-    /* Handle app signals */
     int appCode = isApp(cmd);
     if (appCode) {
         for (int i = 0; i < 3; i++) {
@@ -210,13 +183,10 @@ void handle_command(const char *cmd) {
 int main(int argc, char *argv[]) {
     const char *keyboard_path = get_keyboard_path();
     int i;
-
     if (argc < 2) {
         print_usage();
         return 1;
     }
-
-    // Parse options
     for (i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             print_usage();
@@ -229,22 +199,17 @@ int main(int argc, char *argv[]) {
                 return 1;
             }
         } else {
-            break;  // Start of commands
+            break;  
         }
     }
-
-    // Open keyboard device
     fd = open(keyboard_path, O_WRONLY);
     if (fd < 0) {
         fprintf(stderr, "Error: Could not open keyboard device: %s\n", keyboard_path);
         return 1;
     }
-
-    // Process all commands
     for (; i < argc; i++) {
         handle_command(argv[i]);
     }
-
     close(fd);
     return 0;
 }

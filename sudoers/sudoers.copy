@@ -79,7 +79,10 @@ Cmnd_Alias AUTOMATE = \
  /home/yaniv/coding/automateLinux/evsieve/test/runTest.sh, \
  /home/yaniv/coding/automateLinux/evsieve/test/stopTest.sh, \
  /home/yaniv/coding/automateLinux/evsieve/services/_sudoStop.sh, \
- /home/yaniv/coding/automateLinux/evsieve/toggle/sendKeys
+ /home/yaniv/coding/automateLinux/evsieve/toggle/sendKeys, \
+ /home/yaniv/coding/automateLinux/daemon/restart.sh, \
+ /usr/bin/systemctl restart daemon.service *, \
+ /sbin/shutdown
 
 yaniv ALL=(root) NOPASSWD: AUTOMATE
 

@@ -9,7 +9,7 @@ daemon() {
         export AUTOMATE_LINUX_DAEMON_FD_OUT=${DAEMON_COPROC[0]}
     fi
     local formatOutput="false"
-    local formatOutputTrueFunctions=("" "--help" "showDB" "showTerminalInstance" "showAllTerminalInstances" "showEntriesByPrefix" "printDirHistory")
+    local formatOutputTrueFunctions=("" "--help" "showDB" "showTerminalInstance" "showAllTerminalInstances" "showEntriesByPrefix" "printDirHistory" "setKeyboard")
     if [[ " ${formatOutputTrueFunctions[*]} " == *" $1 "* ]]; then
         formatOutput="true"
     fi

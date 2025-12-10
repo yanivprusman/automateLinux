@@ -197,7 +197,6 @@ CmdResult handleSetKeyboard(const json& command) {
     }
     string logPath = "/home/yaniv/coding/automateLinux/data/daemon.log";
     std::ofstream logFile(logPath, std::ios::app);
-    
     string logMessage = string("[START setKeyboard] keyboard: ") + keyboardName + " isKnown: " + (isKnown ? "true" : "false") + "\n";
     if (logFile.is_open()) {
         logFile << logMessage;
@@ -205,7 +204,9 @@ CmdResult handleSetKeyboard(const json& command) {
     }
     
     string restartScript = "/home/yaniv/coding/automateLinux/evsieve/services/restart.sh";
-    string cmd = string("sudo ") + restartScript + " " + keyboardName + " 2>&1";
+    string keyboardPath = kvTable.get("keyboardPath");
+    string cmd = string("sudo ") + restartScript + " " + keyboardName + " " + keyboardPath + " 2>&1";
+    // string cmd = string("sudo ") + restartScript + " " + keyboardName + " 2>&1";
     logMessage = string("[EXEC] ") + cmd + "\n";
     if (logFile.is_open()) {
         logFile << logMessage;

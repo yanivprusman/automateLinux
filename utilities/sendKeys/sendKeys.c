@@ -14,7 +14,7 @@ const int codeForGoogleChrome = 103;
 // const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 
-const char* get_keyboard_path() {
+const char* getKeyboardPath() {
     static char full_path[256];
     const char* env_path = getenv("KEYBOARD_BY_ID");
     if (env_path != NULL && *env_path != '\0') {
@@ -24,7 +24,7 @@ const char* get_keyboard_path() {
     return DEFAULT_KEYBOARD;
 }
 
-void send_event(int type, int code, int value) {
+void sendEvent(int type, int code, int value) {
     struct input_event ev;
     memset(&ev, 0, sizeof(ev));
     gettimeofday(&ev.time, NULL);
@@ -34,10 +34,10 @@ void send_event(int type, int code, int value) {
     write(fd, &ev, sizeof(ev));
 }
 
-void send_key_event(int key, int value) {
-    send_event(EV_KEY, key, value);
-    send_event(EV_SYN, SYN_REPORT, 0);
-}
+// void send_key_event(int key, int value) {
+//     sendEvent(EV_KEY, key, value);
+//     sendEvent(EV_SYN, SYN_REPORT, 0);
+// }
 
 int isApp(const char *input) {
     if (strcmp(input, "Code") == 0) return codeForCode;
@@ -126,74 +126,74 @@ void handle_command(const char *cmd) {
     int key_code = lookup_key(cmd, &suffix);
     if (key_code != -1) {
         // if (*suffix == '\0') {
-        //     send_event(EV_KEY, key_code, 1);
-        //     send_event(EV_KEY, key_code, 0);
+        //     sendEvent(EV_KEY, key_code, 1);
+        //     sendEvent(EV_KEY, key_code, 0);
         // } else if (strcmp(suffix, "Down") == 0) {
-        //     send_event(EV_KEY, key_code, 1);
+        //     sendEvent(EV_KEY, key_code, 1);
         // } else if (strcmp(suffix, "Up") == 0) {
-        //     send_event(EV_KEY, key_code, 0);
-        //     send_event(EV_SYN, SYN_REPORT, 0);
+        //     sendEvent(EV_KEY, key_code, 0);
+        //     sendEvent(EV_SYN, SYN_REPORT, 0);
         // }
         if (*suffix == '\0') {
-            send_event(EV_KEY, key_code, 1);
-            send_event(EV_KEY, key_code, 0);
-            send_event(EV_SYN, SYN_REPORT, 0);
+            sendEvent(EV_KEY, key_code, 1);
+            sendEvent(EV_KEY, key_code, 0);
+            sendEvent(EV_SYN, SYN_REPORT, 0);
         } else if (strcmp(suffix, "Down") == 0) {
-            send_event(EV_KEY, key_code, 1);
-            send_event(EV_SYN, SYN_REPORT, 0);
+            sendEvent(EV_KEY, key_code, 1);
+            sendEvent(EV_SYN, SYN_REPORT, 0);
         } else if (strcmp(suffix, "Up") == 0) {
-            send_event(EV_KEY, key_code, 0);
-            send_event(EV_SYN, SYN_REPORT, 0);
+            sendEvent(EV_KEY, key_code, 0);
+            sendEvent(EV_SYN, SYN_REPORT, 0);
         }
         return;
     }
     if (strncmp(cmd, "keycode:", 8) == 0) {
         int keycode = atoi(cmd + 8);
         if (keycode > 0) {
-            send_event(EV_KEY, keycode, 1);
-            send_event(EV_KEY, keycode, 0);
-            send_event(EV_SYN, SYN_REPORT, 0);
+            sendEvent(EV_KEY, keycode, 1);
+            sendEvent(EV_KEY, keycode, 0);
+            sendEvent(EV_SYN, SYN_REPORT, 0);
         }
         return;
     }
     if (strcmp(cmd, "numlock") == 0) {
-        send_event(EV_MSC, MSC_SCAN, 0x45);
-        send_event(EV_KEY, KEY_NUMLOCK, 1);
-        send_event(EV_SYN, SYN_REPORT, 0);
+        sendEvent(EV_MSC, MSC_SCAN, 0x45);
+        sendEvent(EV_KEY, KEY_NUMLOCK, 1);
+        sendEvent(EV_SYN, SYN_REPORT, 0);
         usleep(50000);
-        send_event(EV_MSC, MSC_SCAN, 0x45);
-        send_event(EV_KEY, KEY_NUMLOCK, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
+        sendEvent(EV_MSC, MSC_SCAN, 0x45);
+        sendEvent(EV_KEY, KEY_NUMLOCK, 0);
+        sendEvent(EV_SYN, SYN_REPORT, 0);
         return;
     }
     if (strcmp(cmd, "numlockDown") == 0) {
-        send_event(EV_MSC, MSC_SCAN, 0x45);
-        send_event(EV_KEY, KEY_NUMLOCK, 1);
-        send_event(EV_SYN, SYN_REPORT, 0);
+        sendEvent(EV_MSC, MSC_SCAN, 0x45);
+        sendEvent(EV_KEY, KEY_NUMLOCK, 1);
+        sendEvent(EV_SYN, SYN_REPORT, 0);
         return;
     }
     if (strcmp(cmd, "numlockUp") == 0) {
-        send_event(EV_MSC, MSC_SCAN, 0x45);
-        send_event(EV_KEY, KEY_NUMLOCK, 0);
-        send_event(EV_SYN, SYN_REPORT, 0);
+        sendEvent(EV_MSC, MSC_SCAN, 0x45);
+        sendEvent(EV_KEY, KEY_NUMLOCK, 0);
+        sendEvent(EV_SYN, SYN_REPORT, 0);
         return;
     }
     if (strcmp(cmd, "syn") == 0) {
-        send_event(EV_SYN, SYN_REPORT, 0);
+        sendEvent(EV_SYN, SYN_REPORT, 0);
         return;
     }
     int appCode = isApp(cmd);
     if (appCode) {
         for (int i = 0; i < 3; i++) {
-            send_event(EV_MSC, MSC_SCAN, 100);
+            sendEvent(EV_MSC, MSC_SCAN, 100);
         }
-        send_event(EV_MSC, MSC_SCAN, appCode);
-        send_event(EV_SYN, SYN_REPORT, 0);
+        sendEvent(EV_MSC, MSC_SCAN, appCode);
+        sendEvent(EV_SYN, SYN_REPORT, 0);
     }
 }
 
 int main(int argc, char *argv[]) {
-    const char *keyboard_path = get_keyboard_path();
+    const char *keyboard_path = getKeyboardPath();
     int i;
     if (argc < 2) {
         print_usage();

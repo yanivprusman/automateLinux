@@ -43,9 +43,6 @@ export default class ActiveWindowTracker {
     #onActiveWindowChanged() {
         const window = global.display.focus_window;
         const wmClass = window.get_wm_class() || 'unknown';
-        this.#logToFile(`Active window changed: ${wmClass}`);
-        const KEYBOARD_BY_ID = GLib.getenv('KEYBOARD_BY_ID');
-        this.#logToFile(`KEYBOARD_BY_ID=${KEYBOARD_BY_ID}`);
         const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys "${wmClass}"`;
         try {
             const subprocess = new Gio.Subprocess({
@@ -58,8 +55,37 @@ export default class ActiveWindowTracker {
         }
         if (wmClass.toLowerCase().includes('chrome') || wmClass.toLowerCase().includes('chromium')) {
             this.#checkChromeTab();
+            // this.#logToFile('Chrome detected, pinging daemon...');
+            // this.#pingDaemon();
         }
     }
+
+    #pingDaemon() {
+        try {
+            const client = new Gio.SocketClient();
+            const address = new Gio.UnixSocketAddress({ path: '/run/automatelinux/automatelinux-daemon.sock' });
+            client.connect_async(address, null, (client, res) => {  // Change GLib.PRIORITY_DEFAULT to null
+                try {
+                    const connection = client.connect_finish(res);
+                    const out = connection.get_output_stream();
+                    const dout = new Gio.DataOutputStream({ base_stream: out });
+                    // dout.put_string('ping\n', null);
+                    dout.put_string(JSON.stringify({command: 'ping'}) + '\n', null);
+                    dout.flush(null);
+                    const input = connection.get_input_stream();
+                    const din = new Gio.DataInputStream({ base_stream: input });
+                    const [line] = din.read_line_utf8(null);
+                    this.#logToFile(`Daemon replied: ${line}`);
+                } catch (e) {
+                    this.#logToFile(`Socket error: ${e}`);
+                }
+            });
+        } catch (e) {
+            this.#logToFile(`Failed: ${e.message}`);
+            logError(e, 'Socket operation failed');
+        }
+    }
+    
     #checkChromeTab() {
         try {
             console.log('Checking Chrome tab...');
@@ -116,7 +142,7 @@ export default class ActiveWindowTracker {
             // this.#logToFile('chatgpt', 'Sending keys to ChatGPT');
             // const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
             // const command = `sleep 1; /home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
-            const command = `sudo /home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
+            const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
             const subprocess = new Gio.Subprocess({
                 argv: ['/bin/bash', '-c', command],
                 flags: Gio.SubprocessFlags.NONE,

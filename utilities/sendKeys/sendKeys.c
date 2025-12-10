@@ -15,15 +15,44 @@ const int codeForGnomeTerminal = 102;
 const int codeForGoogleChrome = 103;
 // const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
+const char *DAEMON_SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock";
+static char keyboard_path_buffer[512];
+
+// const char* getKeyboardPath() {
+//     static char full_path[256];
+//     const char* env_path = getenv("KEYBOARD_BY_ID");
+//     if (env_path != NULL && *env_path != '\0') {
+//         snprintf(full_path, sizeof(full_path), "/dev/input/by-id/%s", env_path);
+//         return full_path;
+//     }
+//     return DEFAULT_KEYBOARD;
+// }
 
 const char* getKeyboardPath() {
-    static char full_path[256];
-    const char* env_path = getenv("KEYBOARD_BY_ID");
-    if (env_path != NULL && *env_path != '\0') {
-        snprintf(full_path, sizeof(full_path), "/dev/input/by-id/%s", env_path);
-        return full_path;
+    int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sock < 0) return DEFAULT_KEYBOARD;
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, DAEMON_SOCKET_PATH, sizeof(addr.sun_path) - 1);
+    if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        close(sock);
+        return DEFAULT_KEYBOARD;
     }
-    return DEFAULT_KEYBOARD;
+    const char *command = "{\"command\":\"getKeyboardPath\"}\n";
+    if (write(sock, command, strlen(command)) < 0) {
+        close(sock);
+        return DEFAULT_KEYBOARD;
+    }
+    char buffer[512];
+    ssize_t bytes_read = read(sock, buffer, sizeof(buffer) - 1);
+    close(sock);
+    if (bytes_read <= 0) return DEFAULT_KEYBOARD;
+    buffer[bytes_read] = '\0';
+    if (buffer[bytes_read - 1] == '\n') buffer[bytes_read - 1] = '\0';
+    strncpy(keyboard_path_buffer, buffer, sizeof(keyboard_path_buffer) - 1);
+    keyboard_path_buffer[sizeof(keyboard_path_buffer) - 1] = '\0';
+    return keyboard_path_buffer;
 }
 
 void sendEvent(int type, int code, int value) {

@@ -89,7 +89,7 @@ export default class ActiveWindowTracker {
     #checkChromeTab() {
         try {
             console.log('Checking Chrome tab...');
-            const cmd = `curl -s http://localhost:9222/json | jq -r 'map(select(.type=="page")) | max_by(.lastAccessed) | .url'`;
+            const cmd = `curl -s http://localhost:9222/json | jq -r '.[] | select(.type=="page") | .url' | head -1`;
             const subprocess = new Gio.Subprocess({
                 argv: ['/bin/bash', '-c', cmd],
                 flags: Gio.SubprocessFlags.STDOUT_PIPE,

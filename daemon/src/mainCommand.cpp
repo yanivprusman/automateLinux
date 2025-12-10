@@ -152,6 +152,40 @@ CmdResult handleGetKeyboardPath(const json&) {
     }
     return CmdResult(0, path + "\n");
 }
+// CmdResult handleSetKeyboard(const json& command) {
+//     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
+//     bool isKnown = false;
+//     for (const string& known : KNOWN_KEYBOARDS) {
+//         if (known == keyboardName) {
+//             isKnown = true;
+//             break;
+//         }
+//     }
+//     string logMessage = string("[") + keyboardName + "] ";
+//     logMessage += isKnown ? keyboardName : "UNKNOWN";
+//     logMessage += "\n";
+//     string logPath = "/home/yaniv/coding/automateLinux/data/daemon.log";
+//     std::ofstream logFile(logPath, std::ios::app);
+//     if (logFile.is_open()) {
+//         logFile << logMessage;
+//         logFile.close();
+//     }
+//     string cmd = string("sudo /home/yaniv/coding/automateLinux/evsieve/services/restart.sh ") + keyboardName;
+//     int status = system(cmd.c_str());
+//     if (status != 0) {
+//         // return CmdResult(1, string("Failed to execute restart.sh\n"));
+//         logMessage = string("Command failed with status: ") + std::to_string(status) + " (exit code: " + std::to_string(WEXITSTATUS(status)) + ")\n";
+//         logFile.open(logPath, std::ios::app);
+//         if (logFile.is_open()) {
+//             logFile << logMessage;
+//             logFile.close();
+//         }
+//         return CmdResult(1, string("Failed to execute restart.sh (status ") + std::to_string(status) + ")\n");
+
+//     }
+//     return CmdResult(0, string("Set keyboard to: ") + keyboardName + "\n");
+// }
+
 CmdResult handleSetKeyboard(const json& command) {
     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
     bool isKnown = false;
@@ -161,22 +195,73 @@ CmdResult handleSetKeyboard(const json& command) {
             break;
         }
     }
-    string logMessage = string("[") + keyboardName + "] ";
-    logMessage += isKnown ? keyboardName : "UNKNOWN";
-    logMessage += "\n";
     string logPath = "/home/yaniv/coding/automateLinux/data/daemon.log";
     std::ofstream logFile(logPath, std::ios::app);
+    
+    string logMessage = string("[START setKeyboard] keyboard: ") + keyboardName + " isKnown: " + (isKnown ? "true" : "false") + "\n";
     if (logFile.is_open()) {
         logFile << logMessage;
-        logFile.close();
+        logFile.flush();
     }
-    string cmd = string("/home/yaniv/coding/automateLinux/evsieve/services/restart.sh ") + keyboardName;
-    int status = system(cmd.c_str());
+    
+    string restartScript = "/home/yaniv/coding/automateLinux/evsieve/services/restart.sh";
+    string cmd = string("sudo ") + restartScript + " " + keyboardName + " 2>&1";
+    logMessage = string("[EXEC] ") + cmd + "\n";
+    if (logFile.is_open()) {
+        logFile << logMessage;
+        logFile.flush();
+    }
+    
+    FILE* pipe = popen(cmd.c_str(), "r");
+    if (!pipe) {
+        logMessage = string("[ERROR] popen failed\n");
+        if (logFile.is_open()) {
+            logFile << logMessage;
+            logFile.flush();
+        }
+        return CmdResult(1, "Failed to execute restart.sh\n");
+    }
+    
+    char buffer[256];
+    string output;
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+        output += buffer;
+    }
+    
+    int status = pclose(pipe);
+    int exitCode = WEXITSTATUS(status);
+    
+    logMessage = string("[OUTPUT]\n") + output + "\n";
+    if (logFile.is_open()) {
+        logFile << logMessage;
+        logFile.flush();
+    }
+    
+    logMessage = string("[STATUS] raw status: ") + std::to_string(status) + " exit code: " + std::to_string(exitCode) + "\n";
+    if (logFile.is_open()) {
+        logFile << logMessage;
+        logFile.flush();
+    }
+    
     if (status != 0) {
-        return CmdResult(1, string("Failed to execute restart.sh\n"));
+        logMessage = string("[END] FAILED\n");
+        if (logFile.is_open()) {
+            logFile << logMessage;
+            logFile.flush();
+            logFile.close();
+        }
+        return CmdResult(1, string("Failed to execute restart.sh (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
+    }
+    
+    logMessage = string("[END] SUCCESS\n");
+    if (logFile.is_open()) {
+        logFile << logMessage;
+        logFile.flush();
+        logFile.close();
     }
     return CmdResult(0, string("Set keyboard to: ") + keyboardName + "\n");
 }
+
 typedef CmdResult (*CommandHandler)(const json&);
 
 struct CommandDispatch {

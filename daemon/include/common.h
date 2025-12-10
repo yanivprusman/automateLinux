@@ -51,6 +51,8 @@
 #define COMMAND_ARG_VALUE "value"
 #define COMMAND_PING "ping"
 #define COMMAND_GET_KEYBOARD_PATH "getKeyboardPath"
+#define COMMAND_SET_KEYBOARD "setKeyboard"
+#define COMMAND_ARG_KEYBOARD_NAME "keyboardName"
 
 struct CommandSignature {
     string name;
@@ -78,6 +80,7 @@ static const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY}),
     CommandSignature(COMMAND_PING, {}),
     CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
+    CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
 };
 
 static const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);

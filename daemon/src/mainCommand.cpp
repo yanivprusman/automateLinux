@@ -2,6 +2,14 @@
 
 static int g_client_sock = -1;
 
+static const vector<string> KNOWN_KEYBOARDS = {
+    "Code",
+    "gnome-terminal-server",
+    "google-chrome",
+    "testKeyboard1",
+    "testKeyboard2"
+};
+
 static string formatEntriesAsText(const vector<std::pair<string, string>>& entries) {
     if (entries.empty()) {
         return "<no entries>\n";
@@ -34,7 +42,8 @@ static const string HELP_MESSAGE =
     "  deleteEntry             Delete a specific entry from the database by key.\n"
     "  deleteEntriesByPrefix   Delete all entries with a specific prefix.\n"
     "  showDB                  Display all entries in the database.\n"
-    "  ping                    Ping the daemon and receive pong response.\n\n"
+    "  ping                    Ping the daemon and receive pong response.\n"
+    "  setKeyboard             Set the keyboard by name and execute restart script.\n\n"
     "Options:\n"
     "  --help                  Display this help message.\n"
     "  --json                  Output results in JSON format.\n\n"
@@ -143,6 +152,31 @@ CmdResult handleGetKeyboardPath(const json&) {
     }
     return CmdResult(0, path + "\n");
 }
+CmdResult handleSetKeyboard(const json& command) {
+    string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
+    bool isKnown = false;
+    for (const string& known : KNOWN_KEYBOARDS) {
+        if (known == keyboardName) {
+            isKnown = true;
+            break;
+        }
+    }
+    string logMessage = string("[") + keyboardName + "] ";
+    logMessage += isKnown ? keyboardName : "UNKNOWN";
+    logMessage += "\n";
+    string logPath = "/home/yaniv/coding/automateLinux/data/daemon.log";
+    std::ofstream logFile(logPath, std::ios::app);
+    if (logFile.is_open()) {
+        logFile << logMessage;
+        logFile.close();
+    }
+    string cmd = string("/home/yaniv/coding/automateLinux/evsieve/services/restart.sh ") + keyboardName;
+    int status = system(cmd.c_str());
+    if (status != 0) {
+        return CmdResult(1, string("Failed to execute restart.sh\n"));
+    }
+    return CmdResult(0, string("Set keyboard to: ") + keyboardName + "\n");
+}
 typedef CmdResult (*CommandHandler)(const json&);
 
 struct CommandDispatch {
@@ -169,6 +203,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_ENTRY, handleGetEntry},
     {COMMAND_PING, handlePing},
     {COMMAND_GET_KEYBOARD_PATH, handleGetKeyboardPath},
+    {COMMAND_SET_KEYBOARD, handleSetKeyboard},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE = sizeof(COMMAND_HANDLERS) / sizeof(COMMAND_HANDLERS[0]);

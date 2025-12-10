@@ -2,6 +2,12 @@ daemon() {
     if [ -z "$AUTOMATE_LINUX_DAEMON_FD_IN" ] || [ -z "$AUTOMATE_LINUX_DAEMON_FD_OUT" ]; then
         return 1
     fi
+    if ! { true >&"$AUTOMATE_LINUX_DAEMON_FD_IN"; } 2>/dev/null || ! { true <&"$AUTOMATE_LINUX_DAEMON_FD_OUT"; } 2>/dev/null; then
+        AUTOMATE_LINUX_DAEMON_PID=$(${AUTOMATE_LINUX_DAEMON_DIR}getDaemonPID.sh) && \
+        coproc DAEMON_COPROC { socat - UNIX-CONNECT:"$AUTOMATE_LINUX_SOCKET_PATH" 2>/dev/null; } && \
+        export AUTOMATE_LINUX_DAEMON_FD_IN=${DAEMON_COPROC[1]} && \
+        export AUTOMATE_LINUX_DAEMON_FD_OUT=${DAEMON_COPROC[0]}
+    fi
     local formatOutput="false"
     local formatOutputTrueFunctions=("" "--help" "showDB" "showTerminalInstance" "showAllTerminalInstances" "showEntriesByPrefix" "printDirHistory")
     if [[ " ${formatOutputTrueFunctions[*]} " == *" $1 "* ]]; then

@@ -20,7 +20,7 @@ Options:
   -d              Process directories (default mode)
   -f              Process files
   --no-color      Disable colored output
-  -copy           Copy output to clipboard (implies --no-color)
+  --copy, -c      Copy output to clipboard (implies --no-color)
   --help, -h      Display this help message
 
 Features:
@@ -40,7 +40,7 @@ EOF
                 use_color=false
                 shift
                 ;;
-            -copy)
+            --copy|-c)
                 copy_to_clipboard=true
                 use_color=false
                 shift

@@ -136,7 +136,13 @@ CmdResult handleGetEntry(const json& command) {
 CmdResult handlePing(const json&) {
     return CmdResult(0, "pong\n");
 }
-
+CmdResult handleGetKeyboardPath(const json&) {
+    string path = kvTable.get("keyboardPath");
+    if (path.empty()) {
+        return CmdResult(1, "Keyboard path not found\n");
+    }
+    return CmdResult(0, path + "\n");
+}
 typedef CmdResult (*CommandHandler)(const json&);
 
 struct CommandDispatch {
@@ -162,6 +168,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_UPSERT_ENTRY, handleUpsertEntry},
     {COMMAND_GET_ENTRY, handleGetEntry},
     {COMMAND_PING, handlePing},
+    {COMMAND_GET_KEYBOARD_PATH, handleGetKeyboardPath},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE = sizeof(COMMAND_HANDLERS) / sizeof(COMMAND_HANDLERS[0]);

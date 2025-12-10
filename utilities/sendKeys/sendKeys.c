@@ -6,6 +6,8 @@
 #include <string.h>
 #include <sys/time.h>
 #include <ctype.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 int fd;
 const int codeForCode = 101;

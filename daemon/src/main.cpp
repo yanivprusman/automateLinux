@@ -3,6 +3,8 @@
 #include <map>
 #include <regex>
 #include <sys/select.h>
+#include <cstdlib>
+#include <array>
 
 string socketPath;
 Directories actualDirectories;
@@ -32,6 +34,31 @@ void signal_handler(int sig) {
     }
 }
 
+string executeCommand(const char* cmd) {
+    std::array<char, 256> buffer;
+    string result;
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe) return "";
+    while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
+        result += buffer.data();
+    }
+    pclose(pipe);
+    if (!result.empty() && result.back() == '\n') {
+        result.pop_back();
+    }
+    return result;
+}
+void initializeKeyboardPath() {
+    string cmd = "ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd'";
+    string deviceName = executeCommand(cmd.c_str());
+    if (!deviceName.empty()) {
+        string fullPath = "/dev/input/by-id/" + deviceName;
+        kvTable.upsert("keyboardPath", fullPath);
+        cerr << "Keyboard path initialized: " << fullPath << endl;
+    } else {
+        cerr << "Warning: Could not find Corsair keyboard device" << endl;
+    }
+}
 int setup_socket(){
     socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (socket_fd < 0) {
@@ -144,6 +171,7 @@ int initialize(){
         cerr << "Failed to set up socket, exiting." << endl;
         return 1;
     }
+    initializeKeyboardPath();
     return 0;
 }
 

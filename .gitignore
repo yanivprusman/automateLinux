@@ -16,3 +16,4 @@ utilities/cleanBetween/cleanBetween
 chrome/
 utilities/sendKeys/autoSend.sh
 images/grub.png
+utilities/sendKeys/sendKeys

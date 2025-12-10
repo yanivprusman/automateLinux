@@ -106,7 +106,7 @@ export default class ActiveWindowTracker {
                     console.log('Chrome tab URL:', line);
                     if (line && line.trim().length > 0 && line.includes('chatgpt.com')) {
                         console.log('ChatGPT tab found:', line);
-                        // this.#logToFile('chrome', `ChatGPT active: ${line}`);
+                        // this.#logToFile('ChatGPT tab found: ' + line);
                         this.#chatGpt();
                     } else if (line) {
                         console.log('Active tab is not ChatGPT:', line);
@@ -139,10 +139,8 @@ export default class ActiveWindowTracker {
     }
     #chatGpt() {
         try {
-            // this.#logToFile('chatgpt', 'Sending keys to ChatGPT');
             // const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
-            // const command = `sleep 1; /home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
-            const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
+            const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI backspace backspace`;
             const subprocess = new Gio.Subprocess({
                 argv: ['/bin/bash', '-c', command],
                 flags: Gio.SubprocessFlags.NONE,
@@ -154,3 +152,4 @@ export default class ActiveWindowTracker {
     }
 }   
 
+//  test conversation "Git ignore file update" in ChatGPT hi

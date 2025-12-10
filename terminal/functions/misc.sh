@@ -44,3 +44,11 @@ restartGnomeExtensions() {
     gnome-extensions enable clock@ya-niv.com
 }
 export -f restartGnomeExtensions
+
+gnomeExtensionRestart(){
+    gnome-extensions disable $1 && 
+    # sleep 1 && 
+    gnome-extensions enable $1 && 
+    # sleep 2 && 
+    echo "Extension reloaded"
+}

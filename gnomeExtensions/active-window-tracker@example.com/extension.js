@@ -40,10 +40,12 @@ export default class ActiveWindowTracker {
         }
         this.#windowTracker = null;
     }
-
     #onActiveWindowChanged() {
         const window = global.display.focus_window;
         const wmClass = window.get_wm_class() || 'unknown';
+        this.#logToFile(`Active window changed: ${wmClass}`);
+        const KEYBOARD_BY_ID = GLib.getenv('KEYBOARD_BY_ID');
+        this.#logToFile(`KEYBOARD_BY_ID=${KEYBOARD_BY_ID}`);
         const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys "${wmClass}"`;
         try {
             const subprocess = new Gio.Subprocess({
@@ -58,7 +60,6 @@ export default class ActiveWindowTracker {
             this.#checkChromeTab();
         }
     }
-    
     #checkChromeTab() {
         try {
             console.log('Checking Chrome tab...');
@@ -76,12 +77,11 @@ export default class ActiveWindowTracker {
                         base_stream: stdout,
                     });
                     const [line] = reader.read_line_utf8(null);
-                    
                     console.log('Chrome tab URL:', line);
-                    
                     if (line && line.trim().length > 0 && line.includes('chatgpt.com')) {
                         console.log('ChatGPT tab found:', line);
-                        this.#logToFile('chrome', `ChatGPT active: ${line}`);
+                        // this.#logToFile('chrome', `ChatGPT active: ${line}`);
+                        this.#chatGpt();
                     } else if (line) {
                         console.log('Active tab is not ChatGPT:', line);
                     } else {
@@ -95,8 +95,7 @@ export default class ActiveWindowTracker {
             console.warn('Chrome debugging not available:', error);
         }
     }    
-
-    #logToFile(category, message) {
+    #logToFile(message) {
         try {
             const dataDir = '/home/yaniv/coding/automateLinux/data';
             const file = Gio.File.new_for_path(`${dataDir}/chrome.log`);
@@ -110,6 +109,21 @@ export default class ActiveWindowTracker {
             outputStream.close(null);
         } catch (error) {
             console.warn('Failed to log to file:', error);
+        }
+    }
+    #chatGpt() {
+        try {
+            // this.#logToFile('chatgpt', 'Sending keys to ChatGPT');
+            // const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
+            // const command = `sleep 1; /home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
+            const command = `sudo /home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
+            const subprocess = new Gio.Subprocess({
+                argv: ['/bin/bash', '-c', command],
+                flags: Gio.SubprocessFlags.NONE,
+            });
+            subprocess.init(null);
+        } catch (error) {
+            logError(error, 'Failed to send keys to ChatGPT');
         }
     }
 }   

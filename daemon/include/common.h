@@ -49,6 +49,7 @@
 #define COMMAND_ARG_KEY "key"
 #define COMMAND_ARG_PREFIX "prefix"
 #define COMMAND_ARG_VALUE "value"
+#define COMMAND_PING "ping"
 
 struct CommandSignature {
     string name;
@@ -74,6 +75,7 @@ static const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_PRINT_DIR_HISTORY, {}),
     CommandSignature(COMMAND_UPSERT_ENTRY, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
     CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY}),
+    CommandSignature(COMMAND_PING, {}),
 };
 
 static const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);

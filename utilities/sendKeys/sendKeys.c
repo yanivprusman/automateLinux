@@ -11,6 +11,7 @@ int fd;
 const int codeForCode = 101;
 const int codeForGnomeTerminal = 102;
 const int codeForGoogleChrome = 103;
+// const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 
 const char* get_keyboard_path() {

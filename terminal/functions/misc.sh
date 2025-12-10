@@ -20,7 +20,14 @@ export -f lstr
 
 alias ls='ls_my'
 ls_my() {
-    command ls --color=always "$@" | tr " " "\n"
+    # Check if -l flag is present in arguments
+    if [[ "$*" == *"-l"* ]]; then
+        # Use ls normally with -l
+        command ls --color=always "$@"
+    else
+        # Apply the tr transformation
+        command ls --color=always "$@" | tr " " "\n"
+    fi
 }
 export -f ls_my
 

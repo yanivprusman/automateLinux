@@ -124,7 +124,7 @@ if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
 fi
 unset a
 
-
+# from mand bash:
 # FUNCNAME
 #         An  array  variable containing the names of all shell functions currently in the execution call stack.  The element with index 0
 #         is the name of any currently-executing shell function.  The bottom-most element (the one with  the  highest  index)  is  "main".

@@ -178,13 +178,18 @@ CmdResult handleSetKeyboard(const json& command) {
         }
         return CmdResult(1, "Keyboard path not found\n");
     }
-    // string cmd = string("sudo systemctl stop corsairKeyBoardLogiMouse" 
-    //     "sudo systemctl reset-failed corsairKeyBoardLogiMouse 2>/dev/null"
-    //     "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service"
-    //     "evsieve --input /dev/input/by-id/") + keyboardPath + " grab domain=input --output 2>&1";
-   
-    string restartScript = "/home/yaniv/coding/automateLinux/evsieve/services/restart.sh";
-    string cmd = string("sudo ") + restartScript + " " + keyboardName + " " + keyboardPath + " 2>&1";
+    string cmd = string(
+        "sudo ls 2>&1 ; "
+        // "whoami 2>&1 ; "
+        // "echo \\ ;"
+        // "sudo systemctl stop corsairKeyBoardLogiMouse  2>&1 ; " 
+        // "sudo systemctl reset-failed corsairKeyBoardLogiMouse 2>&1 ; "
+        // "sudo rm -f /run/systemd/transient/corsairKeyBoardLogiMouse.service* 2>/dev/null ; "
+        // "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service "
+        // "evsieve --input ") + keyboardPath + " grab domain=input --output 2>&1";
+        // string restartScript = "/home/yaniv/coding/automateLinux/evsieve/services/restart.sh";
+        // string cmd = string("sudo ") + restartScript + " " + keyboardName + " " + keyboardPath + " 2>&1";
+    );
     logMessage = string("[EXEC] ") + cmd + "\n";
     if (logFile.is_open()) {
         logFile << logMessage;
@@ -197,7 +202,7 @@ CmdResult handleSetKeyboard(const json& command) {
             logFile << logMessage;
             logFile.flush();
         }
-        return CmdResult(1, "Failed to execute restart.sh\n");
+        return CmdResult(1, "Failed to execute 1 \n");
     }
     char buffer[256];
     string output;
@@ -223,7 +228,7 @@ CmdResult handleSetKeyboard(const json& command) {
             logFile.flush();
             logFile.close();
         }
-        return CmdResult(1, string("Failed to execute restart.sh (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
+        return CmdResult(1, string("Failed to execute 2 (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
     }
     logMessage = string("[END] SUCCESS\n");
     if (logFile.is_open()) {

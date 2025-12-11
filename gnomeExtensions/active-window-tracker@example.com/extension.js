@@ -43,7 +43,8 @@ export default class ActiveWindowTracker {
     #onActiveWindowChanged() {
         const window = global.display.focus_window;
         const wmClass = window.get_wm_class() || 'unknown';
-        const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys "${wmClass}"`;
+        // const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys "${wmClass}"`;
+        this.#daemon('setKeyboard', { keyboardName: wmClass });
         try {
             const subprocess = new Gio.Subprocess({
                 argv: ['/bin/bash', '-c', command],
@@ -60,32 +61,58 @@ export default class ActiveWindowTracker {
         }
     }
 
-    #pingDaemon() {
+    // #pingDaemon() {
+    //     try {
+    //         const client = new Gio.SocketClient();
+    //         const address = new Gio.UnixSocketAddress({ path: '/run/automatelinux/automatelinux-daemon.sock' });
+    //         client.connect_async(address, null, (client, res) => {  // Change GLib.PRIORITY_DEFAULT to null
+    //             try {
+    //                 const connection = client.connect_finish(res);
+    //                 const out = connection.get_output_stream();
+    //                 const dout = new Gio.DataOutputStream({ base_stream: out });
+    //                 // dout.put_string('ping\n', null);
+    //                 dout.put_string(JSON.stringify({command: 'ping'}) + '\n', null);
+    //                 dout.flush(null);
+    //                 const input = connection.get_input_stream();
+    //                 const din = new Gio.DataInputStream({ base_stream: input });
+    //                 const [line] = din.read_line_utf8(null);
+    //                 this.#logToFile(`Daemon replied: ${line}`);
+    //             } catch (e) {
+    //                 this.#logToFile(`Socket error: ${e}`);
+    //             }
+    //         });
+    //     } catch (e) {
+    //         this.#logToFile(`Failed: ${e.message}`);
+    //         logError(e, 'Socket operation failed');
+    //     }
+    // }
+
+    #daemon(command, params = {}) {
         try {
             const client = new Gio.SocketClient();
             const address = new Gio.UnixSocketAddress({ path: '/run/automatelinux/automatelinux-daemon.sock' });
-            client.connect_async(address, null, (client, res) => {  // Change GLib.PRIORITY_DEFAULT to null
+            client.connect_async(address, null, (client, res) => {
                 try {
                     const connection = client.connect_finish(res);
                     const out = connection.get_output_stream();
                     const dout = new Gio.DataOutputStream({ base_stream: out });
-                    // dout.put_string('ping\n', null);
-                    dout.put_string(JSON.stringify({command: 'ping'}) + '\n', null);
+                    const commandObj = { command: command, ...params };
+                    dout.put_string(JSON.stringify(commandObj) + '\n', null);
                     dout.flush(null);
                     const input = connection.get_input_stream();
                     const din = new Gio.DataInputStream({ base_stream: input });
                     const [line] = din.read_line_utf8(null);
-                    this.#logToFile(`Daemon replied: ${line}`);
+                    this.#logToFile(`Daemon (${command}) replied: ${line}`);
                 } catch (e) {
                     this.#logToFile(`Socket error: ${e}`);
                 }
             });
         } catch (e) {
-            this.#logToFile(`Failed: ${e.message}`);
+            this.#logToFile(`Failed to connect to daemon: ${e.message}`);
             logError(e, 'Socket operation failed');
         }
     }
-    
+
     #checkChromeTab() {
         try {
             console.log('Checking Chrome tab...');

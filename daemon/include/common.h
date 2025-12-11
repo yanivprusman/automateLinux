@@ -59,6 +59,12 @@
 #define GOOGLE_CHROME_KEYBOARD "google-chrome"
 #define DEFAULT_KEYBOARD "DefaultKeyboard"
 #define TEST_KEYBOARD "TestKeyboard"
+#define KEYBOARD_DISCOVERY_CMD "ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd'"
+#define KEYBOARD_INPUT_PATH "/dev/input/by-id/"
+#define MOUSE_DISCOVERY_CMD "awk '/Logitech/ && /Mouse/ {found=1} found && /Handlers/ {if (match($0, /event[0-9]+/, a)) {print a[0]; exit}}' /proc/bus/input/devices"
+#define MOUSE_INPUT_PATH "/dev/input/"
+#define KEYBOARD_PATH_KEY "keyboardPath"
+#define MOUSE_PATH_KEY "mousePath"
 
 struct CommandSignature {
     string name;

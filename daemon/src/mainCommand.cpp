@@ -201,7 +201,7 @@ CmdResult handleSetKeyboard(const json& command) {
         logFile << logMessage;
         logFile.flush();
     }
-    string keyboardPath = kvTable.get("keyboardPath");
+    string keyboardPath = kvTable.get(KEYBOARD_PATH_KEY);
     if (keyboardPath.empty()) {
         logMessage = string("[ERROR] Keyboard path not found in database\n");
         if (logFile.is_open()) {
@@ -225,7 +225,8 @@ CmdResult handleSetKeyboard(const json& command) {
         }
         return CmdResult(1, "Script file not found\n");
     }
-    scriptContent = substituteVariable(scriptContent, "keyboardPath", keyboardPath);
+    scriptContent = substituteVariable(scriptContent, KEYBOARD_PATH_KEY, keyboardPath);
+    scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY, kvTable.get(MOUSE_PATH_KEY));
     string cmd = string(
         "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; " 
         "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service ") + scriptContent;

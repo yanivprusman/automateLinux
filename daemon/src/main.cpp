@@ -49,22 +49,22 @@ string executeCommand(const char* cmd) {
     return result;
 }
 void initializeKeyboardPath() {
-    string cmd = "ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd'";
+    string cmd = KEYBOARD_DISCOVERY_CMD;
     string deviceName = executeCommand(cmd.c_str());
     if (!deviceName.empty()) {
-        string fullPath = "/dev/input/by-id/" + deviceName;
-        kvTable.upsert("keyboardPath", fullPath);
+        string fullPath = KEYBOARD_INPUT_PATH + deviceName;
+        kvTable.upsert(KEYBOARD_PATH_KEY, fullPath);
         cerr << "Keyboard path initialized: " << fullPath << endl;
     } else {
         cerr << "Warning: Could not find Corsair keyboard device" << endl;
     }
 }
 void initializeMousePath() {
-    string cmd = "awk '/Logitech/ && /Mouse/ {found=1} found && /Handlers/ {if (match($0, /event[0-9]+/, a)) {print a[0]; exit}}' /proc/bus/input/devices";
+    string cmd = MOUSE_DISCOVERY_CMD;
     string eventNum = executeCommand(cmd.c_str());
     if (!eventNum.empty()) {
-        string fullPath = "/dev/input/" + eventNum;
-        kvTable.upsert("mousePath", fullPath);
+        string fullPath = MOUSE_INPUT_PATH + eventNum;
+        kvTable.upsert(MOUSE_PATH_KEY, fullPath);
         cerr << "Mouse path initialized: " << fullPath << endl;
     } else {
         cerr << "Warning: Could not find Logitech mouse device" << endl;

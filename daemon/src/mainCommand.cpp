@@ -183,7 +183,12 @@ static string substituteVariable(const string& content, const string& variable, 
 }
 
 CmdResult handleSetKeyboard(const json& command) {
+    static string previousKeyboard = "";
     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
+    if (keyboardName == previousKeyboard) {
+        return CmdResult(0, "Keyboard already set to: " + keyboardName + "\n");
+    }
+    previousKeyboard = keyboardName;
     bool isKnown = false;
     for (const string& known : KNOWN_KEYBOARDS) {
         if (known == keyboardName) {

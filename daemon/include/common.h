@@ -53,6 +53,12 @@
 #define COMMAND_GET_KEYBOARD_PATH "getKeyboardPath"
 #define COMMAND_SET_KEYBOARD "setKeyboard"
 #define COMMAND_ARG_KEYBOARD_NAME "keyboardName"
+#define PREFIX_KEYBOARD "corsairKeyBoardLogiMouse"
+#define CODE_KEYBOARD "Code"
+#define GNOME_TERMINAL_KEYBOARD "gnome-terminal-server"
+#define GOOGLE_CHROME_KEYBOARD "google-chrome"
+#define DEFAULT_KEYBOARD "DefaultKeyboard"
+#define TEST_KEYBOARD "TestKeyboard"
 
 struct CommandSignature {
     string name;

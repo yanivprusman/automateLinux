@@ -3,11 +3,11 @@
 static int g_client_sock = -1;
 
 static const vector<string> KNOWN_KEYBOARDS = {
-    "Code",
-    "gnome-terminal-server",
-    "google-chrome",
-    "testKeyboard1",
-    "testKeyboard2"
+    CODE_KEYBOARD,
+    GNOME_TERMINAL_KEYBOARD,
+    GOOGLE_CHROME_KEYBOARD,
+    DEFAULT_KEYBOARD,
+    TEST_KEYBOARD
 };
 
 static string formatEntriesAsText(const vector<std::pair<string, string>>& entries) {
@@ -192,7 +192,7 @@ CmdResult handleSetKeyboard(const json& command) {
         }
     }
     if (!isKnown) {
-        keyboardName = "KeyboardRegular";
+        keyboardName = DEFAULT_KEYBOARD;
     }
     string logPath = directories.data + "daemon.log";
     std::ofstream logFile(logPath, std::ios::app);
@@ -210,7 +210,7 @@ CmdResult handleSetKeyboard(const json& command) {
         }
         return CmdResult(1, "Keyboard path not found\n");
     }
-    string scriptPath = directories.mappings + "corsairKeyBoardLogiMouse" + keyboardName + ".sh";
+    string scriptPath = directories.mappings + PREFIX_KEYBOARD + keyboardName + ".sh";
     logMessage = string("[SCRIPT] Reading: ") + scriptPath + "\n";
     if (logFile.is_open()) {
         logFile << logMessage;

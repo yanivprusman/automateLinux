@@ -59,6 +59,17 @@ void initializeKeyboardPath() {
         cerr << "Warning: Could not find Corsair keyboard device" << endl;
     }
 }
+void initializeMousePath() {
+    string cmd = "awk '/Logitech/ && /Mouse/ {found=1} found && /Handlers/ {if (match($0, /event[0-9]+/, a)) {print a[0]; exit}}' /proc/bus/input/devices";
+    string eventNum = executeCommand(cmd.c_str());
+    if (!eventNum.empty()) {
+        string fullPath = "/dev/input/" + eventNum;
+        kvTable.upsert("mousePath", fullPath);
+        cerr << "Mouse path initialized: " << fullPath << endl;
+    } else {
+        cerr << "Warning: Could not find Logitech mouse device" << endl;
+    }
+}
 int setup_socket(){
     socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (socket_fd < 0) {
@@ -172,6 +183,7 @@ int initialize(){
         return 1;
     }
     initializeKeyboardPath();
+    initializeMousePath();
     return 0;
 }
 

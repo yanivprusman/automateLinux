@@ -5,6 +5,7 @@ _daemon_completion() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     commands="(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath setKeyboard"
     opts="--help"
+    keyboards="Code gnome-terminal-server google-chrome testKeyboard1 testKeyboard2"
     
     case "$prev" in
         daemon|d)
@@ -13,11 +14,18 @@ _daemon_completion() {
         --json)
             COMPREPLY=( $(compgen -W "$commands" -- "$cur") )
             ;;
-        openedTty|updateDirHistory|cdForward|cdBackward|showTerminalInstance|deleteEntry|deleteEntriesByPrefix|showEntriesByPrefix|upsertEntry|getEntry|printDirHistory|ping|getKeyboardPath|setKeyboard)
+        setKeyboard)
+            COMPREPLY=( $(compgen -W "keyboardName=" -- "$cur") )
+            ;;
+        openedTty|updateDirHistory|cdForward|cdBackward|showTerminalInstance|deleteEntry|deleteEntriesByPrefix|showEntriesByPrefix|upsertEntry|getEntry|printDirHistory|ping|getKeyboardPath)
             COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
             ;;
         *)
         case "$cur" in
+            keyboardName=*)
+                local keyboard_prefix="${cur#keyboardName=}"
+                COMPREPLY=( $(compgen -W "$keyboards" -P "keyboardName=" -- "$keyboard_prefix") )
+                ;;
             -*)
                 COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
                 ;;
@@ -35,4 +43,3 @@ _daemon_completion() {
 
 complete -F _daemon_completion daemon
 complete -F _daemon_completion d
-

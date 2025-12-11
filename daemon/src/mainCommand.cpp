@@ -194,7 +194,7 @@ CmdResult handleSetKeyboard(const json& command) {
     if (!isKnown) {
         keyboardName = "KeyboardRegular";
     }
-    string logPath = "/home/yaniv/coding/automateLinux/data/daemon.log";
+    string logPath = directories.data + "daemon.log";
     std::ofstream logFile(logPath, std::ios::app);
     string logMessage = string("[START setKeyboard] keyboard: ") + keyboardName + " isKnown: " + (isKnown ? "true" : "false") + "\n";
     if (logFile.is_open()) {
@@ -210,13 +210,13 @@ CmdResult handleSetKeyboard(const json& command) {
         }
         return CmdResult(1, "Keyboard path not found\n");
     }
-    string relativeScriptPath = string("../evsieve/mappings/corsairKeyBoardLogiMouse") + keyboardName + ".sh";
-    logMessage = string("[SCRIPT] Reading: ") + relativeScriptPath + "\n";
+    string scriptPath = directories.mappings + "corsairKeyBoardLogiMouse" + keyboardName + ".sh";
+    logMessage = string("[SCRIPT] Reading: ") + scriptPath + "\n";
     if (logFile.is_open()) {
         logFile << logMessage;
         logFile.flush();
     }
-    string scriptContent = readScriptFile(relativeScriptPath, logFile);
+    string scriptContent = readScriptFile(scriptPath, logFile);
     if (scriptContent.empty()) {
         logMessage = string("[ERROR] Script file is empty or not found\n");
         if (logFile.is_open()) {

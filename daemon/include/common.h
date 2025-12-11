@@ -88,9 +88,11 @@ static const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(CO
 struct Directories {
     string base;
     string data;
+    string mappings;
     Directories() {
         base = canonical("/proc/self/exe").parent_path().parent_path().string() + "/";
         data = base + "data/";
+        mappings = base + "evsieve/mappings/";
     }
 };
 

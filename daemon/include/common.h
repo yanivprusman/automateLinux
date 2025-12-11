@@ -66,6 +66,11 @@
 #define KEYBOARD_PATH_KEY "keyboardPath"
 #define MOUSE_PATH_KEY "mousePath"
 #define EVSIEVE_RANDOM_VAR "randomVar"
+#define COMMAND_VALUE_TRUE "true"
+#define COMMAND_VALUE_FALSE "false"
+#define COMMAND_SHOULD_LOG "shouldLog"
+#define COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES "toggleKeyboardsWhenActiveWindowChanges"
+#define COMMAND_ARG_ENABLE "enable"
 
 struct CommandSignature {
     string name;
@@ -94,6 +99,8 @@ static const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_PING, {}),
     CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
     CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
+    CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
+    CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, {COMMAND_ARG_ENABLE}),
 };
 
 static const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);

@@ -1,6 +1,8 @@
 #include "mainCommand.h"
 
 static int g_client_sock = -1;
+static bool g_shouldLog = false;
+static bool g_toggleKeyboardsWhenActiveWindowChanges = true;
 
 static const vector<string> KNOWN_KEYBOARDS = {
     CODE_KEYBOARD,
@@ -43,7 +45,9 @@ static const string HELP_MESSAGE =
     "  deleteEntriesByPrefix   Delete all entries with a specific prefix.\n"
     "  showDB                  Display all entries in the database.\n"
     "  ping                    Ping the daemon and receive pong response.\n"
-    "  setKeyboard             Set the keyboard by name and execute restart script.\n\n"
+    "  setKeyboard             Set the keyboard by name and execute restart script.\n"
+    "  shouldLog               Enable or disable logging (true/false).\n"
+    "  toggleKeyboardsWhenActiveWindowChanges  Toggle automatic keyboard switching on window change.\n\n"
     "Options:\n"
     "  --help                  Display this help message.\n"
     "  --json                  Output results in JSON format.\n\n"
@@ -182,8 +186,19 @@ static string substituteVariable(const string& content, const string& variable, 
     return result;
 }
 
+CmdResult handleShouldLog(const json& command) {
+    string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
+    g_shouldLog = (enableStr == COMMAND_VALUE_TRUE);
+    return CmdResult(0, string("Logging ") + (g_shouldLog ? "enabled" : "disabled") + "\n");
+}
+
+CmdResult handleToggleKeyboardsWhenActiveWindowChanges(const json& command) {
+    string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
+    g_toggleKeyboardsWhenActiveWindowChanges = (enableStr == COMMAND_VALUE_TRUE);
+    return CmdResult(0, string("Return to default keyboard on next window change: ") + (g_toggleKeyboardsWhenActiveWindowChanges ? "no" : "yes") + "\n");
+}
+
 CmdResult handleSetKeyboard(const json& command) {
-    bool shouldLog = false;
     static string previousKeyboard = "";
     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
     if (keyboardName == previousKeyboard) {
@@ -209,7 +224,7 @@ CmdResult handleSetKeyboard(const json& command) {
     if (!isKnown) {
         keyboardName = DEFAULT_KEYBOARD;
     }
-    if (shouldLog){
+    if (g_shouldLog){
         string logPath = directories.data + "daemon.log";
         logFile.open(logPath, std::ios::app);
         logMessage = string("[START setKeyboard] keyboard: ") + keyboardName + " isKnown: " + (isKnown ? "true" : "false") + "\n";
@@ -227,12 +242,16 @@ CmdResult handleSetKeyboard(const json& command) {
     scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY, kvTable.get(MOUSE_PATH_KEY));
     scriptContent = substituteVariable(scriptContent, EVSIEVE_RANDOM_VAR, to_string(rand() % 1000000));
     string cmd = string(
-        "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; " 
-        "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service ") 
+        "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; "
+        "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service ")
         + scriptContent
     ;
+    if (! g_toggleKeyboardsWhenActiveWindowChanges){
+        cmd = string(
+        "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; ");
+    }
     pipe = popen(cmd.c_str(), "r");
-    if (shouldLog){    
+    if (g_shouldLog){
         logMessage = string("[EXEC] ") + cmd + "\n";
         if (logFile.is_open()) {
             logFile << logMessage;
@@ -306,6 +325,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_PING, handlePing},
     {COMMAND_GET_KEYBOARD_PATH, handleGetKeyboardPath},
     {COMMAND_SET_KEYBOARD, handleSetKeyboard},
+    {COMMAND_SHOULD_LOG, handleShouldLog},
+    {COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, handleToggleKeyboardsWhenActiveWindowChanges},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE = sizeof(COMMAND_HANDLERS) / sizeof(COMMAND_HANDLERS[0]);

@@ -153,6 +153,35 @@ CmdResult handleGetKeyboardPath(const json&) {
     return CmdResult(0, path + "\n");
 }
 
+static string readScriptFile(const string& relativeScriptPath, std::ofstream& logFile) {
+    string scriptContent;
+    std::ifstream scriptFile(relativeScriptPath);
+    if (!scriptFile.is_open()) {
+        string logMessage = string("[ERROR] Failed to open script file: ") + relativeScriptPath + "\n";
+        if (logFile.is_open()) {
+            logFile << logMessage;
+            logFile.flush();
+        }
+        return "";
+    }
+    std::stringstream buffer;
+    buffer << scriptFile.rdbuf();
+    scriptContent = buffer.str();
+    scriptFile.close();
+    return scriptContent;
+}
+
+static string substituteVariable(const string& content, const string& variable, const string& value) {
+    string result = content;
+    size_t pos = 0;
+    string searchStr = string("$") + variable;
+    while ((pos = result.find(searchStr, pos)) != string::npos) {
+        result.replace(pos, searchStr.length(), value);
+        pos += value.length();
+    }
+    return result;
+}
+
 CmdResult handleSetKeyboard(const json& command) {
     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
     bool isKnown = false;
@@ -161,6 +190,9 @@ CmdResult handleSetKeyboard(const json& command) {
             isKnown = true;
             break;
         }
+    }
+    if (!isKnown) {
+        keyboardName = "KeyboardRegular";
     }
     string logPath = "/home/yaniv/coding/automateLinux/data/daemon.log";
     std::ofstream logFile(logPath, std::ios::app);
@@ -178,11 +210,25 @@ CmdResult handleSetKeyboard(const json& command) {
         }
         return CmdResult(1, "Keyboard path not found\n");
     }
+    string relativeScriptPath = string("../evsieve/mappings/corsairKeyBoardLogiMouse") + keyboardName + ".sh";
+    logMessage = string("[SCRIPT] Reading: ") + relativeScriptPath + "\n";
+    if (logFile.is_open()) {
+        logFile << logMessage;
+        logFile.flush();
+    }
+    string scriptContent = readScriptFile(relativeScriptPath, logFile);
+    if (scriptContent.empty()) {
+        logMessage = string("[ERROR] Script file is empty or not found\n");
+        if (logFile.is_open()) {
+            logFile << logMessage;
+            logFile.flush();
+        }
+        return CmdResult(1, "Script file not found\n");
+    }
+    scriptContent = substituteVariable(scriptContent, "keyboardPath", keyboardPath);
     string cmd = string(
         "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; " 
-        // "sudo systemctl reset-failed corsairKeyBoardLogiMouse 2>&1 ; "
-        "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service "
-        "evsieve --input ") + keyboardPath + " grab domain=input --output 2>&1";
+        "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service ") + scriptContent;
     logMessage = string("[EXEC] ") + cmd + "\n";
     if (logFile.is_open()) {
         logFile << logMessage;

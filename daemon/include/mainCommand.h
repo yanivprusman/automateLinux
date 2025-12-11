@@ -1,5 +1,6 @@
 #ifndef MAINCOMMAND_H
 #define MAINCOMMAND_H
+#include <unordered_map>
 #include "system.h"
 #include "common.h"
 #include "KVTable.h"

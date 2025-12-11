@@ -183,6 +183,7 @@ static string substituteVariable(const string& content, const string& variable, 
 }
 
 CmdResult handleSetKeyboard(const json& command) {
+    bool shouldLog = false;
     static string previousKeyboard = "";
     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
     if (keyboardName == previousKeyboard) {
@@ -192,10 +193,8 @@ CmdResult handleSetKeyboard(const json& command) {
     //     return CmdResult(0, "Keyboard in test mode: " + keyboardName + "\n");
     // }
     previousKeyboard = keyboardName;
-    bool shouldLog = false;
     string logMessage;
     bool isKnown = false;
-    string keyboardPath = kvTable.get(KEYBOARD_PATH_KEY);
     ofstream logFile;
     FILE* pipe;
     string output;
@@ -219,49 +218,26 @@ CmdResult handleSetKeyboard(const json& command) {
             logFile.flush();
         }
     }
-    if (keyboardPath.empty()) {
-        if (shouldLog){
-            logMessage = string("[ERROR] Keyboard path not found in database\n");
-            if (logFile.is_open()) {
-                logFile << logMessage;
-                logFile.flush();
-            }
-            return CmdResult(1, "Keyboard path not found\n");
-        }
-    }
     string scriptPath = directories.mappings + PREFIX_KEYBOARD + keyboardName + ".sh";
-    if (shouldLog){
-        logMessage = string("[SCRIPT] Reading: ") + scriptPath + "\n";
-        if (logFile.is_open()) {
-            logFile << logMessage;
-            logFile.flush();
-        }
-    }
     string scriptContent = readScriptFile(scriptPath, logFile);
     if (scriptContent.empty()) {
-        if (shouldLog){
-            logMessage = string("[ERROR] Script file is empty or not found\n");
-            if (logFile.is_open()) {
-                logFile << logMessage;
-                logFile.flush();
-            }
-        }
         return CmdResult(1, "Script file not found\n");
     }
-    scriptContent = substituteVariable(scriptContent, KEYBOARD_PATH_KEY, keyboardPath);
+    scriptContent = substituteVariable(scriptContent, KEYBOARD_PATH_KEY, kvTable.get(KEYBOARD_PATH_KEY));
     scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY, kvTable.get(MOUSE_PATH_KEY));
+    scriptContent = substituteVariable(scriptContent, EVSIEVE_RANDOM_VAR, to_string(rand() % 1000000));
     string cmd = string(
         "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; " 
         "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service ") 
         + scriptContent
     ;
+    pipe = popen(cmd.c_str(), "r");
     if (shouldLog){    
         logMessage = string("[EXEC] ") + cmd + "\n";
         if (logFile.is_open()) {
             logFile << logMessage;
             logFile.flush();
         }
-        pipe = popen(cmd.c_str(), "r");
         if (!pipe) {
             logMessage = string("[ERROR] popen failed\n");
             if (logFile.is_open()) {

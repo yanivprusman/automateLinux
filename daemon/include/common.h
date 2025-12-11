@@ -65,6 +65,7 @@
 #define MOUSE_INPUT_PATH "/dev/input/"
 #define KEYBOARD_PATH_KEY "keyboardPath"
 #define MOUSE_PATH_KEY "mousePath"
+#define EVSIEVE_RANDOM_VAR "randomVar"
 
 struct CommandSignature {
     string name;

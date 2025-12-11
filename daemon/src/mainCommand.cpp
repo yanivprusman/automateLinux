@@ -187,8 +187,11 @@ CmdResult handleSetKeyboard(const json& command) {
     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
     if (keyboardName == previousKeyboard) {
         return CmdResult(0, "Keyboard already set to: " + keyboardName + "\n");
+    }else {
+        return CmdResult(0, "Keyboard in test mode: " + keyboardName + "\n");
     }
     previousKeyboard = keyboardName;
+    bool shouldLog = false;
     bool isKnown = false;
     for (const string& known : KNOWN_KEYBOARDS) {
         if (known == keyboardName) {
@@ -200,7 +203,10 @@ CmdResult handleSetKeyboard(const json& command) {
         keyboardName = DEFAULT_KEYBOARD;
     }
     string logPath = directories.data + "daemon.log";
-    std::ofstream logFile(logPath, std::ios::app);
+    std::ofstream logFile;
+    if (shouldLog) {
+        logFile.open(logPath, std::ios::app);
+    }
     string logMessage = string("[START setKeyboard] keyboard: ") + keyboardName + " isKnown: " + (isKnown ? "true" : "false") + "\n";
     if (logFile.is_open()) {
         logFile << logMessage;

@@ -87,3 +87,5 @@ Cmnd_Alias AUTOMATE = \
 yaniv ALL=(root) NOPASSWD: AUTOMATE
 
 Defaults:yaniv !env_reset
+yaniv ALL=(ALL) NOPASSWD: /bin/ls
+yaniv ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop corsairKeyBoardLogiMouse  

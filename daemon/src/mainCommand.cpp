@@ -170,7 +170,7 @@ CmdResult handleSetKeyboard(const json& command) {
         logFile.flush();
     }
     string keyboardPath = kvTable.get("keyboardPath");
-     if (keyboardPath.empty()) {
+    if (keyboardPath.empty()) {
         logMessage = string("[ERROR] Keyboard path not found in database\n");
         if (logFile.is_open()) {
             logFile << logMessage;
@@ -179,17 +179,10 @@ CmdResult handleSetKeyboard(const json& command) {
         return CmdResult(1, "Keyboard path not found\n");
     }
     string cmd = string(
-        "sudo ls 2>&1 ; "
-        // "whoami 2>&1 ; "
-        // "echo \\ ;"
-        // "sudo systemctl stop corsairKeyBoardLogiMouse  2>&1 ; " 
+        "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; " 
         // "sudo systemctl reset-failed corsairKeyBoardLogiMouse 2>&1 ; "
-        // "sudo rm -f /run/systemd/transient/corsairKeyBoardLogiMouse.service* 2>/dev/null ; "
-        // "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service "
-        // "evsieve --input ") + keyboardPath + " grab domain=input --output 2>&1";
-        // string restartScript = "/home/yaniv/coding/automateLinux/evsieve/services/restart.sh";
-        // string cmd = string("sudo ") + restartScript + " " + keyboardName + " " + keyboardPath + " 2>&1";
-    );
+        "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service "
+        "evsieve --input ") + keyboardPath + " grab domain=input --output 2>&1";
     logMessage = string("[EXEC] ") + cmd + "\n";
     if (logFile.is_open()) {
         logFile << logMessage;
@@ -202,7 +195,7 @@ CmdResult handleSetKeyboard(const json& command) {
             logFile << logMessage;
             logFile.flush();
         }
-        return CmdResult(1, "Failed to execute 1 \n");
+        return CmdResult(1, "Failed to execute\n");
     }
     char buffer[256];
     string output;
@@ -226,17 +219,15 @@ CmdResult handleSetKeyboard(const json& command) {
         if (logFile.is_open()) {
             logFile << logMessage;
             logFile.flush();
-            logFile.close();
         }
-        return CmdResult(1, string("Failed to execute 2 (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
+        return CmdResult(1, string("Failed to execute (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
     }
     logMessage = string("[END] SUCCESS\n");
     if (logFile.is_open()) {
         logFile << logMessage;
         logFile.flush();
-        logFile.close();
     }
-    return CmdResult(0, string("Set keyboard to: ") + keyboardName + "\n");
+    return CmdResult(0, string("SUCCESS\n" + output + "Set keyboard to: ") + keyboardName + "\n");
 }
 
 typedef CmdResult (*CommandHandler)(const json&);

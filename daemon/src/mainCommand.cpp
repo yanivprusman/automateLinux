@@ -187,12 +187,20 @@ CmdResult handleSetKeyboard(const json& command) {
     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
     if (keyboardName == previousKeyboard) {
         return CmdResult(0, "Keyboard already set to: " + keyboardName + "\n");
-    }else {
-        return CmdResult(0, "Keyboard in test mode: " + keyboardName + "\n");
     }
+    // else {
+    //     return CmdResult(0, "Keyboard in test mode: " + keyboardName + "\n");
+    // }
     previousKeyboard = keyboardName;
     bool shouldLog = false;
+    string logMessage;
     bool isKnown = false;
+    string keyboardPath = kvTable.get(KEYBOARD_PATH_KEY);
+    ofstream logFile;
+    FILE* pipe;
+    string output;
+    int status;
+    int exitCode;
     for (const string& known : KNOWN_KEYBOARDS) {
         if (known == keyboardName) {
             isKnown = true;
@@ -202,37 +210,41 @@ CmdResult handleSetKeyboard(const json& command) {
     if (!isKnown) {
         keyboardName = DEFAULT_KEYBOARD;
     }
-    string logPath = directories.data + "daemon.log";
-    std::ofstream logFile;
-    if (shouldLog) {
+    if (shouldLog){
+        string logPath = directories.data + "daemon.log";
         logFile.open(logPath, std::ios::app);
-    }
-    string logMessage = string("[START setKeyboard] keyboard: ") + keyboardName + " isKnown: " + (isKnown ? "true" : "false") + "\n";
-    if (logFile.is_open()) {
-        logFile << logMessage;
-        logFile.flush();
-    }
-    string keyboardPath = kvTable.get(KEYBOARD_PATH_KEY);
-    if (keyboardPath.empty()) {
-        logMessage = string("[ERROR] Keyboard path not found in database\n");
+        logMessage = string("[START setKeyboard] keyboard: ") + keyboardName + " isKnown: " + (isKnown ? "true" : "false") + "\n";
         if (logFile.is_open()) {
             logFile << logMessage;
             logFile.flush();
         }
-        return CmdResult(1, "Keyboard path not found\n");
+    }
+    if (keyboardPath.empty()) {
+        if (shouldLog){
+            logMessage = string("[ERROR] Keyboard path not found in database\n");
+            if (logFile.is_open()) {
+                logFile << logMessage;
+                logFile.flush();
+            }
+            return CmdResult(1, "Keyboard path not found\n");
+        }
     }
     string scriptPath = directories.mappings + PREFIX_KEYBOARD + keyboardName + ".sh";
-    logMessage = string("[SCRIPT] Reading: ") + scriptPath + "\n";
-    if (logFile.is_open()) {
-        logFile << logMessage;
-        logFile.flush();
-    }
-    string scriptContent = readScriptFile(scriptPath, logFile);
-    if (scriptContent.empty()) {
-        logMessage = string("[ERROR] Script file is empty or not found\n");
+    if (shouldLog){
+        logMessage = string("[SCRIPT] Reading: ") + scriptPath + "\n";
         if (logFile.is_open()) {
             logFile << logMessage;
             logFile.flush();
+        }
+    }
+    string scriptContent = readScriptFile(scriptPath, logFile);
+    if (scriptContent.empty()) {
+        if (shouldLog){
+            logMessage = string("[ERROR] Script file is empty or not found\n");
+            if (logFile.is_open()) {
+                logFile << logMessage;
+                logFile.flush();
+            }
         }
         return CmdResult(1, "Script file not found\n");
     }
@@ -240,50 +252,53 @@ CmdResult handleSetKeyboard(const json& command) {
     scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY, kvTable.get(MOUSE_PATH_KEY));
     string cmd = string(
         "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; " 
-        "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service ") + scriptContent;
-    logMessage = string("[EXEC] ") + cmd + "\n";
-    if (logFile.is_open()) {
-        logFile << logMessage;
-        logFile.flush();
-    }
-    FILE* pipe = popen(cmd.c_str(), "r");
-    if (!pipe) {
-        logMessage = string("[ERROR] popen failed\n");
+        "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service ") 
+        + scriptContent
+    ;
+    if (shouldLog){    
+        logMessage = string("[EXEC] ") + cmd + "\n";
         if (logFile.is_open()) {
             logFile << logMessage;
             logFile.flush();
         }
-        return CmdResult(1, "Failed to execute\n");
-    }
-    char buffer[256];
-    string output;
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-        output += buffer;
-    }
-    int status = pclose(pipe);
-    int exitCode = WEXITSTATUS(status);
-    logMessage = string("[OUTPUT]\n") + output + "\n";
-    if (logFile.is_open()) {
-        logFile << logMessage;
-        logFile.flush();
-    }
-    logMessage = string("[STATUS] raw status: ") + std::to_string(status) + " exit code: " + std::to_string(exitCode) + "\n";
-    if (logFile.is_open()) {
-        logFile << logMessage;
-        logFile.flush();
-    }
-    if (status != 0) {
-        logMessage = string("[END] FAILED\n");
+        pipe = popen(cmd.c_str(), "r");
+        if (!pipe) {
+            logMessage = string("[ERROR] popen failed\n");
+            if (logFile.is_open()) {
+                logFile << logMessage;
+                logFile.flush();
+            }
+            return CmdResult(1, "Failed to execute\n");
+        }
+        char buffer[256];
+        while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+            output += buffer;
+        }
+        status = pclose(pipe);
+        exitCode = WEXITSTATUS(status);
+        logMessage = string("[OUTPUT]\n") + output + "\n";
         if (logFile.is_open()) {
             logFile << logMessage;
             logFile.flush();
         }
-        return CmdResult(1, string("Failed to execute (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
-    }
-    logMessage = string("[END] SUCCESS\n");
-    if (logFile.is_open()) {
-        logFile << logMessage;
-        logFile.flush();
+        logMessage = string("[STATUS] raw status: ") + to_string(status) + " exit code: " + to_string(exitCode) + "\n";
+        if (logFile.is_open()) {
+            logFile << logMessage;
+            logFile.flush();
+        }
+        if (status != 0) {
+            logMessage = string("[END] FAILED\n");
+            if (logFile.is_open()) {
+                logFile << logMessage;
+                logFile.flush();
+            }
+            return CmdResult(1, string("Failed to execute (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
+        }
+        logMessage = string("[END] SUCCESS\n");
+        if (logFile.is_open()) {
+            logFile << logMessage;
+            logFile.flush();
+        }
     }
     return CmdResult(0, string("SUCCESS\n" + output + "Set keyboard to: ") + keyboardName + "\n");
 }

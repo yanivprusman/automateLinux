@@ -24,6 +24,9 @@ ls_my() {
     if [[ "$*" == *"-l"* ]]; then
         # Use ls normally with -l
         command ls --color=always "$@"
+    # elif [[ "$*" == *"-l"* ]]; then
+    #     # Use ls normally with -l
+    #     command ls --color=always "$@"
     else
         # Apply the tr transformation
         command ls --color=always "$@" | tr " " "\n"

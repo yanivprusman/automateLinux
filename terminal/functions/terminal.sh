@@ -29,3 +29,8 @@ echoBlockSeparator() {
 }
 export -f echoBlockSeparator
 
+getCurrentShell(){
+    readlink /proc/$$/exe
+    # or echo $0 ?
+}
+export -f getCurrentShell

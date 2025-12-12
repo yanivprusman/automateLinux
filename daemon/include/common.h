@@ -65,12 +65,14 @@
 #define MOUSE_INPUT_PATH "/dev/input/"
 #define KEYBOARD_PATH_KEY "keyboardPath"
 #define MOUSE_PATH_KEY "mousePath"
-#define EVSIEVE_RANDOM_VAR "randomVar"
 #define COMMAND_VALUE_TRUE "true"
 #define COMMAND_VALUE_FALSE "false"
 #define COMMAND_SHOULD_LOG "shouldLog"
 #define COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES "toggleKeyboardsWhenActiveWindowChanges"
 #define COMMAND_ARG_ENABLE "enable"
+#define EVSIEVE_RANDOM_VAR "randomVar"
+#define EVSIEVE_STANDARD_ERR_FILE "evsieveErr.log"
+#define EVSIEVE_STANDARD_OUTPUT_FILE "evsieveOutput.log"
 
 struct CommandSignature {
     string name;

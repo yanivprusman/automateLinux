@@ -243,7 +243,10 @@ CmdResult handleSetKeyboard(const json& command) {
     scriptContent = substituteVariable(scriptContent, EVSIEVE_RANDOM_VAR, to_string(rand() % 1000000));
     string cmd = string(
         "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; "
-        "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service ")
+        "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service "
+        "--property=StandardError=append:" + directories.data + EVSIEVE_STANDARD_ERR_FILE + " "
+        "--property=StandardOutput=append:" + directories.data + EVSIEVE_STANDARD_OUTPUT_FILE + " "
+        )
         + scriptContent
     ;
     if (! g_toggleKeyboardsWhenActiveWindowChanges){

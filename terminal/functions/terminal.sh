@@ -34,3 +34,37 @@ getCurrentShell(){
     # or echo $0 ?
 }
 export -f getCurrentShell
+
+    # PS1='\[\e]0;asdf5\w\a\]\[\e[0;33m\]\w\[\e[0m\]$'
+changeTitle() {
+    local prepend="" append="" replace="" reset=""
+
+    # parse named args
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -prepend) prepend="$2"; shift 2;;
+            -append)  append="$2"; shift 2;;
+            -replace) replace="$2"; shift 2;;
+            -reset) reset="1"; shift 1;;
+            *) return 1;;
+        esac
+    done
+    [ -n "$reset" ] && PS1="$AUTOMATE_LINUX_PS1" && return 0
+    # extract current title safely - FIX: match \e not just e
+    local current_title
+    current_title=$(printf "%s" "$PS1" |
+        sed -n 's/.*\\\[\\e]0;\(.*\)\\a.*/\1/p')
+
+    # fallback if missing
+    [ -z "$current_title" ] && return 0
+
+    # compute new title
+    local new_title="$current_title"
+    [ -n "$prepend" ] && new_title="${prepend}${new_title}"
+    [ -n "$append" ]  && new_title="${new_title}${append}"
+    [ -n "$replace" ] && new_title="${replace}"
+    PS1=$(printf "%s" "$PS1" |
+    sed 's#\\\[\\e]0;.*\\a#\\[\\e]0;'"$(printf "%s" "$new_title" | sed 's/[\&]/\\&/g')"'\\a#')
+}
+
+export -f changeTitle

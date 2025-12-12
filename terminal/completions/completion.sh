@@ -4,4 +4,5 @@
 . $(theRealPath printDir.bash)
 . $(theRealPath prepareBuild.bash)
 . $(theRealPath gnome.bash)
+. $(theRealPath changeTitle.bash)
 

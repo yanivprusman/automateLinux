@@ -195,7 +195,7 @@ class KVTable;
 extern KVTable& kvTable;
 class DirHistory;
 extern DirHistory& dirHistory;
-
+extern std::ofstream g_logFile;
 
 #endif // COMMON_H
 

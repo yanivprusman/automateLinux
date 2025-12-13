@@ -17,6 +17,7 @@ DirHistory actualDirHistory;
 DirHistory& dirHistory = actualDirHistory;
 
 static volatile int running = 1;
+std::ofstream g_logFile;
 static int socket_fd = -1;
 
 struct ClientState {
@@ -32,6 +33,9 @@ void signal_handler(int sig) {
         running = 0;
         if (socket_fd >= 0) {
             shutdown(socket_fd, SHUT_RDWR);
+        }
+        if (g_logFile.is_open()) {
+            g_logFile.close();
         }
     }
 }
@@ -179,7 +183,11 @@ int initialize(){
     cerr << "Starting daemon (single-process mode)" << endl;
     signal(SIGTERM, signal_handler);
     signal(SIGINT, signal_handler);
-    signal(SIGPIPE, SIG_IGN); 
+    signal(SIGPIPE, SIG_IGN);
+    g_logFile.open(directories.data + "daemon.log", std::ios::app);
+    if (!g_logFile.is_open()) {
+        cerr << "Warning: Could not open log file at " << directories.data << "daemon.log" << endl;
+    }
     if (setup_socket() != 0) {
         cerr << "Failed to set up socket, exiting." << endl;
         return 1;

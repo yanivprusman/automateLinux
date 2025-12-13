@@ -1,8 +1,16 @@
 #include "mainCommand.h"
 
-static int g_client_sock = -1;
-static bool g_shouldLog = false;
-static bool g_toggleKeyboardsWhenActiveWindowChanges = true;
+static int clientSocket = -1;
+static bool shouldLog = false;
+static bool toggleKeyboardsWhenActiveWindowChanges = true;
+static bool refreshKeyboard = false;
+
+static void logToFile(const string& message) {
+    if (!shouldLog) return;
+    if (!g_logFile.is_open()) return;
+    g_logFile << message;
+    g_logFile.flush();
+}
 
 static const vector<string> KNOWN_KEYBOARDS = {
     CODE_KEYBOARD,
@@ -160,15 +168,12 @@ CmdResult handleGetKeyboardPath(const json&) {
     return CmdResult(0, path + "\n");
 }
 
-static string readScriptFile(const string& relativeScriptPath, std::ofstream& logFile) {
+static string readScriptFile(const string& relativeScriptPath) {
     string scriptContent;
     std::ifstream scriptFile(relativeScriptPath);
     if (!scriptFile.is_open()) {
         string logMessage = string("[ERROR] Failed to open script file: ") + relativeScriptPath + "\n";
-        if (logFile.is_open()) {
-            logFile << logMessage;
-            logFile.flush();
-        }
+        logToFile(logMessage);
         return "";
     }
     std::stringstream buffer;
@@ -191,14 +196,14 @@ static string substituteVariable(const string& content, const string& variable, 
 
 CmdResult handleShouldLog(const json& command) {
     string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
-    g_shouldLog = (enableStr == COMMAND_VALUE_TRUE);
-    return CmdResult(0, string("Logging ") + (g_shouldLog ? "enabled" : "disabled") + "\n");
+    shouldLog = (enableStr == COMMAND_VALUE_TRUE);
+    return CmdResult(0, string("Logging ") + (shouldLog ? "enabled" : "disabled") + "\n");
 }
 
 CmdResult handleToggleKeyboardsWhenActiveWindowChanges(const json& command) {
     string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
-    g_toggleKeyboardsWhenActiveWindowChanges = (enableStr == COMMAND_VALUE_TRUE);
-    return CmdResult(0, string("Return to default keyboard on next window change: ") + (g_toggleKeyboardsWhenActiveWindowChanges ? "no" : "yes") + "\n");
+    toggleKeyboardsWhenActiveWindowChanges = (enableStr == COMMAND_VALUE_TRUE);
+    return CmdResult(0, string("Return to default keyboard on next window change: ") + (toggleKeyboardsWhenActiveWindowChanges ? "no" : "yes") + "\n");
 }
 
 CmdResult handleGetDir(const json& command) {
@@ -238,7 +243,6 @@ CmdResult handleSetKeyboard(const json& command) {
     previousKeyboard = keyboardName;
     string logMessage;
     bool isKnown = false;
-    ofstream logFile;
     FILE* pipe;
     string output;
     int status;
@@ -252,17 +256,10 @@ CmdResult handleSetKeyboard(const json& command) {
     if (!isKnown) {
         keyboardName = DEFAULT_KEYBOARD;
     }
-    if (g_shouldLog){
-        string logPath = directories.data + "daemon.log";
-        logFile.open(logPath, std::ios::app);
-        logMessage = string("[START setKeyboard] keyboard: ") + keyboardName + " isKnown: " + (isKnown ? "true" : "false") + "\n";
-        if (logFile.is_open()) {
-            logFile << logMessage;
-            logFile.flush();
-        }
-    }
+    logMessage = string("[START setKeyboard] keyboard: ") + keyboardName + " isKnown: " + (isKnown ? "true" : "false") + "\n";
+    logToFile(logMessage);
     string scriptPath = directories.mappings + PREFIX_KEYBOARD + keyboardName + ".sh";
-    string scriptContent = readScriptFile(scriptPath, logFile);
+    string scriptContent = readScriptFile(scriptPath);
     if (scriptContent.empty()) {
         return CmdResult(1, "Script file not found\n");
     }
@@ -277,55 +274,35 @@ CmdResult handleSetKeyboard(const json& command) {
         )
         + scriptContent
     ;
-    if (! g_toggleKeyboardsWhenActiveWindowChanges){
+    if (! toggleKeyboardsWhenActiveWindowChanges){
         cmd = string(
         "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; ");
     }
     pipe = popen(cmd.c_str(), "r");
-    if (g_shouldLog){
-        logMessage = string("[EXEC] ") + cmd + "\n";
-        if (logFile.is_open()) {
-            logFile << logMessage;
-            logFile.flush();
-        }
-        if (!pipe) {
-            logMessage = string("[ERROR] popen failed\n");
-            if (logFile.is_open()) {
-                logFile << logMessage;
-                logFile.flush();
-            }
-            return CmdResult(1, "Failed to execute\n");
-        }
-        char buffer[256];
-        while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-            output += buffer;
-        }
-        status = pclose(pipe);
-        exitCode = WEXITSTATUS(status);
-        logMessage = string("[OUTPUT]\n") + output + "\n";
-        if (logFile.is_open()) {
-            logFile << logMessage;
-            logFile.flush();
-        }
-        logMessage = string("[STATUS] raw status: ") + to_string(status) + " exit code: " + to_string(exitCode) + "\n";
-        if (logFile.is_open()) {
-            logFile << logMessage;
-            logFile.flush();
-        }
-        if (status != 0) {
-            logMessage = string("[END] FAILED\n");
-            if (logFile.is_open()) {
-                logFile << logMessage;
-                logFile.flush();
-            }
-            return CmdResult(1, string("Failed to execute (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
-        }
-        logMessage = string("[END] SUCCESS\n");
-        if (logFile.is_open()) {
-            logFile << logMessage;
-            logFile.flush();
-        }
+    logMessage = string("[EXEC] ") + cmd + "\n";
+    logToFile(logMessage);
+    if (!pipe) {
+        logMessage = string("[ERROR] popen failed\n");
+        logToFile(logMessage);
+        return CmdResult(1, "Failed to execute\n");
     }
+    char buffer[256];
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+        output += buffer;
+    }
+    status = pclose(pipe);
+    exitCode = WEXITSTATUS(status);
+    logMessage = string("[OUTPUT]\n") + output + "\n";
+    logToFile(logMessage);
+    logMessage = string("[STATUS] raw status: ") + to_string(status) + " exit code: " + to_string(exitCode) + "\n";
+    logToFile(logMessage);
+    if (status != 0) {
+        logMessage = string("[END] FAILED\n");
+        logToFile(logMessage);
+        return CmdResult(1, string("Failed to execute (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
+    }
+    logMessage = string("[END] SUCCESS\n");
+    logToFile(logMessage);
     return CmdResult(0, string("SUCCESS\n" + output + "Set keyboard to: ") + keyboardName + "\n");
 }
 
@@ -388,7 +365,7 @@ CmdResult testIntegrity(const json& command) {
 }
 
 int mainCommand(const json& command, int client_sock) {
-    g_client_sock = client_sock;
+    clientSocket = client_sock;
     string commandStr = command.dump();
     CmdResult result;
     try {

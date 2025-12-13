@@ -125,8 +125,8 @@ log() {
                 sudo sh -c "> '${AUTOMATE_LINUX_DATA_DIR}evsieveErr.log'"
                 sudo sh -c "> '${AUTOMATE_LINUX_DATA_DIR}evsieveOutput.log'"
             fi
-            tail -f "${AUTOMATE_LINUX_DATA_DIR}evsieveErr.log" >"$target" &
-            tail -f "${AUTOMATE_LINUX_DATA_DIR}evsieveOutput.log" >"$target" &
+            tail -f "${AUTOMATE_LINUX_DATA_DIR}evsieveErr.log" >>"$target" &
+            tail -f "${AUTOMATE_LINUX_DATA_DIR}evsieveOutput.log" >>"$target" &
             ;;
         anotherCommand)
             # future commands

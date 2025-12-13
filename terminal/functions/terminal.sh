@@ -35,11 +35,8 @@ getCurrentShell(){
 }
 export -f getCurrentShell
 
-    # PS1='\[\e]0;asdf5\w\a\]\[\e[0;33m\]\w\[\e[0m\]$'
 changeTitle() {
     local prepend="" append="" replace="" reset=""
-
-    # parse named args
     while [ "$#" -gt 0 ]; do
         case "$1" in
             -prepend) prepend="$2"; shift 2;;
@@ -50,15 +47,9 @@ changeTitle() {
         esac
     done
     [ -n "$reset" ] && PS1="$AUTOMATE_LINUX_PS1" && return 0
-    # extract current title safely - FIX: match \e not just e
     local current_title
-    current_title=$(printf "%s" "$PS1" |
-        sed -n 's/.*\\\[\\e]0;\(.*\)\\a.*/\1/p')
-
-    # fallback if missing
+    current_title=$(printf "%s" "$PS1" | sed -n 's/.*\\\[\\e]0;\(.*\)\\a.*/\1/p')
     [ -z "$current_title" ] && return 0
-
-    # compute new title
     local new_title="$current_title"
     [ -n "$prepend" ] && new_title="${prepend}${new_title}"
     [ -n "$append" ]  && new_title="${new_title}${append}"
@@ -66,5 +57,39 @@ changeTitle() {
     PS1=$(printf "%s" "$PS1" |
     sed 's#\\\[\\e]0;.*\\a#\\[\\e]0;'"$(printf "%s" "$new_title" | sed 's/[\&]/\\&/g')"'\\a#')
 }
-
 export -f changeTitle
+
+log() {
+    local what="" target=""
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            evsieve|anotherCommand)
+                what="$1"; shift ;;
+            *)
+                target="$1"; shift ;;
+        esac
+    done
+    if [ -z "$what" ]; then
+        echo "Usage: log <command> <target>"
+        return 1
+    fi
+    if [ -z "$target" ]; then
+        echo "Add target: log $what <target>"
+        return 1
+    fi
+    case "$what" in
+        evsieve)
+            tail -f "${AUTOMATE_LINUX_DATA_DIR}evsieveErr.log" >"$target" &
+            tail -f "${AUTOMATE_LINUX_DATA_DIR}evsieveOutput.log" >"$target" &
+            ;;
+        anotherCommand)
+            # future commands
+            ;;
+        *)
+            echo "Unregistered log $what "
+            return 1
+            ;;
+    esac
+    echo "${GREEN} Logging"
+}
+export -f log

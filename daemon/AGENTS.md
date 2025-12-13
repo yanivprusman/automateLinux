@@ -11,3 +11,4 @@ Adding Commands:
 - Add `{COMMAND_NAME, handleName}` to `COMMAND_HANDLERS[]` array in `src/mainCommand.cpp`
 - Add command to HELP_MESSAGE in `src/mainCommand.cpp`
 - Update `commands` variable and case statement in `terminal/completions/daemon.bash`
+in daemon.bash optoins that are inside parentheses keep them that way the reason is that they are not supposed to be used regularly.

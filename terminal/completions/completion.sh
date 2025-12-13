@@ -5,4 +5,5 @@
 . $(theRealPath prepareBuild.bash)
 . $(theRealPath gnome.bash)
 . $(theRealPath changeTitle.bash)
+. $(theRealPath log.bash)
 

@@ -9,6 +9,8 @@
 string socketPath;
 Directories actualDirectories;
 Directories& directories = actualDirectories;
+Files actualFiles;
+Files& files = actualFiles;
 KVTable actualKvTable;
 KVTable& kvTable = actualKvTable;
 DirHistory actualDirHistory;
@@ -182,6 +184,7 @@ int initialize(){
         cerr << "Failed to set up socket, exiting." << endl;
         return 1;
     }
+    files.initialize(directories);
     initializeKeyboardPath();
     initializeMousePath();
     return 0;

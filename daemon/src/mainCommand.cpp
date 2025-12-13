@@ -48,6 +48,8 @@ static const string HELP_MESSAGE =
     "  setKeyboard             Set the keyboard by name and execute restart script.\n"
     "  shouldLog               Enable or disable logging (true/false).\n"
     "  toggleKeyboardsWhenActiveWindowChanges  Toggle automatic keyboard switching on window change.\n"
+    "  getDir                  Get a daemon directory path by name (base, data, mappings).\n"
+    "  getFile                 Get file path by name from data or mapping directories.\n\n"
     "  getDir                  Get a daemon directory path by name (base, data, mappings).\n\n"
     "Options:\n"
     "  --help                  Display this help message.\n"
@@ -214,6 +216,16 @@ CmdResult handleGetDir(const json& command) {
     return CmdResult(0, result + "\n");
 }
 
+CmdResult handleGetFile(const json& command) {
+    string fileName = command[COMMAND_ARG_FILE_NAME].get<string>();
+    for (const auto& file : files.files) {
+        if (file.name.find(fileName) != string::npos) {
+            return CmdResult(0, file.fullPath() + "\n");
+        }
+    }
+    return CmdResult(1, "File not found: " + fileName + "\n");
+}
+
 CmdResult handleSetKeyboard(const json& command) {
     static string previousKeyboard = "";
     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
@@ -347,6 +359,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_SHOULD_LOG, handleShouldLog},
     {COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, handleToggleKeyboardsWhenActiveWindowChanges},
     {COMMAND_GET_DIR, handleGetDir},
+    {COMMAND_GET_FILE, handleGetFile},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE = sizeof(COMMAND_HANDLERS) / sizeof(COMMAND_HANDLERS[0]);

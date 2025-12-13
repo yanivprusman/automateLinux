@@ -72,6 +72,8 @@
 #define COMMAND_ARG_ENABLE "enable"
 #define COMMAND_GET_DIR "getDir"
 #define COMMAND_ARG_DIR_NAME "dirName"
+#define COMMAND_GET_FILE "getFile"
+#define COMMAND_ARG_FILE_NAME "fileName"
 #define EVSIEVE_RANDOM_VAR "randomVar"
 #define EVSIEVE_STANDARD_ERR_FILE "evsieveErr.log"
 #define EVSIEVE_STANDARD_OUTPUT_FILE "evsieveOutput.log"
@@ -106,6 +108,7 @@ static const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
+    CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME}),
 };
 
 static const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
@@ -118,6 +121,30 @@ struct Directories {
         base = canonical("/proc/self/exe").parent_path().parent_path().string() + "/";
         data = base + "data/";
         mappings = base + "evsieve/mappings/";
+    }
+};
+
+struct Files {
+    struct File {
+        string name;
+        string dir;
+        string fullPath() const { return dir + name; }
+    };
+    vector<File> files;
+    void initialize(const Directories& dirs) {
+        files = {
+            {"chrome.log", dirs.data},
+            {"combined.log", dirs.data},
+            {"daemon.db", dirs.data},
+            {"evsieveErr.log", dirs.data},
+            {"evsieveOutput.log", dirs.data},
+            {"trapErrLogBackground.txt", dirs.data},
+            {"trapErrLog.txt", dirs.data},
+            {"corsairKeyBoardLogiMouseCode.sh", dirs.mappings},
+            {"corsairKeyBoardLogiMouseDefaultKeyboard.sh", dirs.mappings},
+            {"corsairKeyBoardLogiMousegnome-terminal-server.sh", dirs.mappings},
+            {"corsairKeyBoardLogiMousegoogle-chrome.sh", dirs.mappings}
+        };
     }
 };
 
@@ -162,6 +189,7 @@ inline std::string toJsonSingleLine(const std::string& s) {
 }
 
 extern Directories& directories;
+extern Files& files;
 extern string socketPath;
 class KVTable;
 extern KVTable& kvTable;

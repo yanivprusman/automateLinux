@@ -3,7 +3,7 @@ _daemon_completion() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    commands="(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath setKeyboard shouldLog toggleKeyboardsWhenActiveWindowChanges getDir"
+    commands="(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath setKeyboard shouldLog toggleKeyboardsWhenActiveWindowChanges getDir getFile"
     opts="--help"
     keyboards="Code gnome-terminal-server google-chrome testKeyboard1 testKeyboard2"
     
@@ -23,6 +23,9 @@ _daemon_completion() {
         getDir)
             COMPREPLY=( $(compgen -W "dirName=" -- "$cur") )
             ;;
+        getFile)
+            COMPREPLY=( $(compgen -W "fileName=" -- "$cur") )
+            ;;
         openedTty|updateDirHistory|cdForward|cdBackward|showTerminalInstance|deleteEntry|deleteEntriesByPrefix|showEntriesByPrefix|upsertEntry|getEntry|printDirHistory|ping|getKeyboardPath)
             COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
             ;;
@@ -39,6 +42,12 @@ _daemon_completion() {
             dirName=*)
                 local dir_prefix="${cur#dirName=}"
                 COMPREPLY=( $(compgen -W "base data mappings" -P "dirName=" -- "$dir_prefix") )
+                ;;
+            fileName=*)
+                local file_prefix="${cur#fileName=}"
+                local data_files="chrome.log combined.log daemon.db evsieveErr.log evsieveOutput.log trapErrLogBackground.txt trapErrLog.txt"
+                local mapping_files="corsairKeyBoardLogiMouseCode.sh corsairKeyBoardLogiMouseDefaultKeyboard.sh corsairKeyBoardLogiMousegnome-terminal-server.sh corsairKeyBoardLogiMousegoogle-chrome.sh"
+                COMPREPLY=( $(compgen -W "$data_files $mapping_files" -P "fileName=" -- "$file_prefix") )
                 ;;
             -*)
                 COMPREPLY=( $(compgen -W "$opts" -- "$cur") )

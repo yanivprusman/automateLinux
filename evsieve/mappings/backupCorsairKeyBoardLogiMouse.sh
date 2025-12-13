@@ -81,3 +81,9 @@ systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.serv
     evsieve \
     --input /dev/input/by-id/$KEYBOARD_BY_ID grab domain=input \
     --output
+
+sudo evsieve \
+--input /dev/input/by-id/$KEYBOARD_BY_ID grab domain=input \
+--output
+
+evsievep | grep --line-buffered -E 'msc|key:n' | grep --line-buffered -v 'msc:scan:589825'

@@ -3,8 +3,10 @@ evsieve --input $keyboardPath $mousePath grab domain=input \
 --hook key:leftctrl key:1 exec-shell='sudo -u yaniv DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus DISPLAY=:0 notify-send "Keyboard" "Code"' \
 `#--hook led:numl:1 exec-shell='sudo -u yaniv DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus DISPLAY=:0 notify-send "Keyboard" "Code"' `\
 `#--hook led:numl:1 exec-shell='sudo -u yaniv sendKeys keyA backspace' `\
---hook key:grave exec-shell='theRealPath' \
+`#--hook key:grave exec-shell='theRealPath' `\
+--hook btn:left exec-shell='echo asdf' \
 --output name=corsairKeyBoardLogiMouse 2>&1
 
 
 
+ 

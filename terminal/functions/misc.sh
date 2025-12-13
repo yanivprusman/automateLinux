@@ -64,8 +64,11 @@ gnomeExtensionRestart(){
 }
 
 monitorVSCodeKeyboard(){
-    inotifywait -m -e close_write ./path | while read _; do
+    local file=$(d getFile fileName=corsairKeyBoardLogiMouseCode.sh)
+    echo monitoring $file
+    inotifywait -m -e close_write "$file" | while read _; do
         daemon setKeyboard keyboardName=DefaultKeyboard
+        sleep 0.2
         daemon setKeyboard keyboardName=Code
     done
 }

@@ -70,6 +70,8 @@
 #define COMMAND_SHOULD_LOG "shouldLog"
 #define COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES "toggleKeyboardsWhenActiveWindowChanges"
 #define COMMAND_ARG_ENABLE "enable"
+#define COMMAND_GET_DIR "getDir"
+#define COMMAND_ARG_DIR_NAME "dirName"
 #define EVSIEVE_RANDOM_VAR "randomVar"
 #define EVSIEVE_STANDARD_ERR_FILE "evsieveErr.log"
 #define EVSIEVE_STANDARD_OUTPUT_FILE "evsieveOutput.log"
@@ -103,6 +105,7 @@ static const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, {COMMAND_ARG_ENABLE}),
+    CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
 };
 
 static const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);

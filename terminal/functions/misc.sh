@@ -62,3 +62,11 @@ gnomeExtensionRestart(){
     # sleep 2 && 
     echo "Extension reloaded"
 }
+
+monitorVSCodeKeyboard(){
+    inotifywait -m -e close_write ./path | while read _; do
+        daemon setKeyboard keyboardName=DefaultKeyboard
+        daemon setKeyboard keyboardName=Code
+    done
+}
+export -f monitorVSCodeKeyboard

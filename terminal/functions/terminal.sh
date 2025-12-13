@@ -139,3 +139,13 @@ log() {
     echo -e "${GREEN} Logging"
 }
 export -f log
+
+timeCd() {
+    local start end
+    start=$(date +%s.%N)
+    cd .. || return
+    end=$(date +%s.%N)
+    echo "cd total time: $(echo "$end - $start" | bc) seconds"
+    cd -
+}
+export -f timeCd

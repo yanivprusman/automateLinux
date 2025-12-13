@@ -47,7 +47,8 @@ static const string HELP_MESSAGE =
     "  ping                    Ping the daemon and receive pong response.\n"
     "  setKeyboard             Set the keyboard by name and execute restart script.\n"
     "  shouldLog               Enable or disable logging (true/false).\n"
-    "  toggleKeyboardsWhenActiveWindowChanges  Toggle automatic keyboard switching on window change.\n\n"
+    "  toggleKeyboardsWhenActiveWindowChanges  Toggle automatic keyboard switching on window change.\n"
+    "  getDir                  Get a daemon directory path by name (base, data, mappings).\n\n"
     "Options:\n"
     "  --help                  Display this help message.\n"
     "  --json                  Output results in JSON format.\n\n"
@@ -198,6 +199,21 @@ CmdResult handleToggleKeyboardsWhenActiveWindowChanges(const json& command) {
     return CmdResult(0, string("Return to default keyboard on next window change: ") + (g_toggleKeyboardsWhenActiveWindowChanges ? "no" : "yes") + "\n");
 }
 
+CmdResult handleGetDir(const json& command) {
+    string dirName = command[COMMAND_ARG_DIR_NAME].get<string>();
+    string result;
+    if (dirName == "base") {
+        result = directories.base;
+    } else if (dirName == "data") {
+        result = directories.data;
+    } else if (dirName == "mappings") {
+        result = directories.mappings;
+    } else {
+        return CmdResult(1, "Unknown directory name: " + dirName + "\n");
+    }
+    return CmdResult(0, result + "\n");
+}
+
 CmdResult handleSetKeyboard(const json& command) {
     static string previousKeyboard = "";
     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
@@ -330,6 +346,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_SET_KEYBOARD, handleSetKeyboard},
     {COMMAND_SHOULD_LOG, handleShouldLog},
     {COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, handleToggleKeyboardsWhenActiveWindowChanges},
+    {COMMAND_GET_DIR, handleGetDir},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE = sizeof(COMMAND_HANDLERS) / sizeof(COMMAND_HANDLERS[0]);

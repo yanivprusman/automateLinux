@@ -87,3 +87,18 @@ sudo evsieve \
 --output
 
 evsievep | grep --line-buffered -E 'msc|key:n' | grep --line-buffered -v 'msc:scan:589825'
+evsievep | grep --line-buffered -E 'event23|event23' | grep --line-buffered -v 'msc:scan:589825'
+
+led/numlock from off to on:
+msc:scan:458835@/dev/input/event23
+key:numlock:1@/dev/input/event23
+led:numl:1@/dev/input/event23
+msc:scan:458835@/dev/input/event23
+key:numlock:0@/dev/input/event23
+
+led/numlock from on to off:
+msc:scan:458835@/dev/input/event23
+key:numlock:1@/dev/input/event23
+msc:scan:458835@/dev/input/event23
+key:numlock:0@/dev/input/event23
+led:numl:0@/dev/input/event23

@@ -3,7 +3,7 @@ _log_completion() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts="evsieve/dev/pts/ -reset"
+    opts="evsieve\"${AUTOMATE_LINUX_DATA_DIR}combined.log\" -reset"
     COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
 }
 

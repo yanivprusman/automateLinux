@@ -102,13 +102,13 @@ export default class ActiveWindowTracker {
                     const input = connection.get_input_stream();
                     const din = new Gio.DataInputStream({ base_stream: input });
                     const [line] = din.read_line_utf8(null);
-                    this.#logToFile(`Daemon (${command}) replied: ${line}`);
+                    // this.#logToFile(`Daemon (${command}) replied: ${line}`);
                 } catch (e) {
-                    this.#logToFile(`Socket error: ${e}`);
+                    // this.#logToFile(`Socket error: ${e}`);
                 }
             });
         } catch (e) {
-            this.#logToFile(`Failed to connect to daemon: ${e.message}`);
+            // this.#logToFile(`Failed to connect to daemon: ${e.message}`);
             logError(e, 'Socket operation failed');
         }
     }

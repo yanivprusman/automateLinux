@@ -1,8 +1,9 @@
 #!/bin/bash
-# added shebang so when run with sudo and uses different shell it knows to use bash
+# # added shebang so when run with sudo and uses different shell it knows to use bash
 export CALL_TYPE_SUBPROCESSED="subprocessed"
 export CALL_TYPE_SOURCED="sourced"
 export CALL_TYPE_TERMINAL="terminal"
+
 getCallType() {
     local bottom="${FUNCNAME[-1]}"
     if [[ "$bottom" == "main" ]]; then
@@ -28,8 +29,38 @@ printFileOrDirRealPath() {
 }
 export -f printFileOrDirRealPath
 
+printDebug() {
+    local debug=false
+    if [[ $# -lt 1 ]]; then return; fi
+    debug="$1"
+    shift
+    [[ $debug != true ]] && return
+    while [[ $# -gt 0 ]]; do
+        local name="$1"
+        local value="$2"
+        echo -e "${YELLOW}$name: $value${NC}"
+        shift 2
+    done
+}
+export printDebug
+
 theRealPath() {
+    local debug=
+    local args=()
+    for arg in "$@"; do
+        if [[ $arg == "-debug" ]]; then
+            debug=true
+        elif [[ $arg == "-sudoCommand" ]]; then
+            debug=true
+        else
+            args+=("$arg")
+        fi
+    done
+    set -- "${args[@]}"
     local callType="$(getCallType)"
+    # if $debug; then echo -e "${YELLOW}call type: $callType${NC}"
+    # fi
+    printDebug $debug "call type" $callType
     local callingScript target
     if [[ $1 == "-sudoCommand" ]]; then
         shift
@@ -71,55 +102,10 @@ theRealPath() {
 }
 export -f theRealPath
 
-printTheRealPath() {
-    # echo got
-    local callType="$(getCallType)"
-    local callingScript target
-    if [[ $1 == "-sudoCommand" ]]; then
-        shift
-        local script="$1"
-        shift
-    fi    
-    if [[ $1 == "/" ]]; then
-        printf "/\n"
-        return 0
-    fi
-    if [[ $1 == /* ]]; then
-        target="$(realpath "$1" 2>/dev/null)"
-        if ! printFileOrDirRealPath "$target"; then
-            printf "%s\n" "$1"
-            return 1
-        fi
-    elif [[ "$callType" ==  "$CALL_TYPE_TERMINAL" ]]; then
-        echo test1
-        target="$(realpath "${PWD}/$1" 2>/dev/null)"
-        if ! printFileOrDirRealPath "$target"; then
-            printf "%s\n" "${PWD}/$1"
-            return 1
-        fi
-    elif [[ "$callType" == "$CALL_TYPE_SUBPROCESSED" ]] || [[ "$callType" == "$CALL_TYPE_SOURCED" ]]; then
-        # callingScript="$(realpath "${BASH_SOURCE[1]}$1" 2>/dev/null)"
-        callingScript="$(realpath "${BASH_SOURCE[1]}" 2>/dev/null)"
-        echo $callingScript
-        if [[ ! -z "$script" ]]; then
-            callingScript="$script"
-        fi 
-        if [[ -z "$1" ]]; then
-            printf "%s\n" "$callingScript"
-        else
-            target="$(realpath "$(dirname "$callingScript")/$1")"
-            if ! printFileOrDirRealPath "$target"; then
-                # printf "%s\n" "$(dirname "$callingScript")/$1"
-                printf "%s\n" "$(dirname ${BASH_SOURCE[1]})/$1"
-                return 1
-            fi
-        fi
-    fi
-}
-export -f printTheRealPath
-
 if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
     sudoCommandWithoutParamaters=${SUDO_COMMAND%% *}
+    # echo command: $sudoCommandWithoutParamaters
+    # echo arguments: $@
     theRealPath -sudoCommand "$(realpath $sudoCommandWithoutParamaters)" "$@"
 fi
 unset a
@@ -134,13 +120,3 @@ unset a
 #         and BASH_SOURCE to describe the call stack.  For instance, ${FUNCNAME[$i]} was called from the file ${BASH_SOURCE[$i+1]} at line
 #         number ${BASH_LINENO[$i]}.  The caller builtin displays the current call stack using this information.
 
-# onlySourced() {
-#     local callType="$(getCallType)"
-#     echo "callType is $callType" >&2
-#     if [[ "$callType" != $CALL_TYPE_SOURCED ]]; then
-#         echo -e "${RED}Error: build.sh must be sourced, not executed directly.${NC}"
-#         # return 1
-#         exit 1
-#     fi
-# }
-# export -f onlySourced

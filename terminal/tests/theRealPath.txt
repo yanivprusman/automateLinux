@@ -1,0 +1,8 @@
+from terminal
+from /home/yaniv/coding
+theRealPath expected /home/yaniv/coding/
+theRealPath . expected /home/yaniv/coding/
+theRealPath ./ expected /home/yaniv/coding/
+theRealPath asdf expected /home/yaniv/coding/asdf
+theRealPath ./asdf expected /home/yaniv/coding/asdf
+theRealPath ../asdf expected /home/yaniv/asdf

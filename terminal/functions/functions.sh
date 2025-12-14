@@ -1,4 +1,3 @@
-. $(theRealPath dirHistory.sh)
 . $(theRealPath emoji.sh)
 . $(theRealPath terminal.sh)
 . $(theRealPath files.sh)
@@ -10,3 +9,4 @@
 . $(theRealPath printDir.sh)
 . $(theRealPath db.sh)
 . $(theRealPath git.sh)
+. $(theRealPath log.sh)

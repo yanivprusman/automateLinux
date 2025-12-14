@@ -55,20 +55,3 @@ restartGnomeExtensions() {
 }
 export -f restartGnomeExtensions
 
-gnomeExtensionRestart(){
-    gnome-extensions disable $1 && 
-    # sleep 1 && 
-    gnome-extensions enable $1 && 
-    # sleep 2 && 
-    echo "Extension reloaded"
-}
-
-monitorVSCodeKeyboard(){
-    local file=$(d getFile fileName=corsairKeyBoardLogiMouseCode.sh)
-    echo monitoring $file
-    inotifywait -m -e close_write "$file" | while read _; do
-        daemon setKeyboard keyboardName=DefaultKeyboard
-        daemon setKeyboard keyboardName=Code
-    done
-}
-export -f monitorVSCodeKeyboard

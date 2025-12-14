@@ -6,4 +6,5 @@
 . $(theRealPath gnome.bash)
 . $(theRealPath changeTitle.bash)
 . $(theRealPath log.bash)
+. $(theRealPath theRealPath.bash)
 

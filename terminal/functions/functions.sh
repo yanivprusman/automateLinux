@@ -9,3 +9,4 @@
 . $(theRealPath build.sh)
 . $(theRealPath printDir.sh)
 . $(theRealPath db.sh)
+. $(theRealPath git.sh)

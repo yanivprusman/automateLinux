@@ -118,11 +118,13 @@ struct Directories {
     string data;
     string mappings;
     string symlinks;
+    string terminal;
     Directories() {
         base = canonical("/proc/self/exe").parent_path().parent_path().string() + "/";
         data = base + "data/";
         mappings = base + "evsieve/mappings/";
         symlinks = base + "symlinks/";
+        terminal = base + "terminal/";
     }
 };
 
@@ -145,7 +147,8 @@ struct Files {
             {"corsairKeyBoardLogiMouseCode.sh", dirs.mappings},
             {"corsairKeyBoardLogiMouseDefaultKeyboard.sh", dirs.mappings},
             {"corsairKeyBoardLogiMousegnome-terminal-server.sh", dirs.mappings},
-            {"corsairKeyBoardLogiMousegoogle-chrome.sh", dirs.mappings}
+            {"corsairKeyBoardLogiMousegoogle-chrome.sh", dirs.mappings},
+            {"theRealPath.sh", dirs.terminal},
         };
     }
 };

@@ -113,14 +113,14 @@ theRealPath() {
 }
 export -f theRealPath
 
-if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
-    sudoCommandWithoutParamaters=${SUDO_COMMAND%% *}
-    # echo command: $sudoCommandWithoutParamaters
-    # echo arguments: $@
-    # printDebug  $sudoCommandWithoutParamaters "sudo command without parameters" "$sudoCommandWithoutParamaters"
-    theRealPath -sudoCommand "$(realpath $sudoCommandWithoutParamaters)" "$@"
-fi
-unset a
+# if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
+#     sudoCommandWithoutParamaters=${SUDO_COMMAND%% *}
+#     # echo command: $sudoCommandWithoutParamaters
+#     # echo arguments: $@
+#     # printDebug  $sudoCommandWithoutParamaters "sudo command without parameters" "$sudoCommandWithoutParamaters"
+#     theRealPath -sudoCommand "$(realpath $sudoCommandWithoutParamaters)" "$@"
+# fi
+# unset a
 
 # from mand bash:
 # FUNCNAME

@@ -1,3 +1,1 @@
-#!/bin/bash
-. $(sudo theRealPath ../functions/daemon.sh)
-daemon $@
+../terminal/sourceAndRun.sh

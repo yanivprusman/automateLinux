@@ -1,4 +1,4 @@
-. theRealPath
+# . theRealPath
 export AUTOMATE_LINUX_DIR="$(theRealPath ../)"
 export AUTOMATE_LINUX_TERMINAL_DIR="${AUTOMATE_LINUX_DIR}terminal/"
 export AUTOMATE_LINUX_ENV_FILE="${AUTOMATE_LINUX_TERMINAL_DIR}env.sh"

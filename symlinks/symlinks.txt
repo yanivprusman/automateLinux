@@ -6,10 +6,6 @@ ln -sf /home/yaniv/coding/automateLinux/daemon/daemon.service /etc/systemd/syste
 ln -s /home/yaniv/coding/automateLinux/gnomeExtensions/clock@ya-niv.com ~/.local/share/gnome-shell/extensions/clock@ya-niv.com
 ln -s /home/yaniv/coding/automateLinux/terminal/tmux.conf ~/.tmux.conf
 
-# linked from automateLinux in symlinks
-ln -snfr ../daemon/daemon daemon
-ln -s ../terminal/sudoCommands/sudoCommands.sh /home/yaniv/coding/automateLinux/symlinks/print
-
 # must ont use links not working: 
 # ln -s /home/yaniv/coding/automateLinux/desktop/ /home/yaniv/Desktop
 # ln -snfr /home/yaniv/coding/automateLinux/desktop/shutDown.desktop shutDown.desktop

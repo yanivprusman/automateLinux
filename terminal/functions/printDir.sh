@@ -1,14 +1,6 @@
 #!/bin/bash
 print(){
-    local dirs=()
-    local files=()
-    local dir f
-    local -A excluded_files=()
-    local exclude_file=".printDir.sh"
-    local mode="dirs"
-    local use_color=true
-    local copy_to_clipboard=false
-    
+    local -A excluded_files=() dirs=() files=() dir f exclude_file=".printDir.sh" mode="dirs" use_color=true copy_to_clipboard=false
     while [ $# -gt 0 ]; do
         case "$1" in
             --help|-h)

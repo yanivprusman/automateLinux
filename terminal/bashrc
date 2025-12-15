@@ -95,6 +95,6 @@ fi
 # Unset NoMachine LD_PRELOAD
 unset LD_PRELOAD
 
-if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}myBashrc.sh" ]; then
-    . "${AUTOMATE_LINUX_TERMINAL_DIR}myBashrc.sh"
-fi
+# i f [ -f  " $ { A U TOMATE_LINUX_TERMINAL_DIR}myBashrc.sh" ]; then
+#  " $ { A U T OMATE_LINUX_TERMINAL_DIR}myBashrc.sh"
+# fi

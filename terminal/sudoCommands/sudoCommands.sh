@@ -6,13 +6,12 @@ localFunction(){
         . $(theRealPath ../functions/printDir.sh )
         print $@
     else
-        :
-        # source ../functions/"$script_name".sh
+        #. $(theRealPath "../functions/$script_name.sh" )
+        #"$script_name" $@
+        # theRealPath ../functions/$script_name.sh
+        # theRealPath ../functions/printDir.sh
+        # echo asdf
     fi
 }
 localFunction "$@"
 unset localFunction
-# . $(theRealPath ../functions/printDir.sh -debug)
-# print $@
-
-# theRealPath

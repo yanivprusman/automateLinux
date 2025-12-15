@@ -1,1 +1,0 @@
-/home/yaniv/coding/automateLinux/evsieve/services/stop.sh

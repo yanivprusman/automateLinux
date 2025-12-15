@@ -1,1 +1,0 @@
-../terminal/sudoCommands/sudoCommands.sh

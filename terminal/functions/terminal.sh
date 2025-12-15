@@ -73,3 +73,7 @@ timeCd() {
     cd -
 }
 export -f timeCd
+setPS1ToDirName() {
+    PS1='$(basename "$PWD")\$ '
+}
+export -f setPS1ToDirName

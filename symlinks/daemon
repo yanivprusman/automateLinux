@@ -1,1 +1,3 @@
-../terminal/sudoCommands/sudoCommands.sh
+#!/bin/bash
+. $(sudo theRealPath ../functions/daemon.sh)
+daemon $@

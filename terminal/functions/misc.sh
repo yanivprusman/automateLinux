@@ -66,3 +66,33 @@ bd(){
     bs
     cd "$caller_dir" >/dev/null
 }
+export -f bd
+
+showSymlinkHistory() {
+    local SYMLINK=$1
+    if [ -z "$SYMLINK" ]; then
+        echo "Usage: showSymlinkHistory path/to/symlink"
+        return 1
+    fi
+
+    git log -p --follow --abbrev-commit --date=format:'%d/%m/%y' \
+        --pretty=format:"commit %h %ad" -- "$SYMLINK" | \
+    awk '
+/^commit/ { 
+    if(old || new) { 
+        type=(old && new) ? "Updated" : (old ? "Deleted" : "Created")
+        printf "%s | %s | %s | %s -> %s\n", commit, date, type, old?old:"--", new?new:"--"
+    }
+    commit=$2; date=$3; old=""; new=""; next
+}
+/^-([^-\n])/ { old=substr($0,2) }
+/^\+([^+\n])/ { new=substr($0,2) }
+END {
+    if(old || new) {
+        type=(old && new) ? "Updated" : (old ? "Deleted" : "Created")
+        printf "%s | %s | %s | %s -> %s\n", commit, date, type, old?old:"--", new?new:"--"
+    }
+}'
+}
+
+export -f showSymlinkHistory

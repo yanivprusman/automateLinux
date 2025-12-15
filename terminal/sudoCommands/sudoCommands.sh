@@ -6,7 +6,8 @@ localFunction(){
         . $(theRealPath ../functions/printDir.sh )
         print $@
     else
-        #. $(theRealPath "../functions/$script_name.sh" )
+        :
+        . $(theRealPath "../functions/$script_name.sh" )
         #"$script_name" $@
         # theRealPath ../functions/$script_name.sh
         # theRealPath ../functions/printDir.sh

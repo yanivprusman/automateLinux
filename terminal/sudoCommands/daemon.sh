@@ -1,3 +1,3 @@
 #!/bin/bash
-# . $(sudo theRealPath ../functions/daemon.sh)
-# daemon $@
+. $(sudo theRealPath ../functions/daemon.sh)
+daemon $@

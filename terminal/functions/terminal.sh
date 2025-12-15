@@ -6,8 +6,13 @@ resetPromptColor() {
 export -f resetPromptColor
 
 cd() {
-    if [ "$1" = "..." ]; then
-        builtin cd ../..
+    if [[ "$1" =~ ^\.{2,}$ ]]; then
+        local levels=$(( ${#1} - 1 ))
+        local path=
+        for ((i=0; i<levels; i++)); do
+            path+="../"
+        done
+        builtin cd "${path%/}"
     else
         builtin cd "$@"
     fi

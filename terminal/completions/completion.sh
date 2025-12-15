@@ -7,4 +7,5 @@
 . $(theRealPath changeTitle.bash)
 . $(theRealPath log.bash)
 . $(theRealPath theRealPath.bash)
+. $(theRealPath cd.bash)
 

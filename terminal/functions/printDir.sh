@@ -1,3 +1,4 @@
+#!/bin/bash
 print(){
     local dirs=()
     local files=()

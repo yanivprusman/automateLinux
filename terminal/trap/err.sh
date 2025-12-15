@@ -1,39 +1,20 @@
 
 exit_code=$?
 touch "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"
-# is_back_ground_process=$1
-# if [ ! $is_back_ground_process ] ; then
-    cmd="${BASH_COMMAND}"
-    line_no=${BASH_LINENO[0]}
-    func="${FUNCNAME[1]}"
-    date_time=$(date '+%Y-%m-%d %H:%M:%S')
-    error_msg=$(2>&1 eval "$cmd" >/dev/null || true)
-    {
-        echo "$date_time Exit code: $exit_code Command: $cmd Line: $line_no Function: ${func:-main} PWD: $PWD"
-        if [ -n "$error_msg" ]; then
-            echo "Error message: $error_msg"
-        fi
-        echo "Stack:"
-        for f in "${BASH_SOURCE[@]}"; do
-            echo "  $f"
-        done
-        echo "------------------------------------------"
-    } >> "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"
-# else
-#     cmd="${BASH_COMMAND}"
-#     line_no=${BASH_LINENO[0]}
-#     func="${FUNCNAME[1]}"
-#     date_time=$(date '+%Y-%m-%d %H:%M:%S')
-#     error_msg=$(2>&1 eval "$cmd" >/dev/null || true)
-#     {
-#         echo "$date_time Exit code: $exit_code Command: $cmd Line: $line_no Function: ${func:-main} PWD: $PWD"
-#         if [ -n "$error_msg" ]; then
-#             echo "Error message: $error_msg"
-#         fi
-#         echo "Stack:"
-#         for f in "${BASH_SOURCE[@]}"; do
-#             echo "  $f"
-#         done
-#         echo "------------------------------------------"
-#     } >> "${AUTOMATE_LINUX_TRAP_ERR_LOG_FILE_BACKGROUND}"
-# fi
+cmd="${BASH_COMMAND}"
+line_no=${BASH_LINENO[0]}
+func="${FUNCNAME[1]}"
+date_time=$(date '+%Y-%m-%d %H:%M:%S')
+error_msg=$(2>&1 eval "$cmd" >/dev/null || true)
+{
+    echo "$date_time Exit code: $exit_code Command: $cmd Line: $line_no Function: ${func:-main} PWD: $PWD"
+    if [ -n "$error_msg" ]; then
+        echo "Error message: $error_msg"
+    fi
+    echo "Stack:"
+    for f in "${BASH_SOURCE[@]}"; do
+        echo "  $f"
+    done
+    echo "------------------------------------------"
+} >> "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"
+

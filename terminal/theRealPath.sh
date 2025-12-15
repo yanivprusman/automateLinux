@@ -38,34 +38,42 @@ printDebug() {
     while [[ $# -gt 0 ]]; do
         local name="$1"
         local value="$2"
-        echo -e "${YELLOW}$name: $value${NC}"
+        echo -e "${YELLOW}$name: $value${NC}" >&2
         shift 2
     done
 }
 export printDebug
 
 theRealPath() {
-    local debug=
-    local args=()
-    for arg in "$@"; do
-        if [[ $arg == "-debug" ]]; then
-            debug=true
-        elif [[ $arg == "-sudoCommand" ]]; then
-            debug=true
-        else
-            args+=("$arg")
-        fi
+    local debug= sudoCommand= args=() callingScript= target=
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -debug)
+                debug=true
+                shift
+                ;;
+            -sudoCommand)
+                shift
+                sudoCommand="$1"
+                shift
+                ;;
+            *)
+                args+=("$1")
+                shift
+                ;;
+        esac
     done
     set -- "${args[@]}"
     local callType="$(getCallType)"
-    # if $debug; then echo -e "${YELLOW}call type: $callType${NC}"
-    # fi
     printDebug $debug "call type" $callType
-    local callingScript target
+    if [[ -n "$sudoCommand" ]]; then
+        printDebug $debug "sudo script" "$sudoCommand"
+    fi    
     if [[ $1 == "-sudoCommand" ]]; then
         shift
         local script="$1"
         shift
+        printDebug $debug "sudo script" "$script"
     fi    
     if [[ $1 == "/" ]]; then
         printf "/\n"
@@ -74,25 +82,28 @@ theRealPath() {
     if [[ $1 == /* ]]; then
         target="$(realpath "$1" 2>/dev/null)"
         if ! printFileOrDirRealPath "$target"; then
+            printDebug $debug "realpath failed for" "$1"
             printf "%s\n" "$1"
             return 1
         fi
     elif [[ "$callType" ==  "$CALL_TYPE_TERMINAL" ]]; then
         target="$(realpath "${PWD}/$1" 2>/dev/null)"
         if ! printFileOrDirRealPath "$target"; then
+            printDebug $debug "realpath failed for" "${PWD}/$1"
             printf "%s\n" "${PWD}/$1"
             return 1
         fi
     elif [[ "$callType" == "$CALL_TYPE_SUBPROCESSED" ]] || [[ "$callType" == "$CALL_TYPE_SOURCED" ]]; then
         callingScript="$(realpath "${BASH_SOURCE[1]}" 2>/dev/null)"
-        if [[ ! -z "$script" ]]; then
-            callingScript="$script"
+        if [[ -n "$sudoCommand" ]]; then
+            callingScript="$sudoCommand"
         fi 
         if [[ -z "$1" ]]; then
             printf "%s\n" "$callingScript"
         else
             target="$(realpath "$(dirname "$callingScript")/$1")"
             if ! printFileOrDirRealPath "$target"; then
+                printDebug $debug "realpath failed for" "$(dirname "$callingScript")/$1"
                 # printf "%s\n" "$(dirname ${BASH_SOURCE[1]})/$1" TODO fix to this line
                 printf "%s\n" "$(dirname "$callingScript")/$1"
                 return 1
@@ -106,6 +117,7 @@ if a=$(getCallType) && [ "$a" == "$CALL_TYPE_SUBPROCESSED" ]; then
     sudoCommandWithoutParamaters=${SUDO_COMMAND%% *}
     # echo command: $sudoCommandWithoutParamaters
     # echo arguments: $@
+    # printDebug  $sudoCommandWithoutParamaters "sudo command without parameters" "$sudoCommandWithoutParamaters"
     theRealPath -sudoCommand "$(realpath $sudoCommandWithoutParamaters)" "$@"
 fi
 unset a

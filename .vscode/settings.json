@@ -3,6 +3,7 @@
         "daemon/old": true
     },
     "files.associations": {
+        "symlinks.txt": "shellscript",
         "instructions.txt": "shellscript",
         "assumptions.txt": "shellscript",
         "iostream": "cpp",

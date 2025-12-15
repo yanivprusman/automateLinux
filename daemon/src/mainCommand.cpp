@@ -3,7 +3,7 @@
 static int clientSocket = -1;
 static bool shouldLog = false;
 static bool toggleKeyboardsWhenActiveWindowChanges = true;
-static bool refreshKeyboard = false;
+// static bool refreshKeyboard = false;
 
 static void logToFile(const string& message) {
     if (!shouldLog) return;

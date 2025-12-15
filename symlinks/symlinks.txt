@@ -1,11 +1,15 @@
+# linked to automateLinux
 ln -s /home/yaniv/coding/automateLinux/autostart/ ~/.config/autostart 
 ln -s /home/yaniv/coding/automateLinux/bashrc/bashrc ~/.bashrc
 ln -s /home/yaniv/.local/share/applications /home/yaniv/coding/automateLinux/applications
-ln -snfr ../daemon/daemon daemon
 ln -sf /home/yaniv/coding/automateLinux/daemon/daemon.service /etc/systemd/system
 ln -s /home/yaniv/coding/automateLinux/gnomeExtensions/clock@ya-niv.com ~/.local/share/gnome-shell/extensions/clock@ya-niv.com
-ln -snfr ../terminal/sudoCommands/print.sh ~/coding/automateLinux/symlinks/print
 ln -s /home/yaniv/coding/automateLinux/terminal/tmux.conf ~/.tmux.conf
+
+# linked from automateLinux in symlinks
+ln -snfr ../daemon/daemon daemon
+ln -s ../terminal/sudoCommands/sudoCommands.sh /home/yaniv/coding/automateLinux/symlinks/print
+
 # must ont use links not working: 
 # ln -s /home/yaniv/coding/automateLinux/desktop/ /home/yaniv/Desktop
 # ln -snfr /home/yaniv/coding/automateLinux/desktop/shutDown.desktop shutDown.desktop

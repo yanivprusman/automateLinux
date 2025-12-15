@@ -55,3 +55,14 @@ restartGnomeExtensions() {
 }
 export -f restartGnomeExtensions
 
+tmuxReloadConfig() {
+    tmux source-file ~/.tmux.conf
+}
+export -f tmuxReloadConfig
+
+bd(){
+    local caller_dir="$PWD"
+    cd "$AUTOMATE_LINUX_DAEMON_DIR"
+    bs
+    cd "$caller_dir" >/dev/null
+}

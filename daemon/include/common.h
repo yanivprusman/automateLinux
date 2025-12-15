@@ -117,10 +117,12 @@ struct Directories {
     string base;
     string data;
     string mappings;
+    string symlinks;
     Directories() {
         base = canonical("/proc/self/exe").parent_path().parent_path().string() + "/";
         data = base + "data/";
         mappings = base + "evsieve/mappings/";
+        symlinks = base + "symlinks/";
     }
 };
 

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Reboot
+Comment=Reboot the system
+Exec=bash -c 'reboot'
+Icon=/usr/share/icons/Humanity/actions/32/system-reboot.svg
+Terminal=false
+Type=Application
+Categories=System;

@@ -68,8 +68,18 @@ daemonAlternative() {
 # export -f daemonAlternative
 
 localFunction(){
-    local theRealPath=$(daemonAlternative --socat getFile fileName=theRealPath.sh)
-    local script_name=$(basename ${SUDO_COMMAND%% *} )
+    if ! declare -F theRealPath >/dev/null; then
+        local theRealPath=$(daemonAlternative --socat getFile fileName=theRealPath.sh)
+    fi
+
+    # local script_name=$(basename ${SUDO_COMMAND%% *} )
+    local script_name
+    if [[ -n "$SUDO_COMMAND" ]]; then
+        script_name="$(basename "${SUDO_COMMAND%% *}")"
+    else
+        script_name="$(basename "$0")"
+    fi
+
     if [[ "$script_name" == "print" ]]; then
         # source ../functions/printDir.sh
         . $(theRealPath ../functions/printDir.sh )

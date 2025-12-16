@@ -6,22 +6,6 @@ export function activate(context: vscode.ExtensionContext) {
     const logFilePath = '/home/yaniv/coding/automateLinux/data/combined.log';
     vscode.workspace.openTextDocument(logFilePath).then(doc => {
         vscode.window.showTextDocument(doc, { preview: false });
-        // const watcher = fs.watch(logFilePath, (eventType) => {
-        //     if (eventType === 'change') {
-        //         vscode.workspace.openTextDocument(logFilePath).then(newDoc => {
-        //             const activeEditor = vscode.window.activeTextEditor;
-        //             if (activeEditor && activeEditor.document.uri.fsPath === logFilePath) {
-        //                 const edit = new vscode.WorkspaceEdit();
-        //                 const fullRange = new vscode.Range(
-        //                     newDoc.positionAt(0),
-        //                     newDoc.positionAt(doc.getText().length)
-        //                 );
-        //                 edit.replace(doc.uri, fullRange, newDoc.getText());
-        //                 vscode.workspace.applyEdit(edit);
-        //             }
-        //         });
-        //     }
-        // });
 		const watcher = fs.watch(logFilePath, (eventType) => {
 			if (eventType === 'change') {
 				const doc = vscode.workspace.textDocuments.find(d => d.uri.fsPath === logFilePath);

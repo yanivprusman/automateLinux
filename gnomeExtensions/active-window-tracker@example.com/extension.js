@@ -43,7 +43,7 @@ export default class ActiveWindowTracker {
     #onActiveWindowChanged() {
         const window = global.display.focus_window;
         const wmClass = window.get_wm_class() || 'unknown';
-        // const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys "${wmClass}"`;
+        const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys "${wmClass}"`;
         this.#daemon('setKeyboard', { keyboardName: wmClass });
         try {
             const subprocess = new Gio.Subprocess({

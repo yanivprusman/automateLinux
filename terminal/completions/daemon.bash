@@ -64,5 +64,4 @@ _daemon_completion() {
     esac
 }
 
-complete -F _daemon_completion daemon
-complete -F _daemon_completion d
+complete -F _daemon_completion daemon d daemonAlternative

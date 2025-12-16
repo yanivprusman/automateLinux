@@ -94,5 +94,10 @@ END {
     }
 }'
 }
-
 export -f showSymlinkHistory
+
+makeVscePackage(){
+    npm run compile
+    vsce package
+    code --install-extension *.vsix
+}

@@ -11,14 +11,14 @@
     "Other"
   ],
   "activationEvents": [
-     "onStartupFinished"
+     "onCommand:log.open"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "log.helloWorld",
-        "title": "Hello World"
+        "command": "log.open",
+        "title": "Open Combined Log"
       }
     ]
   },

@@ -15,7 +15,7 @@ compareCommit(){
 export -f compareCommit
 
 gitm(){
-    git commit -m "$*"
+    git commit -m "$*" 2>/dev/null 
     git status -sb
 }
 export -f gitm

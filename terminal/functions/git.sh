@@ -13,3 +13,9 @@ compareCommit(){
     git --no-pager diff -U999 $1 $2
 }
 export -f compareCommit
+
+gitm(){
+    git commit -m "$*"
+    git status -sb
+}
+export -f gitm

@@ -176,8 +176,8 @@ export default class ClockExtension extends Extension {
                     }
                 }
                 
-                console.log(`Loaded position: X=${x}, Y=${y}`);
-                return {x, y};
+                // console.log(`Loaded position: X=${x}, Y=${y}`);
+                return {x:50, y:50};
             }
         } catch (e) {
             console.log('Failed to load position:', e);

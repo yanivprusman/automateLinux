@@ -5,7 +5,19 @@ resetPromptColor() {
 }
 export -f resetPromptColor
 
-cd() {
+# cd() {
+#     if [[ "$1" =~ ^\.{2,}$ ]]; then
+#         local levels=$(( ${#1} - 1 ))
+#         local path=
+#         for ((i=0; i<levels; i++)); do
+#             path+="../"
+#         done
+#         builtin cd "${path%/}"
+#     else
+#         builtin cd "$@"
+#     fi
+# }
+cd () {
     if [[ "$1" =~ ^\.{2,}$ ]]; then
         local levels=$(( ${#1} - 1 ))
         local path=
@@ -14,7 +26,11 @@ cd() {
         done
         builtin cd "${path%/}"
     else
-        builtin cd "$@"
+        if [[ -d "$1" ]]; then
+            builtin cd "$1"/
+        else
+            builtin cd "$@"
+        fi
     fi
 }
 export -f cd

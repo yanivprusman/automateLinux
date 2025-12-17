@@ -10,7 +10,13 @@ _cd() {
         done
         COMPREPLY=( $(compgen -d -- "$prefix") )
     else
-        COMPREPLY=( $(compgen -d -- "$cur") )
+        local IFS=$'\n'
+        local completions=($(compgen -d -- "$cur"))
+        local i=0
+        for item in "${completions[@]}"; do
+            COMPREPLY[i]="${item}/"
+            ((i++))
+        done
     fi
 }
-complete -F _cd cd
+complete -F _cd -o nospace cd

@@ -167,8 +167,14 @@ export default class ActiveWindowTracker {
     #chatGpt() {
         try {
             // const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
-            const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI backspace backspace`;
+            const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
             const subprocess = new Gio.Subprocess({
+                argv: ['/bin/bash', '-c', command],
+                flags: Gio.SubprocessFlags.NONE,
+            });
+            subprocess.init(null);
+            command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys backspace backspace`;
+            subprocess = new Gio.Subprocess({
                 argv: ['/bin/bash', '-c', command],
                 flags: Gio.SubprocessFlags.NONE,
             });

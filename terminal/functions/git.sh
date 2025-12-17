@@ -23,7 +23,14 @@ gitm(){
 export -f gitm
 
 gitPrintChanges(){
+    gitPrintChangesFileName="$@"
     git log --pretty=format:'%h %ad %s' --date=short -- name-only "$@" 
 }
 export -f gitPrintChanges
+
+gitCheckoutLastFile(){
+    git checkout "$1" -- "$gitPrintChangesFileName"
+}
+export -f gitCheckoutLastFile
+
 

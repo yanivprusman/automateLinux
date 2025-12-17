@@ -20,6 +20,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY}),
     CommandSignature(COMMAND_PING, {}),
     CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
+    CommandSignature(COMMAND_GET_MOUSE_PATH, {}),
     CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, {COMMAND_ARG_ENABLE}),
@@ -225,6 +226,14 @@ CmdResult handleGetKeyboardPath(const json&) {
     return CmdResult(0, path + "\n");
 }
 
+CmdResult handleGetMousePath(const json&) {
+    string path = kvTable.get("mousePath");
+    if (path.empty()) {
+        return CmdResult(1, "Mouse path not found\n");
+    }
+    return CmdResult(0, path + "\n");
+}
+
 static string readScriptFile(const string& relativeScriptPath) {
     string scriptContent;
     std::ifstream scriptFile(relativeScriptPath);
@@ -394,6 +403,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_ENTRY, handleGetEntry},
     {COMMAND_PING, handlePing},
     {COMMAND_GET_KEYBOARD_PATH, handleGetKeyboardPath},
+    {COMMAND_GET_MOUSE_PATH, handleGetMousePath},
     {COMMAND_SET_KEYBOARD, handleSetKeyboard},
     {COMMAND_SHOULD_LOG, handleShouldLog},
     {COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, handleToggleKeyboardsWhenActiveWindowChanges},

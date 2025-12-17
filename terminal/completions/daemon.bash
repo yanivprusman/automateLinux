@@ -64,7 +64,7 @@ _daemon_completion() {
 
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath setKeyboard shouldLog toggleKeyboardsWhenActiveWindowChanges getDir getFile help"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath setKeyboard shouldLog toggleKeyboardsWhenActiveWindowChanges getDir getFile help quit"
     }
 
     if [[ "${COMP_WORDS[1]}" == "send" ]]; then

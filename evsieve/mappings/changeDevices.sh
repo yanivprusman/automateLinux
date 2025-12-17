@@ -1,16 +1,10 @@
 #!/bin/bash
-
-# Fetch keyboard path from daemon
-KEYBOARD_BY_ID=$(daemon send getKeyboardPath)
-
-# Check if KEYBOARD_BY_ID was successfully retrieved
-if [ -z "$KEYBOARD_BY_ID" ]; then
+export keyboardPath=$(daemon send getKeyboardPath)
+export mousePath=$(daemon send getMousePath)
+if [ -z "$keyboardPath" ]; then
     echo "Error: Could not retrieve keyboard path from daemon. Is the daemon running?" >&2
     exit 1
 fi
-
-export keyboardPath="$KEYBOARD_BY_ID"
-
 case "$1" in
     terminal)
         script_to_source="corsairKeyBoardLogiMousegnome-terminal-server.sh"
@@ -29,7 +23,6 @@ case "$1" in
         exit 1
         ;;
 esac
-
 script_path="/home/yaniv/coding/automateLinux/evsieve/mappings/$script_to_source"
 
 if [ -f "$script_path" ]; then

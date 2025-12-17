@@ -5,7 +5,7 @@ firstTime(){
     coproc DAEMON_COPROC { socat - UNIX-CONNECT:"$AUTOMATE_LINUX_SOCKET_PATH" 2>/dev/null; }
     export AUTOMATE_LINUX_DAEMON_FD_IN=${DAEMON_COPROC[1]}
     export AUTOMATE_LINUX_DAEMON_FD_OUT=${DAEMON_COPROC[0]}
-    cd $(daemon send openedTty --tty=$AUTOMATE_LINUX_TTY_NUMBER )
+    cd $(daemon send openedTty --tty $AUTOMATE_LINUX_TTY_NUMBER )
 }
 firstTime
 unset firstTime

@@ -1,6 +1,6 @@
 . theRealPath
-# export AUTOMATE_LINUX_DIR="$(theRealPath ../)"
-export AUTOMATE_LINUX_DIR=/home/yaniv/coding/automateLinux/
+export AUTOMATE_LINUX_DIR="$(theRealPath ../)"
+# export AUTOMATE_LINUX_DIR=/home/yaniv/coding/automateLinux/
 export AUTOMATE_LINUX_TERMINAL_DIR="${AUTOMATE_LINUX_DIR}terminal/"
 export AUTOMATE_LINUX_ENV_FILE="${AUTOMATE_LINUX_TERMINAL_DIR}env.sh"
 export AUTOMATE_LINUX_SYMLINK_DIR="${AUTOMATE_LINUX_DIR}symlinks"

@@ -40,7 +40,7 @@ copyToClipboard(){
 export -f copyToClipboard
 
 setCdc() {
-    local newDir="$1"
+    local newDir="${1:-$PWD}"
     aliasFile="${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
     if grep -q '^alias cdc=' "$aliasFile"; then
         sed -i "s|^alias cdc=.*|alias cdc='cd \"$newDir\"'|" "$aliasFile"

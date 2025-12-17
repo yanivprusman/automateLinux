@@ -9,4 +9,5 @@
 . $(theRealPath theRealPath.bash)
 . $(theRealPath cd.bash)
 . $(theRealPath changeDevice.bash)
+. $(theRealPath grep.bash)
 

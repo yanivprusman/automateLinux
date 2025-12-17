@@ -1,0 +1,9 @@
+echo gemini --model gemini-2.5-flash >> $HISTFILE
+echo $HISTFILE
+code symlinks/symlinks.txt 
+cd ...
+ls .b*
+rm .bash_history 
+touch coding/automateLinux/terminal/bash_history
+ln -s coding/automateLinux/terminal/bash_history .bash_history
+ls

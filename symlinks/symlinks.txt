@@ -5,7 +5,7 @@ ln -s /home/yaniv/.local/share/applications /home/yaniv/coding/automateLinux/app
 ln -sf /home/yaniv/coding/automateLinux/daemon/daemon.service /etc/systemd/system
 ln -s /home/yaniv/coding/automateLinux/gnomeExtensions/clock@ya-niv.com ~/.local/share/gnome-shell/extensions/clock@ya-niv.com
 ln -s /home/yaniv/coding/automateLinux/terminal/tmux.conf ~/.tmux.conf
-
+ln -s coding/automateLinux/terminal/bash_history .bash_history
 # must ont use links not working: 
 # ln -s /home/yaniv/coding/automateLinux/desktop/ /home/yaniv/Desktop
 # ln -snfr /home/yaniv/coding/automateLinux/desktop/shutDown.desktop shutDown.desktop

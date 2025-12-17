@@ -19,3 +19,9 @@ gitm(){
     git status -sb
 }
 export -f gitm
+
+gitPrintChanges(){
+    git log --pretty=format:'%h %ad %s' --date=short -- name-only "$@" 
+}
+export -f gitPrintChanges
+

@@ -50,7 +50,7 @@
 # }
 # export -f daemon
 
-# d(){
-#     daemon "$@"
-# }
-# export -f d
+d(){
+    daemon "$@"
+}
+export -f d

@@ -7,4 +7,6 @@
 #include "dirHistory.h"
 #include "mainCommand.h"
 
+extern volatile int running;
+
 #endif // MAIN_H

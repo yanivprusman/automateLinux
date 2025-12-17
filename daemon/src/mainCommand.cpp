@@ -1,9 +1,39 @@
 #include "mainCommand.h"
+#include "main.h"
+
+const CommandSignature COMMAND_REGISTRY[] = {
+    CommandSignature(COMMAND_EMPTY, {}),
+    CommandSignature(COMMAND_HELP_DDASH, {}),
+    CommandSignature(COMMAND_OPENED_TTY, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_CLOSED_TTY, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_UPDATE_DIR_HISTORY, {COMMAND_ARG_TTY, COMMAND_ARG_PWD}),
+    CommandSignature(COMMAND_CD_FORWARD, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_CD_BACKWARD, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_SHOW_TERMINAL_INSTANCE , {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_SHOW_ALL_TERMINAL_INSTANCES , {}),
+    CommandSignature(COMMAND_DELETE_ENTRY, {COMMAND_ARG_KEY}),
+    CommandSignature(COMMAND_SHOW_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
+    CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
+    CommandSignature(COMMAND_SHOW_DB, {}),
+    CommandSignature(COMMAND_PRINT_DIR_HISTORY, {}),
+    CommandSignature(COMMAND_UPSERT_ENTRY, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
+    CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY}),
+    CommandSignature(COMMAND_PING, {}),
+    CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
+    CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
+    CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
+    CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, {COMMAND_ARG_ENABLE}),
+    CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
+    CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME}),
+    CommandSignature(COMMAND_QUIT, {}),
+};
+
+const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
 
 static int clientSocket = -1;
 static bool shouldLog = false;
 static bool toggleKeyboardsWhenActiveWindowChanges = true;
-// static bool refreshKeyboard = false;
+
 
 static void logToFile(const string& message) {
     if (!shouldLog) return;
@@ -235,6 +265,11 @@ CmdResult handleGetFile(const json& command) {
     return CmdResult(1, "File not found: " + fileName + "\n");
 }
 
+CmdResult handleQuit(const json&) {
+    running = 0; // Signal the daemon to shut down
+    return CmdResult(0, "Shutting down daemon.\n");
+}
+
 CmdResult handleSetKeyboard(const json& command) {
     static string previousKeyboard = "";
     string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
@@ -341,6 +376,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, handleToggleKeyboardsWhenActiveWindowChanges},
     {COMMAND_GET_DIR, handleGetDir},
     {COMMAND_GET_FILE, handleGetFile},
+    {COMMAND_QUIT, handleQuit},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE = sizeof(COMMAND_HANDLERS) / sizeof(COMMAND_HANDLERS[0]);

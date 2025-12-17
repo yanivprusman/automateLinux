@@ -50,6 +50,7 @@
 #define COMMAND_ARG_PREFIX "prefix"
 #define COMMAND_ARG_VALUE "value"
 #define COMMAND_PING "ping"
+#define COMMAND_QUIT "quit"
 #define COMMAND_GET_KEYBOARD_PATH "getKeyboardPath"
 #define COMMAND_SET_KEYBOARD "setKeyboard"
 #define COMMAND_ARG_KEYBOARD_NAME "keyboardName"
@@ -85,33 +86,7 @@ struct CommandSignature {
         : name(n), requiredArgs(args) {}
 };
 
-static const CommandSignature COMMAND_REGISTRY[] = {
-    CommandSignature(COMMAND_EMPTY, {}),
-    CommandSignature(COMMAND_HELP_DDASH, {}),
-    CommandSignature(COMMAND_OPENED_TTY, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_CLOSED_TTY, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_UPDATE_DIR_HISTORY, {COMMAND_ARG_TTY, COMMAND_ARG_PWD}),
-    CommandSignature(COMMAND_CD_FORWARD, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_CD_BACKWARD, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_SHOW_TERMINAL_INSTANCE , {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_SHOW_ALL_TERMINAL_INSTANCES , {}),
-    CommandSignature(COMMAND_DELETE_ENTRY, {COMMAND_ARG_KEY}),
-    CommandSignature(COMMAND_SHOW_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
-    CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
-    CommandSignature(COMMAND_SHOW_DB, {}),
-    CommandSignature(COMMAND_PRINT_DIR_HISTORY, {}),
-    CommandSignature(COMMAND_UPSERT_ENTRY, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
-    CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY}),
-    CommandSignature(COMMAND_PING, {}),
-    CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
-    CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
-    CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
-    CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, {COMMAND_ARG_ENABLE}),
-    CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
-    CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME}),
-};
 
-static const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
 
 struct Directories {
     string base;
@@ -201,6 +176,9 @@ extern KVTable& kvTable;
 class DirHistory;
 extern DirHistory& dirHistory;
 extern std::ofstream g_logFile;
+
+extern const CommandSignature COMMAND_REGISTRY[];
+extern const size_t COMMAND_REGISTRY_SIZE;
 
 #endif // COMMON_H
 

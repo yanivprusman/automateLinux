@@ -1,4 +1,3 @@
-echo asdf
 readarray -t varsUntilMyBashrc <<< "$(compgen -v)"
 myBashSourceFiles=(
     "${AUTOMATE_LINUX_TERMINAL_DIR}colors.sh"

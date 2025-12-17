@@ -94,7 +94,6 @@ fi
 
 # Unset NoMachine LD_PRELOAD
 unset LD_PRELOAD
-echo calling myBashrc.sh
 if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}myBashrc.sh" ]; then
     . "${AUTOMATE_LINUX_TERMINAL_DIR}myBashrc.sh"
 fi

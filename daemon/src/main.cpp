@@ -284,9 +284,7 @@ Files& files = actualFiles;
 KVTable actualKvTable;
 KVTable& kvTable = actualKvTable;
 DirHistory actualDirHistory;
-DirHistory& dirHistory = actualDirHistory;
-
-static volatile int running = 1;
+volatile int running = 1;
 static int socket_fd = -1;
 std::ofstream g_logFile;
 
@@ -452,9 +450,12 @@ void daemon_loop() {
 
 // ----------------- Client Mode -----------------
 
-int send_command_to_daemon(const string& jsonCmd) {
+int send_command_to_daemon(const ordered_json& jsonCmd) {
     int client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (client_fd < 0) return 1;
+    if (client_fd < 0) {
+        cerr << "socket() failed: " << strerror(errno) << endl;
+        return 1;
+    }
 
     struct sockaddr_un addr;
     memset(&addr, 0, sizeof(addr));
@@ -467,7 +468,8 @@ int send_command_to_daemon(const string& jsonCmd) {
         return 1;
     }
 
-    write(client_fd, jsonCmd.c_str(), jsonCmd.length());
+    string jsonCmdStr = jsonCmd.dump();
+    write(client_fd, jsonCmdStr.c_str(), jsonCmdStr.length());
     write(client_fd, "\n", 1);
 
     char buffer[512];
@@ -481,18 +483,75 @@ int send_command_to_daemon(const string& jsonCmd) {
     return 0;
 }
 
+ordered_json parse_client_args(int argc, char* argv[], int start_index) {
+    ordered_json j;
+    if (argc <= start_index) {
+        cerr << "Error: No command provided for client." << endl;
+        j["error"] = "No command provided.";
+        return j;
+    }
+
+    string commandName = argv[start_index];
+    j[COMMAND_KEY] = commandName;
+
+    const CommandSignature* foundCommand = nullptr;
+    for (size_t i = 0; i < COMMAND_REGISTRY_SIZE; ++i) {
+        if (COMMAND_REGISTRY[i].name == commandName) {
+            foundCommand = &COMMAND_REGISTRY[i];
+            break;
+        }
+    }
+
+    if (!foundCommand) {
+        cerr << "Error: Unknown command '" << commandName << "'." << endl;
+        j["error"] = "Unknown command.";
+        return j;
+    }
+
+    // Parse arguments
+    for (int i = start_index + 1; i < argc; ++i) {
+        string arg_key_str = argv[i];
+        if (arg_key_str.rfind("--", 0) == 0) { // Starts with --
+            string key = arg_key_str.substr(2);
+            if (i + 1 < argc) {
+                j[key] = argv[i+1];
+                i++; // Consume the value
+            } else {
+                cerr << "Error: Missing value for argument '" << arg_key_str << "'." << endl;
+                j["error"] = "Missing argument value.";
+                return j;
+            }
+        } else {
+            cerr << "Error: Unexpected argument format '" << arg_key_str << "'." << endl;
+            j["error"] = "Invalid argument format.";
+            return j;
+        }
+    }
+
+    // Validate required arguments
+    for (const string& required_arg : foundCommand->requiredArgs) {
+        if (!j.contains(required_arg)) {
+            cerr << "Error: Missing required argument '--" << required_arg << "' for command '" << commandName << "'." << endl;
+            j["error"] = "Missing required argument.";
+            return j;
+        }
+    }
+
+    return j;
+}
+
 // ----------------- Main -----------------
 
 int main(int argc, char* argv[]) {
     if (argc > 1) {
         string mode = argv[1];
         if (mode == "send") {
-            if (argc < 3) {
-                cerr << "Usage: " << argv[0] << " send '{\"command\":\"...\"}'\n";
-                return 1;
+            ordered_json cmdJson = parse_client_args(argc, argv, 2); // Start parsing from argv[2]
+            if (cmdJson.contains("error")) {
+                return 1; // An error occurred during parsing
             }
-            return send_command_to_daemon(argv[2]);
-        }else if (mode == "daemon") {
+            return send_command_to_daemon(cmdJson);
+        } else if (mode == "daemon") {
             if (initialize_daemon() != 0) {
                 cerr << "Failed to initialize daemon." << endl;
                 return 1;
@@ -500,9 +559,17 @@ int main(int argc, char* argv[]) {
             daemon_loop();
             cerr << "Daemon shutting down." << endl;
         } else {
-            cerr << "Unknown mode: expecting daemon send or daemon daemon\ntry daemon send '{\"command\":\"ping\"}'\n";
+            cerr << "Unknown mode: expecting 'daemon send' or 'daemon daemon'\n";
+            cerr << "Try: daemon send ping\n";
+            cerr << "Or: daemon send setKeyboard --keyboardName Code\n";
             return 1;
         }
+    } else {
+        cerr << "Usage: " << argv[0] << " <mode> [args...]\n";
+        cerr << "Modes:\n";
+        cerr << "  daemon            Run the daemon in server mode.\n";
+        cerr << "  send <command>    Send a command to the daemon.\n";
+        return 1;
     }
     return 0;
 }

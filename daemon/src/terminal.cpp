@@ -32,7 +32,7 @@ Terminal* Terminal::getInstanceByTTY(int tty) {
 }
 
 CmdResult Terminal::openedTty(const json& command) {
-    Terminal* terminal = new Terminal(command[TTY_KEY].get<int>());
+    Terminal* terminal = new Terminal(std::stoi(command[TTY_KEY].get<string>()));
     return terminal->_openedTty(command);
 }
 
@@ -62,14 +62,14 @@ CmdResult Terminal::_openedTty(const json& command) {
 }
 
 CmdResult Terminal::closedTty(const json& command) {
-    int tty = command[TTY_KEY].get<int>();
+    int tty = std::stoi(command[TTY_KEY].get<string>());
     Terminal* terminal = getInstanceByTTY(tty);
     if (terminal) {
         return terminal->_closedTty(command);
     }
     CmdResult result;
     result.status = 1;
-    result.message = string("Terminal instance not found for tty ") + to_string(tty) + mustEndWithNewLine;
+    result.message = string("Terminal instance not found for tty ") + command[TTY_KEY].get<string>() + mustEndWithNewLine;
     return result;
 }
 
@@ -92,7 +92,7 @@ string Terminal::dirHistoryEntryKey(int index) {
 }
 
 CmdResult Terminal::updateDirHistory(const json& command) {
-    int tty = command[TTY_KEY].get<int>();
+    int tty = std::stoi(command[TTY_KEY].get<string>());
     Terminal* terminal = getInstanceByTTY(tty);
     if (terminal) {
         return terminal->_updateDirHistory(command);
@@ -144,14 +144,14 @@ string Terminal::dirHistoryKeyPrefix() {
 }
 
 CmdResult Terminal::cdForward(const json& command) {
-    int tty = command[TTY_KEY].get<int>();
+    int tty = std::stoi(command[TTY_KEY].get<string>());
     Terminal* terminal = getInstanceByTTY(tty);
     if (terminal) {
         return terminal->_cdForward(command);
     }
     CmdResult result;
     result.status = 1;
-    result.message = string("Terminal instance not found for tty ") + to_string(command[TTY_KEY].get<int>()) + mustEndWithNewLine;
+    result.message = string("Terminal instance not found for tty ") + command[TTY_KEY].get<string>() + mustEndWithNewLine;
     return result;
 }
 
@@ -174,14 +174,14 @@ CmdResult Terminal::_cdForward(const json& command) {
 }
 
 CmdResult Terminal::cdBackward(const json& command) {
-    int tty = command[TTY_KEY].get<int>();
+    int tty = std::stoi(command[TTY_KEY].get<string>());
     Terminal* terminal = getInstanceByTTY(tty);
     if (terminal) {
         return terminal->_cdBackward(command);
     }
     CmdResult result;
     result.status = 1;
-    result.message = string("Terminal instance not found for tty ") + to_string(command[TTY_KEY].get<int>()) +  mustEndWithNewLine;
+    result.message = string("Terminal instance not found for tty ") + command[TTY_KEY].get<string>() +  mustEndWithNewLine;
     return result;
 }
 
@@ -210,7 +210,7 @@ string Terminal::toString() {
 }
 
 CmdResult Terminal::showTerminalInstance(const json& command) {
-    int tty = command[TTY_KEY].get<int>();
+    int tty = std::stoi(command[TTY_KEY].get<string>());
     CmdResult result;
     Terminal* terminal = getInstanceByTTY(tty);
     if (terminal) {
@@ -219,7 +219,7 @@ CmdResult Terminal::showTerminalInstance(const json& command) {
         return result;
     }
     result.status = 1;
-    result.message = string("Terminal instance not found for tty ") + to_string(command[TTY_KEY].get<int>()) + mustEndWithNewLine;
+    result.message = string("Terminal instance not found for tty ") + command[TTY_KEY].get<string>() + mustEndWithNewLine;
     return result;
 }
 

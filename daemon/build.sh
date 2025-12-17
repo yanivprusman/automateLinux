@@ -9,11 +9,11 @@ cd build
 cmake .. > /dev/null && \
 make > /dev/null && \
 echo -e "${GREEN}Build complete!${NC}" && \
-if [[ -n "$DAEMON_COPROC_PID" ]]; then
-    kill $DAEMON_COPROC_PID 2>/dev/null
-    wait $DAEMON_COPROC_PID 2>/dev/null
-    DAEMON_COPROC_PID=
-fi && \
+# if [[ -n "$DAEMON_COPROC_PID" ]]; then
+#     kill $DAEMON_COPROC_PID 2>/dev/null
+#     wait $DAEMON_COPROC_PID 2>/dev/null
+#     DAEMON_COPROC_PID=
+# fi && \
 sudo systemctl restart daemon.service && \
 sleep 0.5 && \
 AUTOMATE_LINUX_DAEMON_PID=$(${AUTOMATE_LINUX_DAEMON_DIR}getDaemonPID.sh) && \

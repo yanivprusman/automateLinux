@@ -145,15 +145,19 @@ CmdResult handlePrintDirHistory(const json&) {
 CmdResult handleUpsertEntry(const json& command) {
     string key = command[COMMAND_ARG_KEY].get<string>();
     string value = command[COMMAND_ARG_VALUE].get<string>();
-    kvTable.upsert(key, value);
-    return CmdResult(0, "Entry upserted\n");
+    int rc = kvTable.upsert(key, value);
+    if (rc == SQLITE_OK) {
+        return CmdResult(0, "Entry upserted\n");
+    }
+    string errorMsg = string("Upsert failed with code ") + to_string(rc) + ": " + sqlite3_errstr(rc) + "\n";
+    return CmdResult(rc, errorMsg);
 }
 
 CmdResult handleGetEntry(const json& command) {
     string key = command[COMMAND_ARG_KEY].get<string>();
     string value = kvTable.get(key);
     if (value.empty()) {
-        return CmdResult(1, "");
+        return CmdResult(1, "\n");
     }
     return CmdResult(0, value + "\n");
 }

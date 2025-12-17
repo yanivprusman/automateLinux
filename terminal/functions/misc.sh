@@ -50,8 +50,10 @@ setCdc() {
 export -f setCdc
 
 restartGnomeExtensions() {
-    gnome-extensions disable clock@ya-niv.com
-    gnome-extensions enable clock@ya-niv.com
+    # gnome-extensions disable clock@ya-niv.com
+    # gnome-extensions enable clock@ya-niv.com
+    # killall -HUP gnome-shell #test it at least once
+    gnome-shell -r & #test it at least once
 }
 export -f restartGnomeExtensions
 

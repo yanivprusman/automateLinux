@@ -76,3 +76,23 @@ git a
 gitm "added gitCheckoutLastFile"
 journalctl /usr/bin/gnome-shell -n 100 --no-pager
 print -f gnomeExtensions/clock@ya-niv.com/extension.js -c
+git a
+git m "improved cd to add / after completing a directory"
+cd gnomeExtensions/clock@ya-niv.com/
+print
+print |copyToClipboard 
+which daemon 
+sb
+whichReal daemon
+sb
+whichReal daemon
+whichReal daemon | copyToClipboard 
+git a
+gitm "added whichReal(){
+    realpath $(which "$1")
+}
+"
+git push
+echo $AUTOMATE_LINUX_SOCKET_PATH 
+cd ..
+gitPrintChanges gnomeExtensions/clock@ya-niv.com/extension.js 

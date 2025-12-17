@@ -2,10 +2,13 @@
 
 import St from 'gi://St';
 import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
 import Clutter from 'gi://Clutter';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+
+const AUTOMATE_LINUX_SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock";
 
 export default class ClockExtension extends Extension {
     constructor(metadata) {
@@ -15,6 +18,7 @@ export default class ClockExtension extends Extension {
         this._lastX = null;
         this._lastY = null;
         this._menu = null;
+        this._socketClient = null; // Initialize socketClient
         console.log('ClockExtension constructor called');
     }
 
@@ -29,8 +33,9 @@ export default class ClockExtension extends Extension {
             });
             console.log('Label created');
             
-            Main.uiGroup.add_child(this._label);
-            console.log('Label added to stage');
+            // Use global.window_group for draggable elements that should overlay everything
+            global.window_group.add_child(this._label);
+            console.log('Label added to global.window_group');
             
             // Load saved position or use default
             let {x, y} = this._loadPosition();
@@ -120,7 +125,7 @@ export default class ClockExtension extends Extension {
                 const newX = stageX - dragData.offsetX;
                 const newY = stageY - dragData.offsetY;
                 this._label.set_position(newX, newY);
-                // console.log(`Dragging: new position(${newX},${newY})`);
+                // console.log(`Dragging: new position(${newX},${newY})`); // Commented out excessive logging
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
@@ -154,31 +159,65 @@ export default class ClockExtension extends Extension {
         
         this._menu.open();
     }
+    
+    _sendMessageToDaemon(message) {
+        try {
+            if (!this._socketClient) {
+                this._socketClient = new Gio.SocketClient();
+            }
+            let connection = this._socketClient.connect_to_uri(
+                `unix://${AUTOMATE_LINUX_SOCKET_PATH}`,
+                null, // cancellable
+                null  // error
+            );
+
+            if (!connection) {
+                throw new Error('Could not connect to daemon socket.');
+            }
+
+            let istream = connection.get_input_stream();
+            let ostream = connection.get_output_stream();
+
+            // Send message
+            let output = new Gio.DataOutputStream({base_stream: ostream});
+            output.put_string(message + '\n', null); // null for cancellable, error
+            output.close(null);
+
+            // Read response
+            let input = new Gio.DataInputStream({base_stream: istream});
+            let response = input.read_line_utf8(null)[0]; // [0] for actual string, [1] for length
+            input.close(null);
+            
+            connection.close(null);
+            return response ? response.trim() : '';
+
+        } catch (e) {
+            console.error(`Failed to communicate with daemon: ${e.message}`);
+            return '';
+        }
+    }
 
     _loadPosition() {
+        let x = null, y = null;
         try {
-            const [success, stdout] = GLib.spawn_command_line_sync(`bash /home/yaniv/coding/automateLinux/gnomeExtensions/clock@ya-niv.com/loadClockPosition.sh`);
-            if (success && stdout) {
-                const output = new TextDecoder().decode(stdout).trim();
-                const lines = output.split('\n');
-                let x = null, y = null;
-                
-                if (lines[0]) {
-                    const xVal = parseInt(lines[0]);
-                    if (!isNaN(xVal)) {
-                        x = xVal;
-                    }
+            const responseX = this._sendMessageToDaemon(`{"command":"getEntry", "key":"clockPositionX"}`);
+            const responseY = this._sendMessageToDaemon(`{"command":"getEntry", "key":"clockPositionY"}`);
+
+            if (responseX) {
+                const xVal = parseInt(responseX);
+                if (!isNaN(xVal)) {
+                    x = xVal;
                 }
-                if (lines[1]) {
-                    const yVal = parseInt(lines[1]);
-                    if (!isNaN(yVal)) {
-                        y = yVal;
-                    }
-                    console.log(`Loaded position: X=${x}, Y=${y}`);
-                }
-                
-                return {x, y};
             }
+            if (responseY) {
+                const yVal = parseInt(responseY);
+                if (!isNaN(yVal)) {
+                    y = yVal;
+                }
+            }
+            
+            console.log(`Loaded position: X=${x}, Y=${y}`);
+            return {x, y};
         } catch (e) {
             console.log('Failed to load position:', e);
         }
@@ -189,9 +228,8 @@ export default class ClockExtension extends Extension {
         console.log(`Saving position: X=${Math.round(x)}, Y=${Math.round(y)}`);
         
         try {
-            const cmd = `bash /home/yaniv/coding/automateLinux/gnomeExtensions/clock@ya-niv.com/saveClockPosition.sh ${Math.round(x)} ${Math.round(y)}`;
-            console.log(`Running: ${cmd}`);
-            GLib.spawn_command_line_async(cmd);
+            this._sendMessageToDaemon(`{"command":"upsertEntry", "key":"clockPositionX", "value":"${Math.round(x)}"}`);
+            this._sendMessageToDaemon(`{"command":"upsertEntry", "key":"clockPositionY", "value":"${Math.round(y)}"}`);
         } catch (e) {
             console.warn('Failed to save position:', e);
         }

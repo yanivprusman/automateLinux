@@ -120,7 +120,7 @@ export default class ClockExtension extends Extension {
                 const newX = stageX - dragData.offsetX;
                 const newY = stageY - dragData.offsetY;
                 this._label.set_position(newX, newY);
-                console.log(`Dragging: new position(${newX},${newY})`);
+                // console.log(`Dragging: new position(${newX},${newY})`);
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
@@ -174,10 +174,10 @@ export default class ClockExtension extends Extension {
                     if (!isNaN(yVal)) {
                         y = yVal;
                     }
+                    console.log(`Loaded position: X=${x}, Y=${y}`);
                 }
                 
-                // console.log(`Loaded position: X=${x}, Y=${y}`);
-                return {x:50, y:50};
+                return {x, y};
             }
         } catch (e) {
             console.log('Failed to load position:', e);

@@ -93,3 +93,8 @@ setPS1ToDirName() {
     PS1='$(basename "$PWD")\$ '
 }
 export -f setPS1ToDirName
+
+whichReal(){
+    realpath $(which "$1")
+}
+export -f whichReal

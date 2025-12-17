@@ -31,11 +31,11 @@ _daemon_completion() {
 
     # Define arguments for each command
     declare -A command_args
-    command_args[openedTty]="--tty"
-    command_args[closedTty]="--tty"
-    command_args[updateDirHistory]="--tty --pwd"
-    command_args[cdForward]="--tty"
-    command_args[cdBackward]="--tty"
+    command_args[(openedTty)]="--tty"
+    command_args[(closedTty)]="--tty"
+    command_args[(updateDirHistory)]="--tty --pwd"
+    command_args[(cdForward)]="--tty"
+    command_args[(cdBackward)]="--tty"
     command_args[showTerminalInstance]="--tty"
     command_args[deleteEntry]="--key"
     command_args[showEntriesByPrefix]="--prefix"
@@ -64,7 +64,7 @@ _daemon_completion() {
 
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "openedTty closedTty updateDirHistory cdForward cdBackward showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath setKeyboard shouldLog toggleKeyboardsWhenActiveWindowChanges getDir getFile help"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath setKeyboard shouldLog toggleKeyboardsWhenActiveWindowChanges getDir getFile help"
     }
 
     if [[ "${COMP_WORDS[1]}" == "send" ]]; then

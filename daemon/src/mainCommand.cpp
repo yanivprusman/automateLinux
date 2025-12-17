@@ -159,17 +159,40 @@ CmdResult handleDeleteEntry(const json& command) {
 }
 
 CmdResult handlePrintDirHistory(const json&) {
-    string result = "directories:\n";
+    std::stringstream ss;
+    ss << "--- Directory History Entries ---\n";
     vector<std::pair<string, string>> dirs = kvTable.getByPrefix(DIR_HISTORY_ENTRY_PREFIX);
     std::sort(dirs.begin(), dirs.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
-    result += formatEntriesAsText(dirs);
+    if (dirs.empty()) {
+        ss << "No directory entries found.\n";
+    } else {
+        for (const auto& pair : dirs) {
+            ss << "  " << pair.first << ": " << pair.second << "\n";
+        }
+    }
+
+    ss << "\n--- TTY Pointers to History Entries ---\n";
     vector<std::pair<string, string>> ptsPointers = kvTable.getByPrefix(DIR_HISTORY_POINTER_PREFIX);
     std::sort(ptsPointers.begin(), ptsPointers.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
-    result += "Pointers:\n";
-    result += formatEntriesAsText(ptsPointers);
-    string lastTouched = string(DIR_HISTORY_ENTRY_PREFIX) + kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
-    result += string("last touched ") + lastTouched + " " + kvTable.get(lastTouched) + mustEndWithNewLine;
-    return CmdResult(0, result);
+    if (ptsPointers.empty()) {
+        ss << "No TTY pointers found.\n";
+    } else {
+        for (const auto& pair : ptsPointers) {
+            ss << "  " << pair.first << ": " << pair.second << "\n";
+        }
+    }
+    
+    ss << "\n--- Last Touched Directory ---\n";
+    string lastTouchedIndex = kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
+    if (!lastTouchedIndex.empty()) {
+        string lastTouchedKey = string(DIR_HISTORY_ENTRY_PREFIX) + lastTouchedIndex;
+        string lastTouchedValue = kvTable.get(lastTouchedKey);
+        ss << "  Index: " << lastTouchedIndex << ", Path: " << lastTouchedValue << "\n";
+    } else {
+        ss << "No last touched directory recorded.\n";
+    }
+    
+    return CmdResult(0, ss.str());
 }
 
 CmdResult handleUpsertEntry(const json& command) {
@@ -434,10 +457,6 @@ int mainCommand(const json& command, int client_sock) {
     }
     if (!result.message.empty() && result.message.back() != '\n') {
         result.message += "daemon must end in \\n\n";
-    }
-    if (isMultiline(result.message)) {
-        result.message = toJsonSingleLine(result.message);
-        result.message += "\n";
     }
     if (command[COMMAND_KEY] == "closedTty") {
         return 0;

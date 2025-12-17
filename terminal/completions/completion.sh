@@ -8,4 +8,5 @@
 . $(theRealPath log.bash)
 . $(theRealPath theRealPath.bash)
 . $(theRealPath cd.bash)
+. $(theRealPath changeDevice.bash)
 

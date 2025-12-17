@@ -1,4 +1,4 @@
-# . theRealPath
+. theRealPath
 # export AUTOMATE_LINUX_DIR="$(theRealPath ../)"
 export AUTOMATE_LINUX_DIR=/home/yaniv/coding/automateLinux/
 export AUTOMATE_LINUX_TERMINAL_DIR="${AUTOMATE_LINUX_DIR}terminal/"

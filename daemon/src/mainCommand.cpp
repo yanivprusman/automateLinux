@@ -21,6 +21,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_PING, {}),
     CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
     CommandSignature(COMMAND_GET_MOUSE_PATH, {}),
+    CommandSignature(COMMAND_GET_SOCKET_PATH, {}),
     CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, {COMMAND_ARG_ENABLE}),
@@ -84,7 +85,7 @@ static const string HELP_MESSAGE =
     "  deleteEntry             Delete a specific entry from the database by key.\n"
     "  deleteEntriesByPrefix   Delete all entries with a specific prefix.\n"
     "  showDB                  Display all entries in the database.\n"
-    "  ping                    Ping the daemon and receive pong response.\n"
+    "  ping                    Ping the daemon and receive pong response.\n"    "  getMousePath            Get the path to the mouse input device.\n"    "  getSocketPath           Get the path to the daemon's UNIX domain socket.\n"
     "  setKeyboard             Set the keyboard by name and execute restart script.\n"
     "  shouldLog               Enable or disable logging (true/false).\n"
     "  toggleKeyboardsWhenActiveWindowChanges  Toggle automatic keyboard switching on window change.\n"
@@ -234,6 +235,11 @@ CmdResult handleGetMousePath(const json&) {
     }
     return CmdResult(0, path + "\n");
 }
+
+CmdResult handleGetSocketPath(const json&) {
+    return CmdResult(0, SOCKET_PATH + string("\n"));
+}
+
 
 static string readScriptFile(const string& relativeScriptPath) {
     string scriptContent;
@@ -432,6 +438,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_PING, handlePing},
     {COMMAND_GET_KEYBOARD_PATH, handleGetKeyboardPath},
     {COMMAND_GET_MOUSE_PATH, handleGetMousePath},
+    {COMMAND_GET_SOCKET_PATH, handleGetSocketPath},
     {COMMAND_SET_KEYBOARD, handleSetKeyboard},
     {COMMAND_SHOULD_LOG, handleShouldLog},
     {COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, handleToggleKeyboardsWhenActiveWindowChanges},

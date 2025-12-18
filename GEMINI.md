@@ -74,3 +74,6 @@ The terminal customizations are applied by sourcing several Bash scripts.
 *   **Input Handling**: A significant focus on intercepting and manipulating input events, utilizing both the C++ daemon's input device discovery and `evsieve` for event remapping.
 *   **Systemd Integration**: The C++ daemon is managed as a `systemd` service, ensuring it starts automatically and is properly managed by the operating system.
 *   **External Dependencies**: The C++ daemon relies on `SQLite3` for data storage and `systemd` for service management. `evsieve` is an external tool used for input event processing.
+
+
+in case we want to add a command to daemon instructions on how to add a command are provided in /home/yaniv/coding/automateLinux/daemon/AGENTS.md

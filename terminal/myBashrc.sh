@@ -7,6 +7,7 @@ myBashSourceFiles=(
     "${AUTOMATE_LINUX_TERMINAL_DIR}exports.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}gSettings.sh"
     "${AUTOMATE_LINUX_TERMINAL_DIR}/completions/completion.sh"
+    "${AUTOMATE_LINUX_TERMINAL_DIR}geminiSessions.sh"
 )
 for file in "${myBashSourceFiles[@]}"; do
     . "$file"

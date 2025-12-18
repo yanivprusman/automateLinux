@@ -32,10 +32,21 @@ export default class ClockExtension extends Extension {
 
         Main.uiGroup.add_child(this._label);
         
-        this._label.set_position(
-            monitor.x + 30,
-            monitor.y + 30
-        );
+        let posX = monitor.x + 30;
+        let posY = monitor.y + 30;
+
+        let storedPosX = this._runDaemonCommand("getEntry", { key: "clockPositionX" });
+        let storedPosY = this._runDaemonCommand("getEntry", { key: "clockPositionY" });
+        
+        if (storedPosX !== null && storedPosY !== null && storedPosX !== "" && storedPosY !== "") {
+            posX = parseInt(storedPosX.trim());
+            posY = parseInt(storedPosY.trim());
+            this._logError(`Loaded position: x=${posX}, y=${posY}`);
+        } else {
+            this._logError("No stored position found, using default.");
+        }
+
+        this._label.set_position(posX, posY);
 
         this._updateClock();
         
@@ -65,6 +76,8 @@ export default class ClockExtension extends Extension {
         this._label.connect('button-release-event', (_, event) => {
             if (event.get_button() === 1) {
                 dragData.dragging = false;
+                this._runDaemonCommand("upsertEntry", { key: "clockPositionX", value: this._label.x.toString() });
+                this._runDaemonCommand("upsertEntry", { key: "clockPositionY", value: this._label.y.toString() });
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
@@ -81,6 +94,12 @@ export default class ClockExtension extends Extension {
     }
 
     disable() {
+        if (this._label) {
+            // Save the current position before destroying the label
+            this._runDaemonCommand("upsertEntry", { key: "clockPositionX", value: this._label.x.toString() });
+            this._runDaemonCommand("upsertEntry", { key: "clockPositionY", value: this._label.y.toString() });
+        }
+
         if (this._timeoutId) {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
@@ -104,5 +123,30 @@ export default class ClockExtension extends Extension {
             // second: '2-digit',
             hour12: false
         });
+    }
+
+    _logError(message) {
+        console.error(`[ClockExtension] ${message}`);
+    }
+
+    _runDaemonCommand(command, args = {}) {
+        let commandLine = `daemon send ${command}`;
+        for (const key in args) {
+            commandLine += ` --${key} "${args[key]}"`;
+        }
+
+        try {
+            let [res, stdout, stderr, exit_status] = GLib.spawn_command_line_sync(commandLine);
+            
+            if (exit_status !== 0) {
+                this._logError(`Daemon command failed: ${commandLine}\nStderr: ${stderr.toString()}`);
+                return null;
+            }
+
+            return stdout.toString().trim();
+        } catch (e) {
+            this._logError(`Exception running daemon command: ${e.message}\nCommand: ${commandLine}`);
+            return null;
+        }
     }
 }

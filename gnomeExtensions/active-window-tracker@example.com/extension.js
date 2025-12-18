@@ -1,9 +1,8 @@
-
 import Gio from 'gi://Gio';
 import Shell from 'gi://Shell';
 import GLib from 'gi://GLib';
 
-const ActiveWindowTrackerInterface = 
+const ActiveWindowTrackerInterface =
 `<node>
   <interface name="com.example.ActiveWindowTracker">
     <signal name="ActiveWindowChanged">
@@ -12,10 +11,29 @@ const ActiveWindowTrackerInterface =
   </interface>
 </node>`;
 
+// Define a logging function that can be used globally within the extension file.
+function _log(message) {
+    try {
+        const dataDir = '/home/yaniv/coding/automateLinux/data';
+        const file = Gio.File.new_for_path(`${dataDir}/chrome.log`);
+        const timestamp = new Date().toISOString();
+        const logEntry = `[${timestamp}] ${message}\n`;
+
+        // Use synchronous file operations for simplicity in this specific debugging context.
+        // Note: Asynchronous is better for performance in a production extension.
+        const fileStream = file.append_to(Gio.FileCreateFlags.NONE, null);
+        fileStream.write_all(logEntry, null);
+        fileStream.close(null);
+    } catch (e) {
+        console.warn(`Failed to log to file: ${e.message}`);
+    }
+}
+
 export default class ActiveWindowTracker {
     #dbus;
     #windowTracker;
     #signalId;
+
     enable() {
         this.#windowTracker = Shell.WindowTracker.get_default();
         this.#dbus = Gio.DBusExportedObject.wrapJSObject(
@@ -26,9 +44,11 @@ export default class ActiveWindowTracker {
             Gio.DBus.session,
             '/com/example/ActiveWindowTracker'
         );
-        this.#signalId = global.display.connect('notify::focus-window', 
+        this.#signalId = global.display.connect('notify::focus-window',
             () => this.#onActiveWindowChanged());
+        _log('Extension enabled and using subprocess communication.');
     }
+
     disable() {
         if (this.#signalId) {
             global.display.disconnect(this.#signalId);
@@ -39,179 +59,68 @@ export default class ActiveWindowTracker {
             this.#dbus = null;
         }
         this.#windowTracker = null;
+        _log('Extension disabled.');
     }
+
     #onActiveWindowChanged() {
         const window = global.display.focus_window;
-        if (!window) {
-            return;
-        }
+        if (!window) return;
+
         const wmClass = window.get_wm_class() || 'unknown';
-        const windowTitle = window.get_title() || '';
-        const pid = window.get_pid();
-        const xid = window.get_xid();
-        const role = window.get_role() || '';
-        const frameRect = window.get_frame_rect();
-        const outerRect = window.get_outer_rect();
-        const monitor = window.get_monitor();
+        
+        // Let's also log that the event was triggered
+        _log(`Active window changed: ${wmClass}`);
 
         const windowInfo = {
             wmClass: wmClass,
-            windowTitle: windowTitle,
-            pid: pid,
-            xid: xid,
-            role: role,
-            frameRect: {
-                x: frameRect.x,
-                y: frameRect.y,
-                width: frameRect.width,
-                height: frameRect.height
-            },
-            outerRect: {
-                x: outerRect.x,
-                y: outerRect.y,
-                width: outerRect.width,
-                height: outerRect.height
-            },
-            monitor: monitor
+            windowTitle: window.get_title() || '',
+            pid: window.get_pid(),
+            xid: window.get_xid(),
+            role: window.get_role() || '',
+            frameRect: JSON.stringify(window.get_frame_rect()),
+            outerRect: JSON.stringify(window.get_outer_rect()),
+            monitor: window.get_monitor()
         };
-        this.#daemon('activeWindowChanged', windowInfo);
-        // const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys "${wmClass}"`;
-        // try {
-        //     const subprocess = new Gio.Subprocess({
-        //         argv: ['/bin/bash', '-c', command],
-        //         flags: Gio.SubprocessFlags.NONE,
-        //     });
-        //     subprocess.init(null);
-        // } catch (error) {
-        //     logError(error, 'Failed to execute test command');
-        // }
-        // if (wmClass.toLowerCase().includes('chrome') || wmClass.toLowerCase().includes('chromium')) {
-        //     this.#checkChromeTab();
-        //     // this.#logToFile('Chrome detected, pinging daemon...');
-        //     // this.#pingDaemon();
-        // }
+        
+        this.#callDaemonAsSubprocess('ping', {});
     }
 
-    // #pingDaemon() {
-    //     try {
-    //         const client = new Gio.SocketClient();
-    //         const address = new Gio.UnixSocketAddress({ path: '/run/automatelinux/automatelinux-daemon.sock' });
-    //         client.connect_async(address, null, (client, res) => {  // Change GLib.PRIORITY_DEFAULT to null
-    //             try {
-    //                 const connection = client.connect_finish(res);
-    //                 const out = connection.get_output_stream();
-    //                 const dout = new Gio.DataOutputStream({ base_stream: out });
-    //                 // dout.put_string('ping\n', null);
-    //                 dout.put_string(JSON.stringify({command: 'ping'}) + '\n', null);
-    //                 dout.flush(null);
-    //                 const input = connection.get_input_stream();
-    //                 const din = new Gio.DataInputStream({ base_stream: input });
-    //                 const [line] = din.read_line_utf8(null);
-    //                 this.#logToFile(`Daemon replied: ${line}`);
-    //             } catch (e) {
-    //                 this.#logToFile(`Socket error: ${e}`);
-    //             }
-    //         });
-    //     } catch (e) {
-    //         this.#logToFile(`Failed: ${e.message}`);
-    //         logError(e, 'Socket operation failed');
-    //     }
-    // }
-
-    #daemon(command, params = {}) {
+    #callDaemonAsSubprocess(command, params = {}) {
         try {
-            const client = new Gio.SocketClient();
-            const address = new Gio.UnixSocketAddress({ path: '/run/automatelinux/automatelinux-daemon.sock' });
-            client.connect_async(address, null, (client, res) => {
-                try {
-                    const connection = client.connect_finish(res);
-                    const out = connection.get_output_stream();
-                    const dout = new Gio.DataOutputStream({ base_stream: out });
-                    const commandObj = { command: command, ...params };
-                    dout.put_string(JSON.stringify(commandObj) + '\n', null);
-                    dout.flush(null);
-                    const input = connection.get_input_stream();
-                    const din = new Gio.DataInputStream({ base_stream: input });
-                    const [line] = din.read_line_utf8(null);
-                    // this.#logToFile(`Daemon (${command}) replied: ${line}`);
-                } catch (e) {
-                    // this.#logToFile(`Socket error: ${e}`);
-                }
-            });
-        } catch (e) {
-            // this.#logToFile(`Failed to connect to daemon: ${e.message}`);
-            logError(e, 'Socket operation failed');
-        }
-    }
+            const daemonPath = '/home/yaniv/coding/automateLinux/daemon/main';
+            let argv = [daemonPath, 'send', command];
 
-    #checkChromeTab() {
-        try {
-            console.log('Checking Chrome tab...');
-            const cmd = `curl -s http://localhost:9222/json | jq -r '.[] | select(.type=="page") | .url' | head -1`;
+            for (const key in params) {
+                argv.push(`--${key}`);
+                argv.push(String(params[key]));
+            }
+            
+            _log(`Executing: ${argv.join(' ')}`);
+
             const subprocess = new Gio.Subprocess({
-                argv: ['/bin/bash', '-c', cmd],
-                flags: Gio.SubprocessFlags.STDOUT_PIPE,
+                argv: argv,
+                flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
             });
             subprocess.init(null);
-            subprocess.wait_async(null, (proc, result) => {
+
+            subprocess.communicate_utf8_async(null, null, (proc, res) => {
                 try {
-                    proc.wait_finish(result);
-                    const stdout = proc.get_stdout_pipe();
-                    const reader = new Gio.DataInputStream({
-                        base_stream: stdout,
-                    });
-                    const [line] = reader.read_line_utf8(null);
-                    console.log('Chrome tab URL:', line);
-                    if (line && line.trim().length > 0 && line.includes('chatgpt.com')) {
-                        console.log('ChatGPT tab found:', line);
-                        // this.#logToFile('ChatGPT tab found: ' + line);
-                        this.#chatGpt();
-                    } else if (line) {
-                        console.log('Active tab is not ChatGPT:', line);
-                    } else {
-                        console.log('No active page tabs found');
+                    const [ok, stdout, stderr] = proc.communicate_utf8_finish(res);
+                    if (!ok) {
+                        _log(`Subprocess failed. Stderr: ${stderr.trim()}`);
+                        return;
+                    }
+                    _log(`Subprocess success. Stdout: ${stdout.trim()}`);
+                    if (stderr) {
+                         _log(`Subprocess Stderr: ${stderr.trim()}`);
                     }
                 } catch (e) {
-                    console.warn('Failed to read Chrome tab URL:', e);
+                    _log(`Error communicating with subprocess: ${e.message}`);
                 }
             });
-        } catch (error) {
-            console.warn('Chrome debugging not available:', error);
-        }
-    }    
-    #logToFile(message) {
-        try {
-            const dataDir = '/home/yaniv/coding/automateLinux/data';
-            const file = Gio.File.new_for_path(`${dataDir}/chrome.log`);
-            const timestamp = new Date().toISOString();
-            const logEntry = `[${timestamp}] ${message}\n`;
-            const outputStream = file.append_to(Gio.FileCreateFlags.NONE, null);
-            const dataStream = new Gio.DataOutputStream({ base_stream: outputStream });
-            dataStream.put_string(logEntry, null);
-            dataStream.flush(null);
-            dataStream.close(null);
-            outputStream.close(null);
-        } catch (error) {
-            console.warn('Failed to log to file:', error);
+
+        } catch (e) {
+            _log(`Error creating subprocess: ${e.message}`);
         }
     }
-    #chatGpt() {
-        try {
-            // const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI`;
-            let command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys keyH keyI backspace backspace`;
-            const subprocess = new Gio.Subprocess({
-                argv: ['/bin/bash', '-c', command],
-                flags: Gio.SubprocessFlags.NONE,
-            });
-            // subprocess.init(null);
-            // command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys backspace backspace`;
-            // subprocess = new Gio.Subprocess({
-            //     argv: ['/bin/bash', '-c', command],
-            //     flags: Gio.SubprocessFlags.NONE,
-            // });
-            // subprocess.init(null);
-        } catch (error) {
-            logError(error, 'Failed to send keys to ChatGPT');
-        }
-    }
-}   
+}

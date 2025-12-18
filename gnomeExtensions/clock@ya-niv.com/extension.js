@@ -41,12 +41,15 @@ export default class ClockExtension extends Extension {
         if (storedPosX !== null && storedPosY !== null && storedPosX !== "" && storedPosY !== "") {
             posX = parseInt(storedPosX.trim());
             posY = parseInt(storedPosY.trim());
-            this._logError(`Loaded position: x=${posX}, y=${posY}`);
+            this._log(`Loaded position: x=${posX}, y=${posY}`);
         } else {
-            this._logError("No stored position found, using default.");
+            this._log("No stored position found, using default.");
         }
 
-        this._label.set_position(posX, posY);
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            this._label.set_position(posX, posY);
+            return GLib.SOURCE_REMOVE;
+        });
 
         this._updateClock();
         
@@ -125,6 +128,10 @@ export default class ClockExtension extends Extension {
         });
     }
 
+    _log(message) {
+        console.log(`[ClockExtension] ${message}`);
+    }
+
     _logError(message) {
         console.error(`[ClockExtension] ${message}`);
     }
@@ -136,14 +143,15 @@ export default class ClockExtension extends Extension {
         }
 
         try {
+            const decoder = new TextDecoder('utf-8');
             let [res, stdout, stderr, exit_status] = GLib.spawn_command_line_sync(commandLine);
             
             if (exit_status !== 0) {
-                this._logError(`Daemon command failed: ${commandLine}\nStderr: ${stderr.toString()}`);
+                this._logError(`Daemon command failed: ${commandLine}\nStderr: ${decoder.decode(stderr)}`);
                 return null;
             }
 
-            return stdout.toString().trim();
+            return decoder.decode(stdout).trim();
         } catch (e) {
             this._logError(`Exception running daemon command: ${e.message}\nCommand: ${commandLine}`);
             return null;

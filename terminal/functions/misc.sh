@@ -105,6 +105,11 @@ makeVscePackage(){
 }
 
 geminiFree(){
-    gemini --model gemini-2.5-flash
+    gemini --model gemini-2.5-flash "$@"
 }
 export -f makeVscePackage
+
+j (){
+    journalctl /usr/bin/gnome-shell -n 100 --no-pager
+}
+export -f j

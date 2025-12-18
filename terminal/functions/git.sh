@@ -33,4 +33,16 @@ gitCheckoutLastFile(){
 }
 export -f gitCheckoutLastFile
 
+gitDiffFile(){
+    if [ "$#" -ne 3 ]; then
+        echo "Usage: gitDiffFile <hash1> <hash2> <file_path>"
+        return 1
+    fi
+    git --no-pager diff -U999 "$1" "$2" -- "$3"
+}
+export -f gitDiffFile
+
+
+
+
 

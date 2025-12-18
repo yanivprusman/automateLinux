@@ -6,11 +6,13 @@ bind -x '"\C-n":"gnome-terminal --tab "'
 doCdForward() {
     cd $(daemon send cdForward --tty "$AUTOMATE_LINUX_TTY_NUMBER")
     echo -ne "\033[2K\033[1A\033[2K"
+    history -d -1
 }
 bind -s '"\e[1;5B": "doCdForward\n"' >/dev/null
 # control+up    backward a directory
 doCdBack() {
     cd $(daemon send cdBackward --tty "$AUTOMATE_LINUX_TTY_NUMBER")
     echo -ne "\033[2K\033[1A\033[2K"
+    history -d -1
 }
 bind -s '"\e[1;5A": "doCdBack\n"' >/dev/null

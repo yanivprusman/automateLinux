@@ -44,7 +44,7 @@ gitCheckoutLastFile() {
         commit="$1"
         if [ -n "$gitPrintChangesFileName" ]; then
             file="$gitPrintChangesFileName"
-            echo "Defaulting to file: '$file' from previous gitPrintChanges call."
+            # echo "Defaulting to file: '$file' from previous gitPrintChanges call."
         else
             file="" # No default, proceed to interactive selection
         fi

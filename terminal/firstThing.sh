@@ -35,3 +35,10 @@ if [ ! -d "$AUTOMATE_LINUX_DATA_DIR" ]; then
 fi
 echo $AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR>$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE
 echo $AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR>$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE_BACKGROUND
+
+# Ensure geminiSessions.sh exists and source it
+if [ ! -f "${AUTOMATE_LINUX_DATA_DIR}geminiSessions.sh" ]; then
+    touch "${AUTOMATE_LINUX_DATA_DIR}geminiSessions.sh"
+fi
+source "${AUTOMATE_LINUX_DATA_DIR}geminiSessions.sh"
+

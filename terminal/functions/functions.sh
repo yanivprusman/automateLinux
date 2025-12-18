@@ -10,3 +10,4 @@
 . $(theRealPath db.sh)
 . $(theRealPath git.sh)
 . $(theRealPath log.sh)
+. $(theRealPath gemini.sh)

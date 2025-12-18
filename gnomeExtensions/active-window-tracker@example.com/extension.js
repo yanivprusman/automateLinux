@@ -46,7 +46,35 @@ export default class ActiveWindowTracker {
             return;
         }
         const wmClass = window.get_wm_class() || 'unknown';
-        this.#daemon('activeWindowChanged', { window  });
+        const windowTitle = window.get_title() || '';
+        const pid = window.get_pid();
+        const xid = window.get_xid();
+        const role = window.get_role() || '';
+        const frameRect = window.get_frame_rect();
+        const outerRect = window.get_outer_rect();
+        const monitor = window.get_monitor();
+
+        const windowInfo = {
+            wmClass: wmClass,
+            windowTitle: windowTitle,
+            pid: pid,
+            xid: xid,
+            role: role,
+            frameRect: {
+                x: frameRect.x,
+                y: frameRect.y,
+                width: frameRect.width,
+                height: frameRect.height
+            },
+            outerRect: {
+                x: outerRect.x,
+                y: outerRect.y,
+                width: outerRect.width,
+                height: outerRect.height
+            },
+            monitor: monitor
+        };
+        this.#daemon('activeWindowChanged', windowInfo);
         // const command = `/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys "${wmClass}"`;
         // try {
         //     const subprocess = new Gio.Subprocess({

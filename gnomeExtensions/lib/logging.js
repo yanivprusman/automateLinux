@@ -7,6 +7,17 @@ export class Logger {
     constructor(logFilePath, enableLogging = true) {
         this._logFilePath = logFilePath;
         this._enableLogging = enableLogging;
+
+        // Ensure the log directory exists
+        try {
+            const file = Gio.File.new_for_path(this._logFilePath);
+            const parent = file.get_parent();
+            if (parent && !parent.query_exists(null)) {
+                parent.make_directory_with_parents(null);
+            }
+        } catch (e) {
+            console.error(`Failed to create log directory for '${this._logFilePath}': ${e.message}`);
+        }
     }
 
     get isEnabled() {

@@ -29,13 +29,13 @@ The daemon is a C++ application built using CMake and Make. It can operate as a 
 *   **Running the Daemon (Server Mode)**:
     The daemon is designed to run as a systemd service (`daemon.service`). The `build.sh` script typically restarts this service upon successful compilation.
 *   **Sending Commands to the Daemon (Client Mode)**:
-    The daemon executable can act as a client to send JSON commands to a running daemon instance via its UNIX socket.
+    The `daemon` executable is available in the system's PATH and can act as a client to send JSON commands to a running daemon instance via its UNIX socket.
     ```bash
     # Example: Send a 'ping' command
-    ./daemon/main send ping
+    daemon send ping
 
     # Example: Send a command with arguments
-    ./daemon/main send setKeyboard --keyboardName Code
+    daemon send setKeyboard --keyboardName Code
     ```
     Commands are parsed from command-line arguments using a `--key value` format.
 

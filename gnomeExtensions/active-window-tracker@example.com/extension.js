@@ -1,9 +1,9 @@
 import Gio from 'gi://Gio';
 import Shell from 'gi://Shell';
 import GLib from 'gi://GLib';
-import { Logger } from '../lib/logging.js';
+import { Logger } from 'file:///home/yaniv/coding/automateLinux/gnomeExtensions/lib/logging.js';
+import { DaemonConnector } from 'file:///home/yaniv/coding/automateLinux/gnomeExtensions/lib/daemon.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
-import { DaemonConnector } from '../lib/daemon.js';
 
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
 const daemon_unix_domain_socket_path = '/run/automatelinux/automatelinux-daemon.sock';
@@ -12,9 +12,9 @@ export default class ActiveWindowTracker extends Extension {
     #signalId;
     #logger;
     #daemon;
-
+    shouldLog = false;
     enable() {
-        this.#logger = new Logger(LOG_FILE_PATH, true);
+        this.#logger = new Logger(LOG_FILE_PATH, this.shouldLog);
         this.#daemon = new DaemonConnector(daemon_unix_domain_socket_path, this.#logger);
         this.#windowTracker = Shell.WindowTracker.get_default();
         this.#signalId = global.display.connect('notify::focus-window',
@@ -33,7 +33,10 @@ export default class ActiveWindowTracker extends Extension {
 
     #onActiveWindowChanged() {
         const window = global.display.focus_window;
-        if (!window) return;
+        if (!window || typeof window.get_wm_class !== 'function' || typeof window.get_title !== 'function' || typeof window.get_pid !== 'function' || typeof window.get_xid !== 'function' || typeof window.get_role !== 'function' || typeof window.get_frame_rect !== 'function' || typeof window.get_outer_rect !== 'function' || typeof window.get_monitor !== 'function') {
+            this.#logger.log('Active window is not a valid window object or missing properties, skipping update.');
+            return;
+        }
 
         const wmClass = window.get_wm_class() || 'unknown';
         

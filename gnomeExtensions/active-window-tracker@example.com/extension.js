@@ -44,6 +44,7 @@ export default class ActiveWindowTracker extends Extension {
             wmClass: wmClass,
             windowTitle: window.get_title() || '',
             pid: String(window.get_pid()),
+            xid: String(window.get_xid()),
         };
         
         this.#daemon.connectAndSendMessage(windowInfo);

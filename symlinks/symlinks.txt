@@ -4,6 +4,7 @@ ln -s /home/yaniv/coding/automateLinux/bashrc/bashrc ~/.bashrc
 ln -s /home/yaniv/.local/share/applications /home/yaniv/coding/automateLinux/applications
 ln -sf /home/yaniv/coding/automateLinux/daemon/daemon.service /etc/systemd/system
 ln -s /home/yaniv/coding/automateLinux/gnomeExtensions/clock@ya-niv.com ~/.local/share/gnome-shell/extensions/clock@ya-niv.com
+ln -s /home/yaniv/coding/automateLinux/gnomeExtensions/lib ~/.local/share/gnome-shell/extensions/lib
 ln -s /home/yaniv/coding/automateLinux/terminal/tmux.conf ~/.tmux.conf
 # must ont use links not working: 
 # ln -s /home/yaniv/coding/automateLinux/desktop/ /home/yaniv/Desktop

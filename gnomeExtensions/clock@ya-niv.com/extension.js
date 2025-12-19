@@ -35,7 +35,7 @@ export default class ClockExtension extends Extension {
 
             // Load position from daemon
             let x = 50, y = 50; // Default position
-            const response = await this.#daemon.connectAndSendMessage({ command: 'getClockLocation' });
+            const response = await this.#daemon.connectAndSendMessage({ command: 'get', key: 'clockLocation' });
             if (response) {
                 try {
                     const pos = JSON.parse(response);
@@ -94,7 +94,7 @@ export default class ClockExtension extends Extension {
                 const x = Math.round(this.#label.get_x());
                 const y = Math.round(this.#label.get_y());
                 this.#logger.log(`Drag end. Saving position: ${x}, ${y}`);
-                this.#daemon.connectAndSendMessage({ command: 'setClockLocation', x, y });
+                this.#daemon.connectAndSendMessage({ command: 'set', key: 'clockLocation', value: JSON.stringify({ x, y }) });
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;

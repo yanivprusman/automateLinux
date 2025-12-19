@@ -1,13 +1,42 @@
 gitCompareCommit(){
-    if [ "$#" -ne 2 ]; then
-        echo "Usage: gitCompareCommit <commit1> <commit2>"
-        return 1
-    fi
-
-    local commit1="$1"
-    local commit2="$2"
+    local commit1=""
+    local commit2=""
+    local specific_file=""
     local YELLOW='\033[0;33m'
     local NC='\033[0m' # No Color
+
+    # Parse arguments
+    while (( "$#" )); do
+        case "$1" in
+            -f)
+                if [ -n "$2" ] && [[ ! "$2" =~ ^- ]]; then
+                    specific_file="$2"
+                    shift 2
+                else
+                    echo "Error: -f requires a file path."
+                    echo "Usage: gitCompareCommit <commit1> <commit2> [-f <file_path>]"
+                    return 1
+                fi
+                ;;
+            *)
+                if [ -z "$commit1" ]; then
+                    commit1="$1"
+                elif [ -z "$commit2" ]; then
+                    commit2="$1"
+                else
+                    echo "Error: Too many arguments."
+                    echo "Usage: gitCompareCommit <commit1> <commit2> [-f <file_path>]"
+                    return 1
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    if [ -z "$commit1" ] || [ -z "$commit2" ]; then
+        echo "Usage: gitCompareCommit <commit1> <commit2> [-f <file_path>]"
+        return 1
+    fi
 
     local is_commit1_valid=false
     if git rev-parse --verify "$commit1"^{commit} >/dev/null 2>&1; then
@@ -31,18 +60,25 @@ gitCompareCommit(){
         return 1
     fi
 
-    local files_changed=$(git diff --name-only "$commit1" "$commit2")
-    local num_files=$(echo "$files_changed" | wc -l)
+    # Only show file list if no specific file is requested
+    if [ -z "$specific_file" ]; then
+        local files_changed=$(git diff --name-only "$commit1" "$commit2")
+        local num_files=$(echo "$files_changed" | wc -l)
 
-    echo -e "${YELLOW}$num_files Files changed:${NC}"
-    if [ -n "$files_changed" ]; then
-        echo "$files_changed" | while IFS= read -r file; do
-            printf "${YELLOW}%s${NC}\n" "$file"
-        done
+        echo -e "${YELLOW}$num_files Files changed:${NC}"
+        if [ -n "$files_changed" ]; then
+            echo "$files_changed" | while IFS= read -r file; do
+                printf "${YELLOW}%s${NC}\n" "$file"
+            done
+        fi
     fi
 
-    echo -e "${YELLOW}Diff between $commit1 and $commit2:${NC}"
-    git --no-pager diff -U999 "$commit1" "$commit2"
+    echo -e "${YELLOW}Diff between $commit1 and $commit2: ${specific_file:+($specific_file)}${NC}"
+    if [ -n "$specific_file" ]; then
+        git --no-pager diff -U999 "$commit1" "$commit2" -- "$specific_file"
+    else
+        git --no-pager diff -U999 "$commit1" "$commit2"
+    fi
 }
 export -f gitCompareCommit
 

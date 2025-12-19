@@ -82,6 +82,7 @@ export -f gitm
 gitPrintChanges(){
     gitPrintChangesFileName="$@"
     git --no-pager log --pretty=format:'%h %ad %s' --date=short -- name-only "$@" 
+    echo
 }
 export -f gitPrintChanges
 

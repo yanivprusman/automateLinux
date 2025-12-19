@@ -16,7 +16,7 @@ const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'auto
 const shouldLog = false;
 
 export default class ClockExtension extends Extension {
-    constructor(metadata) {dsfgdfsg
+    constructor(metadata) {
         super(metadata);
         this.logger = new Logger(LOG_FILE_PATH, shouldLog);
         this.daemon = new DaemonConnector(DAEMON_SOCKET_PATH, this.logger);
@@ -30,8 +30,8 @@ export default class ClockExtension extends Extension {
     }
 
     async enable() {
-        console.log('ClockExtension enable() called asdf');
         this.logger.log('ClockExtension.enable() called');
+        this.logger.log(`Extension path: ${this.path}`);
         try {
             this._label = new St.Label({
                 text: '00:00',

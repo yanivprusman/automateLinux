@@ -11,17 +11,24 @@ const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'auto
 const daemon_unix_domain_socket_path = '/run/automatelinux/automatelinux-daemon.sock';
 export default class ClockExtension extends Extension {
     enable() {
-        this.appendToLog('Clock Extension Enabled');
+        this._enableLogging = false;
+        this.log('Clock Extension Enabled');
         this.connectAndSendMessage({ command: 'ping' });
     }
 
     disable() {
         const timestamp = new Date().toISOString();
-        this.appendToLog(`Clock Extension Disabled at ${timestamp}`);
+        this.log(`Clock Extension Disabled at ${timestamp}`);
+    }
+
+    log(text) {
+        if (this._enableLogging) {
+            this.appendToLog(text);
+        }
     }
 
     async connectAndSendMessage(command) {
-        this.appendToLog(`Attempting to send command to daemon: ${JSON.stringify(command)}`);
+        this.log(`Attempting to send command to daemon: ${JSON.stringify(command)}`);
         const client = new Gio.SocketClient();
         let conn;
         try {
@@ -51,7 +58,7 @@ export default class ClockExtension extends Extension {
             });
 
             const jsonMessage = JSON.stringify(command);
-            this.appendToLog(`Sending: ${jsonMessage}`);
+            this.log(`Sending: ${jsonMessage}`);
             const bytes = new TextEncoder().encode(jsonMessage + '\n'); // Add newline for line-based protocols
             await new Promise((resolve, reject) => {
                 dataOutputStream.write_bytes_async(
@@ -84,18 +91,18 @@ export default class ClockExtension extends Extension {
             });
 
 
-            this.appendToLog('Message sent, waiting for response...');
+            this.log('Message sent, waiting for response...');
 
             const line = await this._read_line_async(dataInputStream, cancellable);
 
             if (line !== null) {
-                this.appendToLog(`Daemon response: ${line.trim()}`);
+                this.log(`Daemon response: ${line.trim()}`);
             } else {
-                this.appendToLog('No response from daemon or connection closed.');
+                this.log('No response from daemon or connection closed.');
             }
 
         } catch (e) {
-            this.appendToLog(`Error communicating with daemon: ${e.message}`);
+            this.log(`Error communicating with daemon: ${e.message}`);
         } finally {
             if (conn) {
                 conn.close(null);

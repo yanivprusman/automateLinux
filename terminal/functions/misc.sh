@@ -113,3 +113,9 @@ j (){
     journalctl /usr/bin/gnome-shell -n 100 --no-pager
 }
 export -f j
+
+updateGeminiVersion(){
+    sudo npm install -g @google/gemini-cli
+    gemini -v
+}
+export -f updateGeminiVersion

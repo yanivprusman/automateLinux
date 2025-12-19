@@ -39,6 +39,22 @@ The daemon is a C++ application built using CMake and Make. It can operate as a 
     ```
     Commands are parsed from command-line arguments using a `--key value` format.
 
+*   **Discovering Available Commands**:
+    Before adding new functionality, it's crucial to check for existing daemon commands to avoid errors like `Unknown command`. The C++ source code is the definitive source of truth.
+
+    *   **Primary Source**: The `COMMAND_REGISTRY` array in `daemon/src/mainCommand.cpp` provides a complete list of all registered commands and their required arguments. For example:
+        ```cpp
+        const CommandSignature COMMAND_REGISTRY[] = {
+            // ...
+            CommandSignature(COMMAND_UPSERT_ENTRY, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
+            CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY}),
+            // ...
+        };
+        ```
+    *   **Command Definitions**: The string literals for commands (e.g., `COMMAND_UPSERT_ENTRY`) are defined as macros in `daemon/include/common.h`. This file is useful for cross-referencing macro names with their string values.
+
+    By consulting these files, you can construct valid JSON commands to send to the daemon. For instance, to use `upsertEntry`, you know you must provide a `key` and a `value`.
+
 ### Terminal Environment
 
 The terminal customizations are applied by sourcing several Bash scripts.

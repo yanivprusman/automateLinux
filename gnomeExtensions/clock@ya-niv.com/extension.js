@@ -35,20 +35,25 @@ export default class ClockExtension extends Extension {
 
             // Load position from daemon
             let x = 50, y = 50; // Default position
-            const response = await this.#daemon.connectAndSendMessage({ command: 'get', key: 'clockLocation' });
+            let positionLoaded = false;
+            const response = await this.#daemon.connectAndSendMessage({ command: 'getEntry', key: 'clockLocation' });
             if (response) {
                 try {
                     const pos = JSON.parse(response);
                     if (pos.x !== undefined && pos.y !== undefined) {
                         x = pos.x;
                         y = pos.y;
+                        positionLoaded = true;
                         this.#logger.log(`Loaded position from daemon: ${x}, ${y}`);
                     }
                 } catch (e) {
                     this.#logger.log(`Failed to parse position from daemon: ${e}`);
                 }
-            } else {
-                this.#logger.log('No position found on daemon, using default.');
+            }
+            
+            if (!positionLoaded) {
+                this.#logger.log('No position found on daemon, using default and saving it.');
+                await this.#daemon.connectAndSendMessage({ command: 'upsertEntry', key: 'clockLocation', value: JSON.stringify({ x, y }) });
             }
             
             this.#label.set_position(x, y);
@@ -94,7 +99,7 @@ export default class ClockExtension extends Extension {
                 const x = Math.round(this.#label.get_x());
                 const y = Math.round(this.#label.get_y());
                 this.#logger.log(`Drag end. Saving position: ${x}, ${y}`);
-                this.#daemon.connectAndSendMessage({ command: 'set', key: 'clockLocation', value: JSON.stringify({ x, y }) });
+                this.#daemon.connectAndSendMessage({ command: 'upsertEntry', key: 'clockLocation', value: JSON.stringify({ x, y }) });
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;

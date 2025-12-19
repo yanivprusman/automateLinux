@@ -45,6 +45,10 @@ export default class ActiveWindowTracker extends Extension {
             windowTitle: window.get_title() || '',
             pid: String(window.get_pid()),
             xid: String(window.get_xid()),
+            role: window.get_role() || '',
+            frameRect: JSON.stringify(window.get_frame_rect()),
+            outerRect: JSON.stringify(window.get_outer_rect()),
+            monitor: String(window.get_monitor())
         };
         
         this.#daemon.connectAndSendMessage(windowInfo);

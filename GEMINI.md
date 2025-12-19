@@ -9,7 +9,10 @@ The `automateLinux` project aims to provide a highly personalized and automated 
 *   **C++ Daemon (`daemon/`)**: A central background service responsible for system-level tasks. It discovers and manages input device paths (keyboard, mouse), maintains a key-value store (`KVTable`), handles directory history, and facilitates inter-process communication via UNIX domain sockets. It exposes a command interface for clients.
 *   **Terminal Environment Customization (`terminal/`)**: A modular collection of Bash scripts that extensively customize the user's shell environment. This includes setting environment variables, defining aliases and functions, configuring key bindings, managing the prompt (`PS1`, `PROMPT_COMMAND`), and enabling dynamic behaviors within the terminal.
 *   **Input Event Handling (`evsieve/`)**: Utilizes the `evsieve` tool to intercept, remap, and act upon input events from various devices. This allows for complex key rebindings, execution of shell commands based on input patterns, and other advanced input-related automations.
-*   **Desktop Integration (`applications/`, `autostart/`, `desktop/`, `gnomeExtensions/`)**: Contains `.desktop` files for application launchers, autostart configurations, and custom Gnome Shell extensions to integrate automations directly into the graphical desktop environment.
+*   **GNOME Shell Extensions (`gnomeExtensions/`)**: A collection of extensions that provide desktop integration. These extensions leverage a shared library (`gnomeExtensions/lib/`) for common functionality:
+    *   `logging.js`: Provides a standardized logging class for consistent log output across all extensions.
+    *   `daemon.js`: Provides a `DaemonConnector` class that centralizes the logic for communicating with the C++ daemon via its UNIX domain socket.
+*   **Desktop Integration (`applications/`, `autostart/`, `desktop/`)**: Contains `.desktop` files for application launchers, autostart configurations, and custom Gnome Shell extensions to integrate automations directly into the graphical desktop environment.
 
 ## Building and Running
 
@@ -69,6 +72,7 @@ The terminal customizations are applied by sourcing several Bash scripts.
 ## Development Conventions
 
 *   **Modularity**: The project emphasizes modularity, particularly within the `terminal/` scripts, where concerns like aliases, functions, and environment variables are separated into distinct files.
+*   **Shared Extension Modules**: For GNOME Shell extensions, common functionality (like logging and daemon communication) is centralized in shared modules within `gnomeExtensions/lib/` to promote code reuse and simplify maintenance.
 *   **Environment Variables**: Extensive use of `AUTOMATE_LINUX_` prefixed environment variables for managing paths, configurations, and inter-script communication.
 *   **Daemon-Client Architecture**: A clear client-server model for system services, leveraging UNIX sockets for efficient and secure inter-process communication.
 *   **Input Handling**: A significant focus on intercepting and manipulating input events, utilizing both the C++ daemon's input device discovery and `evsieve` for event remapping.

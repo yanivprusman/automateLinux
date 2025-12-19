@@ -102,6 +102,14 @@ gitDiffFile(){
 }
 export -f gitDiffFile
 
+gitShowFileAtCommit(){
+    if [ "$#" -ne 2 ]; then
+        echo "Usage: gitShowFileAtCommit <commit_hash> <file_path>"
+        return 1
+    fi
+    git --no-pager show "$1":"$2"
+}
+export -f gitShowFileAtCommit
 
 
 

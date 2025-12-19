@@ -4,137 +4,135 @@ import St from 'gi://St';
 import GLib from 'gi://GLib';
 import Clutter from 'gi://Clutter';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
-import Gio from 'gi://Gio';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Logger } from '../lib/logging.js';
+import { DaemonConnector } from '../lib/daemon.js';
 
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
-const daemon_unix_domain_socket_path = '/run/automatelinux/automatelinux-daemon.sock';
+const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
+
 export default class ClockExtension extends Extension {
-    enable() {
-        this._enableLogging = false;
-        this.log('Clock Extension Enabled');
-        this.connectAndSendMessage({ command: 'ping' });
-    }
+    #label = null;
+    #timeoutId = 0;
+    #logger;
+    #daemon;
 
-    disable() {
-        const timestamp = new Date().toISOString();
-        this.log(`Clock Extension Disabled at ${timestamp}`);
-    }
+    async enable() {
+        this.#logger = new Logger(LOG_FILE_PATH, true);
+        this.#daemon = new DaemonConnector(DAEMON_SOCKET_PATH, this.#logger);
+        this.#logger.log('ClockExtension enabling...');
 
-    log(text) {
-        if (this._enableLogging) {
-            this.appendToLog(text);
-        }
-    }
-
-    async connectAndSendMessage(command) {
-        this.log(`Attempting to send command to daemon: ${JSON.stringify(command)}`);
-        const client = new Gio.SocketClient();
-        let conn;
         try {
-            const cancellable = new Gio.Cancellable();
-            conn = await new Promise((resolve, reject) => {
-                client.connect_async(
-                    new Gio.UnixSocketAddress({ path: daemon_unix_domain_socket_path }),
-                    cancellable,
-                    (source, res) => {
-                        try {
-                            resolve(client.connect_finish(res));
-                        } catch (e) {
-                            reject(e);
-                        }
+            this.#label = new St.Label({
+                text: '00:00',
+                style_class: 'clock-label',
+                reactive: true,
+                track_hover: true
+            });
+            this.#logger.log('Label created');
+
+            Main.uiGroup.add_child(this.#label);
+
+            // Load position from daemon
+            let x = 50, y = 50; // Default position
+            const response = await this.#daemon.connectAndSendMessage({ command: 'getClockLocation' });
+            if (response) {
+                try {
+                    const pos = JSON.parse(response);
+                    if (pos.x !== undefined && pos.y !== undefined) {
+                        x = pos.x;
+                        y = pos.y;
+                        this.#logger.log(`Loaded position from daemon: ${x}, ${y}`);
                     }
-                );
-            });
-
-            const outputStream = conn.get_output_stream();
-            const dataOutputStream = new Gio.DataOutputStream({
-                base_stream: outputStream,
-            });
-
-            const inputStream = conn.get_input_stream();
-            const dataInputStream = new Gio.DataInputStream({
-                base_stream: inputStream,
-            });
-
-            const jsonMessage = JSON.stringify(command);
-            this.log(`Sending: ${jsonMessage}`);
-            const bytes = new TextEncoder().encode(jsonMessage + '\n'); // Add newline for line-based protocols
-            await new Promise((resolve, reject) => {
-                dataOutputStream.write_bytes_async(
-                    new GLib.Bytes(bytes),
-                    GLib.PRIORITY_DEFAULT,
-                    cancellable,
-                    (source, res) => {
-                        try {
-                            dataOutputStream.write_bytes_finish(res);
-                            resolve();
-                        } catch (e) {
-                            reject(e);
-                        }
-                    }
-                );
-            });
-            await new Promise((resolve, reject) => {
-                dataOutputStream.flush_async(
-                    GLib.PRIORITY_DEFAULT,
-                    cancellable,
-                    (source, res) => {
-                        try {
-                            dataOutputStream.flush_finish(res);
-                            resolve();
-                        } catch (e) {
-                            reject(e);
-                        }
-                    }
-                );
-            });
-
-
-            this.log('Message sent, waiting for response...');
-
-            const line = await this._read_line_async(dataInputStream, cancellable);
-
-            if (line !== null) {
-                this.log(`Daemon response: ${line.trim()}`);
+                } catch (e) {
+                    this.#logger.log(`Failed to parse position from daemon: ${e}`);
+                }
             } else {
-                this.log('No response from daemon or connection closed.');
+                this.#logger.log('No position found on daemon, using default.');
             }
+            
+            this.#label.set_position(x, y);
+            this.#logger.log(`Label positioned at ${x},${y}`);
 
-        } catch (e) {
-            this.log(`Error communicating with daemon: ${e.message}`);
-        } finally {
-            if (conn) {
-                conn.close(null);
-            }
-        }
-    }
-    
-    // Helper to read a line asynchronously
-    _read_line_async(dataInputStream, cancellable) {
-        return new Promise((resolve, reject) => {
-            dataInputStream.read_line_async(
+            this._updateClock();
+            
+            this.#timeoutId = GLib.timeout_add_seconds(
                 GLib.PRIORITY_DEFAULT,
-                cancellable,
-                (source, res) => {
-                    try {
-                        const [buffer, length] = source.read_line_finish_utf8(res);
-                        resolve(buffer); // buffer contains the line, or null at EOF
-                    } catch (e) {
-                        reject(e);
-                    }
+                1,
+                () => {
+                    this._updateClock();
+                    return GLib.SOURCE_CONTINUE; // Keep the timer running
                 }
             );
+            this.#logger.log('Clock update timer started');
+
+            this._setupDragging();
+            
+        } catch (e) {
+            this.#logger.log(`Error in enable(): ${e}. Stack: ${e.stack}`);
+        }
+    }
+
+    _setupDragging() {
+        let dragData = { dragging: false, offsetX: 0, offsetY: 0 };
+
+        this.#label.connect('button-press-event', (_, event) => {
+            if (event.get_button() === 1) {
+                this.#logger.log('Drag start.');
+                dragData.dragging = true;
+                const [stageX, stageY] = event.get_coords();
+                dragData.offsetX = stageX - this.#label.get_x();
+                dragData.offsetY = stageY - this.#label.get_y();
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
+        });
+
+        this.#label.connect('button-release-event', (_, event) => {
+            if (event.get_button() === 1 && dragData.dragging) {
+                dragData.dragging = false;
+                const x = Math.round(this.#label.get_x());
+                const y = Math.round(this.#label.get_y());
+                this.#logger.log(`Drag end. Saving position: ${x}, ${y}`);
+                this.#daemon.connectAndSendMessage({ command: 'setClockLocation', x, y });
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
+        });
+
+        this.#label.connect('motion-event', (_, event) => {
+            if (dragData.dragging) {
+                const [stageX, stageY] = event.get_coords();
+                this.#label.set_position(stageX - dragData.offsetX, stageY - dragData.offsetY);
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
         });
     }
 
-    appendToLog(text) {
-        const now = GLib.DateTime.new_now_local();
-        const timeString = now.format('%Y-%m-%d %H:%M:%S');
-        const file = Gio.File.new_for_path(LOG_FILE_PATH);
-        const stream = file.append_to(Gio.FileCreateFlags.NONE, null);
-        const bytes = new TextEncoder().encode(`[${timeString}] ${text}\n`);
-        stream.write_all(bytes, null);
-        stream.close(null);
+    disable() {
+        this.#logger.log('ClockExtension disabling...');
+        if (this.#timeoutId) {
+            GLib.source_remove(this.#timeoutId);
+            this.#timeoutId = 0;
+        }
+
+        if (this.#label) {
+            this.#label.destroy();
+            this.#label = null;
+        }
+    }
+
+    _updateClock() {
+        if (!this.#label) {
+            return;
+        }
+        
+        const t = new Date();
+        this.#label.text = t.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
     }
 }

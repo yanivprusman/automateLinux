@@ -1,6 +1,6 @@
-import { Logger } from '/home/yaniv/coding/automateLinux/gnomeExtensions/lib/logging.js';
-import { DaemonConnector } from '/home/yaniv/coding/automateLinux/gnomeExtensions/lib/daemon.js';
-import { ShellCommandExecutor } from '/home/yaniv/coding/automateLinux/gnomeExtensions/lib/shellCommand.js';
+import { Logger } from 'file:///home/yaniv/coding/automateLinux/gnomeExtensions/lib/logging.js';
+import { DaemonConnector } from 'file:///home/yaniv/coding/automateLinux/gnomeExtensions/lib/daemon.js';
+import { ShellCommandExecutor } from 'file:///home/yaniv/coding/automateLinux/gnomeExtensions/lib/shellCommand.js';
 const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
 const shouldLog = true;

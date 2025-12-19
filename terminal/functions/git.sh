@@ -1,18 +1,50 @@
-compareCommit(){
-    echo -e  "${YELLOW}Commit $1 message:"
-    git log --format=%B -n 1 $1 | sed '${/^$/d}'
-    echo -e "${YELLOW}Commit $2 message:"
-    git log --format=%B -n 1 $2 | sed '${/^$/d}'
-    echo -e "${YELLOW}$(git diff --name-only $1 $2 | wc -l) Files changed:${NC}" | sed '${/^$/d}'
-    git diff --name-only "$1" "$2" | while IFS= read -r file; do
-        echo "$(git log -1 --format="%ct" -- "$file") $file"
-    done | sort -rn | cut -d' ' -f2- | while IFS= read -r file; do
-        printf "${YELLOW}%s${NC}\n" "$file"
-    done
-    echo -e "${YELLOW}Diff between $1 and $2:"
-    git --no-pager diff -U999 $1 $2
+gitCompareCommit(){
+    if [ "$#" -ne 2 ]; then
+        echo "Usage: gitCompareCommit <commit1> <commit2>"
+        return 1
+    fi
+
+    local commit1="$1"
+    local commit2="$2"
+    local YELLOW='\033[0;33m'
+    local NC='\033[0m' # No Color
+
+    local is_commit1_valid=false
+    if git rev-parse --verify "$commit1"^{commit} >/dev/null 2>&1; then
+        is_commit1_valid=true
+        echo -e "${YELLOW}Commit $commit1 message:${NC}"
+        git log --format=%B -n 1 "$commit1" | sed '${/^$/d}'
+    else
+        echo -e "${YELLOW}Commit $commit1 message:${NC} Does not exist."
+    fi
+
+    local is_commit2_valid=false
+    if git rev-parse --verify "$commit2"^{commit} >/dev/null 2>&1; then
+        is_commit2_valid=true
+        echo -e "${YELLOW}Commit $commit2 message:${NC}"
+        git log --format=%B -n 1 "$commit2" | sed '${/^$/d}'
+    else
+        echo -e "${YELLOW}Commit $commit2 message:${NC} Does not exist."
+    fi
+
+    if ! $is_commit1_valid || ! $is_commit2_valid; then
+        return 1
+    fi
+
+    local files_changed=$(git diff --name-only "$commit1" "$commit2")
+    local num_files=$(echo "$files_changed" | wc -l)
+
+    echo -e "${YELLOW}$num_files Files changed:${NC}"
+    if [ -n "$files_changed" ]; then
+        echo "$files_changed" | while IFS= read -r file; do
+            printf "${YELLOW}%s${NC}\n" "$file"
+        done
+    fi
+
+    echo -e "${YELLOW}Diff between $commit1 and $commit2:${NC}"
+    git --no-pager diff -U999 "$commit1" "$commit2"
 }
-export -f compareCommit
+export -f gitCompareCommit
 
 gitm(){
     if ! git diff --cached --quiet; then

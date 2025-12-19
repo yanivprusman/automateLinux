@@ -7,16 +7,16 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import { Logger } from '/home/yaniv/coding/automateLinux/gnomeExtensions/lib/logging.js';
-import { DaemonConnector } from '/home/yaniv/coding/automateLinux/gnomeExtensions/lib/daemon.js';
-import { ShellCommandExecutor } from '/home/yaniv/coding/automateLinux/gnomeExtensions/lib/shellCommand.js';
+import { Logger } from '../lib/logging.js';
+import { DaemonConnector } from '../lib/daemon.js';
+import { ShellCommandExecutor } from '../lib/shellCommand.js';
 
 const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
 const shouldLog = false;
 
 export default class ClockExtension extends Extension {
-    constructor(metadata) {
+    constructor(metadata) {dsfgdfsg
         super(metadata);
         this.logger = new Logger(LOG_FILE_PATH, shouldLog);
         this.daemon = new DaemonConnector(DAEMON_SOCKET_PATH, this.logger);

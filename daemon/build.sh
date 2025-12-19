@@ -9,5 +9,6 @@ cd build
 cmake .. > /dev/null && \
 make > /dev/null && \
 echo -e "${GREEN}Build complete!${NC}" && \
-sudo systemctl restart daemon.service && \
+#  i get connect() failed: No such file or directory
+sudo setsid systemctl restart daemon.service && \
 cd ..

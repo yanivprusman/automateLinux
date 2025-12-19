@@ -5,7 +5,7 @@ std::string getTtyFromPid(pid_t pid) {
     std::string fdPath = "/proc/" + std::to_string(pid) + "/fd";
 }
 Adding Commands:
-- Add `#define COMMAND_NAME "commandName"` to `include/common.h`
+- Add `#define COMMAND_NAME "commandName"` and if needed new arguments to `include/common.h`
 - Add `CommandSignature(COMMAND_NAME, {required, args})` to `COMMAND_REGISTRY[]` in `include/common.h`
 - Create `CmdResult handleName(const json& command)` handler function in `src/mainCommand.cpp`
 - Add `{COMMAND_NAME, handleName}` to `COMMAND_HANDLERS[]` array in `src/mainCommand.cpp`

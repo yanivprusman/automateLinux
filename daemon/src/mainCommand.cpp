@@ -28,7 +28,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
     CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME}),
     CommandSignature(COMMAND_QUIT, {}),
-    CommandSignature(COMMAND_ACTIVE_WINDOW_CHANGED, {COMMAND_ARG_WM_CLASS, COMMAND_ARG_WINDOW_TITLE, COMMAND_ARG_PID, COMMAND_ARG_XID, COMMAND_ARG_ROLE, COMMAND_ARG_FRAME_RECT, COMMAND_ARG_OUTER_RECT, COMMAND_ARG_MONITOR}),
+    CommandSignature(COMMAND_ACTIVE_WINDOW_CHANGED, {COMMAND_ARG_WINDOW_TITLE, COMMAND_ARG_WM_CLASS, COMMAND_ARG_WM_INSTANCE, COMMAND_ARG_WINDOW_ID}),
 };
 
 const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
@@ -311,28 +311,11 @@ CmdResult handleQuit(const json&) {
 
 CmdResult handleActiveWindowChanged(const json& command) {
     string logMessage = "[ACTIVE_WINDOW_CHANGED] ";
-    logMessage += "wmClass: " + command[COMMAND_ARG_WM_CLASS].get<string>() + ", ";
     logMessage += "windowTitle: " + command[COMMAND_ARG_WINDOW_TITLE].get<string>() + ", ";
-    logMessage += "pid: " + std::to_string(command[COMMAND_ARG_PID].get<int>()) + ", ";
-    logMessage += "xid: " + std::to_string(command[COMMAND_ARG_XID].get<long>()) + ", ";
-    logMessage += "role: " + command[COMMAND_ARG_ROLE].get<string>() + ", ";
-    logMessage += "monitor: " + std::to_string(command[COMMAND_ARG_MONITOR].get<int>()) + "\n";
-    
-    // Log frameRect and outerRect separately as they are objects
-    const json& frameRect = command[COMMAND_ARG_FRAME_RECT];
-    logMessage += "frameRect: {x:" + std::to_string(frameRect["x"].get<int>()) + 
-                  ", y:" + std::to_string(frameRect["y"].get<int>()) + 
-                  ", width:" + std::to_string(frameRect["width"].get<int>()) + 
-                  ", height:" + std::to_string(frameRect["height"].get<int>()) + "}\n";
-
-    const json& outerRect = command[COMMAND_ARG_OUTER_RECT];
-    logMessage += "outerRect: {x:" + std::to_string(outerRect["x"].get<int>()) + 
-                  ", y:" + std::to_string(outerRect["y"].get<int>()) + 
-                  ", width:" + std::to_string(outerRect["width"].get<int>()) + 
-                  ", height:" + std::to_string(outerRect["height"].get<int>()) + "}\n";
-
+    logMessage += "wmClass: " + command[COMMAND_ARG_WM_CLASS].get<string>() + ", ";
+    logMessage += "wmInstance: " + command[COMMAND_ARG_WM_INSTANCE].get<string>() + ", ";
+    logMessage += "windowId: " + std::to_string(command[COMMAND_ARG_WINDOW_ID].get<long>()) + "\n";
     logToFile(logMessage);
-
     return CmdResult(0, "Active window info received and logged.\n");
 }
 

@@ -13,7 +13,7 @@ import { ShellCommandExecutor } from '../lib/shellCommand.js';
 
 const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
-const shouldLog = false;
+const shouldLog = false; 
 
 export default class ClockExtension extends Extension {
     constructor(metadata) {

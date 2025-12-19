@@ -39,17 +39,28 @@ export default class ClockExtension extends Extension {
                 x_align: Clutter.ActorAlign.START
             });
             this.logger.log('Label created');
-            let x = 50;
-            let y = 50;
+            let x, y;
+            const loadedPos = await this._loadPosition();
 
-            const monitorIndex = 0; // Primary monitor
-            const monitor = Main.layoutManager.monitors[monitorIndex];
-            
-            if (!monitor) {
-                this.logger.log(`Monitor ${monitorIndex} not found, falling back to (50,50)`);
+            if (loadedPos.x !== null && loadedPos.y !== null) {
+                x = loadedPos.x;
+                y = loadedPos.y;
+                this.logger.log(`Loaded position used: X=${x}, Y=${y}`);
             } else {
-                x = monitor.x + 30;
-                y = monitor.y + 30;
+                const monitorIndex = 0; // Primary monitor
+                const monitor = Main.layoutManager.monitors[monitorIndex];
+                
+                if (!monitor) {
+                    this.logger.log(`Monitor ${monitorIndex} not found, falling back to (50,50)`);
+                    x = 50;
+                    y = 50;
+                } else {
+                    x = monitor.x + 30;
+                    y = monitor.y + 30;
+                    this.logger.log(`Default position used: X=${x}, Y=${y}`);
+                }
+                // If using default, immediately save it to persist
+                this._savePosition(x, y);
             }
             
             this._label.set_position(x, y);

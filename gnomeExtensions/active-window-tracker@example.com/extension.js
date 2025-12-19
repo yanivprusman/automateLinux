@@ -40,13 +40,12 @@ export default class ActiveWindowTracker extends Extension {
             'wm-class': window.get_wm_class() || '',
             'wm-instance': window.get_wm_class_instance() || '',
             'window-id': window.get_id().toString(),
-            'app-id': app ? app.get_id() || '' : '',
-            'app-name': app ? app.get_name() || '' : '',
         };
     }
 
     #onActiveWindowChanged() {
         const windowInfo = this.#getActiveWindowInfo();
         this.logger.log(`Active window changed: ${JSON.stringify(windowInfo)}`);
+        this.daemon.sendMessage({ 'event': 'active-window-changed', 'data': windowInfo });
     }
 }

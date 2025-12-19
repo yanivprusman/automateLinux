@@ -2,10 +2,6 @@ gitCompareCommit(){
     local commit1=""
     local commit2=""
     local specific_file=""
-    local YELLOW='\033[0;33m'
-    local NC='\033[0m' # No Color
-
-    # Parse arguments
     while (( "$#" )); do
         case "$1" in
             -f)
@@ -32,12 +28,10 @@ gitCompareCommit(){
                 ;;
         esac
     done
-
     if [ -z "$commit1" ] || [ -z "$commit2" ]; then
         echo "Usage: gitCompareCommit <commit1> <commit2> [-f <file_path>]"
         return 1
     fi
-
     local is_commit1_valid=false
     if git rev-parse --verify "$commit1"^{commit} >/dev/null 2>&1; then
         is_commit1_valid=true
@@ -46,7 +40,6 @@ gitCompareCommit(){
     else
         echo -e "${YELLOW}Commit $commit1 message:${NC} Does not exist."
     fi
-
     local is_commit2_valid=false
     if git rev-parse --verify "$commit2"^{commit} >/dev/null 2>&1; then
         is_commit2_valid=true
@@ -59,12 +52,9 @@ gitCompareCommit(){
     if ! $is_commit1_valid || ! $is_commit2_valid; then
         return 1
     fi
-
-    # Only show file list if no specific file is requested
     if [ -z "$specific_file" ]; then
         local files_changed=$(git diff --name-only "$commit1" "$commit2")
         local num_files=$(echo "$files_changed" | wc -l)
-
         echo -e "${YELLOW}$num_files Files changed:${NC}"
         if [ -n "$files_changed" ]; then
             echo "$files_changed" | while IFS= read -r file; do
@@ -72,7 +62,6 @@ gitCompareCommit(){
             done
         fi
     fi
-
     echo -e "${YELLOW}Diff between $commit1 and $commit2: ${specific_file:+($specific_file)}${NC}"
     if [ -n "$specific_file" ]; then
         git --no-pager diff -U999 "$commit1" "$commit2" -- "$specific_file"
@@ -92,7 +81,7 @@ export -f gitm
 
 gitPrintChanges(){
     gitPrintChangesFileName="$@"
-    git log --pretty=format:'%h %ad %s' --date=short -- name-only "$@" 
+    git --no-pager log --pretty=format:'%h %ad %s' --date=short -- name-only "$@" 
 }
 export -f gitPrintChanges
 
@@ -162,10 +151,13 @@ gitDiffFile(){
         echo "Usage: gitDiffFile <hash1> <hash2> <file_path>"
         return 1
     fi
-    echo -e  "${YELLOW}Commit $1 message:"
-    git log --format=%B -n 1 $1 | sed '${/^$/d}'
-    echo -e "${YELLOW}Commit $2 message:"
-    git log --format=%B -n 1 $2 | sed '${/^$/d}'
+    # echo -e  "${YELLOW}Commit $1 message:"
+    # git log --format=%B -n 1 $1 | sed '${/^$/d}'
+    echo -en  "${YELLOW}"
+    git --no-pager log --pretty=format:'%h %ad %s' --date=format:'%d-%m-%Y %H:%M:%S' -n 1 "$1"
+    echo
+    git --no-pager log --pretty=format:'%h %ad %s' --date=format:'%d-%m-%Y %H:%M:%S' -n 1 "$2"
+    echo
     git --no-pager diff -U999 "$1" "$2" -- "$3"
 }
 export -f gitDiffFile

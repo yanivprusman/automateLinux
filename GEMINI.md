@@ -12,6 +12,11 @@ The `automateLinux` project aims to provide a highly personalized and automated 
 *   **GNOME Shell Extensions (`gnomeExtensions/`)**: A collection of extensions that provide desktop integration. These extensions leverage a shared library (`gnomeExtensions/lib/`) for common functionality:
     *   `logging.js`: Provides a standardized logging class for consistent log output across all extensions.
     *   `daemon.js`: Provides a `DaemonConnector` class that centralizes the logic for communicating with the C++ daemon via its UNIX domain socket.
+    *   `shellCommand.js`: Provides a `ShellCommandExecutor` class to asynchronously execute shell commands directly from extensions, used for system-level actions like shutdown.
+
+    The `clock@ya-niv.com` extension now features:
+    *   **Position Persistence**: The clock's position is saved via the C++ daemon (`KVTable`) and reloaded upon extension enablement, ensuring it retains its last-known position across sessions.
+    *   **Right-Click Menu**: A right-click context menu has been added to the clock label, offering a "Shut Down" option that directly executes a system power-off command (`/usr/bin/systemctl poweroff`).
 *   **Desktop Integration (`applications/`, `autostart/`, `desktop/`)**: Contains `.desktop` files for application launchers, autostart configurations, and custom Gnome Shell extensions to integrate automations directly into the graphical desktop environment.
 
 ## Building and Running

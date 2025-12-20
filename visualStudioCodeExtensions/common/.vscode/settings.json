@@ -1,0 +1,28 @@
+{
+  // Treat SVG files as XML
+  "files.associations": {
+    "resources/icon.svg": "plaintext"
+  },
+
+  // Hide build output but show source files
+  "files.exclude": {
+    "out": true,       // hide compiled JS files
+    "node_modules": true,
+    ".vscode": false
+  },
+
+  // Exclude build output and node_modules from search
+  "search.exclude": {
+    "out": true,
+    "node_modules": true
+  },
+
+  // Disable automatic TypeScript task detection (we use npm scripts)
+  "typescript.tsc.autoDetect": "off",
+
+  // Optional: enable auto-save for easier extension development
+  "files.autoSave": "afterDelay",
+
+  // Optional: show inline suggestions and errors for TypeScript
+  "typescript.validate.enable": true
+}

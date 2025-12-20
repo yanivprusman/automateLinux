@@ -47,6 +47,13 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.window.showTextDocument(vscode.Uri.file(filePath), { preview: false });
 			}
 		});
+
+		const treeView = vscode.window.createTreeView('activeFileView', { treeDataProvider: activeFileProvider });
+		activeFileProvider.getChildren().then(children => {
+			if (children.length > 0) {
+				treeView.reveal(children[0], { select: true, focus: true });
+			}
+		});
 	}));
 
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {

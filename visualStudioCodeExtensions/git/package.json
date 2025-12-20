@@ -40,6 +40,10 @@
       {
         "command": "git.checkoutFileFromCommit",
         "title": "Checkout File from Commit"
+      },
+      {
+        "command": "git.checkoutFileFromNextCommit",
+        "title": "Checkout File from Next Commit"
       }
     ]
   },

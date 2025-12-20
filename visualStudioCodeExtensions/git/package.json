@@ -11,8 +11,7 @@
   ],
   "activationEvents": [
     "onView:activeFileView",
-    "onCommand:git.checkoutFileFromCommit",
-    "onCommand:git.checkoutSelectedCommit"
+    "onCommand:git.checkoutFileFromCommit"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -41,50 +40,8 @@
       {
         "command": "git.checkoutFileFromCommit",
         "title": "Checkout File from Commit"
-      },
-      {
-        "command": "git.checkoutSelectedCommit",
-        "title": "Checkout Selected Commit"
-      },
-      {
-        "command": "git.checkoutAndShow",
-        "title": "Checkout and Show File"
-      },
-      {
-        "command": "git.navigateUp",
-        "title": "Navigate Up"
-      },
-      {
-        "command": "git.navigateDown",
-        "title": "Navigate Down"
       }
-    ],
-    "keybindings": [
-      {
-        "command": "git.checkoutSelectedCommit",
-        "key": "enter",
-        "when": "focusedView == activeFileView && viewItem == commitItem"
-      },
-      {
-        "command": "git.navigateUp",
-        "key": "up",
-        "when": "focusedView == activeFileView"
-      },
-      {
-        "command": "git.navigateDown",
-        "key": "down",
-        "when": "focusedView == activeFileView"
-      }
-    ],
-    "menus": {
-      "view/item/context": [
-        {
-          "command": "git.checkoutSelectedCommit",
-          "when": "view == activeFileView && viewItem == commitItem",
-          "group": "inline"
-        }
-      ]
-    }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

@@ -2,28 +2,20 @@ import * as vscode from 'vscode';
 import { exec } from 'child_process';
 import * as path from 'path';
 
-// This method is called when your extension is activated
 export function activate(context: vscode.ExtensionContext) {
-	console.log('Congratulations, your extension "git" is now active!');
-
-	const activeFileProvider = new ActiveFileProvider();
-	vscode.window.createTreeView('activeFileView', { treeDataProvider: activeFileProvider });
-
-	context.subscriptions.push(vscode.commands.registerCommand('git.showActiveFile', () => {
-		activeFileProvider.refresh();
+	const commitProvider = new ActiveFileCommitProvider();
+	const treeView = vscode.window.createTreeView('activeFileCommitsView', { treeDataProvider: commitProvider });
+	context.subscriptions.push(vscode.commands.registerCommand('git.showActiveFileCommits', () => {
+		commitProvider.refresh();
 	}));
-
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromCommit', async (commitHash: string, filePath: string) => {
 		const editor = vscode.window.activeTextEditor;
 		const currentFilePath = editor?.document.uri.fsPath;
-
 		const repoRoot = await findGitRepoRoot(filePath);
 		if (!repoRoot) {
 			vscode.window.showErrorMessage('Not a Git repository.');
 			return;
 		}
-
-		// Ensure the file is saved before checking out to avoid losing changes
 		if (editor && editor.document.isDirty) {
 			const saved = await editor.document.save();
 			if (!saved) {
@@ -31,7 +23,6 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 		}
-
 		exec(`git checkout ${commitHash} -- "${filePath}"`, { cwd: repoRoot }, (error, stdout, stderr) => {
 			if (error) {
 				vscode.window.showErrorMessage(`Failed to checkout file: ${error.message}`);
@@ -41,31 +32,24 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.window.showWarningMessage(`Git checkout warning: ${stderr}`);
 			}
 			vscode.window.showInformationMessage(`Successfully checked out ${path.basename(filePath)} from commit ${commitHash}.`);
-
-			// Reopen the file to reflect changes, if it was the active file
 			if (currentFilePath === filePath) {
 				vscode.window.showTextDocument(vscode.Uri.file(filePath), { preview: false });
 			}
 		});
-
-		const treeView = vscode.window.createTreeView('activeFileView', { treeDataProvider: activeFileProvider });
-		activeFileProvider.getChildren().then(children => {
+		commitProvider.getChildren().then(children => {
 			if (children.length > 0) {
 				treeView.reveal(children[0], { select: true, focus: true });
 			}
 		});
 	}));
-
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {
-		activeFileProvider.refresh();
+		commitProvider.refresh();
 	}));
-
-	activeFileProvider.refresh();
+	commitProvider.refresh();
 }
 
 export function deactivate() {}
 
-// Helper function to find the Git repository root
 async function findGitRepoRoot(filePath: string): Promise<string | null> {
     return new Promise((resolve) => {
         const dir = path.dirname(filePath);
@@ -81,7 +65,7 @@ async function findGitRepoRoot(filePath: string): Promise<string | null> {
 
 class CommitItem extends vscode.TreeItem {
 	constructor(
-		public readonly label: string, // Commit subject
+		public readonly label: string,
 		public readonly commitHash: string,
 		public readonly authorDate: string,
 		public readonly filePath: string,
@@ -98,35 +82,28 @@ class CommitItem extends vscode.TreeItem {
 	}
 }
 
-class ActiveFileProvider implements vscode.TreeDataProvider<CommitItem> {
+class ActiveFileCommitProvider implements vscode.TreeDataProvider<CommitItem> {
 	private _onDidChangeTreeData: vscode.EventEmitter<CommitItem | undefined | void> = new vscode.EventEmitter<CommitItem | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<CommitItem | undefined | void> = this._onDidChangeTreeData.event;
-
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
 	}
-
 	getTreeItem(element: CommitItem): vscode.TreeItem {
 		return element;
 	}
-
 	async getChildren(element?: CommitItem): Promise<CommitItem[]> {
 		if (element) {
-			return []; // Commit items don't have children
+			return [];
 		}
-
 		const editor = vscode.window.activeTextEditor;
 		if (!editor || editor.document.uri.scheme !== 'file') {
 			return [new CommitItem('No active file in a Git repository', '', '', '', vscode.TreeItemCollapsibleState.None)];
 		}
-
 		const filePath = editor.document.uri.fsPath;
 		const repoRoot = await findGitRepoRoot(filePath);
-
 		if (!repoRoot) {
 			return [new CommitItem('File is not in a Git repository', '', '', '', vscode.TreeItemCollapsibleState.None)];
 		}
-
 		return new Promise((resolve) => {
 			exec(`git --no-pager log --pretty=format:'%h %ad %s' --date=short -- "${filePath}"`, { cwd: repoRoot }, (error, stdout, stderr) => {
 				if (error) {
@@ -138,13 +115,11 @@ class ActiveFileProvider implements vscode.TreeDataProvider<CommitItem> {
 				if (stderr) {
 					console.warn(`Git log stderr: ${stderr}`);
 				}
-
 				const lines = stdout.trim().split('\n');
 				if (lines.length === 0 || (lines.length === 1 && lines[0] === '')) {
 					resolve([new CommitItem('No commit history found for this file', '', '', '', vscode.TreeItemCollapsibleState.None)]);
 					return;
 				}
-
 				const commits = lines.map(line => {
 					// Expected format: "%h %ad %s" -> hash date subject
 					const parts = line.match(/^(\w+)\s+(\S+)\s+(.*)$/);
@@ -154,7 +129,6 @@ class ActiveFileProvider implements vscode.TreeDataProvider<CommitItem> {
 					}
 					return null;
 				}).filter((item): item is CommitItem => item !== null);
-
 				resolve(commits);
 			});
 		});

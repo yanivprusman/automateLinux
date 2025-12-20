@@ -10,8 +10,6 @@
     "Other"
   ],
   "activationEvents": [
-    "onView:activeFileView",
-    "onCommand:git.checkoutFileFromCommit"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -27,15 +25,15 @@
     "views": {
       "git-sidebar": [
         {
-          "id": "activeFileView",
+          "id": "activeFileCommitsView",
           "name": "Active File Commits"
         }
       ]
     },
     "commands": [
       {
-        "command": "git.showActiveFile",
-        "title": "Show Active File"
+        "command": "git.showActiveFileCommits",
+        "title": "Show Active File Commits"
       },
       {
         "command": "git.checkoutFileFromCommit",

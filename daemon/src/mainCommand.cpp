@@ -24,6 +24,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_GET_SOCKET_PATH, {}),
     CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
+    CommandSignature(COMMAND_GET_SHOULD_LOG, {}),
     CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
     CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME}),
@@ -273,6 +274,10 @@ CmdResult handleShouldLog(const json& command) {
     return CmdResult(0, string("Logging ") + (shouldLog ? "enabled" : "disabled") + "\n");
 }
 
+CmdResult handleGetShouldLog(const json&) {
+    return CmdResult(0, shouldLog ? COMMAND_VALUE_TRUE : COMMAND_VALUE_FALSE);
+}
+
 CmdResult handleToggleKeyboardsWhenActiveWindowChanges(const json& command) {
     string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
     toggleKeyboardsWhenActiveWindowChanges = (enableStr == COMMAND_VALUE_TRUE);
@@ -424,6 +429,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_SOCKET_PATH, handleGetSocketPath},
     {COMMAND_SET_KEYBOARD, handleSetKeyboard},
     {COMMAND_SHOULD_LOG, handleShouldLog},
+    {COMMAND_GET_SHOULD_LOG, handleGetShouldLog},
     {COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, handleToggleKeyboardsWhenActiveWindowChanges},
     {COMMAND_GET_DIR, handleGetDir},
     {COMMAND_GET_FILE, handleGetFile},

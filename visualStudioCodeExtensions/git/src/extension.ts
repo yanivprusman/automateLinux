@@ -53,7 +53,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 	let lastCheckedOut: Record<string, string> = {};
-	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromNextCommit', async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromPreviousCommit', async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) return;
 
@@ -84,7 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
 		treeView.reveal(nextCommit, { select: true, focus: false });
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromPreviousCommit', async () => {
+	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromNextCommit', async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) return;
 

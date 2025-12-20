@@ -1,7 +1,4 @@
 #!/bin/bash
-print2(){
-    echo "This is print2"
-}
 print(){
     local -A excluded_files=()
     local -a dirs=()
@@ -95,6 +92,7 @@ EOF
                                 echo "$basename_f:"
                             fi
                             cat "$f"
+                            [ -n "$(tail -c1 "$f")" ] && echo
                             if [ "$use_color" = true ]; then
                                 echo -e "${YELLOW}${AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR}${NC}"
                             else

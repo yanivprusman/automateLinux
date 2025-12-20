@@ -7,7 +7,7 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "git" is now active!');
 
 	const activeFileProvider = new ActiveFileProvider();
-	const activeFileTreeView = vscode.window.createTreeView('activeFileView', { treeDataProvider: activeFileProvider });
+	vscode.window.createTreeView('activeFileView', { treeDataProvider: activeFileProvider });
 
 	context.subscriptions.push(vscode.commands.registerCommand('git.showActiveFile', () => {
 		activeFileProvider.refresh();
@@ -47,32 +47,6 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.window.showTextDocument(vscode.Uri.file(filePath), { preview: false });
 			}
 		});
-	}));
-
-	context.subscriptions.push(vscode.commands.registerCommand('git.selectNextCommit', async () => {
-		const currentSelection = activeFileTreeView.selection[0];
-		if (currentSelection instanceof CommitItem) {
-			const commits = await activeFileProvider.getChildren();
-			const currentIndex = commits.findIndex(c => c.commitHash === currentSelection.commitHash);
-			if (currentIndex !== -1 && currentIndex < commits.length - 1) {
-				const nextCommit = commits[currentIndex + 1];
-				activeFileTreeView.reveal(nextCommit, { select: true, focus: true });
-				vscode.commands.executeCommand('git.checkoutFileFromCommit', nextCommit.commitHash, nextCommit.filePath);
-			}
-		}
-	}));
-
-	context.subscriptions.push(vscode.commands.registerCommand('git.selectPreviousCommit', async () => {
-		const currentSelection = activeFileTreeView.selection[0];
-		if (currentSelection instanceof CommitItem) {
-			const commits = await activeFileProvider.getChildren();
-			const currentIndex = commits.findIndex(c => c.commitHash === currentSelection.commitHash);
-			if (currentIndex > 0) {
-				const previousCommit = commits[currentIndex - 1];
-				activeFileTreeView.reveal(previousCommit, { select: true, focus: true });
-				vscode.commands.executeCommand('git.checkoutFileFromCommit', previousCommit.commitHash, previousCommit.filePath);
-			}
-		}
 	}));
 
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {

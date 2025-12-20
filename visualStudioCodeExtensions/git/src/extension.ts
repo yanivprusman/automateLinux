@@ -37,8 +37,10 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		});
 		commitProvider.getChildren().then(children => {
-			if (children.length > 0) {
-				treeView.reveal(children[0], { select: true, focus: true });
+			const currentHash = lastCheckedOut[filePath];
+			const currentItem = children.find(c => c.commitHash === currentHash);
+			if (currentItem) {
+				treeView.reveal(currentItem, { select: true, focus: true });
 			}
 		});
 	}));
@@ -79,9 +81,8 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		await vscode.commands.executeCommand('git.checkoutFileFromCommit', nextCommit.commitHash, filePath);
 		lastCheckedOut[filePath] = nextCommit.commitHash;
-		treeView.reveal(nextCommit, { select: true, focus: false });
+		await vscode.commands.executeCommand('git.checkoutFileFromCommit', nextCommit.commitHash, filePath);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromNextCommit', async () => {
@@ -110,9 +111,8 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		await vscode.commands.executeCommand('git.checkoutFileFromCommit', previousCommit.commitHash, filePath);
 		lastCheckedOut[filePath] = previousCommit.commitHash;
-		treeView.reveal(previousCommit, { select: true, focus: false });
+		await vscode.commands.executeCommand('git.checkoutFileFromCommit', previousCommit.commitHash, filePath);
 	}));
 
 	commitProvider.refresh();
@@ -144,11 +144,6 @@ class CommitItem extends vscode.TreeItem {
 		super(label, collapsibleState);
 		this.description = `${authorDate} (${commitHash.substring(0, 7)})`;
 		this.tooltip = `${label}\nHash: ${commitHash}\nDate: ${authorDate}\nFile: ${filePath}`;
-		// this.command = {
-		// 	command: 'git.checkoutFileFromCommit',
-		// 	title: 'Checkout File from Commit',
-		// 	arguments: [this.commitHash, this.filePath]
-		// };
 	}
 }
 
@@ -202,5 +197,8 @@ class ActiveFileCommitProvider implements vscode.TreeDataProvider<CommitItem> {
 				resolve(commits);
 			});
 		});
+	}
+	getParent(element: CommitItem): vscode.ProviderResult<CommitItem> {
+		return null; // flat list has no parent
 	}
 }

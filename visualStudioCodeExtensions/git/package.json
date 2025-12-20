@@ -9,41 +9,62 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onView:activeFileView",
-    "onCommand:git.checkoutFileFromCommit"
-  ],
-  "main": "./out/extension.js",
-  "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "git-sidebar",
-          "title": "Git Extension",
-          "icon": "resources/git-icon.svg"
-        }
-      ]
-    },
-    "views": {
-      "git-sidebar": [
-        {
-          "id": "activeFileView",
-          "name": "Active File Commits"
-        }
-      ]
-    },
-    "commands": [
-      {
-        "command": "git.showActiveFile",
-        "title": "Show Active File"
-      },
-      {
-        "command": "git.checkoutFileFromCommit",
-        "title": "Checkout File from Commit"
-      }
-    ]
-  },
-  "scripts": {
+      "activationEvents": [
+          "onView:activeFileView",
+          "onCommand:git.checkoutFileFromCommit",
+          "onCommand:git.selectNextCommit",
+          "onCommand:git.selectPreviousCommit"
+      ],
+      "main": "./out/extension.js",
+      "contributes": {
+          "viewsContainers": {
+              "activitybar": [
+                  {
+                      "id": "git-sidebar",
+                      "title": "Git Extension",
+                      "icon": "resources/git-icon.svg"
+                  }
+              ]
+          },
+          "views": {
+              "git-sidebar": [
+                  {
+                      "id": "activeFileView",
+                      "name": "Active File Commits"
+                  }
+              ]
+          },
+          "commands": [
+              {
+                  "command": "git.showActiveFile",
+                  "title": "Show Active File"
+              },
+              {
+                  "command": "git.checkoutFileFromCommit",
+                  "title": "Checkout File from Commit"
+              },
+              {
+                  "command": "git.selectNextCommit",
+                  "title": "Select Next Commit"
+              },
+              {
+                  "command": "git.selectPreviousCommit",
+                  "title": "Select Previous Commit"
+              }
+          ],
+          "keybindings": [
+              {
+                  "command": "git.selectNextCommit",
+                  "key": "down",
+                  "when": "viewHasFocus:activeFileView"
+              },
+              {
+                  "command": "git.selectPreviousCommit",
+                  "key": "up",
+                  "when": "viewHasFocus:activeFileView"
+              }
+          ]
+      },  "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",

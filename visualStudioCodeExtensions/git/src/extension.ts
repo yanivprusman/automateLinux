@@ -33,7 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			vscode.window.showInformationMessage(`Successfully checked out ${path.basename(filePath)} from commit ${commitHash}.`);
 			if (currentFilePath === filePath) {
-				vscode.window.showTextDocument(vscode.Uri.file(filePath), { preview: false });
+				// vscode.window.showTextDocument(vscode.Uri.file(filePath), { preview: false });
 			}
 		});
 		commitProvider.getChildren().then(children => {
@@ -45,6 +45,40 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {
 		commitProvider.refresh();
 	}));
+	treeView.onDidChangeSelection(e => {
+		if (e.selection.length > 0) {
+			const item = e.selection[0] as CommitItem;
+			lastCheckedOut[item.filePath] = item.commitHash;
+			vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
+		}
+	});
+	let lastCheckedOut: Record<string, string> = {};
+	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromNextCommit', async () => {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) return;
+
+		const filePath = editor.document.uri.fsPath;
+		const repoRoot = await findGitRepoRoot(filePath);
+		if (!repoRoot) {
+			vscode.window.showErrorMessage('Not a Git repository.');
+			return;
+		}
+
+		// Get commits
+		const commits = await commitProvider.getChildren();
+		let currentHash = lastCheckedOut[filePath] || commits[0]?.commitHash;
+		const currentIndex = commits.findIndex(c => c.commitHash === currentHash);
+		const nextCommit = commits[currentIndex + 1];
+
+		if (!nextCommit) {
+			vscode.window.showInformationMessage('No next commit found.');
+			return;
+		}
+
+		await vscode.commands.executeCommand('git.checkoutFileFromCommit', nextCommit.commitHash, filePath);
+		lastCheckedOut[filePath] = nextCommit.commitHash;
+	}));
+
 	commitProvider.refresh();
 }
 
@@ -74,11 +108,11 @@ class CommitItem extends vscode.TreeItem {
 		super(label, collapsibleState);
 		this.description = `${authorDate} (${commitHash.substring(0, 7)})`;
 		this.tooltip = `${label}\nHash: ${commitHash}\nDate: ${authorDate}\nFile: ${filePath}`;
-		this.command = {
-			command: 'git.checkoutFileFromCommit',
-			title: 'Checkout File from Commit',
-			arguments: [this.commitHash, this.filePath]
-		};
+		// this.command = {
+		// 	command: 'git.checkoutFileFromCommit',
+		// 	title: 'Checkout File from Commit',
+		// 	arguments: [this.commitHash, this.filePath]
+		// };
 	}
 }
 

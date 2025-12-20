@@ -64,19 +64,55 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		// Get commits
 		const commits = await commitProvider.getChildren();
+		if (commits.length === 0) {
+			vscode.window.showInformationMessage('No commits found for this file.');
+			return;
+		}
+
 		let currentHash = lastCheckedOut[filePath] || commits[0]?.commitHash;
 		const currentIndex = commits.findIndex(c => c.commitHash === currentHash);
 		const nextCommit = commits[currentIndex + 1];
 
 		if (!nextCommit) {
-			vscode.window.showInformationMessage('No next commit found.');
+			vscode.window.showInformationMessage('Already at the oldest commit.');
 			return;
 		}
 
 		await vscode.commands.executeCommand('git.checkoutFileFromCommit', nextCommit.commitHash, filePath);
 		lastCheckedOut[filePath] = nextCommit.commitHash;
+		treeView.reveal(nextCommit, { select: true, focus: false });
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromPreviousCommit', async () => {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) return;
+
+		const filePath = editor.document.uri.fsPath;
+		const repoRoot = await findGitRepoRoot(filePath);
+		if (!repoRoot) {
+			vscode.window.showErrorMessage('Not a Git repository.');
+			return;
+		}
+
+		const commits = await commitProvider.getChildren();
+		if (commits.length === 0) {
+			vscode.window.showInformationMessage('No commits found for this file.');
+			return;
+		}
+
+		let currentHash = lastCheckedOut[filePath] || commits[0]?.commitHash;
+		const currentIndex = commits.findIndex(c => c.commitHash === currentHash);
+		const previousCommit = commits[currentIndex - 1];
+
+		if (!previousCommit) {
+			vscode.window.showInformationMessage('Already at the newest commit.');
+			return;
+		}
+
+		await vscode.commands.executeCommand('git.checkoutFileFromCommit', previousCommit.commitHash, filePath);
+		lastCheckedOut[filePath] = previousCommit.commitHash;
+		treeView.reveal(previousCommit, { select: true, focus: false });
 	}));
 
 	commitProvider.refresh();

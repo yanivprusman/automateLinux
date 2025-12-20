@@ -24,11 +24,19 @@ int KVTable::createDB() {
 
 int KVTable::create() {
     createDB();
-    const char* sql =
+    const char* sql_create_table =
         "CREATE TABLE IF NOT EXISTS kv ("
         " key TEXT PRIMARY KEY,"
         " value TEXT);";
-    return sqlite3_exec(db, sql, nullptr, nullptr, nullptr);
+    int rc = sqlite3_exec(db, sql_create_table, nullptr, nullptr, nullptr);
+    if (rc != SQLITE_OK) {
+        return rc;
+    }
+
+    const char* sql_create_index =
+        "CREATE INDEX IF NOT EXISTS idx_kv_key ON kv (key);";
+    rc = sqlite3_exec(db, sql_create_index, nullptr, nullptr, nullptr);
+    return rc;
 }
 
 int KVTable::upsert(const string& key, const string& value) {

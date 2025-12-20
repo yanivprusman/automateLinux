@@ -39,13 +39,19 @@ export default class ActiveWindowTracker extends Extension {
             'window-title': window.get_title() || '',
             'wm-class': window.get_wm_class() || '',
             'wm-instance': window.get_wm_class_instance() || '',
-            'window-id': window.get_id().toString(),
+            'window-id': window.get_id(),
         };
     }
 
-    #onActiveWindowChanged() {
+    async #onActiveWindowChanged() {
         const windowInfo = this.#getActiveWindowInfo();
         this.logger.log(`Active window changed: ${JSON.stringify(windowInfo)}`);
-        this.daemon.sendMessage({ 'event': 'active-window-changed', 'data': windowInfo });
+        await this.daemon.connectAndSendMessage({
+            'command': 'activeWindowChanged',
+            'windowTitle': windowInfo['window-title'],
+            'wmClass': windowInfo['wm-class'],
+            'wmInstance': windowInfo['wm-instance'],
+            'windowId': windowInfo['window-id']
+        });
     }
 }

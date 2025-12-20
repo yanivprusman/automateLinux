@@ -29,7 +29,7 @@ The daemon is a C++ application built using CMake and Make. It can operate as a 
     The daemon can be built using the `build.sh` script located in the `daemon/` directory. This script handles CMake configuration, compilation, and post-build steps, including restarting the systemd service.
     ```bash
     # To build and deploy the daemon:
-    source ./daemon/build.sh
+    bd
     ```
 *   **Running the Daemon (Server Mode)**:
     The daemon is designed to run as a systemd service (`daemon.service`). The `build.sh` script typically restarts this service upon successful compilation.

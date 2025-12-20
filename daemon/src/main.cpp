@@ -414,8 +414,11 @@ int initialize_daemon() {
     signal(SIGINT, signal_handler);
     signal(SIGPIPE, SIG_IGN);
 
+    files.initialize(directories); // Initialize files (and thus directories.data) first
     g_logFile.open(directories.data + "daemon.log", std::ios::app);
-    files.initialize(directories);
+    if (!g_logFile.is_open()) {
+        cerr << "ERROR: Could not open log file: " << directories.data << "daemon.log" << endl;
+    }
     initializeKeyboardPath();
     initializeMousePath();
     return setup_socket();

@@ -13,12 +13,14 @@ import { ShellCommandExecutor } from '../lib/shellCommand.js';
 
 const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
+const shouldLog = false;  //remove
 
 export default class ClockExtension extends Extension {
     constructor(metadata) {
         super(metadata);
-        this._shouldLog = false; // Initialize to false, will be updated from daemon
-        this.logger = new Logger(LOG_FILE_PATH, this._shouldLog);
+        this.logger = new Logger(LOG_FILE_PATH, shouldLog); //remove
+//        this._shouldLog = false; // Initialize to false, will be updated from daemon //add
+//        this.logger = new Logger(LOG_FILE_PATH, this._shouldLog); //add
         this.daemon = new DaemonConnector(DAEMON_SOCKET_PATH, this.logger);
         this.shellExecutor = new ShellCommandExecutor(this.logger);
         this._label = null;
@@ -26,25 +28,25 @@ export default class ClockExtension extends Extension {
         this._lastX = null;
         this._lastY = null;
         this._menu = null;
-        this._toggleLoggingMenuItem = null;
+//        this._toggleLoggingMenuItem = null; //add
         this.logger.log('ClockExtension constructor called');
     }
 
     async enable() {
         this.logger.log('ClockExtension.enable() called');
         this.logger.log(`Extension path: ${this.path}`);
-        
+//         //add
         try {
-            // Get initial logging state from daemon
-            const shouldLogResponse = await this.daemon.connectAndSendMessage({
-                command: 'getShouldLog'
-            });
-            if (shouldLogResponse) {
-                this._shouldLog = (shouldLogResponse.trim() === 'true');
-                this.logger.setShouldLog(this._shouldLog); // Update logger with daemon's state
-                this.logger.log(`Initial daemon shouldLog state: ${this._shouldLog}`);
-            }
-            
+//            // Get initial logging state from daemon //add
+//            const shouldLogResponse = await this.daemon.connectAndSendMessage({ //add
+//                command: 'getShouldLog' //add
+//            }); //add
+//            if (shouldLogResponse) { //add
+//                this._shouldLog = (shouldLogResponse.trim() === 'true'); //add
+//                this.logger.setShouldLog(this._shouldLog); // Update logger with daemon's state //add
+//                this.logger.log(`Initial daemon shouldLog state: ${this._shouldLog}`); //add
+//            } //add
+//             //add
             this._label = new St.Label({
                 text: '00:00',
                 style_class: 'clock-label',
@@ -98,9 +100,9 @@ export default class ClockExtension extends Extension {
             shutDownMenuItem.connect('activate', () => this._onShutdownMenuItemActivated());
             this._menu.addMenuItem(shutDownMenuItem);
 
-            this._toggleLoggingMenuItem = this._createToggleLoggingMenuItem();
-            this._menu.addMenuItem(this._toggleLoggingMenuItem);
-
+//            this._toggleLoggingMenuItem = this._createToggleLoggingMenuItem(); //add
+//            this._menu.addMenuItem(this._toggleLoggingMenuItem); //add
+// //add
             this._label.menu = this._menu; // Associate menu with the label
 
             this._updateClock();
@@ -182,35 +184,35 @@ export default class ClockExtension extends Extension {
         });
     }
 
-    _createToggleLoggingMenuItem() {
-        let text = this._shouldLog ? 'Disable Logging' : 'Enable Logging';
-        let menuItem = new PopupMenu.PopupMenuItem(text);
-        menuItem.connect('activate', () => this._onToggleLoggingMenuItemActivated(menuItem));
-        return menuItem;
-    }
-
-    async _onToggleLoggingMenuItemActivated(menuItem) {
-        this.logger.log('Toggle Logging menu item activated.');
-        this._shouldLog = !this._shouldLog; // Toggle the state locally
-        this.logger.setShouldLog(this._shouldLog); // Update logger
-
-        const enableValue = this._shouldLog ? 'true' : 'false';
-        this.logger.log(`Sending shouldLog command to daemon: ${enableValue}`);
-
-        try {
-            const response = await this.daemon.connectAndSendMessage({
-                command: 'shouldLog',
-                enable: enableValue
-            });
-            this.logger.log(`Daemon response for shouldLog: ${response}`);
-        } catch (e) {
-            this.logger.log(`Error sending shouldLog command to daemon: ${e.message}`);
-        }
-
-        // Update menu item text
-        menuItem.label.text = this._shouldLog ? 'Disable Logging' : 'Enable Logging';
-    }
-
+//    _createToggleLoggingMenuItem() { //add
+//        let text = this._shouldLog ? 'Disable Logging' : 'Enable Logging'; //add
+//        let menuItem = new PopupMenu.PopupMenuItem(text); //add
+//        menuItem.connect('activate', () => this._onToggleLoggingMenuItemActivated(menuItem)); //add
+//        return menuItem; //add
+//    } //add
+// //add
+//    async _onToggleLoggingMenuItemActivated(menuItem) { //add
+//        this.logger.log('Toggle Logging menu item activated.'); //add
+//        this._shouldLog = !this._shouldLog; // Toggle the state locally //add
+//        this.logger.setShouldLog(this._shouldLog); // Update logger //add
+// //add
+//        const enableValue = this._shouldLog ? 'true' : 'false'; //add
+//        this.logger.log(`Sending shouldLog command to daemon: ${enableValue}`); //add
+// //add
+//        try { //add
+//            const response = await this.daemon.connectAndSendMessage({ //add
+//                command: 'shouldLog', //add
+//                enable: enableValue //add
+//            }); //add
+//            this.logger.log(`Daemon response for shouldLog: ${response}`); //add
+//        } catch (e) { //add
+//            this.logger.log(`Error sending shouldLog command to daemon: ${e.message}`); //add
+//        } //add
+// //add
+//        // Update menu item text //add
+//        menuItem.label.text = this._shouldLog ? 'Disable Logging' : 'Enable Logging'; //add
+//    } //add
+// //add
     async _onShutdownMenuItemActivated() {
         this.logger.log('Shut Down menu item activated. Executing systemctl poweroff...');
         this.shellExecutor.execute('/usr/bin/systemctl poweroff');

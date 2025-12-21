@@ -1,0 +1,10 @@
+{
+  "git": {
+    "enabled": true
+  },
+  "ui": {
+    "accessibility": {
+      "disableLoadingPhrases": true
+    }
+  }
+}

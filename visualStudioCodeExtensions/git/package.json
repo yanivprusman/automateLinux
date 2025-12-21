@@ -25,9 +25,21 @@
     "views": {
       "git-sidebar": [
         {
+          "id": "Mode",
+          "name": "Mode",
+          "icon": "resources/git-icon.svg"
+        },
+        {
           "id": "activeFileCommitsView",
-          "name": "Active File Commits"
+          "name": "Active file fromCommits",
+          "icon": "resources/git-icon.svg"
+        },
+        {
+          "id": "activeFileCommitsView2",
+          "name": "Active file toCommits",
+          "icon": "resources/git-icon.svg"
         }
+
       ]
     },
     "commands": [

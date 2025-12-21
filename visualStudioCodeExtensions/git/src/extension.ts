@@ -7,9 +7,8 @@ import * as path from 'path';
 export function activate(context: vscode.ExtensionContext) {
 	const commitProvider = new ActiveFileCommitProvider();
 	const treeView = vscode.window.createTreeView('activeFileCommitsView', { treeDataProvider: commitProvider });
-	context.subscriptions.push(vscode.commands.registerCommand('git.showActiveFileCommits', () => {
-		commitProvider.refresh();
-	}));
+	const treeView2 = vscode.window.createTreeView('activeFileCommitsView2', { treeDataProvider: commitProvider });
+	let lastCheckedOut: Record<string, string> = {};
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromCommit', async (commitHash: string, filePath: string) => {
 		const editor = vscode.window.activeTextEditor;
 		const currentFilePath = editor?.document.uri.fsPath;
@@ -46,17 +45,6 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		});
 	}));
-	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {
-		commitProvider.refresh();
-	}));
-	treeView.onDidChangeSelection(e => {
-		if (e.selection.length > 0) {
-			const item = e.selection[0] as CommitItem;
-			lastCheckedOut[item.filePath] = item.commitHash;
-			vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
-		}
-	});
-	let lastCheckedOut: Record<string, string> = {};
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromPreviousCommit', async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) return;
@@ -86,7 +74,6 @@ export function activate(context: vscode.ExtensionContext) {
 		lastCheckedOut[filePath] = nextCommit.commitHash;
 		await vscode.commands.executeCommand('git.checkoutFileFromCommit', nextCommit.commitHash, filePath);
 	}));
-
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromNextCommit', async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) return;
@@ -116,7 +103,16 @@ export function activate(context: vscode.ExtensionContext) {
 		lastCheckedOut[filePath] = previousCommit.commitHash;
 		await vscode.commands.executeCommand('git.checkoutFileFromCommit', previousCommit.commitHash, filePath);
 	}));
-
+	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {
+		commitProvider.refresh();
+	}));
+	treeView.onDidChangeSelection(e => {
+		if (e.selection.length > 0) {
+			const item = e.selection[0] as CommitItem;
+			lastCheckedOut[item.filePath] = item.commitHash;
+			vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
+		}
+	});
 	commitProvider.refresh();
 }
 

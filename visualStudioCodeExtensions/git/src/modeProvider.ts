@@ -1,4 +1,6 @@
-class ModeProvider implements vscode.TreeDataProvider<ModeItem> {
+import * as vscode from 'vscode';
+
+export class ModeProvider implements vscode.TreeDataProvider<ModeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<ModeItem | undefined> = new vscode.EventEmitter();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
@@ -16,8 +18,8 @@ class ModeProvider implements vscode.TreeDataProvider<ModeItem> {
 
   getChildren(): ModeItem[] {
     return [
-      new ModeItem('Option 1', true),
-      new ModeItem('Option 2', false)
+      new ModeItem('checkout', true),
+      new ModeItem('diff', false)
     ];
   }
 
@@ -26,6 +28,6 @@ class ModeProvider implements vscode.TreeDataProvider<ModeItem> {
   }
 }
 
-class ModeItem {
+export class ModeItem {
   constructor(public label: string, public checked: boolean) {}
 }

@@ -58,6 +58,10 @@
       {
         "command": "git.CheckoutFileFromPreviousCommit",
         "title": "Checkout File from Previous Commit"
+      },
+      {
+        "command": "git.toggleMode",
+        "title": "Toggle Mode"
       }
     ]
   },

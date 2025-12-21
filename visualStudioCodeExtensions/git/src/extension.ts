@@ -3,8 +3,17 @@ import { exec } from 'child_process';
 import { findGitRepoRoot } from './gitUtils';
 import { ActiveFileCommitProvider, CommitItem } from './commitView';
 import * as path from 'path';
+import { ModeProvider, ModeItem } from './modeProvider';
 
 export function activate(context: vscode.ExtensionContext) {
+	const modeProvider = new ModeProvider();
+	vscode.window.createTreeView('Mode', { treeDataProvider: modeProvider });
+	context.subscriptions.push(
+        vscode.commands.registerCommand('git.toggleMode', (item: ModeItem) => {
+            item.checked = !item.checked;
+            modeProvider.refresh();
+        })
+    );
 	const commitProvider = new ActiveFileCommitProvider();
 	const treeView = vscode.window.createTreeView('activeFileCommitsView', { treeDataProvider: commitProvider });
 	const treeView2 = vscode.window.createTreeView('activeFileCommitsView2', { treeDataProvider: commitProvider });

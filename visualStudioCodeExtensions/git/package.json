@@ -42,6 +42,10 @@
       {
         "command": "git.checkoutFileFromNextCommit",
         "title": "Checkout File from Next Commit"
+      },
+      {
+        "command": "git.CheckoutFileFromPreviousCommit",
+        "title": "Checkout File from Previous Commit"
       }
     ]
   },

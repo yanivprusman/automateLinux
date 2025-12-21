@@ -172,6 +172,18 @@ gitShowFileAtCommit(){
 }
 export -f gitShowFileAtCommit
 
+gitAnnotateChanges() {
+  local fromCommit="$1"
+  local toCommit="$2"
+  local file="$3"
 
-
+  git --no-pager diff -U999 "$fromCommit" "$toCommit" -- "$file" | \
+awk '
+/^@@/ { next }      # skip hunk headers
+/^---/ { next }      # skip file headers
+/^\+\+\+/ { next }   # skip file headers
+/^-/{ sub(/^-/, ""); print $0 " //remove"; next }
+/^\+/{ sub(/^\+/, ""); print "//" $0 " //add"; next }
+/^ /{ sub(/^ /, ""); print }'
+}
 

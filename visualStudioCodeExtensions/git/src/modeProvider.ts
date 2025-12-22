@@ -3,6 +3,11 @@ import * as vscode from 'vscode';
 export class ModeProvider implements vscode.TreeDataProvider<ModeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<ModeItem | undefined> = new vscode.EventEmitter();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+  
+  private modes: ModeItem[] = [
+    new ModeItem('checkout', true),
+    new ModeItem('diff', false)
+  ];
 
   getTreeItem(element: ModeItem): vscode.TreeItem {
     const item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.None);
@@ -17,10 +22,12 @@ export class ModeProvider implements vscode.TreeDataProvider<ModeItem> {
   }
 
   getChildren(): ModeItem[] {
-    return [
-      new ModeItem('checkout', true),
-      new ModeItem('diff', false)
-    ];
+    return this.modes;
+  }
+
+  getCheckedMode(): string {
+    const checked = this.modes.find(m => m.checked);
+    return checked?.label || 'checkout';
   }
 
   refresh() {

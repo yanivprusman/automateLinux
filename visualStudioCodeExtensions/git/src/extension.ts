@@ -43,6 +43,52 @@ async function restoreFileState(filePath: string, repoRoot: string): Promise<boo
 	}
 }
 
+// Helper function to annotate diff changes between two commits
+async function annotateDiffChanges(fromCommit: string, toCommit: string, filePath: string, repoRoot: string): Promise<string> {
+	return new Promise((resolve, reject) => {
+		exec(`git --no-pager diff -U999 "${fromCommit}" "${toCommit}" -- "${filePath}"`, 
+			{ cwd: repoRoot, maxBuffer: 10 * 1024 * 1024 }, 
+			(error, stdout, stderr) => {
+				if (error) {
+					console.error(`Failed to get diff: ${error.message}`);
+					reject(error);
+					return;
+				}
+
+				const lines = stdout.split('\n');
+				const annotatedLines: string[] = [];
+
+				for (const line of lines) {
+					// Skip hunk headers, file headers
+					if (line.startsWith('@@') || line.startsWith('---') || line.startsWith('+++')) {
+						continue;
+					}
+
+					if (line.startsWith('-')) {
+						// Removed line: strip '-' and append ' //remove'
+						const content = line.substring(1);
+						annotatedLines.push(content + ' //remove');
+					} else if (line.startsWith('+')) {
+						// Added line: strip '+', prefix with '//' and append ' //add'
+						const content = line.substring(1);
+						annotatedLines.push('//' + content + ' //add');
+					} else if (line.startsWith(' ')) {
+						// Context line: strip leading space
+						const content = line.substring(1);
+						annotatedLines.push(content);
+					} else if (line === '') {
+						// Empty line
+						annotatedLines.push('');
+					}
+				}
+
+				const annotatedContent = annotatedLines.join('\n');
+				resolve(annotatedContent);
+			}
+		);
+	});
+}
+
 export function activate(context: vscode.ExtensionContext) {
 	const modeProvider = new ModeProvider();
 	const modeTreeView = vscode.window.createTreeView('Mode', { treeDataProvider: modeProvider });
@@ -59,6 +105,56 @@ export function activate(context: vscode.ExtensionContext) {
 	let lastCheckedOut: Record<string, string> = {};
 	// Track files that are currently being checked out to avoid race conditions
 	let checkoutInProgress: Set<string> = new Set();
+	
+	// Track selections for diff mode
+	let selectedFromCommit: { hash: string; filePath: string } | null = null;
+	let selectedToCommit: { hash: string; filePath: string } | null = null;
+	
+	context.subscriptions.push(vscode.commands.registerCommand('git.applyDiffAnnotation', async () => {
+		if (!selectedFromCommit || !selectedToCommit) {
+			vscode.window.showErrorMessage('Please select both from and to commits for diff mode.');
+			return;
+		}
+
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			vscode.window.showErrorMessage('No active editor found.');
+			return;
+		}
+
+		const filePath = editor.document.uri.fsPath;
+		const repoRoot = await findGitRepoRoot(filePath);
+		if (!repoRoot) {
+			vscode.window.showErrorMessage('Not a Git repository.');
+			return;
+		}
+
+		try {
+			console.log(`[git-ext] Applying diff annotation: ${selectedFromCommit.hash} → ${selectedToCommit.hash}`);
+			const annotatedContent = await annotateDiffChanges(
+				selectedFromCommit.hash,
+				selectedToCommit.hash,
+				filePath,
+				repoRoot
+			);
+
+			// Replace editor content with annotated diff
+			const edit = new vscode.WorkspaceEdit();
+			const fullRange = new vscode.Range(
+				editor.document.positionAt(0),
+				editor.document.positionAt(editor.document.getText().length)
+			);
+			edit.replace(editor.document.uri, fullRange, annotatedContent);
+			await vscode.workspace.applyEdit(edit);
+
+			vscode.window.showInformationMessage(
+				`Showing diff between ${selectedFromCommit.hash.substring(0, 7)} and ${selectedToCommit.hash.substring(0, 7)}`
+			);
+		} catch (error) {
+			vscode.window.showErrorMessage(`Failed to apply diff: ${error}`);
+		}
+	}));
+	
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromCommit', async (commitHash: string, filePath: string) => {
 		const editor = vscode.window.activeTextEditor;
 		const currentFilePath = editor?.document.uri.fsPath;
@@ -184,8 +280,39 @@ export function activate(context: vscode.ExtensionContext) {
 	treeView.onDidChangeSelection(e => {
 		if (e.selection.length > 0) {
 			const item = e.selection[0] as CommitItem;
-			lastCheckedOut[item.filePath] = item.commitHash;
-			vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
+			const currentMode = modeProvider.getCheckedMode();
+
+			if (currentMode === 'checkout') {
+				// Checkout mode: single selection triggers checkout
+				lastCheckedOut[item.filePath] = item.commitHash;
+				vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
+			} else if (currentMode === 'diff') {
+				// Diff mode: track selection in left tree (from)
+				selectedFromCommit = { hash: item.commitHash, filePath: item.filePath };
+				console.log(`[git-ext] Selected from commit (left): ${item.commitHash.substring(0, 7)}`);
+				if (selectedToCommit) {
+					vscode.commands.executeCommand('git.applyDiffAnnotation');
+				}
+			}
+		}
+	});
+	treeView2.onDidChangeSelection(e => {
+		if (e.selection.length > 0) {
+			const item = e.selection[0] as CommitItem;
+			const currentMode = modeProvider.getCheckedMode();
+
+			if (currentMode === 'checkout') {
+				// Checkout mode: single selection triggers checkout
+				lastCheckedOut[item.filePath] = item.commitHash;
+				vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
+			} else if (currentMode === 'diff') {
+				// Diff mode: track selection in right tree (to)
+				selectedToCommit = { hash: item.commitHash, filePath: item.filePath };
+				console.log(`[git-ext] Selected to commit (right): ${item.commitHash.substring(0, 7)}`);
+				if (selectedFromCommit) {
+					vscode.commands.executeCommand('git.applyDiffAnnotation');
+				}
+			}
 		}
 	});
 	// Listen for file saves and update the current state

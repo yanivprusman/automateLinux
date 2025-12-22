@@ -27,6 +27,13 @@ export class ActiveFileCommitProvider implements vscode.TreeDataProvider<CommitI
 	private _onDidChangeTreeData: vscode.EventEmitter<CommitItem | undefined | void> = new vscode.EventEmitter<CommitItem | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<CommitItem | undefined | void> = this._onDidChangeTreeData.event;
 	
+	private currentDiffAnnotation: string = '';
+	
+	setCurrentDiffAnnotation(content: string): void {
+		this.currentDiffAnnotation = content;
+		this.refresh();
+	}
+	
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
 	}

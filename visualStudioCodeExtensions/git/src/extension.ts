@@ -101,6 +101,11 @@ export function activate(context: vscode.ExtensionContext) {
             // Check only the selected one
             item.checked = true;
             modeProvider.refresh();
+            
+            // Set context for view visibility
+            const isDiffMode = item.label === 'diff';
+            vscode.commands.executeCommand('setContext', 'git-ext:diffMode', isDiffMode);
+            console.log(`[git-ext] Mode changed to: ${item.label}`);
         })
     );
 	const commitProvider = new ActiveFileCommitProvider();
@@ -151,6 +156,9 @@ export function activate(context: vscode.ExtensionContext) {
 			);
 			edit.replace(editor.document.uri, fullRange, annotatedContent);
 			await vscode.workspace.applyEdit(edit);
+
+			// Store annotation for display in tree and update view
+			commitProvider.setCurrentDiffAnnotation(annotatedContent);
 
 			vscode.window.showInformationMessage(
 				`Showing diff between ${selectedFromCommit.hash.substring(0, 7)} and ${selectedToCommit.hash.substring(0, 7)}`

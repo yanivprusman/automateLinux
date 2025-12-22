@@ -17,7 +17,10 @@ export class ModeProvider implements vscode.TreeDataProvider<ModeItem> {
       title: 'Toggle Mode',
       arguments: [element]
     };
-    item.iconPath = element.checked ? new vscode.ThemeIcon('check') : undefined;
+    // Radio button style: filled circle if checked, outline if not
+    item.iconPath = element.checked
+      ? new vscode.ThemeIcon('radio-tower')
+      : new vscode.ThemeIcon('circle-outline');
     return item;
   }
 

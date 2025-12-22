@@ -321,6 +321,7 @@ CmdResult handleActiveWindowChanged(const json& command) {
     logMessage += "wmInstance: " + command[COMMAND_ARG_WM_INSTANCE].get<string>() + ", ";
     logMessage += "windowId: " + std::to_string(command[COMMAND_ARG_WINDOW_ID].get<long>()) + "\n";
     logToFile(logMessage);
+    
     return CmdResult(0, "Active window info received and logged.\n");
 }
 

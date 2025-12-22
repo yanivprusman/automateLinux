@@ -13,20 +13,9 @@ int fd;
 const int codeForCode = 101;
 const int codeForGnomeTerminal = 102;
 const int codeForGoogleChrome = 103;
-// const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 const char *DAEMON_SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock";
 static char keyboard_path_buffer[512];
-
-// const char* getKeyboardPath() {
-//     static char full_path[256];
-//     const char* env_path = getenv("KEYBOARD_BY_ID");
-//     if (env_path != NULL && *env_path != '\0') {
-//         snprintf(full_path, sizeof(full_path), "/dev/input/by-id/%s", env_path);
-//         return full_path;
-//     }
-//     return DEFAULT_KEYBOARD;
-// }
 
 const char* getKeyboardPath() {
     int sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -64,11 +53,6 @@ void sendEvent(int type, int code, int value) {
     ev.value = value;
     write(fd, &ev, sizeof(ev));
 }
-
-// void send_key_event(int key, int value) {
-//     sendEvent(EV_KEY, key, value);
-//     sendEvent(EV_SYN, SYN_REPORT, 0);
-// }
 
 int isApp(const char *input) {
     if (strcmp(input, "Code") == 0) return codeForCode;

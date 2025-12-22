@@ -19,8 +19,8 @@ export class ModeProvider implements vscode.TreeDataProvider<ModeItem> {
     };
     // Radio button style: filled circle if checked, outline if not
     item.iconPath = element.checked
-      ? new vscode.ThemeIcon('radio-tower')
-      : new vscode.ThemeIcon('circle-outline');
+      ? new vscode.ThemeIcon('circle-outline')
+      : undefined;
     return item;
   }
 

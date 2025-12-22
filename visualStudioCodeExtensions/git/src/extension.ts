@@ -129,7 +129,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.showInformationMessage(`Copied commit hash: ${item.commitHash.substring(0, 7)}`);
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand('git.copyCommitMessage', async (item: CommitItem) => {
+	context.subscriptions.push(vscode.commands.registerCommand('git._copyCommitMessage', async (item: CommitItem) => {
 		if (!item || !item.commitMessage) {
 			vscode.window.showErrorMessage('No commit message to copy.');
 			return;
@@ -175,8 +175,14 @@ export function activate(context: vscode.ExtensionContext) {
 						{ cwd: repoRoot, maxBuffer: 10 * 1024 * 1024 },
 						(error, stdout, stderr) => {
 							if (error) {
-								console.error(`Failed to get file content: ${error.message}`);
-								reject(error);
+								// File doesn't exist in this commit, treat as empty
+								if (error.message.includes('exists on disk, but not in')) {
+									console.log(`[git-ext] File did not exist in commit ${fromCommitHash.substring(0, 7)}, treating as empty`);
+									resolve('');
+								} else {
+									console.error(`Failed to get file content: ${error.message}`);
+									reject(error);
+								}
 								return;
 							}
 							resolve(stdout);
@@ -256,13 +262,22 @@ export function activate(context: vscode.ExtensionContext) {
 			checkoutInProgress.delete(filePath);
 			
 			if (error) {
-				vscode.window.showErrorMessage(`Failed to checkout file: ${error.message}`);
-				return;
+				// File doesn't exist in this commit, treat as empty
+				if (error.message.includes('pathspec') && error.message.includes('did not match')) {
+					console.log(`[git-ext] File did not exist in commit ${commitHash}, clearing content`);
+					// Write empty file
+					fs.writeFileSync(filePath, '', 'utf-8');
+					vscode.window.showInformationMessage(`File did not exist in commit ${commitHash.substring(0, 7)}, showing as empty.`);
+				} else {
+					vscode.window.showErrorMessage(`Failed to checkout file: ${error.message}`);
+					return;
+				}
+			} else {
+				if (stderr) {
+					vscode.window.showWarningMessage(`Git checkout warning: ${stderr}`);
+				}
+				vscode.window.showInformationMessage(`Successfully checked out ${path.basename(filePath)} from commit ${commitHash}.`);
 			}
-			if (stderr) {
-				vscode.window.showWarningMessage(`Git checkout warning: ${stderr}`);
-			}
-			vscode.window.showInformationMessage(`Successfully checked out ${path.basename(filePath)} from commit ${commitHash}.`);
 			if (currentFilePath === filePath) {
 				// vscode.window.showTextDocument(vscode.Uri.file(filePath), { preview: false });
 			}

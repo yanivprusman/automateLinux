@@ -73,7 +73,7 @@
         "title": "Copy Commit Hash"
       },
       {
-        "command": "git.copyCommitMessage",
+        "command": "git._copyCommitMessage",
         "title": "Copy Commit Message"
       }
     ],
@@ -85,7 +85,7 @@
           "group": "1_copy"
         },
         {
-          "command": "git.copyCommitMessage",
+          "command": "git._copyCommitMessage",
           "when": "viewItem == commit",
           "group": "1_copy"
         }

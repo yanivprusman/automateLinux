@@ -94,7 +94,12 @@ export function activate(context: vscode.ExtensionContext) {
 	const modeTreeView = vscode.window.createTreeView('Mode', { treeDataProvider: modeProvider });
 	context.subscriptions.push(
         vscode.commands.registerCommand('git.toggleMode', (item: ModeItem) => {
-            item.checked = !item.checked;
+            // Mutually exclusive: uncheck all modes first
+            const modes = modeProvider.getChildren();
+            modes.forEach(mode => mode.checked = false);
+            
+            // Check only the selected one
+            item.checked = true;
             modeProvider.refresh();
         })
     );

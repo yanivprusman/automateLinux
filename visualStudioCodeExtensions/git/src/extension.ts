@@ -140,15 +140,42 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		try {
-			console.log(`[git-ext] Applying diff annotation: ${selectedFromCommit.hash} → ${selectedToCommit.hash}`);
-			const annotatedContent = await annotateDiffChanges(
-				selectedFromCommit.hash,
-				selectedToCommit.hash,
-				filePath,
-				repoRoot
-			);
+			let annotatedContent: string;
+			
+			// Extract values after null check for type safety
+			const fromCommitHash = selectedFromCommit.hash;
+			const toCommitHash = selectedToCommit.hash;
+			
+			// Convert absolute path to relative path for git commands
+			const relativePath = path.relative(repoRoot, filePath);
 
-			// Replace editor content with annotated diff
+			// If both commits are the same, show the file content from that commit
+			if (fromCommitHash === toCommitHash) {
+				console.log(`[git-ext] Same commit selected: ${fromCommitHash.substring(0, 7)}`);
+				annotatedContent = await new Promise((resolve, reject) => {
+					exec(`git show "${fromCommitHash}:${relativePath}"`, 
+						{ cwd: repoRoot, maxBuffer: 10 * 1024 * 1024 },
+						(error, stdout, stderr) => {
+							if (error) {
+								console.error(`Failed to get file content: ${error.message}`);
+								reject(error);
+								return;
+							}
+							resolve(stdout);
+						}
+					);
+				});
+			} else {
+				console.log(`[git-ext] Applying diff annotation: ${fromCommitHash} → ${toCommitHash}`);
+				annotatedContent = await annotateDiffChanges(
+					fromCommitHash,
+					toCommitHash,
+					relativePath,
+					repoRoot
+				);
+			}
+
+			// Replace editor content with annotated diff or file content
 			const edit = new vscode.WorkspaceEdit();
 			const fullRange = new vscode.Range(
 				editor.document.positionAt(0),
@@ -160,8 +187,9 @@ export function activate(context: vscode.ExtensionContext) {
 			// Store annotation for display in tree and update view
 			commitProvider.setCurrentDiffAnnotation(annotatedContent);
 
+			const isSameCommit = fromCommitHash === toCommitHash;
 			vscode.window.showInformationMessage(
-				`Showing diff between ${selectedFromCommit.hash.substring(0, 7)} and ${selectedToCommit.hash.substring(0, 7)}`
+				`Showing ${isSameCommit ? 'commit' : 'diff'} ${fromCommitHash.substring(0, 7)}${!isSameCommit ? ' → ' + toCommitHash.substring(0, 7) : ''}`
 			);
 		} catch (error) {
 			vscode.window.showErrorMessage(`Failed to apply diff: ${error}`);

@@ -3,20 +3,66 @@ import { exec } from 'child_process';
 import { findGitRepoRoot } from './gitUtils';
 import { ActiveFileCommitProvider, CommitItem } from './commitView';
 import * as path from 'path';
+import * as fs from 'fs';
 import { ModeProvider, ModeItem } from './modeProvider';
+
+// Helper function to save file state before checkout
+async function saveFileState(filePath: string, repoRoot: string): Promise<void> {
+	const stateDir = path.join(repoRoot, '.git-extension-state');
+	if (!fs.existsSync(stateDir)) {
+		fs.mkdirSync(stateDir, { recursive: true });
+	}
+	
+	try {
+		const fileContent = fs.readFileSync(filePath, 'utf-8');
+		const fileHash = path.basename(filePath).replace(/[^a-zA-Z0-9]/g, '_');
+		const statePath = path.join(stateDir, `${fileHash}.state`);
+		fs.writeFileSync(statePath, fileContent, 'utf-8');
+	} catch (error) {
+		console.error(`Failed to save file state: ${error}`);
+	}
+}
+
+// Helper function to restore file state
+async function restoreFileState(filePath: string, repoRoot: string): Promise<boolean> {
+	const stateDir = path.join(repoRoot, '.git-extension-state');
+	const fileHash = path.basename(filePath).replace(/[^a-zA-Z0-9]/g, '_');
+	const statePath = path.join(stateDir, `${fileHash}.state`);
+	
+	if (!fs.existsSync(statePath)) {
+		return false;
+	}
+	
+	try {
+		const savedContent = fs.readFileSync(statePath, 'utf-8');
+		fs.writeFileSync(filePath, savedContent, 'utf-8');
+		return true;
+	} catch (error) {
+		console.error(`Failed to restore file state: ${error}`);
+		return false;
+	}
+}
 
 export function activate(context: vscode.ExtensionContext) {
 	const modeProvider = new ModeProvider();
-	vscode.window.createTreeView('Mode', { treeDataProvider: modeProvider });
+	const modeTreeView = vscode.window.createTreeView('Mode', { treeDataProvider: modeProvider });
 	context.subscriptions.push(
         vscode.commands.registerCommand('git.toggleMode', (item: ModeItem) => {
             item.checked = !item.checked;
             modeProvider.refresh();
+            
+            // Update visibility of diff view based on mode
+            const isDiffMode = item.label === 'diff' && item.checked;
+            vscode.commands.executeCommand('setViewVisibility', 'activeFileCommitsView2', !isDiffMode);
         })
     );
 	const commitProvider = new ActiveFileCommitProvider();
 	const treeView = vscode.window.createTreeView('activeFileCommitsView', { treeDataProvider: commitProvider });
 	const treeView2 = vscode.window.createTreeView('activeFileCommitsView2', { treeDataProvider: commitProvider });
+	
+	// Initially, diff view should be hidden (checkout mode is default)
+	vscode.commands.executeCommand('setViewVisibility', 'activeFileCommitsView2', false);
+	
 	let lastCheckedOut: Record<string, string> = {};
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromCommit', async (commitHash: string, filePath: string) => {
 		const editor = vscode.window.activeTextEditor;
@@ -33,6 +79,23 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 		}
+
+		// Save current state before checkout (unless we're restoring from saved state)
+		if (commitHash !== 'CURRENT') {
+			await saveFileState(filePath, repoRoot);
+		}
+
+		// Handle "Current State" special case
+		if (commitHash === 'CURRENT') {
+			const restored = await restoreFileState(filePath, repoRoot);
+			if (restored) {
+				vscode.window.showInformationMessage(`Restored ${path.basename(filePath)} to current working state.`);
+			} else {
+				vscode.window.showInformationMessage(`Current working state not available. File may not have been modified since last checkout.`);
+			}
+			return;
+		}
+
 		exec(`git checkout ${commitHash} -- "${filePath}"`, { cwd: repoRoot }, (error, stdout, stderr) => {
 			if (error) {
 				vscode.window.showErrorMessage(`Failed to checkout file: ${error.message}`);

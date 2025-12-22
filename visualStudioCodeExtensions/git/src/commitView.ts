@@ -8,11 +8,18 @@ export class CommitItem extends vscode.TreeItem {
 		public readonly commitHash: string,
 		public readonly authorDate: string,
 		public readonly filePath: string,
-		public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None
+		public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None,
+		public readonly isCurrentState: boolean = false
 	) {
 		super(label, collapsibleState);
-		this.description = `${authorDate} (${commitHash.substring(0, 7)})`;
-		this.tooltip = `${label}\nHash: ${commitHash}\nDate: ${authorDate}\nFile: ${filePath}`;
+		if (isCurrentState) {
+			this.description = '(current working state)';
+			this.tooltip = `Current state of ${filePath}`;
+			this.iconPath = new vscode.ThemeIcon('circle-filled');
+		} else {
+			this.description = `${authorDate} (${commitHash.substring(0, 7)})`;
+			this.tooltip = `${label}\nHash: ${commitHash}\nDate: ${authorDate}\nFile: ${filePath}`;
+		}
 	}
 }
 
@@ -73,7 +80,10 @@ export class ActiveFileCommitProvider implements vscode.TreeDataProvider<CommitI
 					return null;
 				}).filter((item): item is CommitItem => item !== null);
 
-				resolve(commits);
+				// Prepend "Current State" item
+				const currentStateItem = new CommitItem('Current State', 'CURRENT', '', filePath, vscode.TreeItemCollapsibleState.None, true);
+				const allItems = [currentStateItem, ...commits];
+				resolve(allItems);
 			});
 		});
 	}

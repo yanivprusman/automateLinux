@@ -120,6 +120,24 @@ export function activate(context: vscode.ExtensionContext) {
 	let selectedFromCommit: { hash: string; filePath: string } | null = null;
 	let selectedToCommit: { hash: string; filePath: string } | null = null;
 	
+	context.subscriptions.push(vscode.commands.registerCommand('git.copyCommitHash', async (item: CommitItem) => {
+		if (!item || !item.commitHash) {
+			vscode.window.showErrorMessage('No commit hash to copy.');
+			return;
+		}
+		await vscode.env.clipboard.writeText(item.commitHash);
+		vscode.window.showInformationMessage(`Copied commit hash: ${item.commitHash.substring(0, 7)}`);
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('git.copyCommitMessage', async (item: CommitItem) => {
+		if (!item || !item.commitMessage) {
+			vscode.window.showErrorMessage('No commit message to copy.');
+			return;
+		}
+		await vscode.env.clipboard.writeText(item.commitMessage);
+		vscode.window.showInformationMessage(`Copied commit message: ${item.commitMessage}`);
+	}));
+
 	context.subscriptions.push(vscode.commands.registerCommand('git.applyDiffAnnotation', async () => {
 		if (!selectedFromCommit || !selectedToCommit) {
 			vscode.window.showErrorMessage('Please select both from and to commits for diff mode.');

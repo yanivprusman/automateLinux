@@ -9,7 +9,8 @@ export class CommitItem extends vscode.TreeItem {
 		public readonly authorDate: string,
 		public readonly filePath: string,
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.None,
-		public readonly isCurrentState: boolean = false
+		public readonly isCurrentState: boolean = false,
+		public readonly commitMessage: string = ''
 	) {
 		super(label, collapsibleState);
 		if (isCurrentState) {
@@ -19,6 +20,7 @@ export class CommitItem extends vscode.TreeItem {
 		} else {
 			this.description = `${authorDate} (${commitHash.substring(0, 7)})`;
 			this.tooltip = `${label}\nHash: ${commitHash}\nDate: ${authorDate}\nFile: ${filePath}`;
+			this.contextValue = 'commit';
 		}
 	}
 }
@@ -82,7 +84,7 @@ export class ActiveFileCommitProvider implements vscode.TreeDataProvider<CommitI
 					const parts = line.match(/^(\w+)\s+(\S+)\s+(.*)$/);
 					if (parts && parts.length === 4) {
 						const [, commitHash, authorDate, subject] = parts;
-						return new CommitItem(subject, commitHash, authorDate, filePath, vscode.TreeItemCollapsibleState.None);
+						return new CommitItem(subject, commitHash, authorDate, filePath, vscode.TreeItemCollapsibleState.None, false, subject);
 					}
 					return null;
 				}).filter((item): item is CommitItem => item !== null);

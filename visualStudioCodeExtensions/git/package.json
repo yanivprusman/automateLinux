@@ -67,8 +67,30 @@
       {
         "command": "git.applyDiffAnnotation",
         "title": "Apply Diff Annotation"
+      },
+      {
+        "command": "git.copyCommitHash",
+        "title": "Copy Commit Hash"
+      },
+      {
+        "command": "git.copyCommitMessage",
+        "title": "Copy Commit Message"
       }
-    ]
+    ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "git.copyCommitHash",
+          "when": "viewItem == commit",
+          "group": "1_copy"
+        },
+        {
+          "command": "git.copyCommitMessage",
+          "when": "viewItem == commit",
+          "group": "1_copy"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

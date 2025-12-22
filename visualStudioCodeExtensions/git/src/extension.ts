@@ -50,20 +50,15 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('git.toggleMode', (item: ModeItem) => {
             item.checked = !item.checked;
             modeProvider.refresh();
-            
-            // Update visibility of diff view based on mode
-            const isDiffMode = item.label === 'diff' && item.checked;
-            vscode.commands.executeCommand('setViewVisibility', 'activeFileCommitsView2', !isDiffMode);
         })
     );
 	const commitProvider = new ActiveFileCommitProvider();
 	const treeView = vscode.window.createTreeView('activeFileCommitsView', { treeDataProvider: commitProvider });
 	const treeView2 = vscode.window.createTreeView('activeFileCommitsView2', { treeDataProvider: commitProvider });
 	
-	// Initially, diff view should be hidden (checkout mode is default)
-	vscode.commands.executeCommand('setViewVisibility', 'activeFileCommitsView2', false);
-	
 	let lastCheckedOut: Record<string, string> = {};
+	// Track files that are currently being checked out to avoid race conditions
+	let checkoutInProgress: Set<string> = new Set();
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromCommit', async (commitHash: string, filePath: string) => {
 		const editor = vscode.window.activeTextEditor;
 		const currentFilePath = editor?.document.uri.fsPath;
@@ -82,6 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Save current state before checkout (unless we're restoring from saved state)
 		if (commitHash !== 'CURRENT') {
+			console.log(`[git-ext] Saving current state before checkout from ${commitHash}`);
 			await saveFileState(filePath, repoRoot);
 		}
 
@@ -96,7 +92,14 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
+		console.log(`[git-ext] Checking out ${filePath} from commit ${commitHash}`);
+		
+		// Mark checkout as in progress
+		checkoutInProgress.add(filePath);
+		
 		exec(`git checkout ${commitHash} -- "${filePath}"`, { cwd: repoRoot }, (error, stdout, stderr) => {
+			checkoutInProgress.delete(filePath);
+			
 			if (error) {
 				vscode.window.showErrorMessage(`Failed to checkout file: ${error.message}`);
 				return;
@@ -185,6 +188,48 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
 		}
 	});
+	// Listen for file saves and update the current state
+	context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(async (document) => {
+		if (document.uri.scheme !== 'file') {
+			return;
+		}
+
+		const filePath = document.uri.fsPath;
+		
+		// Don't save state while a checkout is in progress
+		if (checkoutInProgress.has(filePath)) {
+			console.log(`[git-ext] Ignoring save during checkout for ${filePath}`);
+			return;
+		}
+
+		const repoRoot = await findGitRepoRoot(filePath);
+		
+		if (!repoRoot) {
+			return;
+		}
+
+		// Check if this file was recently checked out from a commit
+		// Try exact match first, then try normalized path
+		let lastCheckout = lastCheckedOut[filePath];
+		
+		// If no exact match, try to find by comparing file names
+		if (!lastCheckout) {
+			for (const trackedPath in lastCheckedOut) {
+				if (trackedPath.toLowerCase() === filePath.toLowerCase()) {
+					lastCheckout = lastCheckedOut[trackedPath];
+					break;
+				}
+			}
+		}
+
+		// Only update the saved state if this file was checked out (not the initial 'CURRENT')
+		if (lastCheckout && lastCheckout !== 'CURRENT') {
+			// File was checked out from a commit and now has been saved
+			// Update the current state to this new content
+			console.log(`[git-ext] Saving state for ${filePath} after checkout from ${lastCheckout}`);
+			await saveFileState(filePath, repoRoot);
+		}
+	}));
 	commitProvider.refresh();
 }
 

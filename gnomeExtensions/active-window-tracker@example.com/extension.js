@@ -5,7 +5,8 @@ import { DaemonConnector } from '../lib/daemon.js';
 import { ShellCommandExecutor } from '../lib/shellCommand.js';
 const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
-const shouldLog = true;
+const shouldLog = false;
+
 export default class ActiveWindowTracker extends Extension {
     constructor(metadata) {
         super(metadata);

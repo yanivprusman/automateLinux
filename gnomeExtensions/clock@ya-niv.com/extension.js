@@ -13,14 +13,12 @@ import { ShellCommandExecutor } from '../lib/shellCommand.js';
 
 const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
-const shouldLog = false;  //remove
+const shouldLog = false;
 
 export default class ClockExtension extends Extension {
     constructor(metadata) {
         super(metadata);
         this.logger = new Logger(LOG_FILE_PATH, shouldLog); //remove
-//        this._shouldLog = false; // Initialize to false, will be updated from daemon //add
-//        this.logger = new Logger(LOG_FILE_PATH, this._shouldLog); //add
         this.daemon = new DaemonConnector(DAEMON_SOCKET_PATH, this.logger);
         this.shellExecutor = new ShellCommandExecutor(this.logger);
         this._label = null;
@@ -28,25 +26,13 @@ export default class ClockExtension extends Extension {
         this._lastX = null;
         this._lastY = null;
         this._menu = null;
-//        this._toggleLoggingMenuItem = null; //add
         this.logger.log('ClockExtension constructor called');
     }
 
     async enable() {
         this.logger.log('ClockExtension.enable() called');
         this.logger.log(`Extension path: ${this.path}`);
-//         //add
         try {
-//            // Get initial logging state from daemon //add
-//            const shouldLogResponse = await this.daemon.connectAndSendMessage({ //add
-//                command: 'getShouldLog' //add
-//            }); //add
-//            if (shouldLogResponse) { //add
-//                this._shouldLog = (shouldLogResponse.trim() === 'true'); //add
-//                this.logger.setShouldLog(this._shouldLog); // Update logger with daemon's state //add
-//                this.logger.log(`Initial daemon shouldLog state: ${this._shouldLog}`); //add
-//            } //add
-//             //add
             this._label = new St.Label({
                 text: '00:00',
                 style_class: 'clock-label',
@@ -58,7 +44,6 @@ export default class ClockExtension extends Extension {
             this.logger.log('Label created');
             let x, y;
             const loadedPos = await this._loadPosition();
-
             if (loadedPos.x !== null && loadedPos.y !== null) {
                 x = loadedPos.x;
                 y = loadedPos.y;
@@ -66,7 +51,6 @@ export default class ClockExtension extends Extension {
             } else {
                 const monitorIndex = 0; // Primary monitor
                 const monitor = Main.layoutManager.monitors[monitorIndex];
-                
                 if (!monitor) {
                     this.logger.log(`Monitor ${monitorIndex} not found, falling back to (50,50)`);
                     x = 50;
@@ -76,44 +60,29 @@ export default class ClockExtension extends Extension {
                     y = monitor.y + 30;
                     this.logger.log(`Default position used: X=${x}, Y=${y}`);
                 }
-                // If using default, immediately save it to persist
                 this._savePosition(x, y);
             }
-            
             this._label.set_position(x, y);
             this._lastX = x;
             this._lastY = y;
             this.logger.log(`Label positioned at ${x},${y}`);
-            
             Main.uiGroup.add_child(this._label);
             this.logger.log('Label added to stage');
-            
             this._label.show();
             this.logger.log('Label shown');
-
-            // Setup the right-click menu
             this._menu = new PopupMenu.PopupMenu(this._label, 0.5, St.Side.TOP);
             Main.uiGroup.add_child(this._menu.actor);
-            this._menu.actor.hide(); // Initially hide the menu
-
+            this._menu.actor.hide(); 
             let shutDownMenuItem = new PopupMenu.PopupMenuItem('Shut Down');
             shutDownMenuItem.connect('activate', () => this._onShutdownMenuItemActivated());
             this._menu.addMenuItem(shutDownMenuItem);
-
-//            this._toggleLoggingMenuItem = this._createToggleLoggingMenuItem(); //add
-//            this._menu.addMenuItem(this._toggleLoggingMenuItem); //add
-// //add
-            this._label.menu = this._menu; // Associate menu with the label
-
+            this._label.menu = this._menu;
             this._updateClock();
-            
             this._timeoutId = GLib.timeout_add_seconds(
                 GLib.PRIORITY_DEFAULT,
                 1,
                 () => {
                     this._updateClock();
-                    
-                    // Periodically save position
                     const x = this._label.get_x();
                     const y = this._label.get_y();
                     if (x !== this._lastX || y !== this._lastY) {
@@ -121,15 +90,11 @@ export default class ClockExtension extends Extension {
                         this._lastX = x;
                         this._lastY = y;
                     }
-                    
                     return GLib.SOURCE_CONTINUE;
                 }
             );
             this.logger.log('Clock update timer started');
-            
-            // Setup dragging
             this._setupDragging();
-            
         } catch (e) {
             this.logger.log(`Error in enable(): ${e.message}`);
             this.logger.log(`Stack: ${e.stack}`);
@@ -138,9 +103,8 @@ export default class ClockExtension extends Extension {
 
     _setupDragging() {
         let dragData = { dragging: false, offsetX: 0, offsetY: 0 };
-
         this._label.connect('button-press-event', (_, event) => {
-            if (event.get_button() === 1) { // Left-click for dragging
+            if (event.get_button() === 1) { 
                 this.logger.log('Button pressed on label (left-click)');
                 dragData.dragging = true;
                 const [stageX, stageY] = event.get_coords();
@@ -150,14 +114,13 @@ export default class ClockExtension extends Extension {
                 dragData.offsetY = stageY - actorY;
                 this.logger.log(`Drag start: stage(${stageX},${stageY}), offset(${dragData.offsetX},${dragData.offsetY})`);
                 return Clutter.EVENT_STOP;
-            } else if (event.get_button() === 3) { // Right-click for menu
+            } else if (event.get_button() === 3) { 
                 this.logger.log('Button pressed on label (right-click)');
                 this._menu.toggle();
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
         });
-
         this._label.connect('button-release-event', (_, event) => {
             if (event.get_button() === 1) {
                 this.logger.log('Button released');
@@ -170,7 +133,6 @@ export default class ClockExtension extends Extension {
             }
             return Clutter.EVENT_PROPAGATE;
         });
-
         this._label.connect('motion-event', (_, event) => {
             if (dragData.dragging) {
                 const [stageX, stageY] = event.get_coords();
@@ -184,46 +146,15 @@ export default class ClockExtension extends Extension {
         });
     }
 
-//    _createToggleLoggingMenuItem() { //add
-//        let text = this._shouldLog ? 'Disable Logging' : 'Enable Logging'; //add
-//        let menuItem = new PopupMenu.PopupMenuItem(text); //add
-//        menuItem.connect('activate', () => this._onToggleLoggingMenuItemActivated(menuItem)); //add
-//        return menuItem; //add
-//    } //add
-// //add
-//    async _onToggleLoggingMenuItemActivated(menuItem) { //add
-//        this.logger.log('Toggle Logging menu item activated.'); //add
-//        this._shouldLog = !this._shouldLog; // Toggle the state locally //add
-//        this.logger.setShouldLog(this._shouldLog); // Update logger //add
-// //add
-//        const enableValue = this._shouldLog ? 'true' : 'false'; //add
-//        this.logger.log(`Sending shouldLog command to daemon: ${enableValue}`); //add
-// //add
-//        try { //add
-//            const response = await this.daemon.connectAndSendMessage({ //add
-//                command: 'shouldLog', //add
-//                enable: enableValue //add
-//            }); //add
-//            this.logger.log(`Daemon response for shouldLog: ${response}`); //add
-//        } catch (e) { //add
-//            this.logger.log(`Error sending shouldLog command to daemon: ${e.message}`); //add
-//        } //add
-// //add
-//        // Update menu item text //add
-//        menuItem.label.text = this._shouldLog ? 'Disable Logging' : 'Enable Logging'; //add
-//    } //add
-// //add
     async _onShutdownMenuItemActivated() {
         this.logger.log('Shut Down menu item activated. Executing systemctl poweroff...');
         this.shellExecutor.execute('/usr/bin/systemctl poweroff');
-        // No need to wait for a response as it's a direct system command.
     }
 
     async _loadPosition() {
         this.logger.log('Loading position using DaemonConnector...');
         let x = null;
         let y = null;
-
         try {
             const xResponse = await this.daemon.connectAndSendMessage({
                 command: 'getEntry',
@@ -235,7 +166,6 @@ export default class ClockExtension extends Extension {
                     x = xVal;
                 }
             }
-
             const yResponse = await this.daemon.connectAndSendMessage({
                 command: 'getEntry',
                 key: 'clockY'
@@ -264,7 +194,6 @@ export default class ClockExtension extends Extension {
         }).catch(e => {
             this.logger.log(`Error saving clockX to daemon: ${e.message}`);
         });
-
         this.daemon.connectAndSendMessage({
             command: 'upsertEntry',
             key: 'clockY',
@@ -282,12 +211,10 @@ export default class ClockExtension extends Extension {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;
         }
-
         if (this._label) {
             this._label.destroy();
             this._label = null;
         }
-
         if (this._menu) {
             this._menu.destroy();
             this._menu = null;
@@ -298,7 +225,6 @@ export default class ClockExtension extends Extension {
         if (!this._label) {
             return;
         }
-        
         const t = new Date();
         this._label.text = t.toLocaleTimeString([], {
             hour: '2-digit',

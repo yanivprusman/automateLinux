@@ -109,8 +109,8 @@ export function activate(context: vscode.ExtensionContext) {
         })
     );
 	const commitProvider = new ActiveFileCommitProvider();
-	const treeView = vscode.window.createTreeView('activeFileCommitsView', { treeDataProvider: commitProvider });
-	const treeView2 = vscode.window.createTreeView('activeFileCommitsView2', { treeDataProvider: commitProvider });
+	const fromCommitView = vscode.window.createTreeView('activeFileFromCommits', { treeDataProvider: commitProvider });
+	const toCommitView = vscode.window.createTreeView('activeFileToCommits', { treeDataProvider: commitProvider });
 	
 	let lastCheckedOut: Record<string, string> = {};
 	// Track files that are currently being checked out to avoid race conditions
@@ -286,7 +286,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const currentHash = lastCheckedOut[filePath];
 			const currentItem = children.find(c => c.commitHash === currentHash);
 			if (currentItem) {
-				treeView.reveal(currentItem, { select: true, focus: true });
+				toCommitView.reveal(currentItem, { select: true, focus: true });
 			}
 		});
 	}));
@@ -351,7 +351,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {
 		commitProvider.refresh();
 	}));
-	treeView.onDidChangeSelection(e => {
+	fromCommitView.onDidChangeSelection(e => {
 		if (e.selection.length > 0) {
 			const item = e.selection[0] as CommitItem;
 			const currentMode = modeProvider.getCheckedMode();
@@ -370,7 +370,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}
 	});
-	treeView2.onDidChangeSelection(e => {
+	toCommitView.onDidChangeSelection(e => {
 		if (e.selection.length > 0) {
 			const item = e.selection[0] as CommitItem;
 			const currentMode = modeProvider.getCheckedMode();

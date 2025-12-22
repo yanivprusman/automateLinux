@@ -30,12 +30,12 @@
           "icon": "resources/git-icon.svg"
         },
         {
-          "id": "activeFileCommitsView2",
+          "id": "activeFileToCommits",
           "name": "to commit",
           "icon": "resources/git-icon.svg"
         },
         {
-          "id": "activeFileCommitsView",
+          "id": "activeFileFromCommits",
           "name": "from commit",
           "icon": "resources/git-icon.svg",
           "when": "git-ext:diffMode"

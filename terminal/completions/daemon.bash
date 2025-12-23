@@ -44,7 +44,7 @@ _daemon_completion() {
     command_args[getEntry]="--key"
     command_args[setKeyboard]="--keyboardName"
     command_args[shouldLog]="--enable"
-    command_args[toggleKeyboardsWhenActiveWindowChanges]="--enable"
+    command_args[toggleKeyboard]="--enable"
     command_args[getDir]="--dirName"
     command_args[getFile]="--fileName"
     command_args[getSocketPath]=""
@@ -66,7 +66,7 @@ _daemon_completion() {
 
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard shouldLog toggleKeyboardsWhenActiveWindowChanges getDir getFile (activeWindowChanged) help quit"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit"
     }
 
     if [[ "${COMP_WORDS[1]}" == "send" ]]; then

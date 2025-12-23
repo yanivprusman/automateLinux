@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     } else {
       cerr << "Unknown mode: expecting 'daemon send' or 'daemon daemon'\n";
       cerr << "Try: daemon send ping\n";
-      cerr << "Or: daemon send setKeyboard --keyboardName Code\n";
+      cerr << "Or: daemon send setKeyboard\n";
       return 1;
     }
   } else {

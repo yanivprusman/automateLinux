@@ -59,8 +59,7 @@
 #define COMMAND_VALUE_FALSE "false"
 #define COMMAND_SHOULD_LOG "shouldLog"
 #define COMMAND_GET_SHOULD_LOG "getShouldLog"
-#define COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES                    \
-  "toggleKeyboardsWhenActiveWindowChanges"
+#define COMMAND_TOGGLE_KEYBOARD "toggleKeyboard"
 #define COMMAND_ARG_ENABLE "enable"
 #define COMMAND_GET_DIR "getDir"
 #define COMMAND_ARG_DIR_NAME "dirName"

@@ -30,8 +30,7 @@ bool KeyboardManager::isKnownKeyboard(const std::string &name) {
   return false;
 }
 
-CmdResult KeyboardManager::setKeyboard(const std::string &keyboardNameStr,
-                                       bool stopKeyboard) {
+CmdResult KeyboardManager::setKeyboard(bool stopKeyboard) {
   string logMessage;
   FILE *pipe;
   string output;

@@ -37,7 +37,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_SHOULD_LOG, {}),
-    CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES,
+    CommandSignature(COMMAND_TOGGLE_KEYBOARD,
                      {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
     CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME}),
@@ -52,7 +52,7 @@ const size_t COMMAND_REGISTRY_SIZE =
 
 static int clientSocket = -1;
 static bool shouldLog = false;
-static bool toggleKeyboardsWhenActiveWindowChanges = true;
+static bool toggleKeyboard = true;
 
 static string
 formatEntriesAsText(const vector<std::pair<string, string>> &entries) {
@@ -93,10 +93,9 @@ static const string HELP_MESSAGE =
     "  getMousePath            Get the path to the mouse input device.\n"
     "  getSocketPath           Get the path to the daemon's UNIX domain "
     "socket.\n"
-    "  setKeyboard             Set the keyboard by name and execute restart "
-    "script.\n"
+    "  setKeyboard             start keyboard"
     "  shouldLog               Enable or disable logging (true/false).\n"
-    "  toggleKeyboardsWhenActiveWindowChanges  Toggle automatic keyboard "
+    "  toggleKeyboard  Toggle automatic keyboard "
     "switching on window change.\n"
     "  getDir                  Get a daemon directory path by name (base, "
     "data, mappings).\n"
@@ -265,12 +264,12 @@ CmdResult handleGetShouldLog(const json &) {
   return CmdResult(0, shouldLog ? COMMAND_VALUE_TRUE : COMMAND_VALUE_FALSE);
 }
 
-CmdResult handleToggleKeyboardsWhenActiveWindowChanges(const json &command) {
+CmdResult handletoggleKeyboard(const json &command) {
   string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
-  toggleKeyboardsWhenActiveWindowChanges = (enableStr == COMMAND_VALUE_TRUE);
+  toggleKeyboard = (enableStr == COMMAND_VALUE_TRUE);
   return CmdResult(
       0, string("Return to default keyboard on next window change: ") +
-             (toggleKeyboardsWhenActiveWindowChanges ? "no" : "yes") + "\n");
+             (toggleKeyboard ? "no" : "yes") + "\n");
 }
 
 CmdResult handleGetDir(const json &command) {
@@ -308,9 +307,7 @@ CmdResult handleActiveWindowChanged(const json &command) {
 }
 
 CmdResult handleSetKeyboard(const json &command) {
-  string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
-  return KeyboardManager::setKeyboard(keyboardName,
-                                      toggleKeyboardsWhenActiveWindowChanges);
+  return KeyboardManager::setKeyboard(toggleKeyboard);
 }
 
 typedef CmdResult (*CommandHandler)(const json &);
@@ -344,8 +341,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_SET_KEYBOARD, handleSetKeyboard},
     {COMMAND_SHOULD_LOG, handleShouldLog},
     {COMMAND_GET_SHOULD_LOG, handleGetShouldLog},
-    {COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES,
-     handleToggleKeyboardsWhenActiveWindowChanges},
+    {COMMAND_TOGGLE_KEYBOARD,
+     handletoggleKeyboard},
     {COMMAND_GET_DIR, handleGetDir},
     {COMMAND_GET_FILE, handleGetFile},
     {COMMAND_QUIT, handleQuit},

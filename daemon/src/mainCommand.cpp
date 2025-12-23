@@ -406,10 +406,12 @@ CmdResult handleActiveWindowChanged(const json &command) {
     std::string url = getCurrentTabUrl();
     logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: " + url +
               "\n");
-    if (url.find("chatgpt.com") != std::string::npos) {
+    if (url.find("https://chatgpt.com") != std::string::npos ||
+        url.find("https://claude.ai") != std::string::npos) {
       if (g_keyboard_fd >= 0) {
-        char *commands[] = {(char *)"keyA", (char *)"keyA", (char *)"keyH", (char *)"keyI", (char *)"keyH"};
-        sendKeys_with_fd(g_keyboard_fd, 1, commands);
+        char *commands[] = {(char *)"keyH", (char *)"keyI", (char *)"backspace", (char *)"backspace"};
+        int commandCount = sizeof(commands) / sizeof(commands[0]);
+        sendKeys_with_fd(g_keyboard_fd, commandCount, commands);
         logToFile("[ACTIVE_WINDOW_CHANGED] ChatGPT detected. Sent 'hi'.\n");
       }
     }

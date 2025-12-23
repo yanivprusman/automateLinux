@@ -54,15 +54,6 @@ static int clientSocket = -1;
 static bool shouldLog = false;
 static bool toggleKeyboardsWhenActiveWindowChanges = true;
 
-static void logToFile(const string &message) {
-  if (!shouldLog)
-    return;
-  if (!g_logFile.is_open())
-    return;
-  g_logFile << message;
-  g_logFile.flush();
-}
-
 static string
 formatEntriesAsText(const vector<std::pair<string, string>> &entries) {
   if (entries.empty()) {

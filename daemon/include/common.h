@@ -93,6 +93,9 @@
 #define EVSIEVE_RANDOM_VAR "randomVar"
 #define EVSIEVE_STANDARD_ERR_FILE "evsieveErr.log"
 #define EVSIEVE_STANDARD_OUTPUT_FILE "evsieveOutput.log"
+#define wmClassTerminal "gnome-terminal-server"
+#define wmClassCode "code"
+#define wmClassChrome "google-chrome"
 
 struct CommandSignature {
     string name;

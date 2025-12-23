@@ -9,49 +9,26 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-int fd;
 const int codeForCode = 101;
 const int codeForGnomeTerminal = 102;
 const int codeForGoogleChrome = 103;
 const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 const char *DAEMON_SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock";
-static char keyboard_path_buffer[512];
+// static char keyboard_path_buffer[512]; // Not needed in daemon mode for sendKeys_execute_commands
 
-const char* getKeyboardPath() {
-    int sock = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (sock < 0) return DEFAULT_KEYBOARD;
-    struct sockaddr_un addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, DAEMON_SOCKET_PATH, sizeof(addr.sun_path) - 1);
-    if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        close(sock);
-        return DEFAULT_KEYBOARD;
-    }
-    const char *command = "{\"command\":\"getKeyboardPath\"}\n";
-    if (write(sock, command, strlen(command)) < 0) {
-        close(sock);
-        return DEFAULT_KEYBOARD;
-    }
-    char buffer[512];
-    ssize_t bytes_read = read(sock, buffer, sizeof(buffer) - 1);
-    close(sock);
-    if (bytes_read <= 0) return DEFAULT_KEYBOARD;
-    buffer[bytes_read] = '\0';
-    if (buffer[bytes_read - 1] == '\n') buffer[bytes_read - 1] = '\0';
-    strncpy(keyboard_path_buffer, buffer, sizeof(keyboard_path_buffer) - 1);
-    keyboard_path_buffer[sizeof(keyboard_path_buffer) - 1] = '\0';
-    return keyboard_path_buffer;
-}
-
-void sendEvent(int type, int code, int value) {
+// sendEvent now takes fd as an argument
+void sendEvent(int fd_local, int type, int code, int value) {
     struct input_event ev;
     memset(&ev, 0, sizeof(ev));
     gettimeofday(&ev.time, NULL);
     ev.type = type;
     ev.code = code;
     ev.value = value;
-    write(fd, &ev, sizeof(ev));
+    if (fd_local >= 0) {
+        write(fd_local, &ev, sizeof(ev));
+    } else {
+        fprintf(stderr, "Error: Invalid file descriptor for sendEvent\n");
+    }
 }
 
 int isApp(const char *input) {
@@ -59,36 +36,6 @@ int isApp(const char *input) {
     if (strcmp(input, "gnome-terminal-server") == 0) return codeForGnomeTerminal;
     if (strcmp(input, "google-chrome") == 0) return codeForGoogleChrome;
     return 0;
-}
-
-void print_usage() {
-    printf("Usage: sendKeys [OPTIONS] COMMANDS...\n");
-    printf("Options:\n");
-    printf("  -k, --keyboard PATH   Specify keyboard device path\n");
-    printf("Commands:\n");
-    printf("  key<X>               Press and release any letter key (A-Z)\n");
-    printf("  key<X>Down           Press any letter key (A-Z)\n");
-    printf("  key<X>Up             Release any letter key (A-Z)\n");
-    printf("  keycode:N            Send raw key code N (e.g., keycode:30 for KEY_A)\n");
-    printf("  period[Down/Up]      Send period key\n");
-    printf("  slash[Down/Up]       Send forward slash key\n");
-    printf("  minus[Down/Up]       Send minus key\n");
-    printf("  space[Down/Up]       Send space key\n");
-    printf("  comma[Down/Up]       Send comma key\n");
-    printf("  equals[Down/Up]      Send equals key\n");
-    printf("  semicolon[Down/Up]   Send semicolon key\n");
-    printf("  apostrophe[Down/Up]  Send apostrophe key\n");
-    printf("  backslash[Down/Up]   Send backslash key\n");
-    printf("  backspace[Down/Up]   Send backspace key\n");
-    printf("  bracket_left[Down/Up] Send left bracket key\n");
-    printf("  bracket_right[Down/Up] Send right bracket key\n");
-    printf("  backtick[Down/Up]    Send backtick key\n");
-    printf("  enter[Down/Up]       Send enter key with optional Down/Up\n");
-    printf("  numlock[Down/Up]     Toggle numlock or send Down/Up separately\n");
-    printf("  syn                  Send sync report\n");
-    printf("  Code                 Send Code app signal\n");
-    printf("  gnome-terminal-server  Send terminal app signal\n");
-    printf("  google-chrome        Send Chrome app signal\n");
 }
 
 struct KeyMapping {
@@ -121,6 +68,7 @@ static const struct KeyMapping KEY_MAP[] = {
     {"bracket_right", KEY_RIGHTBRACE},
     {"backtick", KEY_GRAVE},
     {"enter", KEY_ENTER},
+    {"keyShift", KEY_LEFTSHIFT}, // Added for daemon integration
 };
 
 static const int KEY_MAP_SIZE = sizeof(KEY_MAP) / sizeof(KEY_MAP[0]);
@@ -136,77 +84,120 @@ static int lookup_key(const char *cmd, const char **suffix) {
     return -1;
 }
 
-void handle_command(const char *cmd) {
+// handle_command now takes fd as an argument
+void handle_command(int fd_local, const char *cmd) {
     const char *suffix = NULL;
     int key_code = lookup_key(cmd, &suffix);
     if (key_code != -1) {
-        // if (*suffix == '\0') {
-        //     sendEvent(EV_KEY, key_code, 1);
-        //     sendEvent(EV_KEY, key_code, 0);
-        // } else if (strcmp(suffix, "Down") == 0) {
-        //     sendEvent(EV_KEY, key_code, 1);
-        // } else if (strcmp(suffix, "Up") == 0) {
-        //     sendEvent(EV_KEY, key_code, 0);
-        //     sendEvent(EV_SYN, SYN_REPORT, 0);
-        // }
         if (*suffix == '\0') {
-            sendEvent(EV_KEY, key_code, 1);
-            sendEvent(EV_KEY, key_code, 0);
-            sendEvent(EV_SYN, SYN_REPORT, 0);
+            sendEvent(fd_local, EV_KEY, key_code, 1);
+            sendEvent(fd_local, EV_KEY, key_code, 0);
+            sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
         } else if (strcmp(suffix, "Down") == 0) {
-            sendEvent(EV_KEY, key_code, 1);
-            sendEvent(EV_SYN, SYN_REPORT, 0);
+            sendEvent(fd_local, EV_KEY, key_code, 1);
+            sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
         } else if (strcmp(suffix, "Up") == 0) {
-            sendEvent(EV_KEY, key_code, 0);
-            sendEvent(EV_SYN, SYN_REPORT, 0);
+            sendEvent(fd_local, EV_KEY, key_code, 0);
+            sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
         }
         return;
     }
     if (strncmp(cmd, "keycode:", 8) == 0) {
         int keycode = atoi(cmd + 8);
         if (keycode > 0) {
-            sendEvent(EV_KEY, keycode, 1);
-            sendEvent(EV_KEY, keycode, 0);
-            sendEvent(EV_SYN, SYN_REPORT, 0);
+            sendEvent(fd_local, EV_KEY, keycode, 1);
+            sendEvent(fd_local, EV_KEY, keycode, 0);
+            sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
         }
         return;
     }
     if (strcmp(cmd, "numlock") == 0) {
-        sendEvent(EV_MSC, MSC_SCAN, 0x45);
-        sendEvent(EV_KEY, KEY_NUMLOCK, 1);
-        sendEvent(EV_SYN, SYN_REPORT, 0);
+        sendEvent(fd_local, EV_MSC, MSC_SCAN, 0x45);
+        sendEvent(fd_local, EV_KEY, KEY_NUMLOCK, 1);
+        sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
         usleep(50000);
-        sendEvent(EV_MSC, MSC_SCAN, 0x45);
-        sendEvent(EV_KEY, KEY_NUMLOCK, 0);
-        sendEvent(EV_SYN, SYN_REPORT, 0);
+        sendEvent(fd_local, EV_MSC, MSC_SCAN, 0x45);
+        sendEvent(fd_local, EV_KEY, KEY_NUMLOCK, 0);
+        sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
         return;
     }
     if (strcmp(cmd, "numlockDown") == 0) {
-        sendEvent(EV_MSC, MSC_SCAN, 0x45);
-        sendEvent(EV_KEY, KEY_NUMLOCK, 1);
-        sendEvent(EV_SYN, SYN_REPORT, 0);
+        sendEvent(fd_local, EV_MSC, MSC_SCAN, 0x45);
+        sendEvent(fd_local, EV_KEY, KEY_NUMLOCK, 1);
+        sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
         return;
     }
     if (strcmp(cmd, "numlockUp") == 0) {
-        sendEvent(EV_MSC, MSC_SCAN, 0x45);
-        sendEvent(EV_KEY, KEY_NUMLOCK, 0);
-        sendEvent(EV_SYN, SYN_REPORT, 0);
+        sendEvent(fd_local, EV_MSC, MSC_SCAN, 0x45);
+        sendEvent(fd_local, EV_KEY, KEY_NUMLOCK, 0);
+        sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
         return;
     }
     if (strcmp(cmd, "syn") == 0) {
-        sendEvent(EV_SYN, SYN_REPORT, 0);
+        sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
         return;
     }
     int appCode = isApp(cmd);
     if (appCode) {
         for (int i = 0; i < 3; i++) {
-            sendEvent(EV_MSC, MSC_SCAN, 100);
+            sendEvent(fd_local, EV_MSC, MSC_SCAN, 100);
         }
-        sendEvent(EV_MSC, MSC_SCAN, appCode);
-        sendEvent(EV_SYN, SYN_REPORT, 0);
+        sendEvent(fd_local, EV_MSC, MSC_SCAN, appCode);
+        sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
     }
 }
 
+// Public function for daemon integration
+// This function takes the keyboard path and an array of command strings.
+// It opens the keyboard device, processes commands, and closes the device.
+int sendKeys_execute_commands(const char* keyboard_path, int num_commands, char* commands[]) {
+    int fd_local = open(keyboard_path, O_WRONLY);
+    if (fd_local < 0) {
+        fprintf(stderr, "Error: Could not open keyboard device: %s\n", keyboard_path);
+        return 1;
+    }
+
+    for (int i = 0; i < num_commands; i++) {
+        handle_command(fd_local, commands[i]);
+    }
+
+    close(fd_local);
+    return 0;
+}
+
+#ifndef DAEMON_MODE
+// Global fd for standalone mode
+static int fd;
+static char keyboard_path_buffer[512]; // Used only in standalone getKeyboardPath
+
+const char* getKeyboardPath() {
+    int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sock < 0) return DEFAULT_KEYBOARD;
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, DAEMON_SOCKET_PATH, sizeof(addr.sun_path) - 1);
+    if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        close(sock);
+        return DEFAULT_KEYBOARD;
+    }
+    const char *command = "{\"command\":\"getKeyboardPath\"}\n";
+    if (write(sock, command, strlen(command)) < 0) {
+        close(sock);
+        return DEFAULT_KEYBOARD;
+    }
+    char buffer[512];
+    ssize_t bytes_read = read(sock, buffer, sizeof(buffer) - 1);
+    close(sock);
+    if (bytes_read <= 0) return DEFAULT_KEYBOARD;
+    buffer[bytes_read] = '\0';
+    if (buffer[bytes_read - 1] == '\n') buffer[bytes_read - 1] = '\0';
+    strncpy(keyboard_path_buffer, buffer, sizeof(keyboard_path_buffer) - 1);
+    keyboard_path_buffer[sizeof(keyboard_path_buffer) - 1] = '\0';
+    return keyboard_path_buffer;
+}
+
+// Standalone main function
 int main(int argc, char *argv[]) {
     const char *keyboard_path = getKeyboardPath();
     int i;
@@ -229,14 +220,10 @@ int main(int argc, char *argv[]) {
             break;  
         }
     }
-    fd = open(keyboard_path, O_WRONLY);
-    if (fd < 0) {
-        fprintf(stderr, "Error: Could not open keyboard device: %s\n", keyboard_path);
-        return 1;
-    }
-    for (; i < argc; i++) {
-        handle_command(argv[i]);
-    }
-    close(fd);
-    return 0;
+    // Call the new shared function
+    int num_commands = argc - i;
+    char** commands = &argv[i];
+    
+    return sendKeys_execute_commands(keyboard_path, num_commands, commands);
 }
+#endif // DAEMON_MODE

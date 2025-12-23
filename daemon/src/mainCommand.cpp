@@ -1,5 +1,9 @@
 #include "mainCommand.h"
 #include "main.h"
+#include <string> // Added for std::string
+
+// Declare the C function from sendKeys.c
+extern "C" int sendKeys_execute_commands(const char* keyboard_path, int num_commands, char* commands[]);
 
 const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_EMPTY, {}),
@@ -321,6 +325,19 @@ CmdResult handleActiveWindowChanged(const json& command) {
     logMessage += "wmInstance: " + command[COMMAND_ARG_WM_INSTANCE].get<string>() + ", ";
     logMessage += "windowId: " + std::to_string(command[COMMAND_ARG_WINDOW_ID].get<long>()) + "\n";
     logToFile(logMessage);
+
+    std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
+    if (wmClass == "code") {
+        string keyboard_path = kvTable.get(KEYBOARD_PATH_KEY);
+        if (!keyboard_path.empty()) {
+            char* commands[] = { (char*)"keyA", (char*)"keyA", (char*)"keyA" };
+            int num_commands = sizeof(commands) / sizeof(commands[0]);
+            sendKeys_execute_commands(keyboard_path.c_str(), num_commands, commands);
+            logToFile("[INFO] Sent keyShift three times to Code window.\n");
+        } else {
+            logToFile("[WARNING] Keyboard path not found in kvTable. Cannot send keyShift.\n");
+        }
+    }
     
     return CmdResult(0, "Active window info received and logged.\n");
 }

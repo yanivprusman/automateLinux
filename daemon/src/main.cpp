@@ -15,6 +15,9 @@
 
 using namespace std;
 
+// Declare the C function from sendKeys.c
+extern "C" int sendKeys_execute_commands(const char* keyboard_path, int num_commands, char* commands[]);
+
 string socketPath;
 Directories actualDirectories;
 Directories& directories = actualDirectories;
@@ -183,6 +186,23 @@ void daemon_loop() {
         for (auto& pair : clients) fds.push_back(pair.first);
         for (int fd : fds) if (FD_ISSET(fd, &read_fds) && clients.find(fd) != clients.end())
             handle_client_data(fd);
+
+        // Placeholder for active window detection and sendKeys execution
+        // This is where you would integrate logic to:
+        // 1. Detect active window changes (e.g., via X11 events, D-Bus).
+        // 2. Get the wmclass of the active window.
+        // 3. If wmclass is "code", then call sendKeys_execute_commands.
+        // For demonstration, let's simulate a call:
+        //
+        // Example of how to call sendKeys_execute_commands:
+        // if (kvTable.exists(KEYBOARD_PATH_KEY)) {
+        //     std::string keyboard_path = kvTable.get(KEYBOARD_PATH_KEY);
+        //     char* commands[] = { (char*)"keyA", (char*)"keyB", (char*)"syn" };
+        //     int num_commands = sizeof(commands) / sizeof(commands[0]);
+        //     sendKeys_execute_commands(keyboard_path.c_str(), num_commands, commands);
+        //     // In a real scenario, you'd only call this when the event actually occurs,
+        //     // not in every loop iteration.
+        // }
     }
 
     for (auto& pair : clients) close(pair.first);
@@ -314,6 +334,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     return 0;
+
+
+
+
+
 }
 
 

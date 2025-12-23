@@ -19,9 +19,3 @@ Key features include:
 *   **Project Structure:**
     *   `src/extension.ts`: Contains the main activation logic and the implementation of the extension's features.
     *   `package.json`: 
-
-new goal:
-lets refactor the extension. i want another mode of operatoin. one keep as is. the second mode has two commits, a fromCommit and a toCommit. the file will show both in the following way:
-lines that are going to be removed from the fromCommit will have a comment at the end //remove. 
-lines that will be added in the toCommit will have a comment at the end //add and will be commented out.
-this way the file logic will be the same as the from commit and we will know from the comments what will be removed and what will be added.

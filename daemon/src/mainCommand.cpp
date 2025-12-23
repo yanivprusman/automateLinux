@@ -1,4 +1,6 @@
 #include "mainCommand.h"
+#include "DaemonServer.h" // For Daemon-related functionality if needed, though most is disjoint
+#include "common.h"
 #include "main.h"
 #include "sendKeys.h"
 #include <curl/curl.h>
@@ -409,7 +411,9 @@ CmdResult handleActiveWindowChanged(const json &command) {
     if (url.find("https://chatgpt.com") != std::string::npos ||
         url.find("https://claude.ai") != std::string::npos) {
       if (g_keyboard_fd >= 0) {
-        char *commands[] = {(char *)"keyH", (char *)"keyI", (char *)"space", (char *)"backspace", (char *)"backspace", (char *)"backspace"};
+        char *commands[] = {(char *)"keyH",      (char *)"keyI",
+                            (char *)"space",     (char *)"backspace",
+                            (char *)"backspace", (char *)"backspace"};
         int commandCount = sizeof(commands) / sizeof(commands[0]);
         sendKeys_with_fd(g_keyboard_fd, commandCount, commands);
         logToFile("[ACTIVE_WINDOW_CHANGED] ChatGPT detected. Sent 'hi'.\n");

@@ -4,6 +4,8 @@
 #include <chrono>
 #include <string>
 
+using std::string;
+
 struct Timer {
   std::chrono::high_resolution_clock::time_point start;
   Timer() : start(std::chrono::high_resolution_clock::now()) {}
@@ -17,32 +19,13 @@ struct Timer {
   }
 };
 
-inline bool isMultiline(const std::string &s) {
-  if (s.empty())
-    return false;
-  size_t end = (s.back() == '\n') ? s.size() - 1 : s.size();
-  return s.find('\n') < end;
-}
-
-inline std::string toJsonSingleLine(const std::string &s) {
-  std::string out;
-  out.reserve(s.size());
-  for (char c : s) {
-    switch (c) {
-    case '\n':
-      out += "\\n";
-      break;
-    case '\"':
-      out += "\\\"";
-      break;
-    case '\\':
-      out += "\\\\";
-      break;
-    default:
-      out += c;
-    }
-  }
-  return out;
-}
+bool isMultiline(const std::string &s);
+std::string toJsonSingleLine(const std::string &s);
+std::string readScriptFile(const std::string &relativeScriptPath);
+std::string substituteVariable(const std::string &content,
+                               const std::string &variable,
+                               const std::string &value);
+std::string httpGet(const std::string &url);
+std::string executeCommand(const char *cmd);
 
 #endif // UTILS_H

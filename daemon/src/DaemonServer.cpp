@@ -1,4 +1,5 @@
 #include "DaemonServer.h"
+#include "Utils.h" // For executeCommand
 #include "common.h"
 #include "main.h" // For KVTable, DirHistory, etc. declarations
 #include "mainCommand.h"
@@ -28,21 +29,6 @@ struct ClientState {
 };
 
 static std::map<int, ClientState> clients;
-
-string executeCommand(const char *cmd) {
-  std::array<char, 256> buffer;
-  string result;
-  FILE *pipe = popen(cmd, "r");
-  if (!pipe)
-    return "";
-  while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-    result += buffer.data();
-  }
-  pclose(pipe);
-  if (!result.empty() && result.back() == '\n')
-    result.pop_back();
-  return result;
-}
 
 void initializeKeyboardPath() {
   string deviceName = executeCommand(KEYBOARD_DISCOVERY_CMD);

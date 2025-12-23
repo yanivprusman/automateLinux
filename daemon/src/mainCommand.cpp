@@ -1,14 +1,15 @@
 #include "mainCommand.h"
-#include "DaemonServer.h" // For Daemon-related functionality if needed, though most is disjoint
+#include "AutomationManager.h"
+#include "DaemonServer.h"
+#include "KeyboardManager.h"
 #include "common.h"
 #include "main.h"
 #include "sendKeys.h"
-#include <curl/curl.h>
-#include <jsoncpp/json/json.h>
-#include <string> // Added for std::string
+#include <string>
 
-// Declare access to global keyboard fd from main.cpp
-extern int g_keyboard_fd;
+using std::string;
+using std::to_string;
+using std::vector;
 
 const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_EMPTY, {}),
@@ -61,10 +62,6 @@ static void logToFile(const string &message) {
   g_logFile << message;
   g_logFile.flush();
 }
-
-static const vector<string> KNOWN_KEYBOARDS = {
-    CODE_KEYBOARD, GNOME_TERMINAL_KEYBOARD, GOOGLE_CHROME_KEYBOARD,
-    DEFAULT_KEYBOARD, TEST_KEYBOARD};
 
 static string
 formatEntriesAsText(const vector<std::pair<string, string>> &entries) {
@@ -266,34 +263,6 @@ CmdResult handleGetSocketPath(const json &) {
   return CmdResult(0, SOCKET_PATH + string("\n"));
 }
 
-static string readScriptFile(const string &relativeScriptPath) {
-  string scriptContent;
-  std::ifstream scriptFile(relativeScriptPath);
-  if (!scriptFile.is_open()) {
-    string logMessage = string("[ERROR] Failed to open script file: ") +
-                        relativeScriptPath + "\n";
-    logToFile(logMessage);
-    return "";
-  }
-  std::stringstream buffer;
-  buffer << scriptFile.rdbuf();
-  scriptContent = buffer.str();
-  scriptFile.close();
-  return scriptContent;
-}
-
-static string substituteVariable(const string &content, const string &variable,
-                                 const string &value) {
-  string result = content;
-  size_t pos = 0;
-  string searchStr = string("$") + variable;
-  while ((pos = result.find(searchStr, pos)) != string::npos) {
-    result.replace(pos, searchStr.length(), value);
-    pos += value.length();
-  }
-  return result;
-}
-
 CmdResult handleShouldLog(const json &command) {
   string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
   shouldLog = (enableStr == COMMAND_VALUE_TRUE);
@@ -343,169 +312,14 @@ CmdResult handleQuit(const json &) {
   return CmdResult(0, "Shutting down daemon.\n");
 }
 
-size_t WriteCallback(void *contents, size_t size, size_t nmemb,
-                     std::string *userp) {
-  userp->append((char *)contents, size * nmemb);
-  return size * nmemb;
-}
-
-std::string httpGet(const std::string &url) {
-  CURL *curl = curl_easy_init();
-  std::string response;
-  if (curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
-  }
-  return response;
-}
-
-std::string getCurrentTabUrl() {
-  std::string response = httpGet("http://localhost:9222/json");
-  Json::Value root;
-  Json::Reader reader;
-  if (!reader.parse(response, root)) {
-    return "";
-  }
-  for (const auto &tab : root) {
-    std::string type = tab["type"].asString();
-    std::string url = tab["url"].asString();
-    // Skip over extension pages and devtools
-    if (type == "page" &&
-        url.find("chrome-extension://") == std::string::npos &&
-        url.find("devtools://") == std::string::npos) {
-      return url;
-    }
-  }
-  return "";
-}
-
 CmdResult handleActiveWindowChanged(const json &command) {
-  string logMessage = "[ACTIVE_WINDOW_CHANGED] ";
-  logMessage +=
-      "windowTitle: " + command[COMMAND_ARG_WINDOW_TITLE].get<string>() + ", ";
-  logMessage +=
-      "wmClass: " + command[COMMAND_ARG_WM_CLASS].get<string>() + ", ";
-  logMessage +=
-      "wmInstance: " + command[COMMAND_ARG_WM_INSTANCE].get<string>() + ", ";
-  logMessage += "windowId: " +
-                std::to_string(command[COMMAND_ARG_WINDOW_ID].get<long>()) +
-                "\n";
-  logToFile(logMessage);
-
-  std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
-
-  if (g_keyboard_fd >= 0) {
-    // Send keys based on wmClass (existing logic, seemingly)
-    char *commands[] = {(char *)wmClass.c_str()};
-    int num_commands = sizeof(commands) / sizeof(commands[0]);
-    sendKeys_with_fd(g_keyboard_fd, num_commands, commands);
-  }
-
-  if (wmClass == wmClassChrome) {
-    std::string url = getCurrentTabUrl();
-    logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: " + url +
-              "\n");
-    if (url.find("https://chatgpt.com") != std::string::npos ||
-        url.find("https://claude.ai") != std::string::npos) {
-      if (g_keyboard_fd >= 0) {
-        char *commands[] = {(char *)"keyH",      (char *)"keyI",
-                            (char *)"space",     (char *)"backspace",
-                            (char *)"backspace", (char *)"backspace"};
-        int commandCount = sizeof(commands) / sizeof(commands[0]);
-        sendKeys_with_fd(g_keyboard_fd, commandCount, commands);
-        logToFile("[ACTIVE_WINDOW_CHANGED] ChatGPT detected. Sent 'hi'.\n");
-      }
-    }
-  }
-
-  return CmdResult(0, "Active window info received and logged.\n");
+  return AutomationManager::onActiveWindowChanged(command);
 }
 
 CmdResult handleSetKeyboard(const json &command) {
-  static string previousKeyboard = "";
   string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
-  if (keyboardName == previousKeyboard) {
-    return CmdResult(0, "Keyboard already set to: " + keyboardName + "\n");
-  }
-  // else {
-  //     return CmdResult(0, "Keyboard in test mode: " + keyboardName + "\n");
-  // }
-  previousKeyboard = keyboardName;
-  string logMessage;
-  bool isKnown = false;
-  FILE *pipe;
-  string output;
-  int status;
-  int exitCode;
-  for (const string &known : KNOWN_KEYBOARDS) {
-    if (known == keyboardName) {
-      isKnown = true;
-      break;
-    }
-  }
-  if (!isKnown) {
-    keyboardName = DEFAULT_KEYBOARD;
-  }
-  logMessage = string("[START setKeyboard] keyboard: ") + keyboardName +
-               " isKnown: " + (isKnown ? "true" : "false") + "\n";
-  logToFile(logMessage);
-  string scriptPath =
-      directories.mappings + PREFIX_KEYBOARD + keyboardName + ".sh";
-  string scriptContent = readScriptFile(scriptPath);
-  if (scriptContent.empty()) {
-    return CmdResult(1, "Script file not found\n");
-  }
-  scriptContent = substituteVariable(scriptContent, KEYBOARD_PATH_KEY,
-                                     kvTable.get(KEYBOARD_PATH_KEY));
-  scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY,
-                                     kvTable.get(MOUSE_PATH_KEY));
-  scriptContent = substituteVariable(scriptContent, EVSIEVE_RANDOM_VAR,
-                                     to_string(rand() % 1000000));
-  string cmd = string("sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; "
-                      "sudo systemd-run --collect --service-type=notify "
-                      "--unit=corsairKeyBoardLogiMouse.service "
-                      "--property=StandardError=append:" +
-                      directories.data + EVSIEVE_STANDARD_ERR_FILE +
-                      " "
-                      "--property=StandardOutput=append:" +
-                      directories.data + EVSIEVE_STANDARD_OUTPUT_FILE + " ") +
-               scriptContent;
-  if (!toggleKeyboardsWhenActiveWindowChanges) {
-    cmd = string("sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; ");
-  }
-  pipe = popen(cmd.c_str(), "r");
-  logMessage = string("[EXEC] ") + cmd + "\n";
-  logToFile(logMessage);
-  if (!pipe) {
-    logMessage = string("[ERROR] popen failed\n");
-    logToFile(logMessage);
-    return CmdResult(1, "Failed to execute\n");
-  }
-  char buffer[256];
-  while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-    output += buffer;
-  }
-  status = pclose(pipe);
-  exitCode = WEXITSTATUS(status);
-  logMessage = string("[OUTPUT]\n") + output + "\n";
-  logToFile(logMessage);
-  logMessage = string("[STATUS] raw status: ") + to_string(status) +
-               " exit code: " + to_string(exitCode) + "\n";
-  logToFile(logMessage);
-  if (status != 0) {
-    logMessage = string("[END] FAILED\n");
-    logToFile(logMessage);
-    return CmdResult(1, string("Failed to execute (exit code ") +
-                            std::to_string(exitCode) + ", output: " + output +
-                            ")\n");
-  }
-  logMessage = string("[END] SUCCESS\n");
-  logToFile(logMessage);
-  return CmdResult(0, string("SUCCESS\n" + output + "Set keyboard to: ") +
-                          keyboardName + "\n");
+  return KeyboardManager::setKeyboard(keyboardName,
+                                      toggleKeyboardsWhenActiveWindowChanges);
 }
 
 typedef CmdResult (*CommandHandler)(const json &);

@@ -9,9 +9,10 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-const int codeForCode = 101;
-const int codeForGnomeTerminal = 102;
-const int codeForGoogleChrome = 103;
+const int codeForDefault = 101;
+const int codeForCode = 102;
+const int codeForGnomeTerminal = 103;
+const int codeForGoogleChrome = 104;
 const char *DEFAULT_KEYBOARD = "/dev/input/by-id/corsairKeyBoardLogiMouse";
 const char *DAEMON_SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock";
 // static char keyboard_path_buffer[512]; // Not needed in daemon mode for sendKeys_execute_commands

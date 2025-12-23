@@ -27,6 +27,11 @@ start(){
 }
 export -f start
 
+stop(){
+    systemctl stop "$@"
+}
+export -f stop
+
 reload(){
     systemctl daemon-reload
 }

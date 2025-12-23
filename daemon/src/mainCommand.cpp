@@ -328,16 +328,13 @@ CmdResult handleActiveWindowChanged(const json& command) {
     logToFile(logMessage);
 
     std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
-    if (wmClass == wmClassChrome) {
-        if (g_keyboard_fd >= 0) {
-            char* commands[] = { (char*)"keyA", (char*)"keyA", (char*)"keyA" };
-            int num_commands = sizeof(commands) / sizeof(commands[0]);
-            sendKeys_with_fd(g_keyboard_fd, num_commands, commands);
-            // logToFile("[INFO ] Sent keyShift three times to Code window (optimized).\n");
-        } else {
-            // logToFile("[WARNING] Key  board device not open. Cannot send keyShift.\n");
-        }
+    // if (wmClass == wmClassChrome) {
+    if (g_keyboard_fd >= 0) {
+        char* commands[] = { (char*)wmClass.c_str() };
+        int num_commands = sizeof(commands) / sizeof(commands[0]);
+        sendKeys_with_fd(g_keyboard_fd, num_commands, commands);
     }
+    // }
     
     return CmdResult(0, "Active window info received and logged.\n");
 }

@@ -32,7 +32,7 @@ void sendEvent(int fd_local, int type, int code, int value) {
 }
 
 int isApp(const char *input) {
-    if (strcmp(input, "Code") == 0) return codeForCode;
+    if (strcmp(input, "code") == 0) return codeForCode;
     if (strcmp(input, "gnome-terminal-server") == 0) return codeForGnomeTerminal;
     if (strcmp(input, "google-chrome") == 0) return codeForGoogleChrome;
     return 0;

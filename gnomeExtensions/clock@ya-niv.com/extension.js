@@ -26,6 +26,8 @@ export default class ClockExtension extends Extension {
         this._lastX = null;
         this._lastY = null;
         this._menu = null;
+        this._daemonLoggingEnabled = false;
+        this._toggleLoggingMenuItem = null;
         this.logger.log('ClockExtension constructor called');
     }
 
@@ -76,6 +78,15 @@ export default class ClockExtension extends Extension {
             let shutDownMenuItem = new PopupMenu.PopupMenuItem('Shut Down');
             shutDownMenuItem.connect('activate', () => this._onShutdownMenuItemActivated());
             this._menu.addMenuItem(shutDownMenuItem);
+            
+            // Add separator
+            this._menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            
+            // Add toggle logging menu item
+            this._toggleLoggingMenuItem = new PopupMenu.PopupMenuItem('Enable Daemon Logging');
+            this._toggleLoggingMenuItem.connect('activate', () => this._onToggleLoggingActivated());
+            this._menu.addMenuItem(this._toggleLoggingMenuItem);
+            
             this._label.menu = this._menu;
             this._updateClock();
             this._timeoutId = GLib.timeout_add_seconds(
@@ -95,6 +106,9 @@ export default class ClockExtension extends Extension {
             );
             this.logger.log('Clock update timer started');
             this._setupDragging();
+            
+            // Load initial daemon logging state
+            this._loadDaemonLoggingState();
         } catch (e) {
             this.logger.log(`Error in enable(): ${e.message}`);
             this.logger.log(`Stack: ${e.stack}`);
@@ -149,6 +163,49 @@ export default class ClockExtension extends Extension {
     async _onShutdownMenuItemActivated() {
         this.logger.log('Shut Down menu item activated. Executing systemctl poweroff...');
         this.shellExecutor.execute('/usr/bin/systemctl poweroff');
+    }
+
+    async _onToggleLoggingActivated() {
+        try {
+            // Toggle the state
+            this._daemonLoggingEnabled = !this._daemonLoggingEnabled;
+            
+            // Send command to daemon
+            const response = await this.daemon.connectAndSendMessage({
+                command: 'shouldLog',
+                enable: this._daemonLoggingEnabled ? 'true' : 'false'
+            });
+            
+            // Update menu item text
+            this._toggleLoggingMenuItem.label.text = this._daemonLoggingEnabled 
+                ? 'Disable Daemon Logging' 
+                : 'Enable Daemon Logging';
+            
+            this.logger.log(`Daemon logging toggled: ${this._daemonLoggingEnabled}, response: ${response}`);
+        } catch (e) {
+            this.logger.log(`Error toggling daemon logging: ${e.message}`);
+        }
+    }
+
+    async _loadDaemonLoggingState() {
+        try {
+            const response = await this.daemon.connectAndSendMessage({
+                command: 'getShouldLog'
+            });
+            
+            this._daemonLoggingEnabled = response && response.trim() === 'true';
+            
+            // Update menu item text
+            if (this._toggleLoggingMenuItem) {
+                this._toggleLoggingMenuItem.label.text = this._daemonLoggingEnabled 
+                    ? 'Disable Daemon Logging' 
+                    : 'Enable Daemon Logging';
+            }
+            
+            this.logger.log(`Loaded daemon logging state: ${this._daemonLoggingEnabled}`);
+        } catch (e) {
+            this.logger.log(`Error loading daemon logging state: ${e.message}`);
+        }
     }
 
     async _loadPosition() {

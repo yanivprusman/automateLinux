@@ -28,6 +28,10 @@ export default class ClockExtension extends Extension {
         this._menu = null;
         this._daemonLoggingEnabled = false;
         this._toggleLoggingMenuItem = null;
+        this._toggleDaemonMenuItem = null;
+        this._isDaemonActive = false;
+        this.logger.log('ClockExtension constructor called');
+        this._isUserService = false;
         this.logger.log('ClockExtension constructor called');
     }
 
@@ -74,20 +78,30 @@ export default class ClockExtension extends Extension {
             this.logger.log('Label shown');
             this._menu = new PopupMenu.PopupMenu(this._label, 0.5, St.Side.TOP);
             Main.uiGroup.add_child(this._menu.actor);
-            this._menu.actor.hide(); 
+            this._menu.actor.hide();
             let shutDownMenuItem = new PopupMenu.PopupMenuItem('Shut Down');
             shutDownMenuItem.connect('activate', () => this._onShutdownMenuItemActivated());
             this._menu.addMenuItem(shutDownMenuItem);
-            
+
             // Add separator
             this._menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-            
+
             // Add toggle logging menu item
             this._toggleLoggingMenuItem = new PopupMenu.PopupMenuItem('Enable Daemon Logging');
             this._toggleLoggingMenuItem.connect('activate', () => this._onToggleLoggingActivated());
             this._menu.addMenuItem(this._toggleLoggingMenuItem);
-            
+
+            // Add toggle daemon menu item
+            this._toggleDaemonMenuItem = new PopupMenu.PopupMenuItem('Checking Daemon Status...');
+            this._toggleDaemonMenuItem.connect('activate', () => this._onToggleDaemonActivated());
+            this._menu.addMenuItem(this._toggleDaemonMenuItem);
+
             this._label.menu = this._menu;
+            this._menu.connect('open-state-changed', (menu, open) => {
+                if (open) {
+                    this._updateDaemonStatus();
+                }
+            });
             this._updateClock();
             this._timeoutId = GLib.timeout_add_seconds(
                 GLib.PRIORITY_DEFAULT,
@@ -106,9 +120,10 @@ export default class ClockExtension extends Extension {
             );
             this.logger.log('Clock update timer started');
             this._setupDragging();
-            
+
             // Load initial daemon logging state
             this._loadDaemonLoggingState();
+            this._updateDaemonStatus();
         } catch (e) {
             this.logger.log(`Error in enable(): ${e.message}`);
             this.logger.log(`Stack: ${e.stack}`);
@@ -118,7 +133,7 @@ export default class ClockExtension extends Extension {
     _setupDragging() {
         let dragData = { dragging: false, offsetX: 0, offsetY: 0 };
         this._label.connect('button-press-event', (_, event) => {
-            if (event.get_button() === 1) { 
+            if (event.get_button() === 1) {
                 this.logger.log('Button pressed on label (left-click)');
                 dragData.dragging = true;
                 const [stageX, stageY] = event.get_coords();
@@ -128,7 +143,7 @@ export default class ClockExtension extends Extension {
                 dragData.offsetY = stageY - actorY;
                 this.logger.log(`Drag start: stage(${stageX},${stageY}), offset(${dragData.offsetX},${dragData.offsetY})`);
                 return Clutter.EVENT_STOP;
-            } else if (event.get_button() === 3) { 
+            } else if (event.get_button() === 3) {
                 this.logger.log('Button pressed on label (right-click)');
                 this._menu.toggle();
                 return Clutter.EVENT_STOP;
@@ -169,18 +184,18 @@ export default class ClockExtension extends Extension {
         try {
             // Toggle the state
             this._daemonLoggingEnabled = !this._daemonLoggingEnabled;
-            
+
             // Send command to daemon
             const response = await this.daemon.connectAndSendMessage({
                 command: 'shouldLog',
                 enable: this._daemonLoggingEnabled ? 'true' : 'false'
             });
-            
+
             // Update menu item text
-            this._toggleLoggingMenuItem.label.text = this._daemonLoggingEnabled 
-                ? 'Disable Daemon Logging' 
+            this._toggleLoggingMenuItem.label.text = this._daemonLoggingEnabled
+                ? 'Disable Daemon Logging'
                 : 'Enable Daemon Logging';
-            
+
             this.logger.log(`Daemon logging toggled: ${this._daemonLoggingEnabled}, response: ${response}`);
         } catch (e) {
             this.logger.log(`Error toggling daemon logging: ${e.message}`);
@@ -192,19 +207,81 @@ export default class ClockExtension extends Extension {
             const response = await this.daemon.connectAndSendMessage({
                 command: 'getShouldLog'
             });
-            
+
             this._daemonLoggingEnabled = response && response.trim() === 'true';
-            
+
             // Update menu item text
             if (this._toggleLoggingMenuItem) {
-                this._toggleLoggingMenuItem.label.text = this._daemonLoggingEnabled 
-                    ? 'Disable Daemon Logging' 
+                this._toggleLoggingMenuItem.label.text = this._daemonLoggingEnabled
+                    ? 'Disable Daemon Logging'
                     : 'Enable Daemon Logging';
             }
-            
+
             this.logger.log(`Loaded daemon logging state: ${this._daemonLoggingEnabled}`);
         } catch (e) {
             this.logger.log(`Error loading daemon logging state: ${e.message}`);
+        }
+    }
+
+    _updateDaemonStatus() {
+        try {
+            // First check if it's a user service
+            let output = this.shellExecutor.executeSync('systemctl --user show -p LoadState daemon.service');
+            let loadState = output ? output.trim() : '';
+
+            if (loadState === 'LoadState=loaded') {
+                this._isUserService = true;
+                output = this.shellExecutor.executeSync('systemctl --user is-active daemon.service');
+            } else {
+                // Not a user service, default to system service
+                this._isUserService = false;
+                output = this.shellExecutor.executeSync('systemctl is-active daemon.service');
+            }
+
+            let status = output ? output.trim() : 'unknown';
+
+            this._isDaemonActive = (status === 'active');
+            this.logger.log(`Daemon status check: ${status}, isActive: ${this._isDaemonActive}, isUser: ${this._isUserService}`);
+
+            if (this._toggleDaemonMenuItem) {
+                this._toggleDaemonMenuItem.label.text = this._isDaemonActive
+                    ? 'Stop Daemon'
+                    : 'Start Daemon';
+            }
+        } catch (e) {
+            this.logger.log(`Error checking daemon status: ${e.message}`);
+            if (this._toggleDaemonMenuItem) {
+                this._toggleDaemonMenuItem.label.text = 'Daemon Status Error';
+            }
+        }
+    }
+
+    async _onToggleDaemonActivated() {
+        this.logger.log(`Toggle Daemon activated. Current state: ${this._isDaemonActive ? 'Active' : 'Inactive'}`);
+
+        let command;
+        if (this._isDaemonActive) {
+            // Stop daemon
+            command = this._isUserService ? 'systemctl --user stop daemon.service' : 'pkexec systemctl stop daemon.service';
+        } else {
+            // Start daemon
+            command = this._isUserService ? 'systemctl --user start daemon.service' : 'pkexec systemctl start daemon.service';
+        }
+
+        this.logger.log(`Executing command: ${command}`);
+        this.shellExecutor.execute(command);
+
+        // Wait a bit for the command to execute then update status
+        // systemctl start/stop might take a moment.
+        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
+            this._updateDaemonStatus();
+            return GLib.SOURCE_REMOVE;
+        });
+
+        // Also update immediately (optimistic UI update?) 
+        // Better to just wait for the timeout or maybe show "Working..."
+        if (this._toggleDaemonMenuItem) {
+            this._toggleDaemonMenuItem.label.text = this._isDaemonActive ? 'Stopping...' : 'Starting...';
         }
     }
 
@@ -237,7 +314,7 @@ export default class ClockExtension extends Extension {
         } catch (e) {
             this.logger.log(`Error loading position from daemon: ${e.message}`);
         }
-        return {x, y};
+        return { x, y };
     }
 
     _savePosition(x, y) {

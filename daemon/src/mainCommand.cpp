@@ -306,7 +306,7 @@ CmdResult handleActiveWindowChanged(const json &command) {
   return AutomationManager::onActiveWindowChanged(command);
 }
 
-CmdResult handleSetKeyboard(const json &command) {
+CmdResult handleSetKeyboard(const json &) {
   return KeyboardManager::setKeyboard(toggleKeyboard);
 }
 

@@ -34,7 +34,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
     CommandSignature(COMMAND_GET_MOUSE_PATH, {}),
     CommandSignature(COMMAND_GET_SOCKET_PATH, {}),
-    CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
+    CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_SHOULD_LOG, {}),
     CommandSignature(COMMAND_TOGGLE_KEYBOARD,

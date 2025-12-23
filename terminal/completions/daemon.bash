@@ -42,7 +42,7 @@ _daemon_completion() {
     command_args[deleteEntriesByPrefix]="--prefix"
     command_args[upsertEntry]="--key --value"
     command_args[getEntry]="--key"
-    command_args[setKeyboard]="--keyboardName"
+    command_args[setKeyboard]="--enable"
     command_args[shouldLog]="--enable"
     command_args[toggleKeyboard]="--enable"
     command_args[getDir]="--dirName"
@@ -53,7 +53,6 @@ _daemon_completion() {
 
     # Define possible values for specific arguments
     declare -A arg_values
-    arg_values[--keyboardName]="Code gnome-terminal-server google-chrome DefaultKeyboard TestKeyboard"
     arg_values[--enable]="true false"
     arg_values[--dirName]="base data mappings"
     arg_values[--fileName]="chrome.log combined.log daemon.db evsieveErr.log evsieveOutput.log trapErrLogBackground.txt trapErrLog.txt corsairKeyBoardLogiMouseCode.sh corsairKeyBoardLogiMouseDefaultKeyboard.sh corsairKeyBoardLogiMousegnome-terminal-server.sh corsairKeyBoardLogiMousegoogle-chrome.sh theRealPath.sh"

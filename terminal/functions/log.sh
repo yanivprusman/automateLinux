@@ -42,8 +42,8 @@ restartVSCodeKeyEvsieveOnSave(){
     local file=$(d getFile fileName=corsairKeyBoardLogiMouseCode.sh)
     echo monitoring $file
     inotifywait -m -e close_write "$file" | while read _; do
-        daemon setKeyboard keyboardName=DefaultKeyboard > /dev/null 2>&1
-        daemon setKeyboard keyboardName=Code > /dev/null 2>&1
+        daemon setKeyboard > /dev/null 2>&1
+        daemon setKeyboard > /dev/null 2>&1
     done
 }
 export -f restartVSCodeKeyEvsieveOnSave

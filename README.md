@@ -29,10 +29,10 @@ The daemon is a C++ application built using CMake and Make. It can operate as a 
     The daemon executable can act as a client to send JSON commands to a running daemon instance via its UNIX socket.
     ```bash
     # Example: Send a 'ping' command
-    ./daemon/main send ping
+    {daemon|d} send ping
 
     # Example: Send a command with arguments
-    ./daemon/main send setKeyboard --keyboardName Code
+    {daemon|d} send setKeyboard --enable true
     ```
     Commands are parsed from command-line arguments using a `--key value` format.
 

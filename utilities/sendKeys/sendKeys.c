@@ -165,6 +165,20 @@ int sendKeys_execute_commands(const char* keyboard_path, int num_commands, char*
     return 0;
 }
 
+// Optimized function for daemon - uses pre-opened file descriptor
+// This avoids the overhead of opening/closing the keyboard device on every call
+void sendKeys_with_fd(int fd_local, int num_commands, char* commands[]) {
+    if (fd_local < 0) {
+        fprintf(stderr, "Error: Invalid file descriptor for sendKeys_with_fd\n");
+        return;
+    }
+    
+    for (int i = 0; i < num_commands; i++) {
+        handle_command(fd_local, commands[i]);
+    }
+}
+
+
 #ifndef DAEMON_MODE
 // Global fd for standalone mode
 static int fd;

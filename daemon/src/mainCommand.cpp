@@ -1,9 +1,10 @@
 #include "mainCommand.h"
 #include "main.h"
+#include "sendKeys.h"
 #include <string> // Added for std::string
 
-// Declare the C function from sendKeys.c
-extern "C" int sendKeys_execute_commands(const char* keyboard_path, int num_commands, char* commands[]);
+// Declare access to global keyboard fd from main.cpp
+extern int g_keyboard_fd;
 
 const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_EMPTY, {}),
@@ -327,15 +328,14 @@ CmdResult handleActiveWindowChanged(const json& command) {
     logToFile(logMessage);
 
     std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
-    if (wmClass == "code") {
-        string keyboard_path = kvTable.get(KEYBOARD_PATH_KEY);
-        if (!keyboard_path.empty()) {
+    if (wmClass == wmClassChrome) {
+        if (g_keyboard_fd >= 0) {
             char* commands[] = { (char*)"keyA", (char*)"keyA", (char*)"keyA" };
             int num_commands = sizeof(commands) / sizeof(commands[0]);
-            sendKeys_execute_commands(keyboard_path.c_str(), num_commands, commands);
-            logToFile("[INFO] Sent keyShift three times to Code window.\n");
+            sendKeys_with_fd(g_keyboard_fd, num_commands, commands);
+            // logToFile("[INFO ] Sent keyShift three times to Code window (optimized).\n");
         } else {
-            logToFile("[WARNING] Keyboard path not found in kvTable. Cannot send keyShift.\n");
+            // logToFile("[WARNING] Key  board device not open. Cannot send keyShift.\n");
         }
     }
     

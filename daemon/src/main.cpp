@@ -1,4 +1,5 @@
 #include "main.h"
+#include "sendKeys.h"
 #include <vector>
 #include <map>
 #include <regex>
@@ -12,11 +13,9 @@
 #include <fstream>
 #include <iostream>
 #include <cerrno>
+#include <fcntl.h>
 
 using namespace std;
-
-// Declare the C function from sendKeys.c
-extern "C" int sendKeys_execute_commands(const char* keyboard_path, int num_commands, char* commands[]);
 
 string socketPath;
 Directories actualDirectories;
@@ -28,6 +27,7 @@ KVTable& kvTable = actualKvTable;
 DirHistory actualDirHistory;
 volatile int running = 1;
 static int socket_fd = -1;
+int g_keyboard_fd = -1;  // Cached keyboard file descriptor for performance
 std::ofstream g_logFile;
 
 struct ClientState {
@@ -44,6 +44,7 @@ void signal_handler(int sig) {
     if (sig == SIGTERM || sig == SIGINT) {
         running = 0;
         if (socket_fd >= 0) shutdown(socket_fd, SHUT_RDWR);
+        if (g_keyboard_fd >= 0) close(g_keyboard_fd);
         if (g_logFile.is_open()) g_logFile.close();
     }
 }
@@ -78,6 +79,22 @@ void initializeMousePath() {
         cerr << "Mouse path initialized: " << fullPath << endl;
     }
 }
+
+void openKeyboardDevice() {
+    string keyboard_path = kvTable.get(KEYBOARD_PATH_KEY);
+    if (keyboard_path.empty()) {
+        cerr << "ERROR: Keyboard path not set, cannot open device" << endl;
+        return;
+    }
+    
+    g_keyboard_fd = open(keyboard_path.c_str(), O_WRONLY);
+    if (g_keyboard_fd < 0) {
+        cerr << "ERROR: Could not open keyboard device: " << keyboard_path << endl;
+    } else {
+        cerr << "Keyboard device opened: " << keyboard_path << " (fd=" << g_keyboard_fd << ")" << endl;
+    }
+}
+
 
 int setup_socket() {
     socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -163,6 +180,7 @@ int initialize_daemon() {
     }
     initializeKeyboardPath();
     initializeMousePath();
+    openKeyboardDevice();
     return setup_socket();
 }
 

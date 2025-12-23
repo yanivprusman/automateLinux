@@ -41,7 +41,7 @@
 #define COMMAND_ARG_KEYBOARD_NAME "keyboardName"
 #define PREFIX_KEYBOARD "corsairKeyBoardLogiMouse"
 #define ALL_KEYBOARD "All"
-#define CODE_KEYBOARD "Code"
+#define CODE_KEYBOARD "code"
 #define GNOME_TERMINAL_KEYBOARD "gnome-terminal-server"
 #define GOOGLE_CHROME_KEYBOARD "google-chrome"
 #define DEFAULT_KEYBOARD "DefaultKeyboard"

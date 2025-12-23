@@ -1,6 +1,8 @@
 #include "mainCommand.h"
 #include "main.h"
 #include "sendKeys.h"
+#include <curl/curl.h>
+#include <jsoncpp/json/json.h>
 #include <string> // Added for std::string
 
 // Declare access to global keyboard fd from main.cpp
@@ -11,17 +13,19 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_HELP_DDASH, {}),
     CommandSignature(COMMAND_OPENED_TTY, {COMMAND_ARG_TTY}),
     CommandSignature(COMMAND_CLOSED_TTY, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_UPDATE_DIR_HISTORY, {COMMAND_ARG_TTY, COMMAND_ARG_PWD}),
+    CommandSignature(COMMAND_UPDATE_DIR_HISTORY,
+                     {COMMAND_ARG_TTY, COMMAND_ARG_PWD}),
     CommandSignature(COMMAND_CD_FORWARD, {COMMAND_ARG_TTY}),
     CommandSignature(COMMAND_CD_BACKWARD, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_SHOW_TERMINAL_INSTANCE , {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_SHOW_ALL_TERMINAL_INSTANCES , {}),
+    CommandSignature(COMMAND_SHOW_TERMINAL_INSTANCE, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_SHOW_ALL_TERMINAL_INSTANCES, {}),
     CommandSignature(COMMAND_DELETE_ENTRY, {COMMAND_ARG_KEY}),
     CommandSignature(COMMAND_SHOW_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
     CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
     CommandSignature(COMMAND_SHOW_DB, {}),
     CommandSignature(COMMAND_PRINT_DIR_HISTORY, {}),
-    CommandSignature(COMMAND_UPSERT_ENTRY, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
+    CommandSignature(COMMAND_UPSERT_ENTRY,
+                     {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
     CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY}),
     CommandSignature(COMMAND_PING, {}),
     CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
@@ -30,52 +34,55 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_KEYBOARD_NAME}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_SHOULD_LOG, {}),
-    CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, {COMMAND_ARG_ENABLE}),
+    CommandSignature(COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES,
+                     {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
     CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME}),
     CommandSignature(COMMAND_QUIT, {}),
-    CommandSignature(COMMAND_ACTIVE_WINDOW_CHANGED, {COMMAND_ARG_WINDOW_TITLE, COMMAND_ARG_WM_CLASS, COMMAND_ARG_WM_INSTANCE, COMMAND_ARG_WINDOW_ID}),
+    CommandSignature(COMMAND_ACTIVE_WINDOW_CHANGED,
+                     {COMMAND_ARG_WINDOW_TITLE, COMMAND_ARG_WM_CLASS,
+                      COMMAND_ARG_WM_INSTANCE, COMMAND_ARG_WINDOW_ID}),
 };
 
-const size_t COMMAND_REGISTRY_SIZE = sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
+const size_t COMMAND_REGISTRY_SIZE =
+    sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
 
 static int clientSocket = -1;
 static bool shouldLog = false;
 static bool toggleKeyboardsWhenActiveWindowChanges = true;
 
-
-static void logToFile(const string& message) {
-    if (!shouldLog) return;
-    if (!g_logFile.is_open()) return;
-    g_logFile << message;
-    g_logFile.flush();
+static void logToFile(const string &message) {
+  if (!shouldLog)
+    return;
+  if (!g_logFile.is_open())
+    return;
+  g_logFile << message;
+  g_logFile.flush();
 }
 
 static const vector<string> KNOWN_KEYBOARDS = {
-    CODE_KEYBOARD,
-    GNOME_TERMINAL_KEYBOARD,
-    GOOGLE_CHROME_KEYBOARD,
-    DEFAULT_KEYBOARD,
-    TEST_KEYBOARD
-};
+    CODE_KEYBOARD, GNOME_TERMINAL_KEYBOARD, GOOGLE_CHROME_KEYBOARD,
+    DEFAULT_KEYBOARD, TEST_KEYBOARD};
 
-static string formatEntriesAsText(const vector<std::pair<string, string>>& entries) {
-    if (entries.empty()) {
-        return "<no entries>\n";
-    }
-    string result;
-    for (const auto& pair : entries) {
-        result += pair.first + "|" + pair.second + "\n";
-    }
-    return result;
+static string
+formatEntriesAsText(const vector<std::pair<string, string>> &entries) {
+  if (entries.empty()) {
+    return "<no entries>\n";
+  }
+  string result;
+  for (const auto &pair : entries) {
+    result += pair.first + "|" + pair.second + "\n";
+  }
+  return result;
 }
 
-static string errorEntryNotFound(const string& key) {
-    return string("Entry not found for key ") + key + mustEndWithNewLine;
+static string errorEntryNotFound(const string &key) {
+  return string("Entry not found for key ") + key + mustEndWithNewLine;
 }
 
-static string errorDeleteFailed(const string& prefix) {
-    return string("Error deleting entries with prefix: ") + prefix + mustEndWithNewLine;
+static string errorDeleteFailed(const string &prefix) {
+  return string("Error deleting entries with prefix: ") + prefix +
+         mustEndWithNewLine;
 }
 
 static const string HELP_MESSAGE =
@@ -88,16 +95,25 @@ static const string HELP_MESSAGE =
     "  cdForward               Move forward in the directory history.\n"
     "  cdBackward              Move backward in the directory history.\n"
     "  showTerminalInstance    Show the current terminal instance.\n"
-    "  deleteEntry             Delete a specific entry from the database by key.\n"
+    "  deleteEntry             Delete a specific entry from the database by "
+    "key.\n"
     "  deleteEntriesByPrefix   Delete all entries with a specific prefix.\n"
     "  showDB                  Display all entries in the database.\n"
-    "  ping                    Ping the daemon and receive pong response.\n"    "  getMousePath            Get the path to the mouse input device.\n"    "  getSocketPath           Get the path to the daemon's UNIX domain socket.\n"
-    "  setKeyboard             Set the keyboard by name and execute restart script.\n"
+    "  ping                    Ping the daemon and receive pong response.\n"
+    "  getMousePath            Get the path to the mouse input device.\n"
+    "  getSocketPath           Get the path to the daemon's UNIX domain "
+    "socket.\n"
+    "  setKeyboard             Set the keyboard by name and execute restart "
+    "script.\n"
     "  shouldLog               Enable or disable logging (true/false).\n"
-    "  toggleKeyboardsWhenActiveWindowChanges  Toggle automatic keyboard switching on window change.\n"
-    "  getDir                  Get a daemon directory path by name (base, data, mappings).\n"
-    "  getFile                 Get file path by name from data or mapping directories.\n\n"
-    "  getDir                  Get a daemon directory path by name (base, data, mappings).\n\n"
+    "  toggleKeyboardsWhenActiveWindowChanges  Toggle automatic keyboard "
+    "switching on window change.\n"
+    "  getDir                  Get a daemon directory path by name (base, "
+    "data, mappings).\n"
+    "  getFile                 Get file path by name from data or mapping "
+    "directories.\n\n"
+    "  getDir                  Get a daemon directory path by name (base, "
+    "data, mappings).\n\n"
     "Options:\n"
     "  --help                  Display this help message.\n"
     "  --json                  Output results in JSON format.\n\n"
@@ -107,318 +123,390 @@ static const string HELP_MESSAGE =
     "  daemon deleteEntriesByPrefix session_\n"
     "  daemon showDB --json\n";
 
-CmdResult handleHelp(const json&) {
-    return CmdResult(0, HELP_MESSAGE);
+CmdResult handleHelp(const json &) { return CmdResult(0, HELP_MESSAGE); }
+
+CmdResult handleOpenedTty(const json &command) {
+  return Terminal::openedTty(command);
 }
 
-CmdResult handleOpenedTty(const json& command) {
-    return Terminal::openedTty(command);
+CmdResult handleClosedTty(const json &command) {
+  return Terminal::closedTty(command);
 }
 
-CmdResult handleClosedTty(const json& command) {
-    return Terminal::closedTty(command);
+CmdResult handleUpdateDirHistory(const json &command) {
+  return Terminal::updateDirHistory(command);
 }
 
-CmdResult handleUpdateDirHistory(const json& command) {
-    return Terminal::updateDirHistory(command);
+CmdResult handleCdForward(const json &command) {
+  return Terminal::cdForward(command);
 }
 
-CmdResult handleCdForward(const json& command) {
-    return Terminal::cdForward(command);
+CmdResult handleCdBackward(const json &command) {
+  return Terminal::cdBackward(command);
 }
 
-CmdResult handleCdBackward(const json& command) {
-    return Terminal::cdBackward(command);
+CmdResult handleShowTerminalInstance(const json &command) {
+  return Terminal::showTerminalInstance(command);
 }
 
-CmdResult handleShowTerminalInstance(const json& command) {
-    return Terminal::showTerminalInstance(command);
+CmdResult handleShowAllTerminalInstances(const json &command) {
+  return Terminal::showAllTerminalInstances(command);
 }
 
-CmdResult handleShowAllTerminalInstances(const json& command) {
-    return Terminal::showAllTerminalInstances(command);
+CmdResult handleShowEntriesByPrefix(const json &command) {
+  string prefix = command[COMMAND_ARG_PREFIX].get<string>();
+  auto entries = kvTable.getByPrefix(prefix);
+  return CmdResult(0, formatEntriesAsText(entries));
 }
 
-CmdResult handleShowEntriesByPrefix(const json& command) {
-    string prefix = command[COMMAND_ARG_PREFIX].get<string>();
-    auto entries = kvTable.getByPrefix(prefix);
-    return CmdResult(0, formatEntriesAsText(entries));
+CmdResult handleDeleteEntriesByPrefix(const json &command) {
+  string prefix = command[COMMAND_ARG_PREFIX].get<string>();
+  int rc = kvTable.deleteByPrefix(prefix);
+  if (rc == SQLITE_OK) {
+    return CmdResult(0, "Entries deleted\n");
+  }
+  return CmdResult(1, errorDeleteFailed(prefix));
 }
 
-CmdResult handleDeleteEntriesByPrefix(const json& command) {
-    string prefix = command[COMMAND_ARG_PREFIX].get<string>();
-    int rc = kvTable.deleteByPrefix(prefix);
-    if (rc == SQLITE_OK) {
-        return CmdResult(0, "Entries deleted\n");
+CmdResult handleShowDb(const json &) {
+  return CmdResult(0, formatEntriesAsText(kvTable.getAll()));
+}
+
+CmdResult handleDeleteEntry(const json &command) {
+  string key = command[COMMAND_ARG_KEY].get<string>();
+  int rc = kvTable.deleteEntry(key);
+  if (rc == SQLITE_OK) {
+    return CmdResult(0, "Entry deleted\n");
+  }
+  return CmdResult(1, errorEntryNotFound(key));
+}
+
+CmdResult handlePrintDirHistory(const json &) {
+  std::stringstream ss;
+  ss << "--- Directory History Entries ---\n";
+  vector<std::pair<string, string>> dirs =
+      kvTable.getByPrefix(DIR_HISTORY_ENTRY_PREFIX);
+  std::sort(dirs.begin(), dirs.end(),
+            [](const auto &a, const auto &b) { return a.first < b.first; });
+  if (dirs.empty()) {
+    ss << "No directory entries found.\n";
+  } else {
+    for (const auto &pair : dirs) {
+      ss << "  " << pair.first << ": " << pair.second << "\n";
     }
-    return CmdResult(1, errorDeleteFailed(prefix));
-}
+  }
 
-CmdResult handleShowDb(const json&) {
-    return CmdResult(0, formatEntriesAsText(kvTable.getAll()));
-}
-
-CmdResult handleDeleteEntry(const json& command) {
-    string key = command[COMMAND_ARG_KEY].get<string>();
-    int rc = kvTable.deleteEntry(key);
-    if (rc == SQLITE_OK) {
-        return CmdResult(0, "Entry deleted\n");
+  ss << "\n--- TTY Pointers to History Entries ---\n";
+  vector<std::pair<string, string>> ptsPointers =
+      kvTable.getByPrefix(DIR_HISTORY_POINTER_PREFIX);
+  std::sort(ptsPointers.begin(), ptsPointers.end(),
+            [](const auto &a, const auto &b) { return a.first < b.first; });
+  if (ptsPointers.empty()) {
+    ss << "No TTY pointers found.\n";
+  } else {
+    for (const auto &pair : ptsPointers) {
+      ss << "  " << pair.first << ": " << pair.second << "\n";
     }
-    return CmdResult(1, errorEntryNotFound(key));
+  }
+
+  ss << "\n--- Last Touched Directory ---\n";
+  string lastTouchedIndex = kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
+  if (!lastTouchedIndex.empty()) {
+    string lastTouchedKey = string(DIR_HISTORY_ENTRY_PREFIX) + lastTouchedIndex;
+    string lastTouchedValue = kvTable.get(lastTouchedKey);
+    ss << "  Index: " << lastTouchedIndex << ", Path: " << lastTouchedValue
+       << "\n";
+  } else {
+    ss << "No last touched directory recorded.\n";
+  }
+
+  return CmdResult(0, ss.str());
 }
 
-CmdResult handlePrintDirHistory(const json&) {
-    std::stringstream ss;
-    ss << "--- Directory History Entries ---\n";
-    vector<std::pair<string, string>> dirs = kvTable.getByPrefix(DIR_HISTORY_ENTRY_PREFIX);
-    std::sort(dirs.begin(), dirs.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
-    if (dirs.empty()) {
-        ss << "No directory entries found.\n";
-    } else {
-        for (const auto& pair : dirs) {
-            ss << "  " << pair.first << ": " << pair.second << "\n";
-        }
-    }
-
-    ss << "\n--- TTY Pointers to History Entries ---\n";
-    vector<std::pair<string, string>> ptsPointers = kvTable.getByPrefix(DIR_HISTORY_POINTER_PREFIX);
-    std::sort(ptsPointers.begin(), ptsPointers.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
-    if (ptsPointers.empty()) {
-        ss << "No TTY pointers found.\n";
-    } else {
-        for (const auto& pair : ptsPointers) {
-            ss << "  " << pair.first << ": " << pair.second << "\n";
-        }
-    }
-    
-    ss << "\n--- Last Touched Directory ---\n";
-    string lastTouchedIndex = kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
-    if (!lastTouchedIndex.empty()) {
-        string lastTouchedKey = string(DIR_HISTORY_ENTRY_PREFIX) + lastTouchedIndex;
-        string lastTouchedValue = kvTable.get(lastTouchedKey);
-        ss << "  Index: " << lastTouchedIndex << ", Path: " << lastTouchedValue << "\n";
-    } else {
-        ss << "No last touched directory recorded.\n";
-    }
-    
-    return CmdResult(0, ss.str());
+CmdResult handleUpsertEntry(const json &command) {
+  string key = command[COMMAND_ARG_KEY].get<string>();
+  string value = command[COMMAND_ARG_VALUE].get<string>();
+  int rc = kvTable.upsert(key, value);
+  if (rc == SQLITE_OK) {
+    return CmdResult(0, "Entry upserted\n");
+  }
+  string errorMsg = string("Upsert failed with code ") + to_string(rc) + ": " +
+                    sqlite3_errstr(rc) + "\n";
+  return CmdResult(rc, errorMsg);
 }
 
-CmdResult handleUpsertEntry(const json& command) {
-    string key = command[COMMAND_ARG_KEY].get<string>();
-    string value = command[COMMAND_ARG_VALUE].get<string>();
-    int rc = kvTable.upsert(key, value);
-    if (rc == SQLITE_OK) {
-        return CmdResult(0, "Entry upserted\n");
-    }
-    string errorMsg = string("Upsert failed with code ") + to_string(rc) + ": " + sqlite3_errstr(rc) + "\n";
-    return CmdResult(rc, errorMsg);
+CmdResult handleGetEntry(const json &command) {
+  string key = command[COMMAND_ARG_KEY].get<string>();
+  string value = kvTable.get(key);
+  if (value.empty()) {
+    return CmdResult(1, "\n");
+  }
+  return CmdResult(0, value + "\n");
+}
+CmdResult handlePing(const json &) { return CmdResult(0, "pong\n"); }
+CmdResult handleGetKeyboardPath(const json &) {
+  string path = kvTable.get("keyboardPath");
+  if (path.empty()) {
+    return CmdResult(1, "Keyboard path not found\n");
+  }
+  return CmdResult(0, path + "\n");
 }
 
-CmdResult handleGetEntry(const json& command) {
-    string key = command[COMMAND_ARG_KEY].get<string>();
-    string value = kvTable.get(key);
-    if (value.empty()) {
-        return CmdResult(1, "\n");
-    }
-    return CmdResult(0, value + "\n");
-}
-CmdResult handlePing(const json&) {
-    return CmdResult(0, "pong\n");
-}
-CmdResult handleGetKeyboardPath(const json&) {
-    string path = kvTable.get("keyboardPath");
-    if (path.empty()) {
-        return CmdResult(1, "Keyboard path not found\n");
-    }
-    return CmdResult(0, path + "\n");
+CmdResult handleGetMousePath(const json &) {
+  string path = kvTable.get("mousePath");
+  if (path.empty()) {
+    return CmdResult(1, "Mouse path not found\n");
+  }
+  return CmdResult(0, path + "\n");
 }
 
-CmdResult handleGetMousePath(const json&) {
-    string path = kvTable.get("mousePath");
-    if (path.empty()) {
-        return CmdResult(1, "Mouse path not found\n");
-    }
-    return CmdResult(0, path + "\n");
+CmdResult handleGetSocketPath(const json &) {
+  return CmdResult(0, SOCKET_PATH + string("\n"));
 }
 
-CmdResult handleGetSocketPath(const json&) {
-    return CmdResult(0, SOCKET_PATH + string("\n"));
-}
-
-
-static string readScriptFile(const string& relativeScriptPath) {
-    string scriptContent;
-    std::ifstream scriptFile(relativeScriptPath);
-    if (!scriptFile.is_open()) {
-        string logMessage = string("[ERROR] Failed to open script file: ") + relativeScriptPath + "\n";
-        logToFile(logMessage);
-        return "";
-    }
-    std::stringstream buffer;
-    buffer << scriptFile.rdbuf();
-    scriptContent = buffer.str();
-    scriptFile.close();
-    return scriptContent;
-}
-
-static string substituteVariable(const string& content, const string& variable, const string& value) {
-    string result = content;
-    size_t pos = 0;
-    string searchStr = string("$") + variable;
-    while ((pos = result.find(searchStr, pos)) != string::npos) {
-        result.replace(pos, searchStr.length(), value);
-        pos += value.length();
-    }
-    return result;
-}
-
-CmdResult handleShouldLog(const json& command) {
-    string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
-    shouldLog = (enableStr == COMMAND_VALUE_TRUE);
-    return CmdResult(0, string("Logging ") + (shouldLog ? "enabled" : "disabled") + "\n");
-}
-
-CmdResult handleGetShouldLog(const json&) {
-    return CmdResult(0, shouldLog ? COMMAND_VALUE_TRUE : COMMAND_VALUE_FALSE);
-}
-
-CmdResult handleToggleKeyboardsWhenActiveWindowChanges(const json& command) {
-    string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
-    toggleKeyboardsWhenActiveWindowChanges = (enableStr == COMMAND_VALUE_TRUE);
-    return CmdResult(0, string("Return to default keyboard on next window change: ") + (toggleKeyboardsWhenActiveWindowChanges ? "no" : "yes") + "\n");
-}
-
-CmdResult handleGetDir(const json& command) {
-    string dirName = command[COMMAND_ARG_DIR_NAME].get<string>();
-    string result;
-    if (dirName == "base") {
-        result = directories.base;
-    } else if (dirName == "data") {
-        result = directories.data;
-    } else if (dirName == "mappings") {
-        result = directories.mappings;
-    } else {
-        return CmdResult(1, "Unknown directory name: " + dirName + "\n");
-    }
-    return CmdResult(0, result + "\n");
-}
-
-CmdResult handleGetFile(const json& command) {
-    string fileName = command[COMMAND_ARG_FILE_NAME].get<string>();
-    for (const auto& file : files.files) {
-        if (file.name.find(fileName) != string::npos) {
-            return CmdResult(0, file.fullPath() + "\n");
-        }
-    }
-    return CmdResult(1, "File not found: " + fileName + "\n");
-}
-
-CmdResult handleQuit(const json&) {
-    running = 0; // Signal the daemon to shut down
-    return CmdResult(0, "Shutting down daemon.\n");
-}
-
-CmdResult handleActiveWindowChanged(const json& command) {
-    string logMessage = "[ACTIVE_WINDOW_CHANGED] ";
-    logMessage += "windowTitle: " + command[COMMAND_ARG_WINDOW_TITLE].get<string>() + ", ";
-    logMessage += "wmClass: " + command[COMMAND_ARG_WM_CLASS].get<string>() + ", ";
-    logMessage += "wmInstance: " + command[COMMAND_ARG_WM_INSTANCE].get<string>() + ", ";
-    logMessage += "windowId: " + std::to_string(command[COMMAND_ARG_WINDOW_ID].get<long>()) + "\n";
+static string readScriptFile(const string &relativeScriptPath) {
+  string scriptContent;
+  std::ifstream scriptFile(relativeScriptPath);
+  if (!scriptFile.is_open()) {
+    string logMessage = string("[ERROR] Failed to open script file: ") +
+                        relativeScriptPath + "\n";
     logToFile(logMessage);
-
-    std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
-    // if (wmClass == wmClassChrome) {
-    if (g_keyboard_fd >= 0) {
-        char* commands[] = { (char*)wmClass.c_str() };
-        int num_commands = sizeof(commands) / sizeof(commands[0]);
-        sendKeys_with_fd(g_keyboard_fd, num_commands, commands);
-    }
-    // }
-    
-    return CmdResult(0, "Active window info received and logged.\n");
+    return "";
+  }
+  std::stringstream buffer;
+  buffer << scriptFile.rdbuf();
+  scriptContent = buffer.str();
+  scriptFile.close();
+  return scriptContent;
 }
 
-CmdResult handleSetKeyboard(const json& command) {
-    static string previousKeyboard = "";
-    string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
-    if (keyboardName == previousKeyboard) {
-        return CmdResult(0, "Keyboard already set to: " + keyboardName + "\n");
-    }
-    // else {
-    //     return CmdResult(0, "Keyboard in test mode: " + keyboardName + "\n");
-    // }
-    previousKeyboard = keyboardName;
-    string logMessage;
-    bool isKnown = false;
-    FILE* pipe;
-    string output;
-    int status;
-    int exitCode;
-    for (const string& known : KNOWN_KEYBOARDS) {
-        if (known == keyboardName) {
-            isKnown = true;
-            break;
-        }
-    }
-    if (!isKnown) {
-        keyboardName = DEFAULT_KEYBOARD;
-    }
-    logMessage = string("[START setKeyboard] keyboard: ") + keyboardName + " isKnown: " + (isKnown ? "true" : "false") + "\n";
-    logToFile(logMessage);
-    string scriptPath = directories.mappings + PREFIX_KEYBOARD + keyboardName + ".sh";
-    string scriptContent = readScriptFile(scriptPath);
-    if (scriptContent.empty()) {
-        return CmdResult(1, "Script file not found\n");
-    }
-    scriptContent = substituteVariable(scriptContent, KEYBOARD_PATH_KEY, kvTable.get(KEYBOARD_PATH_KEY));
-    scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY, kvTable.get(MOUSE_PATH_KEY));
-    scriptContent = substituteVariable(scriptContent, EVSIEVE_RANDOM_VAR, to_string(rand() % 1000000));
-    string cmd = string(
-        "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; "
-        "sudo systemd-run --collect --service-type=notify --unit=corsairKeyBoardLogiMouse.service "
-        "--property=StandardError=append:" + directories.data + EVSIEVE_STANDARD_ERR_FILE + " "
-        "--property=StandardOutput=append:" + directories.data + EVSIEVE_STANDARD_OUTPUT_FILE + " "
-        )
-        + scriptContent
-    ;
-    if (! toggleKeyboardsWhenActiveWindowChanges){
-        cmd = string(
-        "sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; ");
-    }
-    pipe = popen(cmd.c_str(), "r");
-    logMessage = string("[EXEC] ") + cmd + "\n";
-    logToFile(logMessage);
-    if (!pipe) {
-        logMessage = string("[ERROR] popen failed\n");
-        logToFile(logMessage);
-        return CmdResult(1, "Failed to execute\n");
-    }
-    char buffer[256];
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-        output += buffer;
-    }
-    status = pclose(pipe);
-    exitCode = WEXITSTATUS(status);
-    logMessage = string("[OUTPUT]\n") + output + "\n";
-    logToFile(logMessage);
-    logMessage = string("[STATUS] raw status: ") + to_string(status) + " exit code: " + to_string(exitCode) + "\n";
-    logToFile(logMessage);
-    if (status != 0) {
-        logMessage = string("[END] FAILED\n");
-        logToFile(logMessage);
-        return CmdResult(1, string("Failed to execute (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
-    }
-    logMessage = string("[END] SUCCESS\n");
-    logToFile(logMessage);
-    return CmdResult(0, string("SUCCESS\n" + output + "Set keyboard to: ") + keyboardName + "\n");
+static string substituteVariable(const string &content, const string &variable,
+                                 const string &value) {
+  string result = content;
+  size_t pos = 0;
+  string searchStr = string("$") + variable;
+  while ((pos = result.find(searchStr, pos)) != string::npos) {
+    result.replace(pos, searchStr.length(), value);
+    pos += value.length();
+  }
+  return result;
 }
 
-typedef CmdResult (*CommandHandler)(const json&);
+CmdResult handleShouldLog(const json &command) {
+  string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
+  shouldLog = (enableStr == COMMAND_VALUE_TRUE);
+  return CmdResult(0, string("Logging ") +
+                          (shouldLog ? "enabled" : "disabled") + "\n");
+}
+
+CmdResult handleGetShouldLog(const json &) {
+  return CmdResult(0, shouldLog ? COMMAND_VALUE_TRUE : COMMAND_VALUE_FALSE);
+}
+
+CmdResult handleToggleKeyboardsWhenActiveWindowChanges(const json &command) {
+  string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
+  toggleKeyboardsWhenActiveWindowChanges = (enableStr == COMMAND_VALUE_TRUE);
+  return CmdResult(
+      0, string("Return to default keyboard on next window change: ") +
+             (toggleKeyboardsWhenActiveWindowChanges ? "no" : "yes") + "\n");
+}
+
+CmdResult handleGetDir(const json &command) {
+  string dirName = command[COMMAND_ARG_DIR_NAME].get<string>();
+  string result;
+  if (dirName == "base") {
+    result = directories.base;
+  } else if (dirName == "data") {
+    result = directories.data;
+  } else if (dirName == "mappings") {
+    result = directories.mappings;
+  } else {
+    return CmdResult(1, "Unknown directory name: " + dirName + "\n");
+  }
+  return CmdResult(0, result + "\n");
+}
+
+CmdResult handleGetFile(const json &command) {
+  string fileName = command[COMMAND_ARG_FILE_NAME].get<string>();
+  for (const auto &file : files.files) {
+    if (file.name.find(fileName) != string::npos) {
+      return CmdResult(0, file.fullPath() + "\n");
+    }
+  }
+  return CmdResult(1, "File not found: " + fileName + "\n");
+}
+
+CmdResult handleQuit(const json &) {
+  running = 0; // Signal the daemon to shut down
+  return CmdResult(0, "Shutting down daemon.\n");
+}
+
+size_t WriteCallback(void *contents, size_t size, size_t nmemb,
+                     std::string *userp) {
+  userp->append((char *)contents, size * nmemb);
+  return size * nmemb;
+}
+
+std::string httpGet(const std::string &url) {
+  CURL *curl = curl_easy_init();
+  std::string response;
+  if (curl) {
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+  }
+  return response;
+}
+
+std::string getCurrentTabUrl() {
+  std::string response = httpGet("http://localhost:9222/json");
+  Json::Value root;
+  Json::Reader reader;
+  if (!reader.parse(response, root)) {
+    return "";
+  }
+  for (const auto &tab : root) {
+    std::string type = tab["type"].asString();
+    std::string url = tab["url"].asString();
+    // Skip over extension pages and devtools
+    if (type == "page" &&
+        url.find("chrome-extension://") == std::string::npos &&
+        url.find("devtools://") == std::string::npos) {
+      return url;
+    }
+  }
+  return "";
+}
+
+CmdResult handleActiveWindowChanged(const json &command) {
+  string logMessage = "[ACTIVE_WINDOW_CHANGED] ";
+  logMessage +=
+      "windowTitle: " + command[COMMAND_ARG_WINDOW_TITLE].get<string>() + ", ";
+  logMessage +=
+      "wmClass: " + command[COMMAND_ARG_WM_CLASS].get<string>() + ", ";
+  logMessage +=
+      "wmInstance: " + command[COMMAND_ARG_WM_INSTANCE].get<string>() + ", ";
+  logMessage += "windowId: " +
+                std::to_string(command[COMMAND_ARG_WINDOW_ID].get<long>()) +
+                "\n";
+  logToFile(logMessage);
+
+  std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
+
+  if (g_keyboard_fd >= 0) {
+    // Send keys based on wmClass (existing logic, seemingly)
+    char *commands[] = {(char *)wmClass.c_str()};
+    int num_commands = sizeof(commands) / sizeof(commands[0]);
+    sendKeys_with_fd(g_keyboard_fd, num_commands, commands);
+  }
+
+  if (wmClass == wmClassChrome) {
+    std::string url = getCurrentTabUrl();
+    logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: " + url +
+              "\n");
+    if (url.find("chatgpt.com") != std::string::npos) {
+      if (g_keyboard_fd >= 0) {
+        char *commands[] = {(char *)"keyA", (char *)"keyA", (char *)"keyH", (char *)"keyI", (char *)"keyH"};
+        sendKeys_with_fd(g_keyboard_fd, 1, commands);
+        logToFile("[ACTIVE_WINDOW_CHANGED] ChatGPT detected. Sent 'hi'.\n");
+      }
+    }
+  }
+
+  return CmdResult(0, "Active window info received and logged.\n");
+}
+
+CmdResult handleSetKeyboard(const json &command) {
+  static string previousKeyboard = "";
+  string keyboardName = command[COMMAND_ARG_KEYBOARD_NAME].get<string>();
+  if (keyboardName == previousKeyboard) {
+    return CmdResult(0, "Keyboard already set to: " + keyboardName + "\n");
+  }
+  // else {
+  //     return CmdResult(0, "Keyboard in test mode: " + keyboardName + "\n");
+  // }
+  previousKeyboard = keyboardName;
+  string logMessage;
+  bool isKnown = false;
+  FILE *pipe;
+  string output;
+  int status;
+  int exitCode;
+  for (const string &known : KNOWN_KEYBOARDS) {
+    if (known == keyboardName) {
+      isKnown = true;
+      break;
+    }
+  }
+  if (!isKnown) {
+    keyboardName = DEFAULT_KEYBOARD;
+  }
+  logMessage = string("[START setKeyboard] keyboard: ") + keyboardName +
+               " isKnown: " + (isKnown ? "true" : "false") + "\n";
+  logToFile(logMessage);
+  string scriptPath =
+      directories.mappings + PREFIX_KEYBOARD + keyboardName + ".sh";
+  string scriptContent = readScriptFile(scriptPath);
+  if (scriptContent.empty()) {
+    return CmdResult(1, "Script file not found\n");
+  }
+  scriptContent = substituteVariable(scriptContent, KEYBOARD_PATH_KEY,
+                                     kvTable.get(KEYBOARD_PATH_KEY));
+  scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY,
+                                     kvTable.get(MOUSE_PATH_KEY));
+  scriptContent = substituteVariable(scriptContent, EVSIEVE_RANDOM_VAR,
+                                     to_string(rand() % 1000000));
+  string cmd = string("sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; "
+                      "sudo systemd-run --collect --service-type=notify "
+                      "--unit=corsairKeyBoardLogiMouse.service "
+                      "--property=StandardError=append:" +
+                      directories.data + EVSIEVE_STANDARD_ERR_FILE +
+                      " "
+                      "--property=StandardOutput=append:" +
+                      directories.data + EVSIEVE_STANDARD_OUTPUT_FILE + " ") +
+               scriptContent;
+  if (!toggleKeyboardsWhenActiveWindowChanges) {
+    cmd = string("sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; ");
+  }
+  pipe = popen(cmd.c_str(), "r");
+  logMessage = string("[EXEC] ") + cmd + "\n";
+  logToFile(logMessage);
+  if (!pipe) {
+    logMessage = string("[ERROR] popen failed\n");
+    logToFile(logMessage);
+    return CmdResult(1, "Failed to execute\n");
+  }
+  char buffer[256];
+  while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+    output += buffer;
+  }
+  status = pclose(pipe);
+  exitCode = WEXITSTATUS(status);
+  logMessage = string("[OUTPUT]\n") + output + "\n";
+  logToFile(logMessage);
+  logMessage = string("[STATUS] raw status: ") + to_string(status) +
+               " exit code: " + to_string(exitCode) + "\n";
+  logToFile(logMessage);
+  if (status != 0) {
+    logMessage = string("[END] FAILED\n");
+    logToFile(logMessage);
+    return CmdResult(1, string("Failed to execute (exit code ") +
+                            std::to_string(exitCode) + ", output: " + output +
+                            ")\n");
+  }
+  logMessage = string("[END] SUCCESS\n");
+  logToFile(logMessage);
+  return CmdResult(0, string("SUCCESS\n" + output + "Set keyboard to: ") +
+                          keyboardName + "\n");
+}
+
+typedef CmdResult (*CommandHandler)(const json &);
 
 struct CommandDispatch {
-    const char* name;
-    CommandHandler handler;
+  const char *name;
+  CommandHandler handler;
 };
 
 static const CommandDispatch COMMAND_HANDLERS[] = {
@@ -445,72 +533,77 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_SET_KEYBOARD, handleSetKeyboard},
     {COMMAND_SHOULD_LOG, handleShouldLog},
     {COMMAND_GET_SHOULD_LOG, handleGetShouldLog},
-    {COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES, handleToggleKeyboardsWhenActiveWindowChanges},
+    {COMMAND_TOGGLE_KEYBOARDS_WHEN_ACTIVE_WINDOW_CHANGES,
+     handleToggleKeyboardsWhenActiveWindowChanges},
     {COMMAND_GET_DIR, handleGetDir},
     {COMMAND_GET_FILE, handleGetFile},
     {COMMAND_QUIT, handleQuit},
     {COMMAND_ACTIVE_WINDOW_CHANGED, handleActiveWindowChanged},
 };
 
-static const size_t COMMAND_HANDLERS_SIZE = sizeof(COMMAND_HANDLERS) / sizeof(COMMAND_HANDLERS[0]);
+static const size_t COMMAND_HANDLERS_SIZE =
+    sizeof(COMMAND_HANDLERS) / sizeof(COMMAND_HANDLERS[0]);
 
-CmdResult testIntegrity(const json& command) {
-    if (!command.contains(COMMAND_KEY)) {
-        return CmdResult(1, "Missing command key");
+CmdResult testIntegrity(const json &command) {
+  if (!command.contains(COMMAND_KEY)) {
+    return CmdResult(1, "Missing command key");
+  }
+  string commandName = command[COMMAND_KEY].get<string>();
+  const CommandSignature *foundCommand = nullptr;
+  for (size_t i = 0; i < COMMAND_REGISTRY_SIZE; ++i) {
+    if (COMMAND_REGISTRY[i].name == commandName) {
+      foundCommand = &COMMAND_REGISTRY[i];
+      break;
     }
-    string commandName = command[COMMAND_KEY].get<string>();
-    const CommandSignature* foundCommand = nullptr;
-    for (size_t i = 0; i < COMMAND_REGISTRY_SIZE; ++i) {
-        if (COMMAND_REGISTRY[i].name == commandName) {
-            foundCommand = &COMMAND_REGISTRY[i];
-            break;
-        }
+  }
+  if (!foundCommand) {
+    return CmdResult(1, string("Unknown command: ") + commandName +
+                            mustEndWithNewLine);
+  }
+  for (const string &arg : foundCommand->requiredArgs) {
+    if (!command.contains(arg)) {
+      return CmdResult(1, string("Missing required arg: ") + arg +
+                              mustEndWithNewLine);
     }
-    if (!foundCommand) {
-        return CmdResult(1, string("Unknown command: ") + commandName + mustEndWithNewLine);
-    }
-    for (const string& arg : foundCommand->requiredArgs) {
-        if (!command.contains(arg)) {
-            return CmdResult(1, string("Missing required arg: ") + arg + mustEndWithNewLine);
-        }
-    }
-    return CmdResult(0, "");
+  }
+  return CmdResult(0, "");
 }
 
-int mainCommand(const json& command, int client_sock) {
-    clientSocket = client_sock;
-    string commandStr = command.dump();
-    CmdResult result;
-    try {
-        CmdResult integrityCheck = testIntegrity(command);
-        if (integrityCheck.status != 0) {
-            result = integrityCheck;
-        } else {
-            string commandName = command[COMMAND_KEY].get<string>();
-            CommandHandler handler = nullptr;
-            for (size_t i = 0; i < COMMAND_HANDLERS_SIZE; ++i) {
-                if (COMMAND_HANDLERS[i].name == commandName) {
-                    handler = COMMAND_HANDLERS[i].handler;
-                    break;
-                }
-            }
-            if (handler) {
-                result = handler(command);
-            } else {
-                result.status = 1;
-                result.message = string("Unhandled command: ") + commandStr + mustEndWithNewLine;
-            }
+int mainCommand(const json &command, int client_sock) {
+  clientSocket = client_sock;
+  string commandStr = command.dump();
+  CmdResult result;
+  try {
+    CmdResult integrityCheck = testIntegrity(command);
+    if (integrityCheck.status != 0) {
+      result = integrityCheck;
+    } else {
+      string commandName = command[COMMAND_KEY].get<string>();
+      CommandHandler handler = nullptr;
+      for (size_t i = 0; i < COMMAND_HANDLERS_SIZE; ++i) {
+        if (COMMAND_HANDLERS[i].name == commandName) {
+          handler = COMMAND_HANDLERS[i].handler;
+          break;
         }
-    } catch (const std::exception& e) {
+      }
+      if (handler) {
+        result = handler(command);
+      } else {
         result.status = 1;
-        result.message = std::string("error: ") + e.what() + "\n";
+        result.message =
+            string("Unhandled command: ") + commandStr + mustEndWithNewLine;
+      }
     }
-    if (!result.message.empty() && result.message.back() != '\n') {
-        result.message += "daemon must end in \\n\n";
-    }
-    if (command[COMMAND_KEY] == "closedTty") {
-        return 0;
-    }
-    write(client_sock, result.message.c_str(), result.message.length());
+  } catch (const std::exception &e) {
+    result.status = 1;
+    result.message = std::string("error: ") + e.what() + "\n";
+  }
+  if (!result.message.empty() && result.message.back() != '\n') {
+    result.message += "daemon must end in \\n\n";
+  }
+  if (command[COMMAND_KEY] == "closedTty") {
     return 0;
+  }
+  write(client_sock, result.message.c_str(), result.message.length());
+  return 0;
 }

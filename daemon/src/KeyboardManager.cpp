@@ -21,8 +21,17 @@ static void logToFile(const string &message) {
   }
 }
 
-CmdResult
-KeyboardManager::setKeyboard(const std::string &keyboardNameStr, bool stopKeyboard) {
+bool KeyboardManager::isKnownKeyboard(const std::string &name) {
+  for (const auto &known : KNOWN_KEYBOARDS) {
+    if (known == name) {
+      return true;
+    }
+  }
+  return false;
+}
+
+CmdResult KeyboardManager::setKeyboard(const std::string &keyboardNameStr,
+                                       bool stopKeyboard) {
   string logMessage;
   FILE *pipe;
   string output;
@@ -30,20 +39,26 @@ KeyboardManager::setKeyboard(const std::string &keyboardNameStr, bool stopKeyboa
   int exitCode;
   logMessage = string("[START setKeyboard]\n");
   logToFile(logMessage);
-  string scriptPath = directories.mappings + PREFIX_KEYBOARD + ALL_KEYBOARD + ".sh";
+  string scriptPath =
+      directories.mappings + PREFIX_KEYBOARD + ALL_KEYBOARD + ".sh";
   string scriptContent = readScriptFile(scriptPath);
   if (scriptContent.empty()) {
     return CmdResult(1, "Script file not found\n");
   }
-  scriptContent = substituteVariable(scriptContent, KEYBOARD_PATH_KEY, kvTable.get(KEYBOARD_PATH_KEY));
-  scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY, kvTable.get(MOUSE_PATH_KEY));
-  scriptContent = substituteVariable(scriptContent, EVSIEVE_RANDOM_VAR, to_string(rand() % 1000000));
+  scriptContent = substituteVariable(scriptContent, KEYBOARD_PATH_KEY,
+                                     kvTable.get(KEYBOARD_PATH_KEY));
+  scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY,
+                                     kvTable.get(MOUSE_PATH_KEY));
+  scriptContent = substituteVariable(scriptContent, EVSIEVE_RANDOM_VAR,
+                                     to_string(rand() % 1000000));
   string cmd = string("sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; "
-    "sudo systemd-run --collect --service-type=simple "
-    "--unit=corsairKeyBoardLogiMouse.service "
-    "--property=StandardError=append:" + directories.data + EVSIEVE_STANDARD_ERR_FILE + " " +
-    "--property=StandardOutput=append:" + directories.data + EVSIEVE_STANDARD_OUTPUT_FILE + " ") +
-    scriptContent;
+                      "sudo systemd-run --collect --service-type=simple "
+                      "--unit=corsairKeyBoardLogiMouse.service "
+                      "--property=StandardError=append:" +
+                      directories.data + EVSIEVE_STANDARD_ERR_FILE + " " +
+                      "--property=StandardOutput=append:" + directories.data +
+                      EVSIEVE_STANDARD_OUTPUT_FILE + " ") +
+               scriptContent;
   if (!stopKeyboard) {
     cmd = string("sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; ");
   }
@@ -63,14 +78,18 @@ KeyboardManager::setKeyboard(const std::string &keyboardNameStr, bool stopKeyboa
   exitCode = WEXITSTATUS(status);
   logMessage = string("[OUTPUT]\n") + output + "\n";
   logToFile(logMessage);
-  logMessage = string("[STATUS] raw status: ") + to_string(status) + " exit code: " + to_string(exitCode) + "\n";
+  logMessage = string("[STATUS] raw status: ") + to_string(status) +
+               " exit code: " + to_string(exitCode) + "\n";
   logToFile(logMessage);
   if (status != 0) {
     logMessage = string("[END] FAILED\n");
     logToFile(logMessage);
-    return CmdResult(1, string("Failed to execute (exit code ") + std::to_string(exitCode) + ", output: " + output + ")\n");
+    return CmdResult(1, string("Failed to execute (exit code ") +
+                            std::to_string(exitCode) + ", output: " + output +
+                            ")\n");
   }
   logMessage = string("[END] SUCCESS\n");
   logToFile(logMessage);
-  return CmdResult(0, string("SUCCESS\n" + output + "Set keyboard to: ") + ALL_KEYBOARD + "\n");
+  return CmdResult(0, string("SUCCESS\n" + output + "Set keyboard to: ") +
+                          ALL_KEYBOARD + "\n");
 }

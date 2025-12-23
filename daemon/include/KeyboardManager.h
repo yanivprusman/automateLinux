@@ -9,6 +9,7 @@ class KeyboardManager {
 public:
   static CmdResult setKeyboard(const std::string &keyboardName,
                                bool toggleKeyboardsWhenActiveWindowChanges);
+  static bool isKnownKeyboard(const std::string &name);
 
 private:
   static const std::vector<std::string> KNOWN_KEYBOARDS;

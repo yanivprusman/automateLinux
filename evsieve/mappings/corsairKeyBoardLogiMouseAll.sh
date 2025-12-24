@@ -11,7 +11,7 @@ evsieve --input $keyboardPath $mousePath grab domain=input \
 --toggle @keyboard @keyboard$codeForCode @keyboard$codeForGnomeTerminal id=keyboardToggle \
 `#--map key:a@keyboard$codeForCode key:b `\
 `#--map key:a@keyboard$codeForGnomeTerminal key:c `\
---print @keyboard format=direct \
+--print format=direct \
 --output create-link=/dev/input/by-id/corsairKeyBoardLogiMouse 2>&1
 
 

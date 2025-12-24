@@ -51,3 +51,21 @@ tailEvsieve(){
     tail -f /home/yaniv/coding/automateLinux/data/evsieveOutput.log | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0 }'
 }
 export -f tailEvsieve
+
+restartEvsieveOnSave(){
+    local file=$(daemon send getFile --fileName corsairKeyBoardLogiMouseAll.sh)
+    echo monitoring $file
+    inotifywait -m -e close_write "$file" | while read _; do
+        daemon send setKeyboard --enable false > /dev/null 2>&1
+        daemon send setKeyboard --enable true > /dev/null 2>&1
+    done
+}
+export -f restartEvsieveOnSave
+
+debugEvsieve(){
+    # combine the output of evsieveOutput.log and evsieveErr.log to combined.log
+    log evsieve $(d getFile fileName=combined.log)
+    # update changes of evsieve imedietly on save in vscode
+    restartVSCodeKeyEvsieveOnSave &
+}
+export -f debugEvsieve

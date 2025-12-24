@@ -39,14 +39,14 @@ log() {
 export -f log
 
 restartEvsieveOnSave(){
-    local file=$(d getFile fileName=corsairKeyBoardLogiMouseAll.sh)
+    local file=$(daemon send getFile --fileName corsairKeyBoardLogiMouseAll.sh)
     echo monitoring $file
     inotifywait -m -e close_write "$file" | while read _; do
-        daemon setKeyboard > /dev/null 2>&1
-        daemon setKeyboard > /dev/null 2>&1
+        daemon send setKeyboard --enable false > /dev/null 2>&1
+        daemon send setKeyboard --enable true > /dev/null 2>&1
     done
 }
-export -f restartVSCodeKeyEvsieveOnSave
+export -f restartEvsieveOnSave
 
 debugEvsieve(){
     # combine the output of evsieveOutput.log and evsieveErr.log to combined.log

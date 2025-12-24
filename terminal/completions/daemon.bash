@@ -63,7 +63,7 @@ _daemon_completion() {
     declare -A arg_values
     arg_values[--enable]="true false"
     arg_values[--dirName]="base data mappings"
-    arg_values[--fileName]="chrome.log combined.log daemon.db evsieveErr.log evsieveOutput.log trapErrLogBackground.txt trapErrLog.txt corsairKeyBoardLogiMouseCode.sh corsairKeyBoardLogiMouseDefaultKeyboard.sh corsairKeyBoardLogiMousegnome-terminal-server.sh corsairKeyBoardLogiMousegoogle-chrome.sh theRealPath.sh"
+    arg_values[--fileName]="chrome.log combined.log daemon.db evsieveErr.log evsieveOutput.log trapErrLogBackground.txt trapErrLog.txt corsairKeyBoardLogiMouseCode.sh corsairKeyBoardLogiMouseDefaultKeyboard.sh corsairKeyBoardLogiMousegnome-terminal-server.sh corsairKeyBoardLogiMouseAll.sh corsairKeyBoardLogiMousegoogle-chrome.sh theRealPath.sh"
     # Placeholder for --tty and --pwd, could be dynamic later
     arg_values[--tty]="" 
     arg_values[--pwd]=""

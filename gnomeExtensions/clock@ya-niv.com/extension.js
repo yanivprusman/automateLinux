@@ -79,8 +79,13 @@ export default class ClockExtension extends Extension {
             this._menu = new PopupMenu.PopupMenu(this._label, 0.5, St.Side.TOP);
             Main.uiGroup.add_child(this._menu.actor);
             this._menu.actor.hide();
-            let shutDownMenuItem = new PopupMenu.PopupMenuItem('Shut Down');
-            shutDownMenuItem.connect('activate', () => this._onShutdownMenuItemActivated());
+            let shutDownMenuItem = new PopupMenu.PopupMenuItem('Power Off');
+            shutDownMenuItem.connect('activate', (menuItem, event) => {
+                if (event && event.get_button() !== 1) {
+                    return;
+                }
+                this._onShutdownMenuItemActivated();
+            });
             this._menu.addMenuItem(shutDownMenuItem);
 
             // Add separator

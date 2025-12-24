@@ -119,3 +119,14 @@ updateGeminiVersion(){
     gemini -v
 }
 export -f updateGeminiVersion
+
+evsievep() {
+    local path
+    if [[ " $* " == *" -k "* ]]; then
+        path=$(d send getKeyboardPath)
+    else
+        path="/dev/input/event*"
+    fi
+    sudo evsieve --input $path --print format=direct
+}
+export -f evsievep

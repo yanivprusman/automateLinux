@@ -10,4 +10,5 @@
 . $(theRealPath cd.bash)
 . $(theRealPath changeDevice.bash)
 . $(theRealPath grep.bash)
+. $(theRealPath evsieve.bash)
 

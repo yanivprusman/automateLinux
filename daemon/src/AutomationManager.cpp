@@ -11,13 +11,6 @@ using std::to_string;
 
 extern int g_keyboard_fd; // From main.cpp
 
-static void logToFile(const string &message) {
-  if (g_logFile.is_open()) {
-    g_logFile << message;
-    g_logFile.flush();
-  }
-}
-
 std::string AutomationManager::getCurrentTabUrl() {
   std::string response = httpGet("http://localhost:9222/json");
   Json::Value root;

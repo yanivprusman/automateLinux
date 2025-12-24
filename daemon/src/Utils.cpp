@@ -12,11 +12,11 @@ using std::cerr;
 using std::endl;
 using std::vector;
 
-// Helper log function since we don't declare logToFile in header
-// We'll use the one in Globals.h if we can or just implement simple one
-static void utilsLog(const string &msg) {
-  if (g_logFile.is_open()) {
-    g_logFile << msg;
+// Centralized logging function that respects the shouldLog flag
+void logToFile(const string &message) {
+  extern bool shouldLog;
+  if (shouldLog && g_logFile.is_open()) {
+    g_logFile << message;
     g_logFile.flush();
   }
 }
@@ -53,8 +53,8 @@ std::string readScriptFile(const std::string &relativeScriptPath) {
   std::string scriptContent;
   std::ifstream scriptFile(relativeScriptPath);
   if (!scriptFile.is_open()) {
-    utilsLog("[ERROR] Failed to open script file: " + relativeScriptPath +
-             "\n");
+    logToFile("[ERROR] Failed to open script file: " + relativeScriptPath +
+              "\n");
     return "";
   }
   std::stringstream buffer;

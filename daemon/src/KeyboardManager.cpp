@@ -14,13 +14,6 @@ const std::vector<std::string> KeyboardManager::KNOWN_KEYBOARDS = {
     CODE_KEYBOARD, GNOME_TERMINAL_KEYBOARD, GOOGLE_CHROME_KEYBOARD,
     DEFAULT_KEYBOARD, TEST_KEYBOARD};
 
-static void logToFile(const string &message) {
-  if (g_logFile.is_open()) {
-    g_logFile << message;
-    g_logFile.flush();
-  }
-}
-
 bool KeyboardManager::isKnownKeyboard(const std::string &name) {
   for (const auto &known : KNOWN_KEYBOARDS) {
     if (known == name) {

@@ -1,10 +1,12 @@
 #include "mainCommand.h"
 #include "AutomationManager.h"
 #include "DaemonServer.h"
+#include "Globals.h"
 #include "KeyboardManager.h"
 #include "common.h"
 #include "main.h"
 #include "sendKeys.h"
+#include <iostream>
 #include <string>
 
 using std::string;
@@ -37,8 +39,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_SHOULD_LOG, {}),
-    CommandSignature(COMMAND_TOGGLE_KEYBOARD,
-                     {COMMAND_ARG_ENABLE}),
+    CommandSignature(COMMAND_TOGGLE_KEYBOARD, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
     CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME}),
     CommandSignature(COMMAND_QUIT, {}),
@@ -51,8 +52,8 @@ const size_t COMMAND_REGISTRY_SIZE =
     sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
 
 static int clientSocket = -1;
-static bool shouldLog = false;
-bool g_keyboardEnabled = true;  // Global state for keyboard enable/disable
+bool shouldLog = false;        // Global state for logging
+bool g_keyboardEnabled = true; // Global state for keyboard enable/disable
 
 static string
 formatEntriesAsText(const vector<std::pair<string, string>> &entries) {
@@ -261,15 +262,15 @@ CmdResult handleShouldLog(const json &command) {
 }
 
 CmdResult handleGetShouldLog(const json &) {
-  return CmdResult(0, shouldLog ? COMMAND_VALUE_TRUE : COMMAND_VALUE_FALSE);
+  return CmdResult(0, (shouldLog ? COMMAND_VALUE_TRUE : COMMAND_VALUE_FALSE) +
+                          string("\n"));
 }
 
 CmdResult handletoggleKeyboard(const json &command) {
   string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
   g_keyboardEnabled = (enableStr == COMMAND_VALUE_TRUE);
-  return CmdResult(
-      0, string("Keyboard enabled: ") +
-             (g_keyboardEnabled ? "yes" : "no") + "\n");
+  return CmdResult(0, string("Keyboard enabled: ") +
+                          (g_keyboardEnabled ? "yes" : "no") + "\n");
 }
 
 CmdResult handleGetDir(const json &command) {
@@ -343,8 +344,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_SET_KEYBOARD, handleSetKeyboard},
     {COMMAND_SHOULD_LOG, handleShouldLog},
     {COMMAND_GET_SHOULD_LOG, handleGetShouldLog},
-    {COMMAND_TOGGLE_KEYBOARD,
-     handletoggleKeyboard},
+    {COMMAND_TOGGLE_KEYBOARD, handletoggleKeyboard},
     {COMMAND_GET_DIR, handleGetDir},
     {COMMAND_GET_FILE, handleGetFile},
     {COMMAND_QUIT, handleQuit},

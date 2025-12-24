@@ -19,12 +19,22 @@ struct Directories {
   string symlinks;
   string terminal;
   Directories() {
-    base =
-        canonical("/proc/self/exe").parent_path().parent_path().string() + "/";
-    data = base + "../data/";
-    mappings = base + "../evsieve/mappings/";
-    symlinks = base + "../symlinks/";
-    terminal = base + "../terminal/";
+    std::filesystem::path p = canonical("/proc/self/exe").parent_path();
+    // Go up until we find a directory that contains 'data', 'evsieve', and
+    // 'daemon'
+    while (p != p.root_path()) {
+      if (std::filesystem::exists(p / "data") &&
+          std::filesystem::exists(p / "evsieve") &&
+          std::filesystem::exists(p / "daemon")) {
+        break;
+      }
+      p = p.parent_path();
+    }
+    base = p.string() + "/";
+    data = base + "data/";
+    mappings = base + "evsieve/mappings/";
+    symlinks = base + "symlinks/";
+    terminal = base + "terminal/";
   }
 };
 

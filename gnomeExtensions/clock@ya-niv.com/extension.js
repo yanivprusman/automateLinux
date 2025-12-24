@@ -30,6 +30,8 @@ export default class ClockExtension extends Extension {
         this._toggleLoggingMenuItem = null;
         this._toggleDaemonMenuItem = null;
         this._isDaemonActive = false;
+        this._keyboardEnabled = true;
+        this._toggleKeyboardMenuItem = null;
         this.logger.log('ClockExtension constructor called');
         this._isUserService = false;
         this.logger.log('ClockExtension constructor called');
@@ -101,6 +103,11 @@ export default class ClockExtension extends Extension {
             this._toggleDaemonMenuItem.connect('activate', () => this._onToggleDaemonActivated());
             this._menu.addMenuItem(this._toggleDaemonMenuItem);
 
+            // Add toggle keyboard menu item
+            this._toggleKeyboardMenuItem = new PopupMenu.PopupMenuItem('Enable Keyboard');
+            this._toggleKeyboardMenuItem.connect('activate', () => this._onToggleKeyboardActivated());
+            this._menu.addMenuItem(this._toggleKeyboardMenuItem);
+
             this._label.menu = this._menu;
             this._menu.connect('open-state-changed', (menu, open) => {
                 if (open) {
@@ -126,8 +133,9 @@ export default class ClockExtension extends Extension {
             this.logger.log('Clock update timer started');
             this._setupDragging();
 
-            // Load initial daemon logging state
+            // Load initial daemon state
             this._loadDaemonLoggingState();
+            this._loadKeyboardState();
             this._updateDaemonStatus();
         } catch (e) {
             this.logger.log(`Error in enable(): ${e.message}`);
@@ -225,6 +233,49 @@ export default class ClockExtension extends Extension {
             this.logger.log(`Loaded daemon logging state: ${this._daemonLoggingEnabled}`);
         } catch (e) {
             this.logger.log(`Error loading daemon logging state: ${e.message}`);
+        }
+    }
+
+    async _onToggleKeyboardActivated() {
+        try {
+            // Toggle the state
+            this._keyboardEnabled = !this._keyboardEnabled;
+
+            // Send command to daemon
+            const response = await this.daemon.connectAndSendMessage({
+                command: 'setKeyboard',
+                enable: this._keyboardEnabled ? 'true' : 'false'
+            });
+
+            // Update menu item text
+            this._toggleKeyboardMenuItem.label.text = this._keyboardEnabled
+                ? 'Disable Keyboard'
+                : 'Enable Keyboard';
+
+            this.logger.log(`Keyboard toggled: ${this._keyboardEnabled}, response: ${response}`);
+        } catch (e) {
+            this.logger.log(`Error toggling keyboard: ${e.message}`);
+        }
+    }
+
+    async _loadKeyboardState() {
+        try {
+            const response = await this.daemon.connectAndSendMessage({
+                command: 'getKeyboard'
+            });
+
+            this._keyboardEnabled = response && response.trim() === 'true';
+
+            // Update menu item text
+            if (this._toggleKeyboardMenuItem) {
+                this._toggleKeyboardMenuItem.label.text = this._keyboardEnabled
+                    ? 'Disable Keyboard'
+                    : 'Enable Keyboard';
+            }
+
+            this.logger.log(`Loaded keyboard state: ${this._keyboardEnabled}`);
+        } catch (e) {
+            this.logger.log(`Error loading keyboard state: ${e.message}`);
         }
     }
 

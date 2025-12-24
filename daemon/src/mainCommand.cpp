@@ -37,6 +37,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_GET_MOUSE_PATH, {}),
     CommandSignature(COMMAND_GET_SOCKET_PATH, {}),
     CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_ENABLE}),
+    CommandSignature(COMMAND_GET_KEYBOARD, {}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_SHOULD_LOG, {}),
     CommandSignature(COMMAND_TOGGLE_KEYBOARD, {COMMAND_ARG_ENABLE}),
@@ -313,6 +314,12 @@ CmdResult handleSetKeyboard(const json &command) {
   return KeyboardManager::setKeyboard(g_keyboardEnabled);
 }
 
+CmdResult handleGetKeyboard(const json &) {
+  return CmdResult(
+      0, (g_keyboardEnabled ? COMMAND_VALUE_TRUE : COMMAND_VALUE_FALSE) +
+             string("\n"));
+}
+
 typedef CmdResult (*CommandHandler)(const json &);
 
 struct CommandDispatch {
@@ -342,6 +349,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_MOUSE_PATH, handleGetMousePath},
     {COMMAND_GET_SOCKET_PATH, handleGetSocketPath},
     {COMMAND_SET_KEYBOARD, handleSetKeyboard},
+    {COMMAND_GET_KEYBOARD, handleGetKeyboard},
     {COMMAND_SHOULD_LOG, handleShouldLog},
     {COMMAND_GET_SHOULD_LOG, handleGetShouldLog},
     {COMMAND_TOGGLE_KEYBOARD, handletoggleKeyboard},

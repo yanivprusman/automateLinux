@@ -44,7 +44,7 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
                 "\n";
   logToFile(logMessage);
   std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
-  if (g_keyboard_fd >= 0) {
+  if (g_keyboard_fd >= 0 && g_keyboardEnabled) {
     std::string commandToSend =
         KeyboardManager::isKnownKeyboard(wmClass) ? wmClass : DEFAULT_KEYBOARD;
     char *commands[] = {(char *)commandToSend.c_str()};
@@ -57,7 +57,7 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
               "\n");
     if (url.find("https://chatgpt.com") != std::string::npos ||
         url.find("https://claude.ai") != std::string::npos) {
-      if (g_keyboard_fd >= 0) {
+      if (g_keyboard_fd >= 0 && g_keyboardEnabled) {
         char *commands[] = {(char *)"keyH",      (char *)"keyI",
                             (char *)"space",     (char *)"backspace",
                             (char *)"backspace", (char *)"backspace"};

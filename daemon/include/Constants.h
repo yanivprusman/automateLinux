@@ -38,6 +38,7 @@
 #define COMMAND_GET_MOUSE_PATH "getMousePath"
 #define COMMAND_GET_SOCKET_PATH "getSocketPath"
 #define COMMAND_SET_KEYBOARD "setKeyboard"
+#define COMMAND_GET_KEYBOARD "getKeyboard"
 #define COMMAND_ARG_KEYBOARD_NAME "keyboardName"
 #define PREFIX_KEYBOARD "corsairKeyBoardLogiMouse"
 #define ALL_KEYBOARD "All"

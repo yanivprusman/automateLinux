@@ -38,6 +38,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_GET_SOCKET_PATH, {}),
     CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_KEYBOARD, {}),
+    CommandSignature(COMMAND_GET_KEYBOARD_ENABLED, {}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_SHOULD_LOG, {}),
     CommandSignature(COMMAND_TOGGLE_KEYBOARD, {COMMAND_ARG_ENABLE}),
@@ -96,6 +97,7 @@ static const string HELP_MESSAGE =
     "  getSocketPath           Get the path to the daemon's UNIX domain "
     "socket.\n"
     "  setKeyboard             Enable or disable keyboard (true/false).\n"
+    "  getKeyboardEnabled      Get whether keyboard is enabled (true/false).\n"
     "  shouldLog               Enable or disable logging (true/false).\n"
     "  toggleKeyboard  Toggle automatic keyboard "
     "switching on window change.\n"
@@ -350,6 +352,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_SOCKET_PATH, handleGetSocketPath},
     {COMMAND_SET_KEYBOARD, handleSetKeyboard},
     {COMMAND_GET_KEYBOARD, handleGetKeyboard},
+    {COMMAND_GET_KEYBOARD_ENABLED, handleGetKeyboard},
     {COMMAND_SHOULD_LOG, handleShouldLog},
     {COMMAND_GET_SHOULD_LOG, handleGetShouldLog},
     {COMMAND_TOGGLE_KEYBOARD, handletoggleKeyboard},

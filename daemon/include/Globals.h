@@ -21,10 +21,10 @@ struct Directories {
   Directories() {
     base =
         canonical("/proc/self/exe").parent_path().parent_path().string() + "/";
-    data = base + "data/";
-    mappings = base + "evsieve/mappings/";
-    symlinks = base + "symlinks/";
-    terminal = base + "terminal/";
+    data = base + "../data/";
+    mappings = base + "../evsieve/mappings/";
+    symlinks = base + "../symlinks/";
+    terminal = base + "../terminal/";
   }
 };
 
@@ -47,6 +47,7 @@ struct Files {
         {"corsairKeyBoardLogiMouseCode.sh", dirs.mappings},
         {"corsairKeyBoardLogiMouseDefaultKeyboard.sh", dirs.mappings},
         {"corsairKeyBoardLogiMousegnome-terminal-server.sh", dirs.mappings},
+        {"corsairKeyBoardLogiMouseAll.sh", dirs.mappings},
         {"corsairKeyBoardLogiMousegoogle-chrome.sh", dirs.mappings},
         {"theRealPath.sh", dirs.terminal},
     };
@@ -61,8 +62,8 @@ extern KVTable &kvTable;
 class DirHistory;
 extern DirHistory &dirHistory;
 extern std::ofstream g_logFile;
-extern bool shouldLog;  // Global logging control flag
-extern bool g_keyboardEnabled;  // Global keyboard enable/disable flag
+extern bool shouldLog;         // Global logging control flag
+extern bool g_keyboardEnabled; // Global keyboard enable/disable flag
 
 extern const CommandSignature COMMAND_REGISTRY[];
 extern const size_t COMMAND_REGISTRY_SIZE;

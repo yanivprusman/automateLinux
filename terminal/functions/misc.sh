@@ -119,39 +119,43 @@ updateGeminiVersion(){
     gemini -v
 }
 export -f updateGeminiVersion
-
 evsievep() {
     local path=()
     local print=()
+    local used_dev=0
 
     while [[ $# -gt 0 ]]; do
         case $1 in
             -k)
                 path+=( $(d send getKeyboardPath) )
+                used_dev=1
                 shift
                 ;;
             -m)
                 path+=( $(d send getMousePath) )
+                used_dev=1
                 shift
                 ;;
             -p)
-                if [[ -n $2 ]]; then
-                    print+=( "$2" )
-                    shift 2
-                else
-                    echo "Error: -p requires an argument" >&2
-                    return 1
-                fi
+                [[ -n $2 ]] || { echo "Error: -p requires an argument" >&2; return 1; }
+                print+=( "$2" )
+                shift 2
                 ;;
             *)
                 shift
                 ;;
         esac
     done
-    if [ ${#path[@]} -eq 0 ]; then
+
+    if (( ${#path[@]} == 0 )); then
         path+=( $(d send getKeyboardPath) )
     fi
+
+    if (( used_dev )); then
+        path+=( /dev/input/by-id/corsairKeyBoardLogiMouse )
+    fi
+
     echo "sudo evsieve --input ${path[*]} --print ${print[*]} format=direct"
-    sudo evsieve --input "${path[@]}" --print ${print[*]} format=direct
+    sudo evsieve --input "${path[@]}" --print "${print[@]}" format=direct
 }
 export -f evsievep

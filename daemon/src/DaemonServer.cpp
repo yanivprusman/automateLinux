@@ -1,10 +1,10 @@
 #include "DaemonServer.h"
+#include "KeyboardManager.h"
 #include "Utils.h" // For executeCommand
 #include "common.h"
 #include "main.h" // For KVTable, DirHistory, etc. declarations
 #include "mainCommand.h"
 #include "sendKeys.h"
-#include "KeyboardManager.h"
 #include <array>
 #include <csignal>
 #include <cstdlib>

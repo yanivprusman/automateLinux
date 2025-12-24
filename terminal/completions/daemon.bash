@@ -4,9 +4,15 @@ _daemon_completion() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     cword=${COMP_CWORD}
 
+    pword_idx=$((cword - 1))
+    
+    # Function to get daemon commands (excluding the `send` itself)
+    get_daemon_commands() {
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit"
+    }
+
     # Find the real command word and previous word, accounting for 'send'
     if [[ "${COMP_WORDS[1]}" == "send" ]]; then
-        pword_idx=$((cword - 1))
         if [[ "${COMP_WORDS[pword_idx]}" == "send" ]]; then
             prev="" # No previous command word if 'send' was the immediate prior
         else
@@ -47,6 +53,8 @@ _daemon_completion() {
     command_args[toggleKeyboard]="--enable"
     command_args[getDir]="--dirName"
     command_args[getFile]="--fileName"
+    command_args[getKeyboard]=""
+    command_args[getKeyboardEnabled]=""
     command_args[getSocketPath]=""
     command_args[activeWindowChanged]=""
     command_args[help]="--help"
@@ -63,10 +71,6 @@ _daemon_completion() {
     arg_values[--value]=""
     arg_values[--prefix]=""
 
-    # Function to get daemon commands (excluding the `send` itself)
-    get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit"
-    }
 
     if [[ "${COMP_WORDS[1]}" == "send" ]]; then
         if [[ $cword -eq 2 ]]; then # daemon send |

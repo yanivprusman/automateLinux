@@ -166,6 +166,7 @@ void handle_command(int fd_local, const char *cmd) {
   if (appCode) {
     for (int i = 0; i < 3; i++) {
       sendEvent(fd_local, EV_MSC, MSC_SCAN, codeForAppCodes);
+      sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);
     }
     sendEvent(fd_local, EV_MSC, MSC_SCAN, appCode);
     sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);

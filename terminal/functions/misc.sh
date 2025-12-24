@@ -120,3 +120,12 @@ updateGeminiVersion(){
 }
 export -f updateGeminiVersion
 
+toHex() {
+  printf "0x%X\n" "$1"
+}
+export -f toHex
+
+toDecimal() {
+  printf "%d\n" "$1"
+}
+export -f toDecimal

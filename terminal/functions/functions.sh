@@ -11,3 +11,4 @@
 . $(theRealPath git.sh)
 . $(theRealPath log.sh)
 . $(theRealPath gemini.sh)
+. $(theRealPath evsieve.sh)

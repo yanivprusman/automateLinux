@@ -125,6 +125,7 @@ evsievep() {
     local print=()
     local used_dev=0
 
+    local orig_arg_count=$#
     while [[ $# -gt 0 ]]; do
         case $1 in
             -k)
@@ -147,7 +148,9 @@ evsievep() {
                 ;;
         esac
     done
-    if (( ${#path[@]} == 0 )); then
+    if [[ $orig_arg_count -eq 0 ]]; then
+        path=( /dev/input/event* )
+    elif (( ${#path[@]} == 0 )); then
         path+=( $(d send getKeyboardPath) )
     fi
     if (( used_dev )); then

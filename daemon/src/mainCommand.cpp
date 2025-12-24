@@ -240,17 +240,17 @@ CmdResult handlePing(const json &) { return CmdResult(0, "pong\n"); }
 CmdResult handleGetKeyboardPath(const json &) {
   string path = kvTable.get("keyboardPath");
   if (path.empty()) {
-    return CmdResult(1, "Keyboard path not found\n");
+    return CmdResult(1, "Keyboard path not found");
   }
-  return CmdResult(0, path + "\n");
+  return CmdResult(0, path);
 }
 
 CmdResult handleGetMousePath(const json &) {
   string path = kvTable.get("mousePath");
   if (path.empty()) {
-    return CmdResult(1, "Mouse path not found\n");
+    return CmdResult(1, "Mouse path not found");
   }
-  return CmdResult(0, path + "\n");
+  return CmdResult(0, path);
 }
 
 CmdResult handleGetSocketPath(const json &) {
@@ -420,7 +420,7 @@ int mainCommand(const json &command, int client_sock) {
     result.message = std::string("error: ") + e.what() + "\n";
   }
   if (!result.message.empty() && result.message.back() != '\n') {
-    result.message += "daemon must end in \\n\n";
+    result.message += "\n";
   }
   if (command[COMMAND_KEY] == "closedTty") {
     return 0;

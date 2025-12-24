@@ -151,11 +151,17 @@ evsievep() {
         path+=( $(d send getKeyboardPath) )
     fi
     if (( used_dev )); then
-        if [[ -f /dev/input/by-id/corsairKeyBoardLogiMouse ]]; then
+        if [[ -e /dev/input/by-id/corsairKeyBoardLogiMouse ]]; then
             path+=( /dev/input/by-id/corsairKeyBoardLogiMouse )
         fi
     fi
-    echo "sudo evsieve --input ${path[*]} --print ${print[*]} format=direct"
-    sudo evsieve --input "${path[@]}" --print "${print[@]}" format=direct
+    
+    local input_args=()
+    for p in "${path[@]}"; do
+        input_args+=( --input "$p" )
+    done
+
+    echo "sudo evsieve ${input_args[*]} --print ${print[*]} format=direct"
+    sudo evsieve "${input_args[@]}" --print "${print[@]}" format=direct
 }
 export -f evsievep

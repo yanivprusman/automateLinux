@@ -119,6 +119,7 @@ updateGeminiVersion(){
     gemini -v
 }
 export -f updateGeminiVersion
+
 evsievep() {
     local path=()
     local print=()
@@ -146,15 +147,14 @@ evsievep() {
                 ;;
         esac
     done
-
     if (( ${#path[@]} == 0 )); then
         path+=( $(d send getKeyboardPath) )
     fi
-
     if (( used_dev )); then
-        path+=( /dev/input/by-id/corsairKeyBoardLogiMouse )
+        if [[ -f /dev/input/by-id/corsairKeyBoardLogiMouse ]]; then
+            path+=( /dev/input/by-id/corsairKeyBoardLogiMouse )
+        fi
     fi
-
     echo "sudo evsieve --input ${path[*]} --print ${print[*]} format=direct"
     sudo evsieve --input "${path[@]}" --print "${print[@]}" format=direct
 }

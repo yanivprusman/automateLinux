@@ -1,7 +1,7 @@
 evsieve --input $keyboardPath $mousePath grab domain=input \
 --map key @keyboard                                              `#part of detecting window`\
 --map btn:forward key:enter `#mouse to enter`\
---hook key:leftctrl key:1 exec-shell='sudo -u yaniv DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus DISPLAY=:0 notify-send "hi" "3"'`#sanity check` \
+--hook key:leftctrl key:1 exec-shell='sudo -u yaniv DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus DISPLAY=:0 notify-send "hi" "5"'`#sanity check` \
 --copy key @gprogress \
 --hook msc:scan:$codeForAppCodes toggle=appCodesToggle         `#detecting window continued`\
 --map msc:scan:$codeForAppCodes @codeForAppCodesCount                                       \
@@ -13,13 +13,13 @@ evsieve --input $keyboardPath $mousePath grab domain=input \
 `#                                                                       detecting G keys  `\
 `#                             1       2      3       4     5      6                       `\
 `#                          ctrl10  shift10 ctrl10 shift10 N10 backspace10                 `\
---hook key:leftctrl@gprogress1 toggle=GToggle \ 
---hook key@gprogress2 toggle=GToggle:1 \ 
---hook key:leftshift@gprogress2 toggle=GToggle:3 \ 
---hook key@gprogress3 toggle=GToggle:1 \ 
---hook key:leftctrl@gprogress3 toggle=GToggle:4 \ 
---hook key@gprogress4 toggle=GToggle:1 \ 
---hook key:leftshift@gprogress4 toggle=GToggle:5 \ 
+--hook key:leftctrl@gprogress1 toggle=GToggle \
+--hook @gprogress2 toggle=GToggle:1 \
+--hook key:leftshift@gprogress2 toggle=GToggle:3 \
+--hook @gprogress3 toggle=GToggle:1 \
+--hook key:leftctrl@gprogress3 toggle=GToggle:4 \
+--hook @gprogress4 toggle=GToggle:1 \
+--hook key:leftshift@gprogress4 toggle=GToggle:5 \
 `#--hook key`\
 --toggle @gprogress @gprogress1 @gprogress2 @gprogress3 @gprogress4 @gprogress5 @gprogress6 id=GToggle \
 --toggle @gKey @gKey1 @gKey2 @gKey3 @gKey4 @gKey5 @gKey6 \

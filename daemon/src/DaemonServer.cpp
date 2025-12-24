@@ -4,6 +4,7 @@
 #include "main.h" // For KVTable, DirHistory, etc. declarations
 #include "mainCommand.h"
 #include "sendKeys.h"
+#include "KeyboardManager.h"
 #include <array>
 #include <csignal>
 #include <cstdlib>
@@ -21,6 +22,7 @@ static int socket_fd = -1;
 extern int g_keyboard_fd;       // Defined in main.cpp, used here
 extern volatile int running;    // Defined in main.cpp
 extern std::ofstream g_logFile; // Defined in Globals.h/main.cpp
+extern bool g_keyboardEnabled;  // Defined in mainCommand.cpp
 
 struct ClientState {
   int fd;
@@ -167,6 +169,8 @@ int initialize_daemon() {
   initializeKeyboardPath();
   initializeMousePath();
   openKeyboardDevice();
+  // Initialize keyboard to default enabled state on daemon startup
+  KeyboardManager::setKeyboard(g_keyboardEnabled);
   return setup_socket();
 }
 

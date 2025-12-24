@@ -52,7 +52,7 @@ const size_t COMMAND_REGISTRY_SIZE =
 
 static int clientSocket = -1;
 static bool shouldLog = false;
-static bool toggleKeyboard = true;
+bool g_keyboardEnabled = true;  // Global state for keyboard enable/disable
 
 static string
 formatEntriesAsText(const vector<std::pair<string, string>> &entries) {
@@ -93,7 +93,7 @@ static const string HELP_MESSAGE =
     "  getMousePath            Get the path to the mouse input device.\n"
     "  getSocketPath           Get the path to the daemon's UNIX domain "
     "socket.\n"
-    "  setKeyboard             start keyboard"
+    "  setKeyboard             Enable or disable keyboard (true/false).\n"
     "  shouldLog               Enable or disable logging (true/false).\n"
     "  toggleKeyboard  Toggle automatic keyboard "
     "switching on window change.\n"
@@ -266,10 +266,10 @@ CmdResult handleGetShouldLog(const json &) {
 
 CmdResult handletoggleKeyboard(const json &command) {
   string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
-  toggleKeyboard = (enableStr == COMMAND_VALUE_TRUE);
+  g_keyboardEnabled = (enableStr == COMMAND_VALUE_TRUE);
   return CmdResult(
-      0, string("Return to default keyboard on next window change: ") +
-             (toggleKeyboard ? "no" : "yes") + "\n");
+      0, string("Keyboard enabled: ") +
+             (g_keyboardEnabled ? "yes" : "no") + "\n");
 }
 
 CmdResult handleGetDir(const json &command) {
@@ -306,8 +306,10 @@ CmdResult handleActiveWindowChanged(const json &command) {
   return AutomationManager::onActiveWindowChanged(command);
 }
 
-CmdResult handleSetKeyboard(const json &) {
-  return KeyboardManager::setKeyboard(toggleKeyboard);
+CmdResult handleSetKeyboard(const json &command) {
+  string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
+  g_keyboardEnabled = (enableStr == COMMAND_VALUE_TRUE);
+  return KeyboardManager::setKeyboard(g_keyboardEnabled);
 }
 
 typedef CmdResult (*CommandHandler)(const json &);

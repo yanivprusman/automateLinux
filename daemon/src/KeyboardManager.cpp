@@ -30,7 +30,7 @@ bool KeyboardManager::isKnownKeyboard(const std::string &name) {
   return false;
 }
 
-CmdResult KeyboardManager::setKeyboard(bool stopKeyboard) {
+CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
   string logMessage;
   FILE *pipe;
   string output;
@@ -58,7 +58,9 @@ CmdResult KeyboardManager::setKeyboard(bool stopKeyboard) {
                       "--property=StandardOutput=append:" + directories.data +
                       EVSIEVE_STANDARD_OUTPUT_FILE + " ") +
                scriptContent;
-  if (!stopKeyboard) {
+  if (enableKeyboard) {
+    // Enable keyboard: run full setup script
+  } else {
     cmd = string("sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; ");
   }
   pipe = popen(cmd.c_str(), "r");
@@ -89,6 +91,10 @@ CmdResult KeyboardManager::setKeyboard(bool stopKeyboard) {
   }
   logMessage = string("[END] SUCCESS\n");
   logToFile(logMessage);
-  return CmdResult(0, string("SUCCESS\n" + output + "Set keyboard to: ") +
+  if (enableKeyboard) {
+    return CmdResult(0, string("SUCCESS\n" + output + "Set keyboard to: ") +
                           ALL_KEYBOARD + "\n");
+  } else {
+    return CmdResult(0, string("SUCCESS\n" + output + "Keyboard disabled\n"));
+  }
 }

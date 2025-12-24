@@ -121,12 +121,37 @@ updateGeminiVersion(){
 export -f updateGeminiVersion
 
 evsievep() {
-    local path
-    if [[ " $* " == *" -k "* ]]; then
-        path=$(d send getKeyboardPath)
-    else
-        path="/dev/input/event*"
+    local path=()
+    local print=()
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -k)
+                path+=( $(d send getKeyboardPath) )
+                shift
+                ;;
+            -m)
+                path+=( $(d send getMousePath) )
+                shift
+                ;;
+            -p)
+                if [[ -n $2 ]]; then
+                    print+=( "$2" )
+                    shift 2
+                else
+                    echo "Error: -p requires an argument" >&2
+                    return 1
+                fi
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+    if [ ${#path[@]} -eq 0 ]; then
+        path+=( $(d send getKeyboardPath) )
     fi
-    sudo evsieve --input $path --print format=direct
+    echo "sudo evsieve --input ${path[*]} --print ${print[*]} format=direct"
+    sudo evsieve --input "${path[@]}" --print ${print[*]} format=direct
 }
 export -f evsievep

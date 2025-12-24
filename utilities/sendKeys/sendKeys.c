@@ -9,6 +9,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+const int codeForAppCodes = 100;
 const int codeForDefault = 101;
 const int codeForCode = 102;
 const int codeForGnomeTerminal = 103;
@@ -164,7 +165,7 @@ void handle_command(int fd_local, const char *cmd) {
   int appCode = isApp(cmd);
   if (appCode) {
     for (int i = 0; i < 3; i++) {
-      sendEvent(fd_local, EV_MSC, MSC_SCAN, 100);
+      sendEvent(fd_local, EV_MSC, MSC_SCAN, codeForAppCodes);
     }
     sendEvent(fd_local, EV_MSC, MSC_SCAN, appCode);
     sendEvent(fd_local, EV_SYN, SYN_REPORT, 0);

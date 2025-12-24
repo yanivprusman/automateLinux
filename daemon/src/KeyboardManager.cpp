@@ -37,20 +37,22 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
   if (scriptContent.empty()) {
     return CmdResult(1, "Script file not found\n");
   }
-  scriptContent = substituteVariable(scriptContent, KEYBOARD_PATH_KEY,
-                                     kvTable.get(KEYBOARD_PATH_KEY));
-  scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY,
-                                     kvTable.get(MOUSE_PATH_KEY));
-  scriptContent = substituteVariable(scriptContent, EVSIEVE_RANDOM_VAR,
-                                     to_string(rand() % 1000000));
+  scriptContent = substituteVariable(scriptContent, KEYBOARD_PATH_KEY, kvTable.get(KEYBOARD_PATH_KEY));
+  scriptContent = substituteVariable(scriptContent, MOUSE_PATH_KEY, kvTable.get(MOUSE_PATH_KEY));
+  scriptContent = substituteVariable(scriptContent, EVSIEVE_RANDOM_VAR, to_string(rand() % 1000000));
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_APP_CODES, VALUE_FOR_APP_CODES);
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_DEFAULT, VALUE_FOR_DEFAULT);
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_CODE, VALUE_FOR_CODE);
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_GNOME_TERMINAL, VALUE_FOR_GNOME_TERMINAL);
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_GOOGLE_CHROME, VALUE_FOR_GOOGLE_CHROME);
   string cmd = string("sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; "
-                      "sudo systemd-run --collect --service-type=simple "
-                      "--unit=corsairKeyBoardLogiMouse.service "
-                      "--property=StandardError=append:" +
-                      directories.data + EVSIEVE_STANDARD_ERR_FILE + " " +
-                      "--property=StandardOutput=append:" + directories.data +
-                      EVSIEVE_STANDARD_OUTPUT_FILE + " ") +
-               scriptContent;
+    "sudo systemd-run --collect --service-type=simple "
+    "--unit=corsairKeyBoardLogiMouse.service "
+    "--property=StandardError=append:" +
+    directories.data + EVSIEVE_STANDARD_ERR_FILE + " " +
+    "--property=StandardOutput=append:" + directories.data +
+    EVSIEVE_STANDARD_OUTPUT_FILE + " ") +
+    scriptContent;
   if (enableKeyboard) {
     // Enable keyboard: run full setup script
   } else {

@@ -77,5 +77,14 @@
 #define wmClassTerminal "gnome-terminal-server"
 #define wmClassCode "code"
 #define wmClassChrome "google-chrome"
-
+#define CODE_FOR_APP_CODES "codeForAppCodes"
+#define VALUE_FOR_APP_CODES "100"
+#define CODE_FOR_DEFAULT "codeForDefault"
+#define VALUE_FOR_DEFAULT "101"
+#define CODE_FOR_CODE "codeForCode"
+#define VALUE_FOR_CODE "102"
+#define CODE_FOR_GNOME_TERMINAL "codeForGnomeTerminal"
+#define VALUE_FOR_GNOME_TERMINAL "103"
+#define CODE_FOR_GOOGLE_CHROME "codeForGoogleChrome"
+#define VALUE_FOR_GOOGLE_CHROME "104"
 #endif // CONSTANTS_H

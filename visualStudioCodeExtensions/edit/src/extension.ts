@@ -12,9 +12,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 		if (text.trimEnd().endsWith('\\')) {
 			const trimmed = text.trim();
-			// Check if already commented: starts with '# ' and has '`' before the last '\'
-			// This regex is a bit more robust for finding the '`' before '\'
-			const commentRegex = /^# (.*)`\\(\s*)$/;
+			// Check if already commented: starts with '`#' and has '`' before the last '\'
+			const commentRegex = /^`#(.*)`\\(\s*)$/;
 			const match = text.match(commentRegex);
 
 			if (match) {
@@ -30,14 +29,14 @@ export function activate(context: vscode.ExtensionContext) {
 				const content = text.substring(0, backslashIndex);
 				const rest = text.substring(backslashIndex);
 				await editor.edit(editBuilder => {
-					editBuilder.replace(line.range, `# ${content}\`${rest}`);
+					editBuilder.replace(line.range, `\`#${content}\`${rest}`);
 				});
 			}
-		// } else if (line.isEmptyOrWhitespace) {
-		// 	await editor.edit(editBuilder => {
-		// 		const range = line.rangeIncludingLineBreak;
-		// 		editBuilder.delete(range);
-		// 	});
+			// } else if (line.isEmptyOrWhitespace) {
+			// 	await editor.edit(editBuilder => {
+			// 		const range = line.rangeIncludingLineBreak;
+			// 		editBuilder.delete(range);
+			// 	});
 		} else {
 			await vscode.commands.executeCommand('editor.action.commentLine');
 		}

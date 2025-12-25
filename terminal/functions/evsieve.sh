@@ -54,10 +54,15 @@ export -f tailEvsieve
 
 restartEvsieveOnSave(){
     local file=$(daemon send getFile --fileName corsairKeyBoardLogiMouseAll.sh)
-    echo monitoring $file
-    inotifywait -m -e close_write "$file" | while read _; do
-        daemon send setKeyboard --enable false > /dev/null 2>&1
-        daemon send setKeyboard --enable true > /dev/null 2>&1
+    local dir=$(dirname "$file")
+    local base=$(basename "$file")
+    echo "monitoring $file"
+    inotifywait -m -e close_write "$dir" | while read -r _ _ f; do
+        if [[ "$f" == "$base" ]]; then
+            # Small debounce to avoid race conditions during rapid saves
+            sleep 0.2
+            daemon send setKeyboard --enable true > /dev/null 2>&1
+        fi
     done
 }
 export -f restartEvsieveOnSave

@@ -38,7 +38,8 @@ evsieve --input $keyboardPath $mousePath grab domain=input \
 `# mapping keys`\
 --hook key:leftctrl@keyboard$codeForGoogleChrome key:v@keyboard$codeForGoogleChrome send-key=key:leftctrl@$codeForCntrlV sequential  \
 --withhold key:v@keyboard$codeForGoogleChrome                                                                              \
---map key:leftctrl:1@$codeForCntrlV key:leftctrl:0@$codeForCntrlV \
+--map key:leftctrl:1@$codeForCntrlV key:leftctrl:0@$codeForCntrlV key:h:1 key:h:0 key:i:1 key:i:0 key:backspace:1 key:backspace:0 key:backspace:1 key:backspace:0 \
+key:leftctrl:1@$codeForCntrlV key:v:1@keyboard$codeForGoogleChrome key:leftctrl:0@$codeForCntrlV key:v:0@keyboard$codeForGoogleChrome \
 --print key format=direct \
 --output create-link=/dev/input/by-id/corsairKeyBoardLogiMouse 2>&1
 

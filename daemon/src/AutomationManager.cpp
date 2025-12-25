@@ -51,21 +51,21 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
     int num_commands = sizeof(commands) / sizeof(commands[0]);
     sendKeys_with_fd(g_keyboard_fd, num_commands, commands);
   }
-  if (wmClass == wmClassChrome) {
-    std::string url = getCurrentTabUrl();
-    logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: " + url +
-              "\n");
-    if (url.find("https://chatgpt.com") != std::string::npos ||
-        url.find("https://claude.ai") != std::string::npos) {
-      if (g_keyboard_fd >= 0 && g_keyboardEnabled) {
-        char *commands[] = {(char *)"keyH",      (char *)"keyI",
-                            (char *)"space",     (char *)"backspace",
-                            (char *)"backspace", (char *)"backspace"};
-        int commandCount = sizeof(commands) / sizeof(commands[0]);
-        sendKeys_with_fd(g_keyboard_fd, commandCount, commands);
-        logToFile("[ACTIVE_WINDOW_CHANGED] ChatGPT detected. Sent 'hi'.\n");
-      }
-    }
-  }
+  // if (wmClass == wmClassChrome) {
+  //   std::string url = getCurrentTabUrl();
+  //   logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: " + url +
+  //             "\n");
+  //   if (url.find("https://chatgpt.com") != std::string::npos ||
+  //       url.find("https://claude.ai") != std::string::npos) {
+  //     if (g_keyboard_fd >= 0 && g_keyboardEnabled) {
+  //       char *commands[] = {(char *)"keyH",      (char *)"keyI",
+  //                           (char *)"space",     (char *)"backspace",
+  //                           (char *)"backspace", (char *)"backspace"};
+  //       int commandCount = sizeof(commands) / sizeof(commands[0]);
+  //       sendKeys_with_fd(g_keyboard_fd, commandCount, commands);
+  //       logToFile("[ACTIVE_WINDOW_CHANGED] ChatGPT detected. Sent 'hi'.\n");
+  //     }
+  //   }
+  // }
   return CmdResult(0, "Active window info received and logged.\n");
 }

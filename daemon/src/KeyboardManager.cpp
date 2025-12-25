@@ -56,7 +56,8 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
     "sudo systemd-run --collect --service-type=simple "
     "--unit=corsairKeyBoardLogiMouse.service "
     "--property=StandardError=append:" +
-    directories.data + EVSIEVE_STANDARD_ERR_FILE + " " +
+    // directories.data + EVSIEVE_STANDARD_ERR_FILE + " " +
+    directories.data + EVSIEVE_STANDARD_OUTPUT_FILE + " " +
     "--property=StandardOutput=append:" + directories.data +
     EVSIEVE_STANDARD_OUTPUT_FILE + " ") +
     scriptContent;

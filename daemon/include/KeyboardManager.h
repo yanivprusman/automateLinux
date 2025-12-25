@@ -1,6 +1,7 @@
 #ifndef KEYBOARD_MANAGER_H
 #define KEYBOARD_MANAGER_H
 
+#include "InputMapper.h"
 #include "Types.h"
 #include <string>
 #include <vector>
@@ -12,6 +13,7 @@ public:
 
 private:
   static const std::vector<std::string> KNOWN_KEYBOARDS;
+  static InputMapper mapper;
 };
 
 #endif // KEYBOARD_MANAGER_H

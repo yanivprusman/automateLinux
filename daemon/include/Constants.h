@@ -88,4 +88,6 @@
 #define VALUE_FOR_GNOME_TERMINAL "103"
 #define CODE_FOR_GOOGLE_CHROME "codeForGoogleChrome"
 #define VALUE_FOR_GOOGLE_CHROME "104"
+#define CODE_FOR_CNTRL_V "codeForCntrlV"
+#define VALUE_FOR_CNTRL_V "205"
 #endif // CONSTANTS_H

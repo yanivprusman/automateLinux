@@ -35,10 +35,11 @@ evsieve --input $keyboardPath $mousePath grab domain=input \
 --hook key:6@gProgress5 key:6@keyboard exec-shell='echo G6' breaks-on=key::1 sequential --withhold \
 --block @gProgress @gProgress1 @gProgress2 @gProgress3 @gProgress4 @gProgress5 \
 --toggle @keyboard @keyboard$codeForCode @keyboard$codeForGnomeTerminal @keyboard$codeForGoogleChrome id=keyboardToggle   \
---hook key:leftctrl@keyboard$codeForGoogleChrome key:v@keyboard$codeForGoogleChrome send-key=key:leftctrl@$codeForCntrlV   \
+`# mapping keys`\
+--hook key:leftctrl@keyboard$codeForGoogleChrome key:v@keyboard$codeForGoogleChrome send-key=key:leftctrl@$codeForCntrlV sequential  \
 --withhold key:v@keyboard$codeForGoogleChrome                                                                              \
 --map key:leftctrl:1@$codeForCntrlV key:leftctrl:0@$codeForCntrlV \
-`#--print key:a@nothing key:v@nothing key:leftctrl format=direct `\
+--print key format=direct \
 --output create-link=/dev/input/by-id/corsairKeyBoardLogiMouse 2>&1
 
 

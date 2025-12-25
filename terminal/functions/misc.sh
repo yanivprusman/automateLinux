@@ -129,3 +129,8 @@ toDecimal() {
   printf "%d\n" "$1"
 }
 export -f toDecimal
+lfuncs() {
+    grep -rhE "^[a-zA-Z0-9_-]+[[:space:]]*\(\)[[:space:]]*\{" "$AUTOMATE_LINUX_TERMINAL_DIR"/*.sh "$AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR"/*.sh 2>/dev/null | \
+        sed -E "s/^([a-zA-Z0-9_-]+).*/\1/" | sort -u
+}
+export -f lfuncs

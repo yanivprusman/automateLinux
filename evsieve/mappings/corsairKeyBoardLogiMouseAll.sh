@@ -2,7 +2,7 @@ evsieve --input $keyboardPath $mousePath grab domain=input \
 --map key @keyboard                                              `#part of detecting window`\
 `#`\
 --map btn:forward key:enter                                                `#mouse to enter`\
---hook key:leftctrl key:1 exec-shell='sudo -u yaniv DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus DISPLAY=:0 notify-send "hi" "5"'`#sanity check` \
+--hook key:leftctrl key:1 exec-shell='sudo -u yaniv DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus DISPLAY=:0 notify-send "hi" "4"'`#sanity check` \
 --copy key @gprogress                                            `#part of detecting G keys`\
                                                                `#detecting window continued`\
 --toggle @gprogress @gprogress1 @gprogress2 @gprogress3 @gprogress4 @gprogress5 id=GToggle  \
@@ -39,13 +39,14 @@ evsieve --input $keyboardPath $mousePath grab domain=input \
 --hook key:6 key:6@gprogress5 exec-shell='echo G6' \
 --withhold                                         \
 --block @gprogress @gprogress1 @gprogress2 @gprogress3 @gprogress4 @gprogress5 \
---hook key:leftctrl@keyboard$codeForGoogleChrome key:v@keyboard$codeForGoogleChrome send-key=key:leftctrl@$codeForCntrlV \
---withhold key:v@keyboard$codeForGoogleChrome      \
---print key:v format=direct \
+                                                                                              `# handling ctrl+v in chrome`\
+--hook key:leftctrl@keyboard$codeForGoogleChrome key:v@keyboard$codeForGoogleChrome exec-shell='echo in chrome pasting...' \
+--hook key:leftctrl@keyboard$codeForGoogleChrome key:v@keyboard$codeForGoogleChrome send-key=key:leftctrl@$codeForCntrlV   \
+--withhold `#key:v@keyboard$codeForGoogleChrome`                                                                              \
+`#--hook key:leftctrl@keyboard$codeForGoogleChrome key:leftctrl@$codeForCntrlV                                               `\
+`#--withhold                                                                                                                 `\
+`#--map key:leftctrl@$codeForCntrlV key:a `\
+--print key:a@nothing key:v@nothing key:leftctrl format=direct \
 `#--hook key:leftctrl@$codeForCntrlV `\
 --output create-link=/dev/input/by-id/corsairKeyBoardLogiMouse 2>&1
-
-
-
-
 

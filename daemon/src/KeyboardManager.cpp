@@ -46,6 +46,12 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
   scriptContent = substituteVariable(scriptContent, CODE_FOR_GNOME_TERMINAL, VALUE_FOR_GNOME_TERMINAL);
   scriptContent = substituteVariable(scriptContent, CODE_FOR_GOOGLE_CHROME, VALUE_FOR_GOOGLE_CHROME);
   scriptContent = substituteVariable(scriptContent, CODE_FOR_CNTRL_V, VALUE_FOR_CNTRL_V);
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_G1, VALUE_FOR_G1);
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_G2, VALUE_FOR_G2);
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_G3, VALUE_FOR_G3);
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_G4, VALUE_FOR_G4);
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_G5, VALUE_FOR_G5);
+  scriptContent = substituteVariable(scriptContent, CODE_FOR_G6, VALUE_FOR_G6);
   string cmd = string("sudo systemctl stop corsairKeyBoardLogiMouse 2>&1 ; "
     "sudo systemd-run --collect --service-type=simple "
     "--unit=corsairKeyBoardLogiMouse.service "

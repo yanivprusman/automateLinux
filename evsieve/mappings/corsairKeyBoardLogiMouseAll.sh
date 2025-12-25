@@ -38,6 +38,7 @@ evsieve --input $keyboardPath $mousePath grab domain=input \
 --withhold                                         \
 --hook key:6 key:6@gprogress5 exec-shell='echo G6' \
 --withhold                                         \
+--block @gprogress @gprogress1 @gprogress2 @gprogress3 @gprogress4 @gprogress5 \
 --hook key:leftctrl@keyboard$codeForGoogleChrome key:v@keyboard$codeForGoogleChrome send-key=key:leftctrl@$codeForCntrlV \
 --withhold key:v@keyboard$codeForGoogleChrome      \
 --print key:v format=direct \

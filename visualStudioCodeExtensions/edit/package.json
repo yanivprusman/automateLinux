@@ -9,13 +9,26 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "edit.deleteEmptyRow",
         "title": "delete empty row"
+      },
+      {
+        "command": "edit.commentCommandLine",
+        "title": "comment command line"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "edit.commentCommandLine",
+        "key": "ctrl+/",
+        "when": "editorTextFocus && !editorReadonly"
       }
     ]
   },

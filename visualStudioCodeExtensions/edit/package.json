@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "edit.helloWorld",
-        "title": "Hello World"
+        "command": "edit.deleteEmptyRow",
+        "title": "delete empty row"
       }
     ]
   },

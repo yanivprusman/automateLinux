@@ -1,7 +1,5 @@
 (return 0 2>/dev/null) || { echo "Script must be sourced"; exit 1; }
 echo "Stopping services..."
-sudo systemctl stop daemon.service || true
-
 # Stop via safe script
 /home/yaniv/coding/automateLinux/daemon/stop_daemon.sh
 
@@ -9,9 +7,9 @@ sudo systemctl stop daemon.service || true
 # Ensure socket directory exists with correct permissions
 if [ ! -d "/run/automatelinux" ]; then
     echo "Creating /run/automatelinux..."
-    sudo mkdir -p /run/automatelinux
+    sudo /bin/mkdir -p /run/automatelinux
 fi
-sudo chown $USER:$USER /run/automatelinux
+sudo /usr/bin/chown $USER:$USER /run/automatelinux
 
 if [ ! -d "build" ]; then
     mkdir -p build
@@ -20,7 +18,7 @@ cd build
 cmake .. > /dev/null && \
 make > /dev/null && \
 echo -e "${GREEN}Build complete!${NC}" && \
-echo "Starting daemon.service..." && \
-sudo systemctl start daemon.service && \
+echo "Restarting daemon.service..." && \
+sudo /usr/bin/systemctl restart daemon.service && \
 sleep 0.1 && \
 cd ..

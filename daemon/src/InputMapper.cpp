@@ -85,6 +85,7 @@ bool InputMapper::setupDevices() {
   }
   std::cerr << "InputMapper: Keyboard grabbed successfully" << std::endl;
 
+  /* MOUSE GRAB DISABLED FOR STABILITY
   if (!mousePath_.empty()) {
     mouseFd_ = open(mousePath_.c_str(), O_RDONLY | O_NONBLOCK);
     if (mouseFd_ >= 0) {
@@ -97,6 +98,7 @@ bool InputMapper::setupDevices() {
       }
     }
   }
+  */
 
   return true;
 }
@@ -172,10 +174,8 @@ void InputMapper::loop() {
       struct input_event ev;
       while (libevdev_next_event(keyboardDev_, LIBEVDEV_READ_FLAG_NORMAL,
                                  &ev) == LIBEVDEV_READ_STATUS_SUCCESS) {
-        logToFile("KBD Event: type=" + std::to_string(ev.type) +
-                      " code=" + std::to_string(ev.code) +
-                      " value=" + std::to_string(ev.value),
-                  LOG_INPUT);
+        // High-frequency logging disabled for stability
+        // logToFile("KBD Event: type=" + std::to_string(ev.type) + ...
         processEvent(ev, true);
       }
     }
@@ -184,13 +184,7 @@ void InputMapper::loop() {
       struct input_event ev;
       while (libevdev_next_event(mouseDev_, LIBEVDEV_READ_FLAG_NORMAL, &ev) ==
              LIBEVDEV_READ_STATUS_SUCCESS) {
-        // Log only non-motion mouse events to avoid flooding
-        if (ev.type != EV_REL) {
-          logToFile("MSE Event: type=" + std::to_string(ev.type) +
-                        " code=" + std::to_string(ev.code) +
-                        " value=" + std::to_string(ev.value),
-                    LOG_INPUT);
-        }
+         // Mouse logging disabled
         processEvent(ev, false);
       }
     }
@@ -225,6 +219,11 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
   // Update LeftCtrl state for macros (tracked outside Chrome block)
   if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_LEFTCTRL) {
     ctrlDown_ = (ev.value != 0);
+  }
+
+  // Filter out MSC events to prevent interference
+  if (ev.type == EV_MSC) {
+    return;
   }
 
   // Debug: Log all Ctrl+V combinations to see current context
@@ -392,6 +391,12 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
         }
       }
     }
+  }
+
+  if (ev.type == EV_KEY && (ev.code == KEY_ENTER || ev.code == KEY_KPENTER)) {
+    logToFile("Processing ENTER key (code " + std::to_string(ev.code) +
+                  ", value " + std::to_string(ev.value) + ") -> uinput",
+              LOG_INPUT);
   }
 
   int rc = libevdev_uinput_write_event(uinputDev_, ev.type, ev.code, ev.value);

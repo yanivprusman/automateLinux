@@ -209,6 +209,20 @@ int initialize_daemon() {
     // Don't return error here, let the daemon loop run so we can debug via
     // socket
   }
+  // Restore logging state
+  string savedLogState = kvTable.get("shouldLogState");
+  if (!savedLogState.empty()) {
+    try {
+      shouldLog = std::stoul(savedLogState);
+      logToFile("Restored logging state: " + std::to_string(shouldLog),
+                LOG_CORE);
+    } catch (...) {
+      shouldLog = LOG_INPUT; // Default fallback
+    }
+  } else {
+    shouldLog = LOG_INPUT; // Default if nothing saved
+  }
+
   return 0;
 }
 

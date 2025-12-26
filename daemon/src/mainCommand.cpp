@@ -304,6 +304,7 @@ CmdResult handleShouldLog(const json &command) {
                           "bitmask integer.\n");
     }
   }
+  kvTable.upsert("shouldLogState", to_string(shouldLog));
   return CmdResult(0, string("Logging mask set to: ") + to_string(shouldLog) +
                           "\n");
 }

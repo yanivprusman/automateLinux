@@ -12,5 +12,5 @@ make > /dev/null && \
 echo -e "${GREEN}Build complete!${NC}" && \
 echo "Starting automateLinux.service..." && \
 sudo systemctl start automateLinux.service && \
-sleep 1 && \
+sleep 0.1 && \
 cd ..

@@ -5,6 +5,7 @@
 #include <curl/curl.h>
 #include <fstream>
 #include <iostream>
+#include <json/json.h>
 #include <sstream>
 #include <vector>
 
@@ -31,6 +32,26 @@ void forceLog(const string &message) {
   }
   // Also echo to cerr for journalctl
   std::cerr << message << std::endl;
+}
+
+std::string getChromeTabUrl() {
+  std::string response = httpGet("http://localhost:9222/json");
+  Json::Value root;
+  Json::Reader reader;
+  if (!reader.parse(response, root)) {
+    return "";
+  }
+  for (const auto &tab : root) {
+    std::string type = tab["type"].asString();
+    std::string url = tab["url"].asString();
+    // Skip over extension pages and devtools
+    if (type == "page" &&
+        url.find("chrome-extension://") == std::string::npos &&
+        url.find("devtools://") == std::string::npos) {
+      return url;
+    }
+  }
+  return "";
 }
 
 bool isMultiline(const std::string &s) {

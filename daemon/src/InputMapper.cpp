@@ -302,9 +302,21 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
 
   if (isKeyboard && currentApp == wmClassChrome && ev.type == EV_KEY) {
     if (ev.code == KEY_V && ctrlDown_) {
-      // Relaxed URL check (case-insensitive and not necessarily at start)
-      if (currentUrl.find("chatgpt.com") != std::string::npos) {
-        if (ev.value == 1) {
+      // Logic for KEY_V press (value == 1)
+      if (ev.value == 1) {
+        // Fetch fresh URL ON DEMAND to handle tab switches
+        std::string freshUrl = getChromeTabUrl();
+        if (!freshUrl.empty()) {
+          currentUrl = freshUrl;
+          forceLog("On-demand context update: URL=[" + currentUrl + "]");
+          // Update the context via mutex so subsequent logs/logic are correct
+          // (Optional, but good for consistency)
+          std::lock_guard<std::mutex> lock(contextMutex_);
+          activeUrl_ = currentUrl;
+        }
+
+        // Relaxed URL check (case-insensitive and not necessarily at start)
+        if (currentUrl.find("chatgpt.com") != std::string::npos) {
           forceLog("Triggering ChatGPT Ctrl+V macro. URL: " + currentUrl);
           emit(EV_KEY, KEY_LEFTCTRL, 1);
           emit(EV_KEY, KEY_LEFTCTRL, 0);
@@ -320,13 +332,22 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
           emit(EV_KEY, KEY_V, 1);
           emit(EV_KEY, KEY_V, 0);
           emit(EV_KEY, KEY_LEFTCTRL, 0);
-        }
-        return; // Swallowed for ChatGPT
-      } else {
-        if (ev.value == 1) {
+          return; // Swallowed for ChatGPT
+        } else {
           forceLog("Ctrl+V in Chrome (NOT ChatGPT). URL: [" + currentUrl + "]");
+          // Fall through to default emit for regular tabs
         }
-        // Fall through to default emit for regular tabs
+      } else {
+        // For key release (value == 0) or repeat (value == 2)
+        // Check if we should swallow it based on the URL we decided on press?
+        // Actually, if we swallowed the press, we must swallow the release.
+        // But here we are fetching URL on press.
+        // A simple heuristic: if it *looks* like ChatGPT, we swallow.
+        // Note: activeUrl_ might have been updated by the press.
+        // Re-reading is safe.
+        if (currentUrl.find("chatgpt.com") != std::string::npos) {
+          return; // Swallow release/repeat for ChatGPT
+        }
       }
     }
   }

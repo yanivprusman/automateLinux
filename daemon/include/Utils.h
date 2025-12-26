@@ -27,6 +27,7 @@ std::string readScriptFile(const std::string &relativeScriptPath);
 std::string substituteVariable(const std::string &content,
                                const std::string &variable,
                                const std::string &value);
+std::string getChromeTabUrl();
 std::string httpGet(const std::string &url);
 std::string executeCommand(const char *cmd);
 

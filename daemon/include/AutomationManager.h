@@ -9,9 +9,6 @@
 class AutomationManager {
 public:
   static CmdResult onActiveWindowChanged(const json &command);
-
-private:
-  static std::string getCurrentTabUrl();
 };
 
 #endif // AUTOMATION_MANAGER_H

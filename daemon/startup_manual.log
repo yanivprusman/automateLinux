@@ -1,0 +1,7 @@
+Starting daemon...
+Keyboard path initialized: /dev/input/by-id/usb-Corsair_CORSAIR_K100_RGB_Optical-Mechanical_Gaming_Keyboard_502A81D24AAA7CC6-event-kbd
+Mouse path initialized: /dev/input/event9
+Keyboard device opened: /dev/input/by-id/usb-Corsair_CORSAIR_K100_RGB_Optical-Mechanical_Gaming_Keyboard_502A81D24AAA7CC6-event-kbd (fd=7)
+Socket listening on: /run/automatelinux/automatelinux-daemon.sock
+Client connected: FD=10 PID=1908398 UID=1000
+Daemon shutting down.

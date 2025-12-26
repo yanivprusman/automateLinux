@@ -92,15 +92,48 @@ bool InputMapper::setupDevices() {
 }
 
 bool InputMapper::setupUinput() {
-  // We want the uinput device to have the same capabilities as the keyboard +
-  // extra Actually, evsieve All.sh creates a link, it doesn't specify caps,
-  // libevdev handles it. We'll base it on the keyboard but enable all keys and
-  // buttons we might need.
+  struct libevdev *uinput_template = libevdev_new();
+  libevdev_set_name(uinput_template, "AutomateLinux Virtual Device");
+
+  // Helper to enable all bits from a source device
+  auto enable_bits = [&](struct libevdev *src) {
+    for (int type = 0; type < EV_MAX; ++type) {
+      if (libevdev_has_event_type(src, type)) {
+        libevdev_enable_event_type(uinput_template, type);
+        int max_code = libevdev_event_type_get_max(type);
+        if (max_code < 0)
+          continue;
+        for (int code = 0; code <= max_code; ++code) {
+          if (libevdev_has_event_code(src, type, code)) {
+            libevdev_enable_event_code(uinput_template, type, code,
+                                       libevdev_get_abs_info(src, code));
+          }
+        }
+      }
+    }
+  };
+
+  if (keyboardDev_)
+    enable_bits(keyboardDev_);
+  if (mouseDev_)
+    enable_bits(mouseDev_);
+
+  // Robustness: enable ALL possible keys
+  for (int i = 0; i < KEY_MAX; ++i) {
+    libevdev_enable_event_code(uinput_template, EV_KEY, i, NULL);
+  }
+
+  // ensure some common types are enabled even if not in physical devices
+  // (optional but good)
+  libevdev_enable_event_type(uinput_template, EV_KEY);
+  libevdev_enable_event_type(uinput_template, EV_SYN);
 
   int rc = libevdev_uinput_create_from_device(
-      keyboardDev_, LIBEVDEV_UINPUT_OPEN_MANAGED, &uinputDev_);
+      uinput_template, LIBEVDEV_UINPUT_OPEN_MANAGED, &uinputDev_);
+  libevdev_free(uinput_template);
+
   if (rc < 0) {
-    logToFile("Failed to create uinput device");
+    logToFile("Failed to create uinput device: " + std::string(strerror(-rc)));
     return false;
   }
 
@@ -127,6 +160,9 @@ void InputMapper::loop() {
       struct input_event ev;
       while (libevdev_next_event(keyboardDev_, LIBEVDEV_READ_FLAG_NORMAL,
                                  &ev) == LIBEVDEV_READ_STATUS_SUCCESS) {
+        logToFile("KBD Event: type=" + std::to_string(ev.type) +
+                  " code=" + std::to_string(ev.code) +
+                  " value=" + std::to_string(ev.value));
         processEvent(ev, true);
       }
     }
@@ -135,6 +171,12 @@ void InputMapper::loop() {
       struct input_event ev;
       while (libevdev_next_event(mouseDev_, LIBEVDEV_READ_FLAG_NORMAL, &ev) ==
              LIBEVDEV_READ_STATUS_SUCCESS) {
+        // Log only non-motion mouse events to avoid flooding
+        if (ev.type != EV_REL) {
+          logToFile("MSE Event: type=" + std::to_string(ev.type) +
+                    " code=" + std::to_string(ev.code) +
+                    " value=" + std::to_string(ev.value));
+        }
         processEvent(ev, false);
       }
     }
@@ -267,8 +309,13 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
   }
 
   // Default: pass through
-  libevdev_uinput_write_event(uinputDev_, ev.type, ev.code, ev.value);
-  if (ev.type == EV_SYN) {
-    // SYN events are handled by the pass-through
+  int rc = libevdev_uinput_write_event(uinputDev_, ev.type, ev.code, ev.value);
+  if (rc < 0) {
+    char errBuf[128];
+    int len = snprintf(errBuf, sizeof(errBuf),
+                       "Failed to write to uinput: %s (type=%d, code=%d)\n",
+                       strerror(-rc), ev.type, ev.code);
+    write(STDERR_FILENO, errBuf, len);
+    logToFile("Failed to write to uinput: " + std::string(strerror(-rc)));
   }
 }

@@ -195,11 +195,20 @@ int initialize_daemon() {
   initializeMousePath();
   openKeyboardDevice();
   int rc = setup_socket();
-  if (rc != 0)
+  if (rc != 0) {
+    if (g_keyboard_fd >= 0) {
+      close(g_keyboard_fd);
+      g_keyboard_fd = -1;
+    }
     return rc;
+  }
 
   // Initialize keyboard to default enabled state on daemon startup
-  KeyboardManager::setKeyboard(g_keyboardEnabled);
+  if (KeyboardManager::setKeyboard(g_keyboardEnabled).status != 0) {
+    cerr << "ERROR: Failed to initialize keyboard mapping" << endl;
+    // Don't return error here, let the daemon loop run so we can debug via
+    // socket
+  }
   return 0;
 }
 

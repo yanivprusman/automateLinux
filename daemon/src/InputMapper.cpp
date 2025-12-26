@@ -20,10 +20,14 @@ bool InputMapper::start(const std::string &keyboardPath,
   keyboardPath_ = keyboardPath;
   mousePath_ = mousePath;
 
-  if (!setupDevices())
+  if (!setupDevices()) {
+    stop();
     return false;
-  if (!setupUinput())
+  }
+  if (!setupUinput()) {
+    stop();
     return false;
+  }
 
   running_ = true;
   thread_ = std::thread(&InputMapper::loop, this);

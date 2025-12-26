@@ -88,8 +88,6 @@ std::string getChromeTabUrl(const std::string &preferredTitle) {
         bool windowInTitle = title.find(preferredTitle) != std::string::npos;
 
         if (titleInWindow || windowInTitle) {
-          logToFile("[getChromeTabUrl] Returning title match: " + url,
-                    LOG_CORE);
           return url;
         }
       }
@@ -99,15 +97,9 @@ std::string getChromeTabUrl(const std::string &preferredTitle) {
 
   // Prefer lastRealUrl over fallback (chrome:// URLs)
   if (!lastRealUrl.empty()) {
-    logToFile("[getChromeTabUrl] No title match, returning lastRealUrl: " +
-                  lastRealUrl,
-              LOG_CORE);
     return lastRealUrl;
   }
 
-  logToFile("[getChromeTabUrl] No real URL found, returning fallback: " +
-                fallbackUrl,
-            LOG_CORE);
   return fallbackUrl;
 }
 

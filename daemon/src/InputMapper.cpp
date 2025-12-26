@@ -85,7 +85,6 @@ bool InputMapper::setupDevices() {
   }
   std::cerr << "InputMapper: Keyboard grabbed successfully" << std::endl;
 
-  /* MOUSE GRAB DISABLED FOR STABILITY
   if (!mousePath_.empty()) {
     mouseFd_ = open(mousePath_.c_str(), O_RDONLY | O_NONBLOCK);
     if (mouseFd_ >= 0) {
@@ -98,7 +97,6 @@ bool InputMapper::setupDevices() {
       }
     }
   }
-  */
 
   return true;
 }
@@ -184,7 +182,7 @@ void InputMapper::loop() {
       struct input_event ev;
       while (libevdev_next_event(mouseDev_, LIBEVDEV_READ_FLAG_NORMAL, &ev) ==
              LIBEVDEV_READ_STATUS_SUCCESS) {
-         // Mouse logging disabled
+        // Mouse logging disabled
         processEvent(ev, false);
       }
     }

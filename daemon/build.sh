@@ -2,28 +2,16 @@
 echo "Stopping services..."
 sudo systemctl stop daemon.service || true
 
-# Aggressively kill any matching daemon processes
-echo "Checking for running daemon processes..."
-# Kill any process that looks like our daemon
-sudo pkill -9 -f "daemon/daemon" || true
-sudo pkill -9 -f "daemon daemon" || true
+# Stop via safe script
+/home/yaniv/coding/automateLinux/daemon/stop_daemon.sh
 
-# Wait loop to ensure they are gone
-MAX_RETRIES=10
-COUNT=0
-while pgrep -f "daemon/daemon" > /dev/null || pgrep -f "daemon daemon" > /dev/null; do
-    echo "Waiting for daemon processes to exit..."
-    sudo pkill -9 -f "daemon/daemon" || true
-    sudo pkill -9 -f "daemon daemon" || true
-    sleep 0.5
-    COUNT=$((COUNT+1))
-    if [ $COUNT -ge $MAX_RETRIES ]; then
-        echo "WARNING: Failed to kill all daemon processes after 5 seconds."
-        # Attempt to show what's still running for debugging
-        ps aux | grep daemon | grep -v grep
-        break
-    fi
-done
+
+# Ensure socket directory exists with correct permissions
+if [ ! -d "/run/automatelinux" ]; then
+    echo "Creating /run/automatelinux..."
+    sudo mkdir -p /run/automatelinux
+fi
+sudo chown $USER:$USER /run/automatelinux
 
 if [ ! -d "build" ]; then
     mkdir -p build

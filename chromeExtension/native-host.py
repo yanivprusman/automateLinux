@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """
 Native messaging host for AutomateLinux Chrome extension.
 Threaded Bidirectional version.

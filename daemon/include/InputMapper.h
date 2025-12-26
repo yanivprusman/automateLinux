@@ -17,6 +17,7 @@ public:
   bool start(const std::string &keyboardPath, const std::string &mousePath);
   void stop();
   bool isRunning() const { return running_; }
+  void setContext(const std::string &appName, const std::string &url = "");
 
 private:
   void loop();
@@ -45,11 +46,9 @@ private:
   // Key(number)
   int gToggleState_ = 1; // 1-5
 
-  // Window/App detection (corresponds to keyboardToggle in evsieve script)
-  // Triggered by specific MSC_SCAN codes
-  int keyboardToggle_ = 0; // 0: Default, 1: Code, 2: Terminal, 3: Chrome
-  bool appCodesToggle_ = false;
-  int appCodesCount_ = 0;
+  // Window/App detection context
+  std::string activeApp_;
+  std::string activeUrl_;
 
   // Helper for Chrome Ctrl+V macro
   bool withholdingV_ = false;

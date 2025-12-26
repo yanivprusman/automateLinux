@@ -10,6 +10,8 @@ class KeyboardManager {
 public:
   static CmdResult setKeyboard(bool enableKeyboard);
   static bool isKnownKeyboard(const std::string &name);
+  static void setContext(const std::string &appName,
+                         const std::string &url = "");
 
 private:
   static const std::vector<std::string> KNOWN_KEYBOARDS;

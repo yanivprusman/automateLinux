@@ -206,6 +206,13 @@ void InputMapper::emitSequence(
   libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
 }
 
+void InputMapper::setContext(const std::string &appName,
+                             const std::string &url) {
+  activeApp_ = appName;
+  activeUrl_ = url;
+  logToFile("Context updated: App=" + activeApp_ + " URL=" + activeUrl_);
+}
+
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
   // Update LeftCtrl state for macros (tracked outside Chrome block)
   if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_LEFTCTRL) {
@@ -282,33 +289,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
     }
   }
 
-  // 3. App detection (keyboardToggle)
-  // --hook msc:scan:$codeForAppCodes toggle=appCodesToggle
-  if (isKeyboard && ev.type == EV_MSC && ev.code == MSC_SCAN) {
-    if (ev.value == atoi(VALUE_FOR_APP_CODES)) {
-      appCodesToggle_ = true;
-      appCodesCount_ = 0;
-      return;
-    }
-    if (appCodesToggle_) {
-      appCodesCount_++;
-      if (appCodesCount_ == 3) { // After 3 intermediate events
-        if (ev.value == atoi(VALUE_FOR_CODE))
-          keyboardToggle_ = 1;
-        else if (ev.value == atoi(VALUE_FOR_GNOME_TERMINAL))
-          keyboardToggle_ = 2;
-        else if (ev.value == atoi(VALUE_FOR_GOOGLE_CHROME))
-          keyboardToggle_ = 3;
-        else if (ev.value == atoi(VALUE_FOR_DEFAULT))
-          keyboardToggle_ = 0;
-        appCodesToggle_ = false;
-      }
-      return;
-    }
-  }
-
   // 4. Chrome-specific Ctrl+V macro
-  if (isKeyboard && keyboardToggle_ == 3 && ev.type == EV_KEY) {
+  if (isKeyboard && activeApp_ == wmClassChrome && ev.type == EV_KEY) {
     static bool ctrlDown = false;
     if (ev.code == KEY_LEFTCTRL)
       ctrlDown = (ev.value != 0);

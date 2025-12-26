@@ -32,6 +32,7 @@ std::string AutomationManager::getCurrentTabUrl() {
 }
 
 CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
+  std::cerr << "AutomationManager: onActiveWindowChanged called!" << std::endl;
   string logMessage = "[ACTIVE_WINDOW_CHANGED] ";
   logMessage +=
       "windowTitle: " + command[COMMAND_ARG_WINDOW_TITLE].get<string>() + ", ";
@@ -42,6 +43,7 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
   logMessage += "windowId: " +
                 std::to_string(command[COMMAND_ARG_WINDOW_ID].get<long>()) +
                 "\n";
+  std::cerr << "AutomationManager: " << logMessage << std::flush;
   logToFile(logMessage);
   std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
   if (g_keyboard_fd >= 0 && g_keyboardEnabled) {
@@ -53,7 +55,8 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
   }
   // if (wmClass == wmClassChrome) {
   //   std::string url = getCurrentTabUrl();
-  //   logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: " + url +
+  //   logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: " + url
+  //   +
   //             "\n");
   //   if (url.find("https://chatgpt.com") != std::string::npos ||
   //       url.find("https://claude.ai") != std::string::npos) {

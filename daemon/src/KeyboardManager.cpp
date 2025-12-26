@@ -58,6 +58,7 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
 }
 
 void KeyboardManager::setContext(const std::string &appName,
-                                 const std::string &url) {
-  mapper.setContext(appName, url);
+                                 const std::string &url,
+                                 const std::string &title) {
+  mapper.setContext(appName, url, title);
 }

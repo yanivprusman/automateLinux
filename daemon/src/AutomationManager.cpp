@@ -26,18 +26,22 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
   logToFile("AutomationManager: " + logMessage, LOG_WINDOW);
 
   std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
-  logToFile("[ACTIVE_WINDOW_CHANGED] Received wmClass: [" + wmClass + "]\n",
+  std::string windowTitle = command[COMMAND_ARG_WINDOW_TITLE].get<string>();
+
+  logToFile("[ACTIVE_WINDOW_CHANGED] Received wmClass: [" + wmClass +
+                "] Title: [" + windowTitle + "]\n",
             LOG_WINDOW);
   std::string url = "";
   if (wmClass == wmClassChrome) {
-    url = getChromeTabUrl();
+    // Pass windowTitle to help disambiguate correct tab
+    url = getChromeTabUrl(windowTitle);
     logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: [" + url +
                   "]\n",
               LOG_WINDOW);
   }
 
-  // Set the mapping context directly in InputMapper
-  KeyboardManager::setContext(wmClass, url);
+  // Set the mapping context directly in InputMapper, tracking title too
+  KeyboardManager::setContext(wmClass, url, windowTitle);
 
   return CmdResult(0, "Active window info received and mapping updated.\n");
 }

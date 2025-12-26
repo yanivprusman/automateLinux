@@ -49,6 +49,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_ACTIVE_WINDOW_CHANGED,
                      {COMMAND_ARG_WINDOW_TITLE, COMMAND_ARG_WM_CLASS,
                       COMMAND_ARG_WM_INSTANCE, COMMAND_ARG_WINDOW_ID}),
+    CommandSignature(COMMAND_SET_ACTIVE_TAB_URL, {COMMAND_ARG_URL}),
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -57,6 +58,16 @@ const size_t COMMAND_REGISTRY_SIZE =
 static int clientSocket = -1;
 unsigned int shouldLog = LOG_ALL; // Global state for logging
 bool g_keyboardEnabled = true;    // Global state for keyboard enable/disable
+
+// Global state for active tab URL (set by Chrome extension)
+static std::mutex g_activeTabUrlMutex;
+static std::string g_activeTabUrl = "";
+
+// Function to get active tab URL (called from Utils.cpp)
+std::string getActiveTabUrlFromExtension() {
+  std::lock_guard<std::mutex> lock(g_activeTabUrlMutex);
+  return g_activeTabUrl;
+}
 
 static string
 formatEntriesAsText(const vector<std::pair<string, string>> &entries) {
@@ -322,6 +333,16 @@ CmdResult handleActiveWindowChanged(const json &command) {
   return AutomationManager::onActiveWindowChanged(command);
 }
 
+CmdResult handleSetActiveTabUrl(const json &command) {
+  std::string url = command[COMMAND_ARG_URL].get<std::string>();
+  {
+    std::lock_guard<std::mutex> lock(g_activeTabUrlMutex);
+    g_activeTabUrl = url;
+  }
+  logToFile("[setActiveTabUrl] Active tab URL set to: " + url, LOG_CORE);
+  return CmdResult(0, "Active tab URL updated\n");
+}
+
 CmdResult handleSetKeyboard(const json &command) {
   string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
   g_keyboardEnabled = (enableStr == COMMAND_VALUE_TRUE);
@@ -372,6 +393,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_FILE, handleGetFile},
     {COMMAND_QUIT, handleQuit},
     {COMMAND_ACTIVE_WINDOW_CHANGED, handleActiveWindowChanged},
+    {COMMAND_SET_ACTIVE_TAB_URL, handleSetActiveTabUrl},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =

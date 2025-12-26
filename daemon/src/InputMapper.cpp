@@ -210,13 +210,14 @@ void InputMapper::emitSequence(
   libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
 }
 
-void InputMapper::setContext(const std::string &appName,
-                             const std::string &url) {
+void InputMapper::setContext(const std::string &appName, const std::string &url,
+                             const std::string &title) {
   std::lock_guard<std::mutex> lock(contextMutex_);
   activeApp_ = appName;
   activeUrl_ = url;
+  activeTitle_ = title;
   logToFile("Context updated: App=[" + activeApp_ + "] URL=[" + activeUrl_ +
-                "]",
+                "] Title=[" + activeTitle_ + "]",
             LOG_WINDOW);
 }
 
@@ -292,8 +293,10 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
         }
       }
     } else if (gToggleState_ == 5) {
+      logToFile("G ", LOG_CORE);
       if (ev.code >= KEY_1 && ev.code <= KEY_6) {
         if (ev.code == KEY_1) {
+          logToFile("G1 pressed. Current gToggleState: " + std::to_string(gToggleState_), LOG_CORE);
           std::string currentApp;
           {
             std::lock_guard<std::mutex> lock(contextMutex_);
@@ -334,25 +337,25 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
   }
 
   // 4. Chrome-specific Ctrl+V macro (ChatGPT only)
-  std::string currentApp, currentUrl;
+  std::string currentApp, currentUrl, currentTitle;
   {
     std::lock_guard<std::mutex> lock(contextMutex_);
     currentApp = activeApp_;
     currentUrl = activeUrl_;
+    currentTitle = activeTitle_;
   }
 
   if (isKeyboard && currentApp == wmClassChrome && ev.type == EV_KEY) {
     if (ev.code == KEY_V && ctrlDown_) {
       // Logic for KEY_V press (value == 1)
       if (ev.value == 1) {
-        // Fetch fresh URL ON DEMAND to handle tab switches
-        std::string freshUrl = getChromeTabUrl();
+        // Fetch fresh URL ON DEMAND using the TITLE hint
+        std::string freshUrl = getChromeTabUrl(currentTitle);
         if (!freshUrl.empty()) {
           currentUrl = freshUrl;
           logToFile("On-demand context update: URL=[" + currentUrl + "]",
                     LOG_WINDOW);
           // Update the context via mutex so subsequent logs/logic are correct
-          // (Optional, but good for consistency)
           std::lock_guard<std::mutex> lock(contextMutex_);
           activeUrl_ = currentUrl;
         }
@@ -384,12 +387,6 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
         }
       } else {
         // For key release (value == 0) or repeat (value == 2)
-        // Check if we should swallow it based on the URL we decided on press?
-        // Actually, if we swallowed the press, we must swallow the release.
-        // But here we are fetching URL on press.
-        // A simple heuristic: if it *looks* like ChatGPT, we swallow.
-        // Note: activeUrl_ might have been updated by the press.
-        // Re-reading is safe.
         if (currentUrl.find("chatgpt.com") != std::string::npos) {
           return; // Swallow release/repeat for ChatGPT
         }

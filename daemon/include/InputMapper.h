@@ -18,7 +18,8 @@ public:
   bool start(const std::string &keyboardPath, const std::string &mousePath);
   void stop();
   bool isRunning() const { return running_; }
-  void setContext(const std::string &appName, const std::string &url = "");
+  void setContext(const std::string &appName, const std::string &url = "",
+                  const std::string &title = "");
 
 private:
   void loop();
@@ -50,6 +51,7 @@ private:
   // Window/App detection context
   std::string activeApp_;
   std::string activeUrl_;
+  std::string activeTitle_;
   std::mutex contextMutex_;
 
   // Helper for Chrome Ctrl+V macro

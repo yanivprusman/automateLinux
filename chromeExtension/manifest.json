@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "AutomateLinux Active Tab Tracker",
+    "version": "1.0",
+    "description": "Tracks the active Chrome tab URL for AutomateLinux daemon",
+    "permissions": [
+        "tabs",
+        "nativeMessaging"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "host_permissions": [
+        "<all_urls>"
+    ]
+}

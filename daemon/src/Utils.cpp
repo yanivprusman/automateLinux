@@ -39,24 +39,96 @@ void forceLog(const string &message) {
   std::cerr << message << std::endl;
 }
 
-std::string getChromeTabUrl() {
+std::string getChromeTabUrl(const std::string &preferredTitle) {
+  // First, check if we have an active tab URL from the Chrome extension
+  extern std::string getActiveTabUrlFromExtension();
+  std::string extensionUrl = getActiveTabUrlFromExtension();
+  if (!extensionUrl.empty()) {
+    logToFile("[getChromeTabUrl] Using URL from Chrome extension: " +
+                  extensionUrl,
+              LOG_CORE);
+    return extensionUrl;
+  }
+
+  // Fallback to Chrome DevTools Protocol with title matching
   std::string response = httpGet("http://localhost:9222/json");
   Json::Value root;
   Json::Reader reader;
   if (!reader.parse(response, root)) {
+    logToFile("[getChromeTabUrl] Failed to parse Chrome DevTools response",
+              LOG_CORE);
     return "";
   }
+
+  logToFile("[getChromeTabUrl] preferredTitle=[" + preferredTitle + "]",
+            LOG_CORE);
+
+  std::string fallbackUrl = "";
+  std::string lastRealUrl = ""; // Last non-chrome:// URL
+  int tabIndex = 0;
+
   for (const auto &tab : root) {
     std::string type = tab["type"].asString();
     std::string url = tab["url"].asString();
+    std::string title = tab["title"].asString();
+
+    logToFile("[getChromeTabUrl] Tab #" + std::to_string(tabIndex) +
+                  ": type=[" + type + "] url=[" + url + "] title=[" + title +
+                  "]",
+              LOG_CORE);
+
     // Skip over extension pages and devtools
     if (type == "page" &&
         url.find("chrome-extension://") == std::string::npos &&
         url.find("devtools://") == std::string::npos) {
-      return url;
+
+      // Store the first valid page as ultimate fallback
+      if (fallbackUrl.empty()) {
+        fallbackUrl = url;
+        logToFile("[getChromeTabUrl] Set fallback URL: " + fallbackUrl,
+                  LOG_CORE);
+      }
+
+      // Track last non-chrome:// URL (more likely to be the active tab)
+      if (url.find("chrome://") == std::string::npos) {
+        lastRealUrl = url;
+        logToFile("[getChromeTabUrl] Updated lastRealUrl: " + lastRealUrl,
+                  LOG_CORE);
+      }
+
+      // If we have a preferred title, look for a substring match
+      if (!preferredTitle.empty()) {
+        bool titleInWindow = preferredTitle.find(title) != std::string::npos;
+        bool windowInTitle = title.find(preferredTitle) != std::string::npos;
+
+        logToFile("[getChromeTabUrl] Matching: titleInWindow=" +
+                      std::to_string(titleInWindow) +
+                      " windowInTitle=" + std::to_string(windowInTitle),
+                  LOG_CORE);
+
+        if (titleInWindow || windowInTitle) {
+          logToFile("[getChromeTabUrl] TITLE MATCH FOUND! Returning URL: " +
+                        url,
+                    LOG_CORE);
+          return url;
+        }
+      }
     }
+    tabIndex++;
   }
-  return "";
+
+  // Prefer lastRealUrl over fallback (chrome:// URLs)
+  if (!lastRealUrl.empty()) {
+    logToFile("[getChromeTabUrl] No title match, returning lastRealUrl: " +
+                  lastRealUrl,
+              LOG_CORE);
+    return lastRealUrl;
+  }
+
+  logToFile("[getChromeTabUrl] No real URL found, returning fallback: " +
+                fallbackUrl,
+            LOG_CORE);
+  return fallbackUrl;
 }
 
 bool isMultiline(const std::string &s) {

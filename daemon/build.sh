@@ -1,6 +1,5 @@
 (return 0 2>/dev/null) || { echo "Script must be sourced"; exit 1; }
 echo "Stopping services..."
-sudo systemctl stop automateLinux.service || true
 sudo systemctl stop daemon.service || true
 
 # Aggressively kill any matching daemon processes

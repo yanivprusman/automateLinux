@@ -47,6 +47,7 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
   logToFile(logMessage);
 
   std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
+  logToFile("[ACTIVE_WINDOW_CHANGED] Received wmClass: [" + wmClass + "]");
   std::string url = "";
   if (wmClass == wmClassChrome) {
     url = getCurrentTabUrl();

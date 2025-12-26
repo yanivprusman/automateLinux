@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <poll.h>
 #include <unistd.h>
 #include <vector>
@@ -208,9 +209,11 @@ void InputMapper::emitSequence(
 
 void InputMapper::setContext(const std::string &appName,
                              const std::string &url) {
+  std::lock_guard<std::mutex> lock(contextMutex_);
   activeApp_ = appName;
   activeUrl_ = url;
-  logToFile("Context updated: App=" + activeApp_ + " URL=" + activeUrl_);
+  logToFile("Context updated: App=[" + activeApp_ + "] URL=[" + activeUrl_ +
+            "]");
 }
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
@@ -219,7 +222,19 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
     ctrlDown_ = (ev.value != 0);
   }
 
-  // 0. Sanity Check Macro (LeftCtrl + 1)
+  // Debug: Log all Ctrl+V combinations to see current context
+  if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_V && ctrlDown_ &&
+      ev.value == 1) {
+    std::string tmpApp, tmpUrl;
+    {
+      std::lock_guard<std::mutex> lock(contextMutex_);
+      tmpApp = activeApp_;
+      tmpUrl = activeUrl_;
+    }
+    logToFile("Ctrl+V detected. State: App=[" + tmpApp + "] URL=[" + tmpUrl +
+              "]");
+  }
+
   if (isKeyboard && ctrlDown_ && ev.type == EV_KEY && ev.code == KEY_1 &&
       ev.value == 1) {
     std::string logPath;
@@ -241,20 +256,14 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
     logToFile("Sanity check: LeftCtrl + 1 detected");
   }
 
-  // Porting logic from corsairKeyBoardLogiMouseAll.sh
-
-  // 1. Mouse forward to Enter
   if (!isKeyboard && ev.type == EV_KEY && ev.code == BTN_FORWARD) {
     emit(EV_KEY, KEY_ENTER, ev.value);
     return;
   }
 
-  // 2. G-key detection (GToggle)
-  // --hook key:leftctrl@gProgress1 toggle=GToggle:2
-  // --hook @gProgress2 toggle=GToggle:1 ... etc
   if (isKeyboard && ev.type == EV_KEY) {
     if (ev.code == KEY_LEFTCTRL) {
-      if (ev.value == 1) { // Down
+      if (ev.value == 1) {
         if (gToggleState_ == 1)
           gToggleState_ = 2;
         else if (gToggleState_ == 3)
@@ -263,7 +272,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
           gToggleState_ = 1;
       }
     } else if (ev.code == KEY_LEFTSHIFT) {
-      if (ev.value == 1) { // Down
+      if (ev.value == 1) {
         if (gToggleState_ == 2)
           gToggleState_ = 3;
         else if (gToggleState_ == 4)
@@ -272,62 +281,57 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
           gToggleState_ = 1;
       }
     } else if (gToggleState_ == 5) {
-      // Check for G1-G6 keys (which are sent as number keys 1-6 in this state)
       if (ev.code >= KEY_1 && ev.code <= KEY_6) {
-        // evsieve script says: echo G1, but doesn't map them to anything else
-        // in All.sh? Wait, All.sh has "--hook key:1@gProgress5 key:1@keyboard
-        // exec-shell='echo G1' breaks-on=key::1 sequential --withhold" This
-        // means it blocks the key:1 and executes shell.
         logToFile("G" + std::to_string(ev.code - KEY_1 + 1) + " pressed");
         gToggleState_ = 1;
-        return; // Block the key
+        return;
       }
       gToggleState_ = 1;
     } else {
-      // Reset state if any other key is pressed
       gToggleState_ = 1;
     }
   }
 
-  // 4. Chrome-specific Ctrl+V macro
-  if (isKeyboard && activeApp_ == wmClassChrome && ev.type == EV_KEY) {
-    static bool ctrlDown = false;
-    if (ev.code == KEY_LEFTCTRL)
-      ctrlDown = (ev.value != 0);
+  // 4. Chrome-specific Ctrl+V macro (ChatGPT only)
+  std::string currentApp, currentUrl;
+  {
+    std::lock_guard<std::mutex> lock(contextMutex_);
+    currentApp = activeApp_;
+    currentUrl = activeUrl_;
+  }
 
-    if (ev.code == KEY_V && ctrlDown) {
-      if (ev.value == 1) { // Down
-        // Complex sequence from script:
-        // key:leftctrl:1@$codeForCntrlV key:leftctrl:0@$codeForCntrlV key:h:1
-        // key:h:0 key:i:1 key:i:0 key:backspace:1 key:backspace:0
-        // key:backspace:1 key:backspace:0 key:leftctrl:1@$codeForCntrlV
-        // key:v:1@keyboard$codeForGoogleChrome key:leftctrl:0@$codeForCntrlV
-        // key:v:0@keyboard$codeForGoogleChrome
-
-        // Simplified version for now (just hi + backspaces + ctrl+v)
-        // Note: @$codeForCntrlV in evsieve is just a tag, we don't need to do
-        // anything special here unless it changes behavior.
-        emit(EV_KEY, KEY_LEFTCTRL, 1);
-        emit(EV_KEY, KEY_LEFTCTRL, 0);
-        emit(EV_KEY, KEY_H, 1);
-        emit(EV_KEY, KEY_H, 0);
-        emit(EV_KEY, KEY_I, 1);
-        emit(EV_KEY, KEY_I, 0);
-        emit(EV_KEY, KEY_BACKSPACE, 1);
-        emit(EV_KEY, KEY_BACKSPACE, 0);
-        emit(EV_KEY, KEY_BACKSPACE, 1);
-        emit(EV_KEY, KEY_BACKSPACE, 0);
-        emit(EV_KEY, KEY_LEFTCTRL, 1);
-        emit(EV_KEY, KEY_V, 1);
-        emit(EV_KEY, KEY_V, 0);
-        emit(EV_KEY, KEY_LEFTCTRL, 0);
-        return;
+  if (isKeyboard && currentApp == wmClassChrome && ev.type == EV_KEY) {
+    if (ev.code == KEY_V && ctrlDown_) {
+      // Relaxed URL check (case-insensitive and not necessarily at start)
+      if (currentUrl.find("chatgpt.com") != std::string::npos) {
+        if (ev.value == 1) {
+          logToFile("Triggering ChatGPT Ctrl+V macro. URL: " + currentUrl);
+          emit(EV_KEY, KEY_LEFTCTRL, 1);
+          emit(EV_KEY, KEY_LEFTCTRL, 0);
+          emit(EV_KEY, KEY_H, 1);
+          emit(EV_KEY, KEY_H, 0);
+          emit(EV_KEY, KEY_I, 1);
+          emit(EV_KEY, KEY_I, 0);
+          emit(EV_KEY, KEY_BACKSPACE, 1);
+          emit(EV_KEY, KEY_BACKSPACE, 0);
+          emit(EV_KEY, KEY_BACKSPACE, 1);
+          emit(EV_KEY, KEY_BACKSPACE, 0);
+          emit(EV_KEY, KEY_LEFTCTRL, 1);
+          emit(EV_KEY, KEY_V, 1);
+          emit(EV_KEY, KEY_V, 0);
+          emit(EV_KEY, KEY_LEFTCTRL, 0);
+        }
+        return; // Swallowed for ChatGPT
+      } else {
+        if (ev.value == 1) {
+          logToFile("Ctrl+V in Chrome (NOT ChatGPT). URL: [" + currentUrl +
+                    "]");
+        }
+        // Fall through to default emit for regular tabs
       }
-      return; // Block normal V if Ctrl is down
     }
   }
 
-  // Default: pass through
   int rc = libevdev_uinput_write_event(uinputDev_, ev.type, ev.code, ev.value);
   if (rc < 0) {
     char errBuf[128];

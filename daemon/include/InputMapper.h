@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <libevdev/libevdev-uinput.h>
 #include <libevdev/libevdev.h>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -49,6 +50,7 @@ private:
   // Window/App detection context
   std::string activeApp_;
   std::string activeUrl_;
+  std::mutex contextMutex_;
 
   // Helper for Chrome Ctrl+V macro
   bool withholdingV_ = false;

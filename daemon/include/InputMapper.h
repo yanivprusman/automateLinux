@@ -36,6 +36,7 @@ private:
 
   std::thread thread_;
   std::atomic<bool> running_{false};
+  bool ctrlDown_ = false; // Track LeftCtrl state for macros
 
   // --- State Machine for evsieve logic ---
 

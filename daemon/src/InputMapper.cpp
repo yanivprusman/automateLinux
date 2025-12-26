@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <fcntl.h>
+#include <fstream>
 #include <iostream>
 #include <poll.h>
 #include <unistd.h>
@@ -197,6 +198,26 @@ void InputMapper::emitSequence(
 }
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
+  // Update LeftCtrl state for macros (tracked outside Chrome block)
+  if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_LEFTCTRL) {
+    ctrlDown_ = (ev.value != 0);
+  }
+
+  // 0. Sanity Check Macro (LeftCtrl + 1)
+  if (isKeyboard && ctrlDown_ && ev.type == EV_KEY && ev.code == KEY_1 &&
+      ev.value == 1) {
+    executeCommand("notify-send \"hi\" \"2\"");
+    std::string logPath =
+        "/home/yaniv/coding/automateLinux/data/sanity_check.log";
+    std::ofstream sf(logPath, std::ios::app);
+    if (sf.is_open()) {
+      sf << "Sanity check: LeftCtrl + 1 pressed at event time "
+         << ev.input_event_sec << "." << ev.input_event_usec << std::endl;
+      sf.close();
+    }
+    logToFile("Sanity check: LeftCtrl + 1 detected");
+  }
+
   // Porting logic from corsairKeyBoardLogiMouseAll.sh
 
   // 1. Mouse forward to Enter

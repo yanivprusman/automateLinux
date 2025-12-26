@@ -33,25 +33,26 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
 
   if (enableKeyboard) {
     if (mapper.isRunning()) {
+      std::cerr << "Keyboard already enabled" << std::endl;
       return CmdResult(0, "Keyboard already enabled\n");
     }
-    string keyboardPath = kvTable.get(KEYBOARD_PATH_KEY);
-    string mousePath = kvTable.get(MOUSE_PATH_KEY);
+    std::string keyboardPath = kvTable.get(KEYBOARD_PATH_KEY);
+    std::string mousePath = kvTable.get(MOUSE_PATH_KEY);
 
     if (keyboardPath.empty()) {
-      return CmdResult(1, "Keyboard path not set\n");
+      std::cerr << "ERROR: Keyboard path empty" << std::endl;
+      return CmdResult(1, "Keyboard path not found\n");
     }
-
+    std::cerr << "Enabling keyboard: " << keyboardPath << std::endl;
     if (mapper.start(keyboardPath, mousePath)) {
-      logToFile("[END] SUCCESS\n");
-      return CmdResult(0, "Keyboard enabled via libevdev\n");
+      return CmdResult(0, "Keyboard enabled\n");
     } else {
-      logToFile("[END] FAILED\n");
-      return CmdResult(1, "Failed to start InputMapper\n");
+      std::cerr << "ERROR: Failed to start InputMapper" << std::endl;
+      return CmdResult(1, "Failed to enable keyboard\n");
     }
   } else {
+    std::cerr << "Disabling keyboard" << std::endl;
     mapper.stop();
-    logToFile("[END] SUCCESS\n");
     return CmdResult(0, "Keyboard disabled\n");
   }
 }

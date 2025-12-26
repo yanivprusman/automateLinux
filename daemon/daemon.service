@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/home/yaniv/coding/automateLinux/daemon/daemon daemon
+ExecStart=/home/yaniv/coding/automateLinux/daemon/daemon daemon 2>&1 | tee -a /home/yaniv/coding/automateLinux/data/combined.log
 Restart=on-failure
 RestartSec=2
 User=yaniv

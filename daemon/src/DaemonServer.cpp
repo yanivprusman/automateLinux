@@ -186,10 +186,10 @@ int initialize_daemon() {
 
   files.initialize(
       directories); // Initialize files (and thus directories.data) first
-  g_logFile.open(directories.data + "daemon.log", std::ios::app);
+  g_logFile.open(directories.data + "combined.log", std::ios::app);
   if (!g_logFile.is_open()) {
     cerr << "ERROR: Could not open log file: " << directories.data
-         << "daemon.log" << endl;
+         << "combined.log" << endl;
   }
   initializeKeyboardPath();
   initializeMousePath();

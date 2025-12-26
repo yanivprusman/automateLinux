@@ -10,6 +10,7 @@
 
 using std::cerr;
 using std::endl;
+using std::string;
 using std::vector;
 
 // Centralized logging function that respects the shouldLog flag
@@ -19,6 +20,17 @@ void logToFile(const string &message) {
     g_logFile << message;
     g_logFile.flush();
   }
+}
+
+// Forced logging that always writes to combined.log
+void forceLog(const string &message) {
+  std::ofstream sf(directories.data + "combined.log", std::ios::app);
+  if (sf.is_open()) {
+    sf << message << std::endl;
+    sf.close();
+  }
+  // Also echo to cerr for journalctl
+  std::cerr << message << std::endl;
 }
 
 bool isMultiline(const std::string &s) {

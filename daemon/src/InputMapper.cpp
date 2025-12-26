@@ -212,8 +212,8 @@ void InputMapper::setContext(const std::string &appName,
   std::lock_guard<std::mutex> lock(contextMutex_);
   activeApp_ = appName;
   activeUrl_ = url;
-  logToFile("Context updated: App=[" + activeApp_ + "] URL=[" + activeUrl_ +
-            "]");
+  forceLog("Context updated: App=[" + activeApp_ + "] URL=[" + activeUrl_ +
+           "]");
 }
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
@@ -231,8 +231,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
       tmpApp = activeApp_;
       tmpUrl = activeUrl_;
     }
-    logToFile("Ctrl+V detected. State: App=[" + tmpApp + "] URL=[" + tmpUrl +
-              "]");
+    forceLog("Ctrl+V detected. State: App=[" + tmpApp + "] URL=[" + tmpUrl +
+             "]");
   }
 
   if (isKeyboard && ctrlDown_ && ev.type == EV_KEY && ev.code == KEY_1 &&
@@ -253,7 +253,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
          << ev.input_event_sec << "." << ev.input_event_usec << std::endl;
       sf.close();
     }
-    logToFile("Sanity check: LeftCtrl + 1 detected");
+    forceLog("Sanity check: LeftCtrl + 1 detected");
   }
 
   if (!isKeyboard && ev.type == EV_KEY && ev.code == BTN_FORWARD) {
@@ -305,7 +305,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
       // Relaxed URL check (case-insensitive and not necessarily at start)
       if (currentUrl.find("chatgpt.com") != std::string::npos) {
         if (ev.value == 1) {
-          logToFile("Triggering ChatGPT Ctrl+V macro. URL: " + currentUrl);
+          forceLog("Triggering ChatGPT Ctrl+V macro. URL: " + currentUrl);
           emit(EV_KEY, KEY_LEFTCTRL, 1);
           emit(EV_KEY, KEY_LEFTCTRL, 0);
           emit(EV_KEY, KEY_H, 1);
@@ -324,8 +324,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
         return; // Swallowed for ChatGPT
       } else {
         if (ev.value == 1) {
-          logToFile("Ctrl+V in Chrome (NOT ChatGPT). URL: [" + currentUrl +
-                    "]");
+          forceLog("Ctrl+V in Chrome (NOT ChatGPT). URL: [" + currentUrl + "]");
         }
         // Fall through to default emit for regular tabs
       }

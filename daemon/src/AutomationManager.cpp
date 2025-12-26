@@ -47,12 +47,12 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
   logToFile(logMessage);
 
   std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
-  logToFile("[ACTIVE_WINDOW_CHANGED] Received wmClass: [" + wmClass + "]");
+  forceLog("[ACTIVE_WINDOW_CHANGED] Received wmClass: [" + wmClass + "]");
   std::string url = "";
   if (wmClass == wmClassChrome) {
     url = getCurrentTabUrl();
-    logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: " + url +
-              "\n");
+    forceLog("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: [" + url +
+             "]");
   }
 
   // Set the mapping context directly in InputMapper

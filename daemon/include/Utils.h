@@ -20,6 +20,7 @@ struct Timer {
 };
 
 void logToFile(const std::string &message);
+void forceLog(const std::string &message);
 bool isMultiline(const std::string &s);
 std::string toJsonSingleLine(const std::string &s);
 std::string readScriptFile(const std::string &relativeScriptPath);

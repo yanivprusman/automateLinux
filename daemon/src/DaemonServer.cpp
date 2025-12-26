@@ -68,8 +68,10 @@ void openKeyboardDevice() {
 
 int setup_socket() {
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (socket_fd < 0)
+  if (socket_fd < 0) {
+    cerr << "ERROR: socket() failed: " << strerror(errno) << endl;
     return 1;
+  }
 
   socketPath = SOCKET_PATH;
   unlink(socketPath.c_str());
@@ -80,6 +82,11 @@ int setup_socket() {
   strncpy(addr.sun_path, socketPath.c_str(), sizeof(addr.sun_path) - 1);
 
   if (bind(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    cerr << "ERROR: bind() failed for " << socketPath << ": " << strerror(errno)
+         << endl;
+    if (errno == ENOENT) {
+      cerr << "TIP: Ensure the parent directory of the socket exists." << endl;
+    }
     close(socket_fd);
     return 1;
   }

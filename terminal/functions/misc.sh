@@ -135,3 +135,8 @@ listMyFunctions() {
         sed -E "s/^([a-zA-Z0-9_-]+).*/\1/" | sort -u
 }
 export -f listMyFunctions
+
+emergencyRestore() {
+    $AUTOMATE_LINUX_DIR/utilities/emergencyRestore.sh
+}
+export -f emergencyRestore

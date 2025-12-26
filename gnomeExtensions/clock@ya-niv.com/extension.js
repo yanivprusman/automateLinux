@@ -3,6 +3,7 @@
 import St from 'gi://St';
 import GLib from 'gi://GLib';
 import Clutter from 'gi://Clutter';
+import GObject from 'gi://GObject';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
@@ -13,7 +14,21 @@ import { ShellCommandExecutor } from '../lib/shellCommand.js';
 
 const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
-const shouldLog = false;
+const shouldLog = true;
+
+// Custom menu item that doesn't close the menu on toggle
+const NonClosingPopupSwitchMenuItem = GObject.registerClass(
+    class NonClosingPopupSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
+        activate(event) {
+            if (this._switch.mapped) {
+                this.toggle();
+            }
+
+            // We do NOT call super.activate(event) because that eventually calls 
+            // this.emit('activate') which closes the menu.
+            // Instead we allow the toggle to happen and stay open.
+        }
+    });
 
 export default class ClockExtension extends Extension {
     constructor(metadata) {
@@ -34,7 +49,7 @@ export default class ClockExtension extends Extension {
         this._toggleKeyboardMenuItem = null;
         this.logger.log('ClockExtension constructor called');
         this._isUserService = false;
-        this.logger.log('ClockExtension constructor called');
+
     }
 
     async enable() {
@@ -81,53 +96,59 @@ export default class ClockExtension extends Extension {
             this._menu = new PopupMenu.PopupMenu(this._label, 0.5, St.Side.TOP);
             Main.uiGroup.add_child(this._menu.actor);
             this._menu.actor.hide();
-            let shutDownMenuItem = new PopupMenu.PopupMenuItem('Power Off');
-            shutDownMenuItem.connect('activate', (menuItem, event) => {
-                if (event && event.get_button() !== 1) {
-                    return;
-                }
-                this._onShutdownMenuItemActivated();
-            });
-            this._menu.addMenuItem(shutDownMenuItem);
 
-            // Add separator
-            this._menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+            try {
+                let shutDownMenuItem = new PopupMenu.PopupMenuItem('Power Off');
+                shutDownMenuItem.connect('activate', (menuItem, event) => {
+                    if (event && event.get_button() !== 1) {
+                        return;
+                    }
+                    this._onShutdownMenuItemActivated();
+                });
+                this._menu.addMenuItem(shutDownMenuItem);
 
-            // Add logging submenu
-            this._loggingSubMenu = new PopupMenu.PopupSubMenuMenuItem('Daemon Logging');
-            this._menu.addMenuItem(this._loggingSubMenu);
+                // Add separator
+                this._menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-            this._logItems = {};
-            const categories = [
-                { name: 'Input', mask: 1 },
-                { name: 'Window', mask: 2 },
-                { name: 'Automation', mask: 4 },
-                { name: 'Core', mask: 8 }
-            ];
+                // Add logging submenu
+                this._loggingSubMenu = new PopupMenu.PopupSubMenuMenuItem('Daemon Logging');
+                this._menu.addMenuItem(this._loggingSubMenu);
 
-            categories.forEach(cat => {
-                let item = new PopupMenu.PopupSwitchMenuItem(cat.name, false);
-                item.connect('toggled', (obj, state) => this._onLogCategoryToggled(cat.mask, state));
-                this._loggingSubMenu.menu.addMenuItem(item);
-                this._logItems[cat.mask] = item;
-            });
+                this._logItems = {};
+                const categories = [
+                    { name: 'Input', mask: 1 },
+                    { name: 'Window', mask: 2 },
+                    { name: 'Automation', mask: 4 },
+                    { name: 'Core', mask: 8 }
+                ];
 
-            // Add toggle daemon menu item
-            this._toggleDaemonMenuItem = new PopupMenu.PopupMenuItem('Checking Daemon Status...');
-            this._toggleDaemonMenuItem.connect('activate', () => this._onToggleDaemonActivated());
-            this._menu.addMenuItem(this._toggleDaemonMenuItem);
+                categories.forEach(cat => {
+                    let item = new NonClosingPopupSwitchMenuItem(cat.name, false);
+                    item.connect('toggled', (obj, state) => this._onLogCategoryToggled(cat.mask, state));
+                    this._loggingSubMenu.menu.addMenuItem(item);
+                    this._logItems[cat.mask] = item;
+                });
 
-            // Add toggle keyboard menu item
-            this._toggleKeyboardMenuItem = new PopupMenu.PopupMenuItem('Enable Keyboard');
-            this._toggleKeyboardMenuItem.connect('activate', () => this._onToggleKeyboardActivated());
-            this._menu.addMenuItem(this._toggleKeyboardMenuItem);
+                // Add toggle daemon menu item
+                this._toggleDaemonMenuItem = new PopupMenu.PopupMenuItem('Checking Daemon Status...');
+                this._toggleDaemonMenuItem.connect('activate', () => this._onToggleDaemonActivated());
+                this._menu.addMenuItem(this._toggleDaemonMenuItem);
 
-            this._label.menu = this._menu;
-            this._menu.connect('open-state-changed', (menu, open) => {
-                if (open) {
-                    this._updateDaemonStatus();
-                }
-            });
+                // Add toggle keyboard menu item
+                this._toggleKeyboardMenuItem = new PopupMenu.PopupMenuItem('Enable Keyboard');
+                this._toggleKeyboardMenuItem.connect('activate', () => this._onToggleKeyboardActivated());
+                this._menu.addMenuItem(this._toggleKeyboardMenuItem);
+
+                this._label.menu = this._menu;
+                this._menu.connect('open-state-changed', (menu, open) => {
+                    if (open) {
+                        this._updateDaemonStatus();
+                    }
+                });
+            } catch (menuError) {
+                this.logger.log(`Error building menu: ${menuError.message}`);
+                this.logger.log(`Stack: ${menuError.stack}`);
+            } // Continue execution even if menu fails
             this._updateClock();
             this._timeoutId = GLib.timeout_add_seconds(
                 GLib.PRIORITY_DEFAULT,

@@ -12,7 +12,7 @@ using std::to_string;
 extern int g_keyboard_fd; // From main.cpp
 
 CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
-  std::cerr << "AutomationManager: onActiveWindowChanged called!" << std::endl;
+  logToFile("AutomationManager: onActiveWindowChanged called!\n", LOG_WINDOW);
   string logMessage = "[ACTIVE_WINDOW_CHANGED] ";
   logMessage +=
       "windowTitle: " + command[COMMAND_ARG_WINDOW_TITLE].get<string>() + ", ";
@@ -23,16 +23,17 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
   logMessage += "windowId: " +
                 std::to_string(command[COMMAND_ARG_WINDOW_ID].get<long>()) +
                 "\n";
-  std::cerr << "AutomationManager: " << logMessage << std::flush;
-  logToFile(logMessage, LOG_WINDOW);
+  logToFile("AutomationManager: " + logMessage, LOG_WINDOW);
 
   std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
-  forceLog("[ACTIVE_WINDOW_CHANGED] Received wmClass: [" + wmClass + "]");
+  logToFile("[ACTIVE_WINDOW_CHANGED] Received wmClass: [" + wmClass + "]\n",
+            LOG_WINDOW);
   std::string url = "";
   if (wmClass == wmClassChrome) {
     url = getChromeTabUrl();
-    forceLog("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: [" + url +
-             "]");
+    logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: [" + url +
+                  "]\n",
+              LOG_WINDOW);
   }
 
   // Set the mapping context directly in InputMapper

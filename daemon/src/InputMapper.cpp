@@ -68,19 +68,19 @@ void InputMapper::stop() {
 bool InputMapper::setupDevices() {
   keyboardFd_ = open(keyboardPath_.c_str(), O_RDONLY | O_NONBLOCK);
   if (keyboardFd_ < 0) {
-    logToFile("Failed to open keyboard device: " + keyboardPath_);
+    logToFile("Failed to open keyboard device: " + keyboardPath_, LOG_CORE);
     return false;
   }
 
   if (libevdev_new_from_fd(keyboardFd_, &keyboardDev_) < 0) {
-    logToFile("Failed to initialize libevdev for keyboard");
+    logToFile("Failed to initialize libevdev for keyboard", LOG_CORE);
     return false;
   }
 
   if (libevdev_grab(keyboardDev_, LIBEVDEV_GRAB) < 0) {
     std::cerr << "CRITICAL: Failed to grab keyboard: " << strerror(errno)
               << std::endl;
-    logToFile("Failed to grab keyboard");
+    logToFile("Failed to grab keyboard", LOG_CORE);
     return false;
   }
   std::cerr << "InputMapper: Keyboard grabbed successfully" << std::endl;
@@ -89,10 +89,10 @@ bool InputMapper::setupDevices() {
     mouseFd_ = open(mousePath_.c_str(), O_RDONLY | O_NONBLOCK);
     if (mouseFd_ >= 0) {
       if (libevdev_new_from_fd(mouseFd_, &mouseDev_) < 0) {
-        logToFile("Failed to initialize libevdev for mouse");
+        logToFile("Failed to initialize libevdev for mouse", LOG_CORE);
       } else {
         if (libevdev_grab(mouseDev_, LIBEVDEV_GRAB) < 0) {
-          logToFile("Failed to grab mouse");
+          logToFile("Failed to grab mouse", LOG_CORE);
         }
       }
     }
@@ -143,7 +143,8 @@ bool InputMapper::setupUinput() {
   libevdev_free(uinput_template);
 
   if (rc < 0) {
-    logToFile("Failed to create uinput device: " + std::string(strerror(-rc)));
+    logToFile("Failed to create uinput device: " + std::string(strerror(-rc)),
+              LOG_CORE);
     return false;
   }
 
@@ -172,8 +173,9 @@ void InputMapper::loop() {
       while (libevdev_next_event(keyboardDev_, LIBEVDEV_READ_FLAG_NORMAL,
                                  &ev) == LIBEVDEV_READ_STATUS_SUCCESS) {
         logToFile("KBD Event: type=" + std::to_string(ev.type) +
-                  " code=" + std::to_string(ev.code) +
-                  " value=" + std::to_string(ev.value));
+                      " code=" + std::to_string(ev.code) +
+                      " value=" + std::to_string(ev.value),
+                  LOG_INPUT);
         processEvent(ev, true);
       }
     }
@@ -185,8 +187,9 @@ void InputMapper::loop() {
         // Log only non-motion mouse events to avoid flooding
         if (ev.type != EV_REL) {
           logToFile("MSE Event: type=" + std::to_string(ev.type) +
-                    " code=" + std::to_string(ev.code) +
-                    " value=" + std::to_string(ev.value));
+                        " code=" + std::to_string(ev.code) +
+                        " value=" + std::to_string(ev.value),
+                    LOG_INPUT);
         }
         processEvent(ev, false);
       }
@@ -212,8 +215,9 @@ void InputMapper::setContext(const std::string &appName,
   std::lock_guard<std::mutex> lock(contextMutex_);
   activeApp_ = appName;
   activeUrl_ = url;
-  forceLog("Context updated: App=[" + activeApp_ + "] URL=[" + activeUrl_ +
-           "]");
+  logToFile("Context updated: App=[" + activeApp_ + "] URL=[" + activeUrl_ +
+                "]",
+            LOG_WINDOW);
 }
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
@@ -231,8 +235,9 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
       tmpApp = activeApp_;
       tmpUrl = activeUrl_;
     }
-    forceLog("Ctrl+V detected. State: App=[" + tmpApp + "] URL=[" + tmpUrl +
-             "]");
+    logToFile("Ctrl+V detected. State: App=[" + tmpApp + "] URL=[" + tmpUrl +
+                  "]",
+              LOG_INPUT);
   }
 
   if (isKeyboard && ctrlDown_ && ev.type == EV_KEY && ev.code == KEY_1 &&
@@ -253,7 +258,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
          << ev.input_event_sec << "." << ev.input_event_usec << std::endl;
       sf.close();
     }
-    forceLog("Sanity check: LeftCtrl + 1 detected");
+    logToFile("Sanity check: LeftCtrl + 1 detected", LOG_CORE);
   }
 
   if (!isKeyboard && ev.type == EV_KEY && ev.code == BTN_FORWARD) {
@@ -264,30 +269,66 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
   if (isKeyboard && ev.type == EV_KEY) {
     if (ev.code == KEY_LEFTCTRL) {
       if (ev.value == 1) {
-        if (gToggleState_ == 1)
+        if (gToggleState_ == 1) {
           gToggleState_ = 2;
-        else if (gToggleState_ == 3)
+          logToFile("G-Key State: 1 -> 2 (Ctrl)", LOG_INPUT);
+        } else if (gToggleState_ == 3) {
           gToggleState_ = 4;
-        else
+          logToFile("G-Key State: 3 -> 4 (Ctrl)", LOG_INPUT);
+        } else {
           gToggleState_ = 1;
+        }
       }
     } else if (ev.code == KEY_LEFTSHIFT) {
       if (ev.value == 1) {
-        if (gToggleState_ == 2)
+        if (gToggleState_ == 2) {
           gToggleState_ = 3;
-        else if (gToggleState_ == 4)
+          logToFile("G-Key State: 2 -> 3 (Shift)", LOG_INPUT);
+        } else if (gToggleState_ == 4) {
           gToggleState_ = 5;
-        else
+          logToFile("G-Key State: 4 -> 5 (Shift)", LOG_INPUT);
+        } else {
           gToggleState_ = 1;
+        }
       }
     } else if (gToggleState_ == 5) {
       if (ev.code >= KEY_1 && ev.code <= KEY_6) {
-        logToFile("G" + std::to_string(ev.code - KEY_1 + 1) + " pressed");
+        if (ev.code == KEY_1) {
+          std::string currentApp;
+          {
+            std::lock_guard<std::mutex> lock(contextMutex_);
+            currentApp = activeApp_;
+          }
+          if (currentApp == wmClassTerminal) {
+            logToFile(
+                "Triggering G1 SIGINT macro (Ctrl+Alt+C) for Gnome Terminal",
+                LOG_AUTOMATION);
+            emit(EV_KEY, KEY_LEFTCTRL, 1);
+            emit(EV_KEY, KEY_LEFTALT, 1);
+            emit(EV_KEY, KEY_C, 1);
+            emit(EV_KEY, KEY_C, 0);
+            emit(EV_KEY, KEY_LEFTALT, 0);
+            emit(EV_KEY, KEY_LEFTCTRL, 0);
+            gToggleState_ = 1;
+            return;
+          }
+        }
+        logToFile("G" + std::to_string(ev.code - KEY_1 + 1) + " pressed",
+                  LOG_INPUT);
         gToggleState_ = 1;
         return;
       }
+      logToFile("G-Key State: Reset due to unexpected key code: " +
+                    std::to_string(ev.code),
+                LOG_INPUT);
       gToggleState_ = 1;
     } else {
+      if (gToggleState_ != 1) {
+        // Just log if we are resetting a partial state
+        logToFile("G-Key State: Reset from " + std::to_string(gToggleState_) +
+                      " due to key code: " + std::to_string(ev.code),
+                  LOG_INPUT);
+      }
       gToggleState_ = 1;
     }
   }
@@ -308,7 +349,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
         std::string freshUrl = getChromeTabUrl();
         if (!freshUrl.empty()) {
           currentUrl = freshUrl;
-          forceLog("On-demand context update: URL=[" + currentUrl + "]");
+          logToFile("On-demand context update: URL=[" + currentUrl + "]",
+                    LOG_WINDOW);
           // Update the context via mutex so subsequent logs/logic are correct
           // (Optional, but good for consistency)
           std::lock_guard<std::mutex> lock(contextMutex_);
@@ -317,7 +359,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
 
         // Relaxed URL check (case-insensitive and not necessarily at start)
         if (currentUrl.find("chatgpt.com") != std::string::npos) {
-          forceLog("Triggering ChatGPT Ctrl+V macro. URL: " + currentUrl);
+          logToFile("Triggering ChatGPT Ctrl+V macro. URL: " + currentUrl,
+                    LOG_AUTOMATION);
           emit(EV_KEY, KEY_LEFTCTRL, 1);
           emit(EV_KEY, KEY_LEFTCTRL, 0);
           emit(EV_KEY, KEY_H, 1);
@@ -334,7 +377,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
           emit(EV_KEY, KEY_LEFTCTRL, 0);
           return; // Swallowed for ChatGPT
         } else {
-          forceLog("Ctrl+V in Chrome (NOT ChatGPT). URL: [" + currentUrl + "]");
+          logToFile("Ctrl+V in Chrome (NOT ChatGPT). URL: [" + currentUrl + "]",
+                    LOG_AUTOMATION);
           // Fall through to default emit for regular tabs
         }
       } else {

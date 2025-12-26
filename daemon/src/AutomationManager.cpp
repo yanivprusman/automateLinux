@@ -24,7 +24,7 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
                 std::to_string(command[COMMAND_ARG_WINDOW_ID].get<long>()) +
                 "\n";
   std::cerr << "AutomationManager: " << logMessage << std::flush;
-  logToFile(logMessage);
+  logToFile(logMessage, LOG_WINDOW);
 
   std::string wmClass = command[COMMAND_ARG_WM_CLASS].get<string>();
   forceLog("[ACTIVE_WINDOW_CHANGED] Received wmClass: [" + wmClass + "]");

@@ -72,7 +72,7 @@ extern KVTable &kvTable;
 class DirHistory;
 extern DirHistory &dirHistory;
 extern std::ofstream g_logFile;
-extern bool shouldLog;         // Global logging control flag
+extern unsigned int shouldLog; // Global logging control bitmask
 extern bool g_keyboardEnabled; // Global keyboard enable/disable flag
 
 extern const CommandSignature COMMAND_REGISTRY[];

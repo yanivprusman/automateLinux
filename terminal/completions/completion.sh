@@ -11,4 +11,5 @@
 . $(theRealPath changeDevice.bash)
 . $(theRealPath grep.bash)
 . $(theRealPath evsieve.bash)
+. $(theRealPath tailCombinedLog.bash)
 

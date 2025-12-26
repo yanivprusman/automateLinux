@@ -141,8 +141,25 @@ emergencyRestore() {
 }
 export -f emergencyRestore
 
-tailCombinedLog(){
-    tail -f /home/yaniv/coding/automateLinux/data/combined.log | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0 }'
+tailCombinedLog() {
+    local erase=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -e|--erase)
+                erase=true
+                shift
+                ;;
+            *)
+                echo "Unknown option: $1" >&2
+                return 1
+                ;;
+        esac
+    done
+    local logfile="${AUTOMATE_LINUX_DIR}/data/combined.log"
+    if [[ "$erase" == true ]]; then
+        : > "$logfile" || return 1
+    fi
+    tail -f "$logfile" | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0 }'
 }
 export -f tailCombinedLog
 

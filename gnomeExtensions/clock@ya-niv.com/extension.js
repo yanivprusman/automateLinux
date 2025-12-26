@@ -93,10 +93,24 @@ export default class ClockExtension extends Extension {
             // Add separator
             this._menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-            // Add toggle logging menu item
-            this._toggleLoggingMenuItem = new PopupMenu.PopupMenuItem('Enable Daemon Logging');
-            this._toggleLoggingMenuItem.connect('activate', () => this._onToggleLoggingActivated());
-            this._menu.addMenuItem(this._toggleLoggingMenuItem);
+            // Add logging submenu
+            this._loggingSubMenu = new PopupMenu.PopupSubMenuMenuItem('Daemon Logging');
+            this._menu.addMenuItem(this._loggingSubMenu);
+
+            this._logItems = {};
+            const categories = [
+                { name: 'Input', mask: 1 },
+                { name: 'Window', mask: 2 },
+                { name: 'Automation', mask: 4 },
+                { name: 'Core', mask: 8 }
+            ];
+
+            categories.forEach(cat => {
+                let item = new PopupMenu.PopupSwitchMenuItem(cat.name, false);
+                item.connect('toggled', (obj, state) => this._onLogCategoryToggled(cat.mask, state));
+                this._loggingSubMenu.menu.addMenuItem(item);
+                this._logItems[cat.mask] = item;
+            });
 
             // Add toggle daemon menu item
             this._toggleDaemonMenuItem = new PopupMenu.PopupMenuItem('Checking Daemon Status...');
@@ -193,25 +207,24 @@ export default class ClockExtension extends Extension {
         this.shellExecutor.execute('/usr/bin/systemctl poweroff');
     }
 
-    async _onToggleLoggingActivated() {
+    async _onLogCategoryToggled(mask, state) {
         try {
-            // Toggle the state
-            this._daemonLoggingEnabled = !this._daemonLoggingEnabled;
+            // Update local state mask
+            if (state) {
+                this._daemonLoggingMask |= mask;
+            } else {
+                this._daemonLoggingMask &= ~mask;
+            }
 
-            // Send command to daemon
+            // Send full mask to daemon
             const response = await this.daemon.connectAndSendMessage({
                 command: 'shouldLog',
-                enable: this._daemonLoggingEnabled ? 'true' : 'false'
+                enable: this._daemonLoggingMask.toString()
             });
 
-            // Update menu item text
-            this._toggleLoggingMenuItem.label.text = this._daemonLoggingEnabled
-                ? 'Disable Daemon Logging'
-                : 'Enable Daemon Logging';
-
-            this.logger.log(`Daemon logging toggled: ${this._daemonLoggingEnabled}, response: ${response}`);
+            this.logger.log(`Daemon logging mask updated: ${this._daemonLoggingMask}, response: ${response}`);
         } catch (e) {
-            this.logger.log(`Error toggling daemon logging: ${e.message}`);
+            this.logger.log(`Error updating logging mask: ${e.message}`);
         }
     }
 
@@ -221,16 +234,27 @@ export default class ClockExtension extends Extension {
                 command: 'getShouldLog'
             });
 
-            this._daemonLoggingEnabled = response && response.trim() === 'true';
+            if (response) {
+                // If response is numeric, parse it.
+                // If it's legacy 'true'/'false', map to ALL/NONE
+                let mask = 0;
+                const trimmed = response.trim();
+                if (trimmed === 'true') mask = 15; // 1|2|4|8
+                else if (trimmed === 'false') mask = 0;
+                else {
+                    const parsed = parseInt(trimmed);
+                    if (!isNaN(parsed)) mask = parsed;
+                }
 
-            // Update menu item text
-            if (this._toggleLoggingMenuItem) {
-                this._toggleLoggingMenuItem.label.text = this._daemonLoggingEnabled
-                    ? 'Disable Daemon Logging'
-                    : 'Enable Daemon Logging';
+                this._daemonLoggingMask = mask;
+
+                // Update UI switches
+                for (const [m, item] of Object.entries(this._logItems)) {
+                    item.setToggleState((mask & parseInt(m)) !== 0);
+                }
             }
 
-            this.logger.log(`Loaded daemon logging state: ${this._daemonLoggingEnabled}`);
+            this.logger.log(`Loaded daemon logging mask: ${this._daemonLoggingMask}`);
         } catch (e) {
             this.logger.log(`Error loading daemon logging state: ${e.message}`);
         }

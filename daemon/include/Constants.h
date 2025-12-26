@@ -102,4 +102,12 @@
 #define VALUE_FOR_G5 "305"
 #define CODE_FOR_G6 "codeForG6"
 #define VALUE_FOR_G6 "306"
+// Log Categories
+#define LOG_NONE 0
+#define LOG_INPUT (1 << 0)
+#define LOG_WINDOW (1 << 1)
+#define LOG_AUTOMATION (1 << 2)
+#define LOG_CORE (1 << 3)
+#define LOG_ALL (LOG_INPUT | LOG_WINDOW | LOG_AUTOMATION | LOG_CORE)
+
 #endif // CONSTANTS_H

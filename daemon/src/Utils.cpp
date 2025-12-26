@@ -1,23 +1,24 @@
 #include "Utils.h"
+#include "Constants.h"
 #include "Globals.h" // For g_logFile
 #include <array>
 #include <cstdio>
 #include <curl/curl.h>
 #include <fstream>
 #include <iostream>
-#include <json/json.h>
+#include <jsoncpp/json/json.h>
 #include <sstream>
+#include <unistd.h>
 #include <vector>
 
-using std::cerr;
 using std::endl;
 using std::string;
 using std::vector;
 
 // Centralized logging function that respects the shouldLog flag
-void logToFile(const string &message) {
-  extern bool shouldLog;
-  if (shouldLog && g_logFile.is_open()) {
+void logToFile(const string &message, unsigned int category) {
+  extern unsigned int shouldLog; // Now unsigned int
+  if ((shouldLog & category) && g_logFile.is_open()) {
     g_logFile << message;
     g_logFile.flush();
   }

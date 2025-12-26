@@ -359,6 +359,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
                        "Failed to write to uinput: %s (type=%d, code=%d)\n",
                        strerror(-rc), ev.type, ev.code);
     write(STDERR_FILENO, errBuf, len);
-    logToFile("Failed to write to uinput: " + std::string(strerror(-rc)));
+    logToFile("Failed to write to uinput: " + std::string(strerror(-rc)),
+              LOG_INPUT);
   }
 }

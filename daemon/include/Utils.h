@@ -19,7 +19,15 @@ struct Timer {
   }
 };
 
-void logToFile(const std::string &message);
+void logToFile(
+    const std::string &message,
+    unsigned int category =
+        8); // 8 is LOG_CORE (defined in Constants.h, but we can't include it
+            // easily here without circular depends if Constants imports Utils?
+            // No. But safe to use int literal or assume inclusion)
+// Better: include Constants.h or just use int. CONSTANTS_H is safe.
+// Let's just use unsigned int and default to LOG_CORE (8) value matching
+// Constants.h, or safer: include Constants.h
 void forceLog(const std::string &message);
 bool isMultiline(const std::string &s);
 std::string toJsonSingleLine(const std::string &s);

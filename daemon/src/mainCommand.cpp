@@ -6,6 +6,7 @@
 #include "common.h"
 #include "main.h"
 #include "sendKeys.h"
+#include <algorithm>
 #include <iostream>
 #include <string>
 
@@ -54,8 +55,8 @@ const size_t COMMAND_REGISTRY_SIZE =
     sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
 
 static int clientSocket = -1;
-bool shouldLog = false;        // Global state for logging
-bool g_keyboardEnabled = true; // Global state for keyboard enable/disable
+unsigned int shouldLog = LOG_NONE; // Global state for logging
+bool g_keyboardEnabled = true;     // Global state for keyboard enable/disable
 
 static string
 formatEntriesAsText(const vector<std::pair<string, string>> &entries) {
@@ -259,14 +260,25 @@ CmdResult handleGetSocketPath(const json &) {
 
 CmdResult handleShouldLog(const json &command) {
   string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
-  shouldLog = (enableStr == COMMAND_VALUE_TRUE);
-  return CmdResult(0, string("Logging ") +
-                          (shouldLog ? "enabled" : "disabled") + "\n");
+  if (enableStr == "true") {
+    shouldLog = LOG_ALL;
+  } else if (enableStr == "false") {
+    shouldLog = LOG_NONE;
+  } else {
+    // Try parsing as integer bitmask
+    try {
+      shouldLog = std::stoul(enableStr);
+    } catch (...) {
+      return CmdResult(1, "Invalid logging value. Use 'true', 'false', or a "
+                          "bitmask integer.\n");
+    }
+  }
+  return CmdResult(0, string("Logging mask set to: ") + to_string(shouldLog) +
+                          "\n");
 }
 
 CmdResult handleGetShouldLog(const json &) {
-  return CmdResult(0, (shouldLog ? COMMAND_VALUE_TRUE : COMMAND_VALUE_FALSE) +
-                          string("\n"));
+  return CmdResult(0, to_string(shouldLog) + string("\n"));
 }
 
 CmdResult handletoggleKeyboard(const json &command) {

@@ -71,7 +71,18 @@ ordered_json parse_client_args(int argc, char *argv[], int start_index) {
     if (arg_key_str.rfind("--", 0) == 0) { // Starts with --
       string key = arg_key_str.substr(2);
       if (i + 1 < argc) {
-        j[key] = argv[i + 1];
+        string val = argv[i + 1];
+        try {
+          size_t pos;
+          long long num = stoll(val, &pos);
+          if (pos == val.length()) { // Entire string is a number
+            j[key] = num;
+          } else {
+            j[key] = val;
+          }
+        } catch (...) {
+          j[key] = val;
+        }
         i++; // Consume the value
       } else {
         cerr << "Error: Missing value for argument '" << arg_key_str << "'."

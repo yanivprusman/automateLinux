@@ -73,9 +73,12 @@ bool InputMapper::setupDevices() {
   }
 
   if (libevdev_grab(keyboardDev_, LIBEVDEV_GRAB) < 0) {
+    std::cerr << "CRITICAL: Failed to grab keyboard: " << strerror(errno)
+              << std::endl;
     logToFile("Failed to grab keyboard");
     return false;
   }
+  std::cerr << "InputMapper: Keyboard grabbed successfully" << std::endl;
 
   if (!mousePath_.empty()) {
     mouseFd_ = open(mousePath_.c_str(), O_RDONLY | O_NONBLOCK);
@@ -151,6 +154,7 @@ void InputMapper::loop() {
 
   int nfds = (mouseFd_ >= 0) ? 2 : 1;
 
+  std::cerr << "InputMapper loop starting..." << std::endl;
   while (running_) {
     int rc = poll(fds, nfds, 100); // 100ms timeout
     if (rc < 0)

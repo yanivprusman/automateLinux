@@ -74,6 +74,24 @@ int setup_socket() {
   }
 
   socketPath = SOCKET_PATH;
+
+  // Check if another daemon is already running
+  int temp_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (temp_fd >= 0) {
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, socketPath.c_str(), sizeof(addr.sun_path) - 1);
+    if (connect(temp_fd, (struct sockaddr *)&addr, sizeof(addr)) == 0) {
+      cerr << "ERROR: Another daemon is already running on " << socketPath
+           << endl;
+      close(temp_fd);
+      close(socket_fd);
+      return 1;
+    }
+    close(temp_fd);
+  }
+
   unlink(socketPath.c_str());
 
   struct sockaddr_un addr;
@@ -176,9 +194,13 @@ int initialize_daemon() {
   initializeKeyboardPath();
   initializeMousePath();
   openKeyboardDevice();
+  int rc = setup_socket();
+  if (rc != 0)
+    return rc;
+
   // Initialize keyboard to default enabled state on daemon startup
   KeyboardManager::setKeyboard(g_keyboardEnabled);
-  return setup_socket();
+  return 0;
 }
 
 void daemon_loop() {

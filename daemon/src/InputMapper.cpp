@@ -1,5 +1,6 @@
 #include "InputMapper.h"
 #include "Constants.h"
+#include "Globals.h"
 #include "Utils.h"
 #include <cstdint>
 #include <cstring>
@@ -206,9 +207,16 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
   // 0. Sanity Check Macro (LeftCtrl + 1)
   if (isKeyboard && ctrlDown_ && ev.type == EV_KEY && ev.code == KEY_1 &&
       ev.value == 1) {
-    executeCommand("notify-send \"hi\" \"2\"");
-    std::string logPath =
-        "/home/yaniv/coding/automateLinux/data/sanity_check.log";
+    std::string logPath;
+    for (const auto &f : files.files) {
+      if (f.name == "combined.log") {
+        logPath = f.fullPath();
+        break;
+      }
+    }
+    if (logPath.empty()) {
+      logPath = directories.data + "combined.log";
+    }
     std::ofstream sf(logPath, std::ios::app);
     if (sf.is_open()) {
       sf << "Sanity check: LeftCtrl + 1 pressed at event time "

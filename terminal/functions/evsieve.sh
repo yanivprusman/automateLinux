@@ -47,10 +47,10 @@ evsievep() {
 }
 export -f evsievep
 
-tailEvsieve(){
-    tail -f /home/yaniv/coding/automateLinux/data/evsieveOutput.log | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0 }'
+tailCombinedLog(){
+    tail -f /home/yaniv/coding/automateLinux/data/combined.log | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0 }'
 }
-export -f tailEvsieve
+export -f tailCombinedLog
 
 restartEvsieveOnSave(){
     local file=$(daemon send getFile --fileName corsairKeyBoardLogiMouseAll.sh)

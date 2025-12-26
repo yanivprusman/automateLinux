@@ -140,3 +140,10 @@ emergencyRestore() {
     $AUTOMATE_LINUX_DIR/utilities/emergencyRestore.sh
 }
 export -f emergencyRestore
+
+tailCombinedLog(){
+    tail -f /home/yaniv/coding/automateLinux/data/combined.log | awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0 }'
+}
+export -f tailCombinedLog
+
+

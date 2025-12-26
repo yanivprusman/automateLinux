@@ -55,8 +55,8 @@ const size_t COMMAND_REGISTRY_SIZE =
     sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
 
 static int clientSocket = -1;
-unsigned int shouldLog = LOG_NONE; // Global state for logging
-bool g_keyboardEnabled = true;     // Global state for keyboard enable/disable
+unsigned int shouldLog = LOG_ALL; // Global state for logging
+bool g_keyboardEnabled = true;    // Global state for keyboard enable/disable
 
 static string
 formatEntriesAsText(const vector<std::pair<string, string>> &entries) {

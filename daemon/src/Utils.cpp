@@ -19,8 +19,12 @@ using std::vector;
 void logToFile(const string &message, unsigned int category) {
   extern unsigned int shouldLog; // Now unsigned int
   if ((shouldLog & category) && g_logFile.is_open()) {
-    g_logFile << message;
+    g_logFile << message << endl; // Add newline for flush consistency
     g_logFile.flush();
+  }
+  // Mirror to stderr for debugging
+  if (shouldLog & category) {
+    std::cerr << "[LOG] " << message << std::endl;
   }
 }
 

@@ -371,6 +371,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
           emit(EV_KEY, KEY_BACKSPACE, 0);
           emit(EV_KEY, KEY_BACKSPACE, 1);
           emit(EV_KEY, KEY_BACKSPACE, 0);
+
           emit(EV_KEY, KEY_LEFTCTRL, 1);
           emit(EV_KEY, KEY_V, 1);
           emit(EV_KEY, KEY_V, 0);

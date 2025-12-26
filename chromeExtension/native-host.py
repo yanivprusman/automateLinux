@@ -1,65 +1,144 @@
 #!/usr/bin/env python3
 """
 Native messaging host for AutomateLinux Chrome extension.
-Receives active tab URL from Chrome and sends it to daemon via UDS.
+Threaded Bidirectional version.
 """
 
 import sys
 import json
 import struct
 import socket
+import os
+import threading
+import time
 
 SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock"
+LOG_FILE = "/tmp/chrome-native-host.log"
 
-def send_message(message):
-    """Send a message to Chrome extension."""
-    encoded_message = json.dumps(message).encode('utf-8')
-    sys.stdout.buffer.write(struct.pack('I', len(encoded_message)))
-    sys.stdout.buffer.write(encoded_message)
-    sys.stdout.buffer.flush()
-
-def read_message():
-    """Read a message from Chrome extension."""
-    raw_length = sys.stdin.buffer.read(4)
-    if not raw_length:
-        return None
-    message_length = struct.unpack('I', raw_length)[0]
-    message = sys.stdin.buffer.read(message_length).decode('utf-8')
-    return json.loads(message)
-
-def send_to_daemon(url):
-    """Send active tab URL to daemon via UDS."""
+def log(message):
+    """Log to file for debugging."""
     try:
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sock.connect(SOCKET_PATH)
-        
-        # Send command to update active tab URL
-        command = json.dumps({"command": "setActiveTabUrl", "url": url}) + "\n"
-        sock.sendall(command.encode('utf-8'))
-        
-        sock.close()
-        return True
+        with open(LOG_FILE, 'a') as f:
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}\n")
+            f.flush()
+    except:
+        pass
+
+def send_to_chrome(message):
+    """Send a message to Chrome extension through stdout."""
+    try:
+        encoded_message = json.dumps(message).encode('utf-8')
+        sys.stdout.buffer.write(struct.pack('I', len(encoded_message)))
+        sys.stdout.buffer.write(encoded_message)
+        sys.stdout.buffer.flush()
     except Exception as e:
-        # Log error but don't crash
-        sys.stderr.write(f"Error sending to daemon: {e}\n")
-        sys.stderr.flush()
-        return False
+        log(f"Error sending to chrome: {e}")
+
+def read_from_chrome():
+    """Read a message from Chrome extension through stdin."""
+    try:
+        raw_length = sys.stdin.buffer.read(4)
+        if not raw_length:
+            return None
+        message_length = struct.unpack('I', raw_length)[0]
+        message = sys.stdin.buffer.read(message_length).decode('utf-8')
+        return json.loads(message)
+    except Exception as e:
+        log(f"Error reading from chrome: {e}")
+        return None
+
+class DaemonLink:
+    def __init__(self):
+        self.sock = None
+        self.running = True
+        self.lock = threading.Lock()
+
+    def connect(self):
+        with self.lock:
+            if self.sock:
+                try:
+                    self.sock.close()
+                except:
+                    pass
+            try:
+                self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                self.sock.connect(SOCKET_PATH)
+                # Register as native host
+                register_cmd = json.dumps({"command": "registerNativeHost"}) + "\n"
+                self.sock.sendall(register_cmd.encode('utf-8'))
+                log("Connected and registered with daemon")
+                return True
+            except Exception as e:
+                log(f"Error connecting to daemon: {e}")
+                self.sock = None
+                return False
+
+    def send(self, data_dict):
+        with self.lock:
+            if not self.sock:
+                if not self.connect():
+                    return False
+            try:
+                cmd = json.dumps(data_dict) + "\n"
+                self.sock.sendall(cmd.encode('utf-8'))
+                return True
+            except Exception as e:
+                log(f"Error sending to daemon: {e}")
+                self.sock = None
+                return False
+
+    def listen_loop(self):
+        log("Daemon listener thread started")
+        buffer = ""
+        while self.running:
+            if not self.sock:
+                time.sleep(1)
+                self.connect()
+                continue
+            
+            try:
+                data = self.sock.recv(4096).decode('utf-8')
+                if not data:
+                    log("Daemon disconnected")
+                    self.sock = None
+                    continue
+                
+                buffer += data
+                while "\n" in buffer:
+                    line, buffer = buffer.split("\n", 1)
+                    if not line.strip():
+                        continue
+                    try:
+                        msg = json.loads(line)
+                        send_to_chrome(msg)
+                    except Exception as e:
+                        log(f"Error parsing daemon message: {e} | Line: {line}")
+            except Exception as e:
+                log(f"Error in daemon listen loop: {e}")
+                self.sock = None
+                time.sleep(1)
 
 def main():
-    """Main loop for native messaging host."""
+    log("Native host main starting")
+    link = DaemonLink()
+    link.connect()
+
+    # Start listener thread for daemon -> chrome
+    listener = threading.Thread(target=link.listen_loop, daemon=True)
+    listener.start()
+
+    # Main loop for chrome -> daemon
     while True:
-        message = read_message()
+        message = read_from_chrome()
         if message is None:
+            log("Chrome disconnected, exiting")
+            link.running = False
             break
         
-        # Extract URL from message
+        log(f"From Chrome: {message}")
         url = message.get('url', '')
-        
-        # Send URL to daemon
-        success = send_to_daemon(url)
-        
-        # Send acknowledgment back to extension
-        send_message({"status": "ok" if success else "error", "url": url})
+        if url:
+            link.send({"command": "setActiveTabUrl", "url": url})
 
 if __name__ == '__main__':
     main()

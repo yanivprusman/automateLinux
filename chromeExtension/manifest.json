@@ -5,11 +5,23 @@
     "description": "Tracks the active Chrome tab URL for AutomateLinux daemon",
     "permissions": [
         "tabs",
-        "nativeMessaging"
+        "nativeMessaging",
+        "scripting"
     ],
     "background": {
         "service_worker": "background.js"
     },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://chatgpt.com/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
     "host_permissions": [
         "<all_urls>"
     ]

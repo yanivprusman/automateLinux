@@ -55,13 +55,8 @@ std::string getChromeTabUrl(const std::string &preferredTitle) {
   Json::Value root;
   Json::Reader reader;
   if (!reader.parse(response, root)) {
-    logToFile("[getChromeTabUrl] Failed to parse Chrome DevTools response",
-              LOG_CORE);
     return "";
   }
-
-  logToFile("[getChromeTabUrl] preferredTitle=[" + preferredTitle + "]",
-            LOG_CORE);
 
   std::string fallbackUrl = "";
   std::string lastRealUrl = ""; // Last non-chrome:// URL
@@ -72,11 +67,6 @@ std::string getChromeTabUrl(const std::string &preferredTitle) {
     std::string url = tab["url"].asString();
     std::string title = tab["title"].asString();
 
-    logToFile("[getChromeTabUrl] Tab #" + std::to_string(tabIndex) +
-                  ": type=[" + type + "] url=[" + url + "] title=[" + title +
-                  "]",
-              LOG_CORE);
-
     // Skip over extension pages and devtools
     if (type == "page" &&
         url.find("chrome-extension://") == std::string::npos &&
@@ -85,15 +75,11 @@ std::string getChromeTabUrl(const std::string &preferredTitle) {
       // Store the first valid page as ultimate fallback
       if (fallbackUrl.empty()) {
         fallbackUrl = url;
-        logToFile("[getChromeTabUrl] Set fallback URL: " + fallbackUrl,
-                  LOG_CORE);
       }
 
       // Track last non-chrome:// URL (more likely to be the active tab)
       if (url.find("chrome://") == std::string::npos) {
         lastRealUrl = url;
-        logToFile("[getChromeTabUrl] Updated lastRealUrl: " + lastRealUrl,
-                  LOG_CORE);
       }
 
       // If we have a preferred title, look for a substring match
@@ -101,14 +87,8 @@ std::string getChromeTabUrl(const std::string &preferredTitle) {
         bool titleInWindow = preferredTitle.find(title) != std::string::npos;
         bool windowInTitle = title.find(preferredTitle) != std::string::npos;
 
-        logToFile("[getChromeTabUrl] Matching: titleInWindow=" +
-                      std::to_string(titleInWindow) +
-                      " windowInTitle=" + std::to_string(windowInTitle),
-                  LOG_CORE);
-
         if (titleInWindow || windowInTitle) {
-          logToFile("[getChromeTabUrl] TITLE MATCH FOUND! Returning URL: " +
-                        url,
+          logToFile("[getChromeTabUrl] Returning title match: " + url,
                     LOG_CORE);
           return url;
         }

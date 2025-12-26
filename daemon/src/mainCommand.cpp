@@ -50,6 +50,8 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      {COMMAND_ARG_WINDOW_TITLE, COMMAND_ARG_WM_CLASS,
                       COMMAND_ARG_WM_INSTANCE, COMMAND_ARG_WINDOW_ID}),
     CommandSignature(COMMAND_SET_ACTIVE_TAB_URL, {COMMAND_ARG_URL}),
+    CommandSignature(COMMAND_REGISTER_NATIVE_HOST, {}),
+    CommandSignature(COMMAND_FOCUS_CHATGPT, {}),
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -62,11 +64,29 @@ bool g_keyboardEnabled = true;    // Global state for keyboard enable/disable
 // Global state for active tab URL (set by Chrome extension)
 static std::mutex g_activeTabUrlMutex;
 static std::string g_activeTabUrl = "";
+static int g_nativeHostSocket = -1;
+static std::mutex g_nativeHostSocketMutex;
 
 // Function to get active tab URL (called from Utils.cpp)
 std::string getActiveTabUrlFromExtension() {
   std::lock_guard<std::mutex> lock(g_activeTabUrlMutex);
   return g_activeTabUrl;
+}
+
+// Function to trigger ChatGPT focus in Chrome (called from InputMapper.cpp)
+void triggerChromeChatGPTFocus() {
+  std::lock_guard<std::mutex> lock(g_nativeHostSocketMutex);
+  if (g_nativeHostSocket != -1) {
+    std::string msg =
+        std::string(R"({"action":"focusChatGPT"})") + mustEndWithNewLine;
+    write(g_nativeHostSocket, msg.c_str(), msg.length());
+    logToFile("[Chrome Extension] Sent focus request to native host",
+              LOG_AUTOMATION);
+  } else {
+    logToFile(
+        "[Chrome Extension] Cannot focus ChatGPT: native host not registered",
+        LOG_AUTOMATION);
+  }
 }
 
 static string
@@ -339,8 +359,22 @@ CmdResult handleSetActiveTabUrl(const json &command) {
     std::lock_guard<std::mutex> lock(g_activeTabUrlMutex);
     g_activeTabUrl = url;
   }
-  logToFile("[setActiveTabUrl] Active tab URL set to: " + url, LOG_CORE);
+  logToFile("[Chrome Extension] Active tab changed to: " + url, LOG_AUTOMATION);
   return CmdResult(0, "Active tab URL updated\n");
+}
+
+CmdResult handleRegisterNativeHost(const json &) {
+  {
+    std::lock_guard<std::mutex> lock(g_nativeHostSocketMutex);
+    g_nativeHostSocket = clientSocket;
+  }
+  logToFile("[Chrome Extension] Native messaging host registered", LOG_CORE);
+  return CmdResult(0, "Native host registered\n");
+}
+
+CmdResult handleFocusChatGPT(const json &) {
+  triggerChromeChatGPTFocus();
+  return CmdResult(0, "Focus request sent\n");
 }
 
 CmdResult handleSetKeyboard(const json &command) {
@@ -394,6 +428,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_QUIT, handleQuit},
     {COMMAND_ACTIVE_WINDOW_CHANGED, handleActiveWindowChanged},
     {COMMAND_SET_ACTIVE_TAB_URL, handleSetActiveTabUrl},
+    {COMMAND_REGISTER_NATIVE_HOST, handleRegisterNativeHost},
+    {COMMAND_FOCUS_CHATGPT, handleFocusChatGPT},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =

@@ -296,7 +296,9 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
       logToFile("G ", LOG_CORE);
       if (ev.code >= KEY_1 && ev.code <= KEY_6) {
         if (ev.code == KEY_1) {
-          logToFile("G1 pressed. Current gToggleState: " + std::to_string(gToggleState_), LOG_CORE);
+          logToFile("G1 pressed. Current gToggleState: " +
+                        std::to_string(gToggleState_),
+                    LOG_CORE);
           std::string currentApp;
           {
             std::lock_guard<std::mutex> lock(contextMutex_);
@@ -362,18 +364,16 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
 
         // Relaxed URL check (case-insensitive and not necessarily at start)
         if (currentUrl.find("chatgpt.com") != std::string::npos) {
-          logToFile("Triggering ChatGPT Ctrl+V macro. URL: " + currentUrl,
+          logToFile("Triggering ChatGPT Ctrl+V macro (direct focus). URL: " +
+                        currentUrl,
                     LOG_AUTOMATION);
-          emit(EV_KEY, KEY_LEFTCTRL, 1);
-          emit(EV_KEY, KEY_LEFTCTRL, 0);
-          emit(EV_KEY, KEY_H, 1);
-          emit(EV_KEY, KEY_H, 0);
-          emit(EV_KEY, KEY_I, 1);
-          emit(EV_KEY, KEY_I, 0);
-          emit(EV_KEY, KEY_BACKSPACE, 1);
-          emit(EV_KEY, KEY_BACKSPACE, 0);
-          emit(EV_KEY, KEY_BACKSPACE, 1);
-          emit(EV_KEY, KEY_BACKSPACE, 0);
+
+          // Request direct focus via Chrome extension
+          extern void triggerChromeChatGPTFocus();
+          triggerChromeChatGPTFocus();
+
+          // Small delay to allow focus to complete
+          usleep(50000); // 50ms
 
           emit(EV_KEY, KEY_LEFTCTRL, 1);
           emit(EV_KEY, KEY_V, 1);

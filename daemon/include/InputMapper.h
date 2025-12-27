@@ -31,14 +31,18 @@ enum class GKey { G1 = 1, G2 = 2, G3 = 3, G4 = 4, G5 = 5, G6 = 6 };
 struct ComboState {
   size_t nextKeyIndex =
       0; // Next key position to match (0 = start, size = complete)
-  std::vector<std::pair<uint16_t, uint8_t>> suppressedKeys; // (keyCode, state) pairs held back for this combo
+  std::vector<std::pair<uint16_t, uint8_t>>
+      suppressedKeys; // (keyCode, state) pairs held back for this combo
 };
 
 // Represents a keyboard/mouse trigger condition
-// keyCodes is a sequence of (keyCode, state) pairs where state: 1=press, 0=release
+// keyCodes is a sequence of (keyCode, state) pairs where state: 1=press,
+// 0=release
 struct KeyTrigger {
-  std::vector<std::pair<uint16_t, uint8_t>> keyCodes; // Sequence of (key, state: 1=press, 0=release)
-  bool suppressUnmatched = false;  // If true, withhold keys until combo matches or breaks
+  std::vector<std::pair<uint16_t, uint8_t>>
+      keyCodes; // Sequence of (key, state: 1=press, 0=release)
+  bool suppressUnmatched =
+      false; // If true, withhold keys until combo matches or breaks
 };
 
 // Represents an action to execute when a trigger is matched
@@ -114,14 +118,14 @@ private:
   std::map<uint16_t, std::set<size_t>>
       keySuppressedBy_; // keyCode → {combo indices suppressing it}
 
-  // Key event queue for delayed emission when combos break (~1ms delay)
-  struct PendingKeyEvent {
-    uint16_t keyCode;
-    uint8_t state;  // 1=press, 0=release
-    std::chrono::steady_clock::time_point emitTime;
+  // Key event queue for delayed emission when combos break
+  struct PendingEvent {
+    uint16_t type;
+    uint16_t code;
+    int32_t value;
   };
-  std::vector<PendingKeyEvent> pendingKeyEvents_;
-  std::mutex pendingKeyEventsMutex_;
+  std::vector<PendingEvent> pendingEvents_;
+  std::mutex pendingEventsMutex_;
 };
 
 #endif // INPUT_MAPPER_H

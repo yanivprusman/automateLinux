@@ -328,7 +328,9 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
 
     auto appIt = appMacros_.find(currentApp);
     if (appIt != appMacros_.end()) {
-      bool anyComboSuppressed = false;
+      bool matchedAny = false;
+      bool currentlySuppressing = false;
+      bool completedSuppressing = false;
 
       // Test all combos for this app
       for (size_t comboIdx = 0; comboIdx < appIt->second.size(); ++comboIdx) {
@@ -336,32 +338,21 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
         if (action.trigger.keyCodes.empty())
           continue;
 
-        // Get or create combo progress for this combo
         auto &comboMap = comboProgress_[currentApp];
         ComboState &state = comboMap[comboIdx];
 
-        // Check if this is the next expected key
         if (state.nextKeyIndex < action.trigger.keyCodes.size()) {
-          const auto &expectedKeyState = action.trigger.keyCodes[state.nextKeyIndex];
-          uint16_t expectedKey = expectedKeyState.first;
-          uint8_t expectedState = expectedKeyState.second; // 1=press, 0=release
+          const auto &expectedKeyState =
+              action.trigger.keyCodes[state.nextKeyIndex];
 
-          // Check both code AND state
-          if (expectedKey == ev.code && expectedState == ev.value) {
+          if (expectedKeyState.first == ev.code &&
+              expectedKeyState.second == ev.value) {
             // Match! Advance state
             state.nextKeyIndex++;
+            matchedAny = true;
 
-            // Only suppress if suppressUnmatched is true OR it's a non-modifier key
-            bool isModifier =
-                (ev.code == KEY_LEFTCTRL || ev.code == KEY_RIGHTCTRL ||
-                 ev.code == KEY_LEFTSHIFT || ev.code == KEY_RIGHTSHIFT ||
-                 ev.code == KEY_LEFTALT || ev.code == KEY_RIGHTALT ||
-                 ev.code == KEY_LEFTMETA || ev.code == KEY_RIGHTMETA);
-
-            if (action.trigger.suppressUnmatched && !isModifier) {
-              state.suppressedKeys.push_back(expectedKeyState);
-              keySuppressedBy_[ev.code].insert(comboIdx);
-              anyComboSuppressed = true;
+            if (action.trigger.suppressUnmatched) {
+              state.suppressedKeys.push_back({ev.code, (uint8_t)ev.value});
             }
 
             logToFile("Combo " + std::to_string(comboIdx) +
@@ -372,87 +363,82 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             // Check if combo is complete
             if (state.nextKeyIndex == action.trigger.keyCodes.size()) {
               logToFile("COMBO COMPLETE: " + action.logMessage, LOG_AUTOMATION);
-              executeKeyAction(action);
 
-              // Clear suppressed keys and reset combo
-              for (const auto &suppKey : state.suppressedKeys) {
-                keySuppressedBy_[suppKey.first].erase(comboIdx);
-                if (keySuppressedBy_[suppKey.first].empty()) {
-                  keySuppressedBy_.erase(suppKey.first);
+              if (action.trigger.suppressUnmatched) {
+                completedSuppressing = true;
+                // Consume trigger from queue (the keys that match the combo)
+                std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+                if (state.suppressedKeys.size() > 1) {
+                  size_t toRemove = state.suppressedKeys.size() - 1;
+                  if (pendingEvents_.size() >= toRemove) {
+                    pendingEvents_.erase(pendingEvents_.begin(),
+                                         pendingEvents_.begin() + toRemove);
+                  }
                 }
+                state.suppressedKeys.clear();
               }
-              state.suppressedKeys.clear();
+
+              executeKeyAction(action);
               state.nextKeyIndex = 0;
             }
-          } else {
-            // Doesn't match - break this combo
-            if (state.nextKeyIndex > 0) {
-              logToFile("Combo " + std::to_string(comboIdx) +
-                            " broken at step " +
-                            std::to_string(state.nextKeyIndex),
-                        LOG_INPUT);
-            }
-
-            // Release suppressed keys if not needed by other combos
-            for (const auto &suppKey : state.suppressedKeys) {
-              keySuppressedBy_[suppKey.first].erase(comboIdx);
-              if (keySuppressedBy_[suppKey.first].empty()) {
-                keySuppressedBy_.erase(suppKey.first);
-              }
-            }
-            state.suppressedKeys.clear();
-            state.nextKeyIndex = 0;
-          }
-        }
-      }
-
-      // If a combo suppressed this key, don't emit it
-      if (anyComboSuppressed) {
-        return;
-      }
-    }
-  }
-
-  // On key release: break combos if a key they're tracking is released
-  if (!skipMacros && ev.type == EV_KEY && ev.value == 0) { // Key release
-    AppType currentApp;
-    {
-      std::lock_guard<std::mutex> lock(contextMutex_);
-      currentApp = activeApp_;
-    }
-
-    auto appIt = appMacros_.find(currentApp);
-    if (appIt != appMacros_.end()) {
-      auto &comboMap = comboProgress_[currentApp];
-
-      // Find combos that are suppressing this key
-      auto suppIt = keySuppressedBy_.find(ev.code);
-      if (suppIt != keySuppressedBy_.end()) {
-        for (size_t comboIdx : suppIt->second) {
-          if (comboIdx < appIt->second.size()) {
-            ComboState &state = comboMap[comboIdx];
-
-            logToFile("Combo " + std::to_string(comboIdx) +
-                          " broken (key released)",
+          } else if (state.nextKeyIndex > 0) {
+            // Broke an existing combo
+            logToFile("Combo " + std::to_string(comboIdx) + " broken at step " +
+                          std::to_string(state.nextKeyIndex),
                       LOG_INPUT);
-
-            // Release all suppressed keys from this combo
-            for (const auto &suppKey : state.suppressedKeys) {
-              keySuppressedBy_[suppKey.first].erase(comboIdx);
-              if (keySuppressedBy_[suppKey.first].empty()) {
-                keySuppressedBy_.erase(suppKey.first);
-              }
-            }
-            state.suppressedKeys.clear();
             state.nextKeyIndex = 0;
+            state.suppressedKeys.clear();
           }
         }
-        keySuppressedBy_.erase(suppIt);
       }
 
-      // If this key was suppressed, don't emit it
-      if (suppIt != keySuppressedBy_.end()) {
+      // Check if ANY combo is STILL in progress and suppressing
+      for (const auto &pair : comboProgress_[currentApp]) {
+        const KeyAction &action = appIt->second[pair.first];
+        if (pair.second.nextKeyIndex > 0 && action.trigger.suppressUnmatched) {
+          currentlySuppressing = true;
+          break;
+        }
+      }
+
+      if (completedSuppressing) {
+        // Current event finished a suppressing combo. Consume it.
+        // It is NOT in pendingEvents_ yet.
+        if (!currentlySuppressing) {
+          // No other matching combos are suppressing. Replay the REST of the
+          // queue.
+          std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+          if (!pendingEvents_.empty()) {
+            logToFile("Flushing " + std::to_string(pendingEvents_.size()) +
+                          " pending events (after complete)",
+                      LOG_INPUT);
+            for (const auto &pe : pendingEvents_) {
+              emit(pe.type, pe.code, pe.value);
+            }
+            pendingEvents_.clear();
+          }
+        }
+        return; // Event consumed
+      }
+
+      if (currentlySuppressing) {
+        // Queue this event
+        std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+        pendingEvents_.push_back(
+            {(uint16_t)ev.type, (uint16_t)ev.code, (int32_t)ev.value});
         return;
+      } else {
+        // Not suppressing anymore. If we have pending events, flush them.
+        std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+        if (!pendingEvents_.empty()) {
+          logToFile("Flushing " + std::to_string(pendingEvents_.size()) +
+                        " pending events (after mismatch)",
+                    LOG_INPUT);
+          for (const auto &pe : pendingEvents_) {
+            emit(pe.type, pe.code, pe.value);
+          }
+          pendingEvents_.clear();
+        }
       }
     }
   }

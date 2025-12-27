@@ -304,20 +304,29 @@ CmdResult handleGetSocketPath(const json &) {
 }
 
 CmdResult handleShouldLog(const json &command) {
-  string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
-  if (enableStr == "true") {
-    shouldLog = LOG_ALL;
-  } else if (enableStr == "false") {
-    shouldLog = LOG_NONE;
-  } else {
-    // Try parsing as integer bitmask
-    try {
-      shouldLog = std::stoul(enableStr);
-    } catch (...) {
-      return CmdResult(1, "Invalid logging value. Use 'true', 'false', or a "
-                          "bitmask integer.\n");
+  unsigned int newLogMask = shouldLog;
+  auto val = command[COMMAND_ARG_ENABLE];
+
+  if (val.is_string()) {
+    string enableStr = val.get<string>();
+    if (enableStr == "true") {
+      newLogMask = LOG_ALL;
+    } else if (enableStr == "false") {
+      newLogMask = LOG_NONE;
+    } else {
+      try {
+        newLogMask = std::stoul(enableStr);
+      } catch (...) {
+        return CmdResult(1, "Invalid logging value string.\n");
+      }
     }
+  } else if (val.is_number()) {
+    newLogMask = val.get<unsigned int>();
+  } else {
+    return CmdResult(1, "Invalid logging value type.\n");
   }
+
+  shouldLog = newLogMask;
   kvTable.upsert("shouldLogState", to_string(shouldLog));
   return CmdResult(0, string("Logging mask set to: ") + to_string(shouldLog) +
                           "\n");
@@ -330,8 +339,7 @@ CmdResult handleGetShouldLog(const json &) {
 CmdResult handletoggleKeyboard(const json &command) {
   string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
   g_keyboardEnabled = (enableStr == COMMAND_VALUE_TRUE);
-  return CmdResult(0, string("Keyboard enabled: ") +
-                          (g_keyboardEnabled ? "yes" : "no") + "\n");
+  return KeyboardManager::setKeyboard(g_keyboardEnabled);
 }
 
 CmdResult handleGetDir(const json &command) {
@@ -375,6 +383,7 @@ CmdResult handleSetActiveTabUrl(const json &command) {
     g_activeTabUrl = url;
   }
   logToFile("[Chrome Extension] Active tab changed to: " + url, LOG_CORE);
+  KeyboardManager::setContext(wmClassChrome, url, "");
   return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
 
@@ -391,6 +400,11 @@ CmdResult handleRegisterNativeHost(const json &) {
 CmdResult handleFocusChatGPT(const json &) {
   triggerChromeChatGPTFocus();
   return CmdResult(0, "Focus request sent\n");
+}
+
+CmdResult handleFocusAck(const json &) {
+  KeyboardManager::onFocusAck();
+  return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
 
 CmdResult handleSetKeyboard(const json &command) {
@@ -446,6 +460,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_SET_ACTIVE_TAB_URL, handleSetActiveTabUrl},
     {COMMAND_REGISTER_NATIVE_HOST, handleRegisterNativeHost},
     {COMMAND_FOCUS_CHATGPT, handleFocusChatGPT},
+    {COMMAND_FOCUS_ACK, handleFocusAck},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =

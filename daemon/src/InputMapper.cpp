@@ -2,8 +2,7 @@
 #include "Constants.h"
 #include "Globals.h"
 #include "Utils.h"
-#include <cstdint>
-#include <cstring>
+#include <atomic>
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
@@ -170,19 +169,37 @@ void InputMapper::loop() {
 
     if (fds[0].revents & POLLIN) {
       struct input_event ev;
-      while (libevdev_next_event(keyboardDev_, LIBEVDEV_READ_FLAG_NORMAL,
-                                 &ev) == LIBEVDEV_READ_STATUS_SUCCESS) {
-        // High-frequency logging disabled for stability
-        // logToFile("KBD Event: type=" + std::to_string(ev.type) + ...
+      int rc_event;
+      while ((rc_event = libevdev_next_event(keyboardDev_,
+                                             LIBEVDEV_READ_FLAG_NORMAL, &ev)) ==
+                 LIBEVDEV_READ_STATUS_SUCCESS ||
+             rc_event == LIBEVDEV_READ_STATUS_SYNC) {
+        if (rc_event == LIBEVDEV_READ_STATUS_SYNC) {
+          logToFile("[InputMapper] Keyboard Sync Status!", LOG_CORE);
+          while (libevdev_next_event(keyboardDev_, LIBEVDEV_READ_FLAG_SYNC,
+                                     &ev) == LIBEVDEV_READ_STATUS_SYNC) {
+            // Process sync events but don't trigger macros on them to avoid
+            // double triggers
+          }
+          continue;
+        }
         processEvent(ev, true);
       }
     }
 
     if (mouseFd_ >= 0 && (fds[1].revents & POLLIN)) {
       struct input_event ev;
-      while (libevdev_next_event(mouseDev_, LIBEVDEV_READ_FLAG_NORMAL, &ev) ==
-             LIBEVDEV_READ_STATUS_SUCCESS) {
-        // Mouse logging disabled
+      int rc_event;
+      while ((rc_event = libevdev_next_event(mouseDev_,
+                                             LIBEVDEV_READ_FLAG_NORMAL, &ev)) ==
+                 LIBEVDEV_READ_STATUS_SUCCESS ||
+             rc_event == LIBEVDEV_READ_STATUS_SYNC) {
+        if (rc_event == LIBEVDEV_READ_STATUS_SYNC) {
+          while (libevdev_next_event(mouseDev_, LIBEVDEV_READ_FLAG_SYNC, &ev) ==
+                 LIBEVDEV_READ_STATUS_SYNC) {
+          }
+          continue;
+        }
         processEvent(ev, false);
       }
     }
@@ -190,16 +207,35 @@ void InputMapper::loop() {
 }
 
 void InputMapper::emit(uint16_t type, uint16_t code, int32_t value) {
+  if (!uinputDev_)
+    return;
+  std::lock_guard<std::mutex> lock(uinputMutex_);
   libevdev_uinput_write_event(uinputDev_, type, code, value);
   libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
 }
 
 void InputMapper::emitSequence(
     const std::vector<std::pair<uint16_t, int32_t>> &sequence) {
+  if (!uinputDev_)
+    return;
+  std::lock_guard<std::mutex> lock(uinputMutex_);
   for (const auto &p : sequence) {
     libevdev_uinput_write_event(uinputDev_, EV_KEY, p.first, p.second);
   }
   libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
+}
+
+void InputMapper::onFocusAck() {
+  if (withholdingV_) {
+    logToFile("[InputMapper] Focus ACK received. Emitting withheld paste.",
+              LOG_AUTOMATION);
+    emitSequence(
+        {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}});
+    withholdingV_ = false;
+  } else {
+    logToFile("[InputMapper] Focus ACK received but no paste was withheld.",
+              LOG_AUTOMATION);
+  }
 }
 
 void InputMapper::setContext(const std::string &appName, const std::string &url,
@@ -214,6 +250,34 @@ void InputMapper::setContext(const std::string &appName, const std::string &url,
 }
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
+  // Check for withholding timeout
+  if (withholdingV_) {
+    static auto withholdingStart = std::chrono::steady_clock::now();
+    // Only set withholdingStart when we FIRST enter this state
+    static bool wasWithholding = false;
+    if (!wasWithholding) {
+      withholdingStart = std::chrono::steady_clock::now();
+      wasWithholding = true;
+    }
+
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(now -
+                                                              withholdingStart)
+            .count() > 500) {
+      logToFile("[InputMapper] Withholding Ctrl+V timed out. Falling back to "
+                "immediate paste.",
+                LOG_AUTOMATION);
+      emitSequence(
+          {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}});
+      withholdingV_ = false;
+      wasWithholding = false;
+    }
+
+    if (!withholdingV_) {
+      wasWithholding = false;
+    }
+  }
+
   // Update LeftCtrl state for macros (tracked outside Chrome block)
   if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_LEFTCTRL) {
     ctrlDown_ = (ev.value != 0);
@@ -234,7 +298,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
       tmpUrl = activeUrl_;
     }
     logToFile("Ctrl+V detected. State: App=[" + tmpApp + "] URL=[" + tmpUrl +
-                  "]",
+                  "] withholdV=" + std::to_string(withholdingV_),
               LOG_INPUT);
   }
 
@@ -269,10 +333,10 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
       if (ev.value == 1) {
         if (gToggleState_ == 1) {
           gToggleState_ = 2;
-          logToFile("G-Key State: 1 -> 2 (Ctrl)", LOG_INPUT);
+          logToFile("G-Key State: 1 -> 2 (Ctrl Down)", LOG_INPUT);
         } else if (gToggleState_ == 3) {
           gToggleState_ = 4;
-          logToFile("G-Key State: 3 -> 4 (Ctrl)", LOG_INPUT);
+          logToFile("G-Key State: 3 -> 4 (Ctrl Down)", LOG_INPUT);
         } else {
           gToggleState_ = 1;
         }
@@ -281,10 +345,10 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
       if (ev.value == 1) {
         if (gToggleState_ == 2) {
           gToggleState_ = 3;
-          logToFile("G-Key State: 2 -> 3 (Shift)", LOG_INPUT);
+          logToFile("G-Key State: 2 -> 3 (Shift Down)", LOG_INPUT);
         } else if (gToggleState_ == 4) {
           gToggleState_ = 5;
-          logToFile("G-Key State: 4 -> 5 (Shift)", LOG_INPUT);
+          logToFile("G-Key State: 4 -> 5 (Shift Down)", LOG_INPUT);
         } else {
           gToggleState_ = 1;
         }
@@ -367,16 +431,11 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
 
           // Request direct focus via Chrome extension
           extern void triggerChromeChatGPTFocus();
+          logToFile("[InputMapper] Withholding Ctrl+V until focus ACK.",
+                    LOG_AUTOMATION);
+          withholdingV_ = true;
           triggerChromeChatGPTFocus();
-
-          // Minimal delay to ensure focus wins the race against paste
-          usleep(10000); //  10ms
-
-          emit(EV_KEY, KEY_LEFTCTRL, 1);
-          emit(EV_KEY, KEY_V, 1);
-          emit(EV_KEY, KEY_V, 0);
-          emit(EV_KEY, KEY_LEFTCTRL, 0);
-          return; // Swallowed for ChatGPT
+          return; // Do NOT emit anything till focusAck
         } else {
           logToFile("Ctrl+V in Chrome (NOT ChatGPT). URL: [" + currentUrl + "]",
                     LOG_AUTOMATION);
@@ -397,6 +456,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
               LOG_INPUT);
   }
 
+  std::lock_guard<std::mutex> lock(uinputMutex_);
   int rc = libevdev_uinput_write_event(uinputDev_, ev.type, ev.code, ev.value);
   if (rc < 0) {
     char errBuf[128];

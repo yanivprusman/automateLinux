@@ -2,6 +2,7 @@
 // Uses HTTP bridge instead of native messaging to bypass Chrome sandbox issues
 const BRIDGE_URL = "http://localhost:9223/active-tab";
 const EVENTS_URL = "http://localhost:9223/events";
+const FOCUS_ACK_URL = "http://localhost:9223/focus-ack";
 
 // Establish SSE connection for receiving commands
 function connectToEvents() {
@@ -37,16 +38,33 @@ async function focusChatGPTTextarea() {
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
         if (activeTab && activeTab.url && activeTab.url.includes("chatgpt.com")) {
-            await chrome.scripting.executeScript({
+            const results = await chrome.scripting.executeScript({
                 target: { tabId: activeTab.id },
                 func: () => {
-                    const textarea = document.querySelector('#prompt-textarea');
+                    const textarea = document.querySelector('#prompt-textarea') || document.querySelector('div[contenteditable="true"]');
                     if (textarea) {
                         textarea.focus();
                         console.log("[AutomateLinux] Focused ChatGPT textarea");
+                        return true;
                     }
+                    return false;
                 }
             });
+
+            // If we successfully focused, send an acknowledgment back immediately
+            if (results && results[0] && results[0].result) {
+                console.log("[AutomateLinux] Focus successful/received, result:", results[0].result);
+                console.log("[AutomateLinux] Sending ack to:", FOCUS_ACK_URL);
+                fetch(FOCUS_ACK_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    cache: 'no-cache'
+                }).then(r => {
+                    console.log("[AutomateLinux] Ack response:", r.status);
+                }).catch(err => {
+                    console.error("[AutomateLinux] Ack fetch failed:", err);
+                });
+            }
         }
     } catch (error) {
         console.error("[AutomateLinux] Error focusing ChatGPT:", error);

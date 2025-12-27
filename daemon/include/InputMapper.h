@@ -2,6 +2,7 @@
 #define INPUT_MAPPER_H
 
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <libevdev/libevdev-uinput.h>
 #include <libevdev/libevdev.h>
@@ -16,10 +17,11 @@ public:
   ~InputMapper();
 
   bool start(const std::string &keyboardPath, const std::string &mousePath);
+  void onFocusAck();
   void stop();
-  bool isRunning() const { return running_; }
   void setContext(const std::string &appName, const std::string &url = "",
                   const std::string &title = "");
+  bool isRunning() const { return running_; }
 
 private:
   void loop();
@@ -41,6 +43,10 @@ private:
   std::atomic<bool> running_{false};
   bool ctrlDown_ = false; // Track LeftCtrl state for macros
 
+  // Thread safety and async flow
+  std::mutex uinputMutex_;
+  std::atomic<bool> withholdingV_{false};
+
   // --- State Machine for evsieve logic ---
 
   // G-key sequence detection (corresponds to GToggle in evsieve script)
@@ -53,9 +59,6 @@ private:
   std::string activeUrl_;
   std::string activeTitle_;
   std::mutex contextMutex_;
-
-  // Helper for Chrome Ctrl+V macro
-  bool withholdingV_ = false;
 };
 
 #endif // INPUT_MAPPER_H

@@ -13,6 +13,7 @@ public:
   static void setContext(const std::string &appName,
                          const std::string &url = "",
                          const std::string &title = "");
+  static void onFocusAck();
 
 private:
   static const std::vector<std::string> KNOWN_KEYBOARDS;

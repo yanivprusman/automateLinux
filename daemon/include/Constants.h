@@ -70,6 +70,7 @@
 #define COMMAND_ACTIVE_WINDOW_CHANGED "activeWindowChanged"
 #define COMMAND_SET_ACTIVE_TAB_URL "setActiveTabUrl"
 #define COMMAND_REGISTER_NATIVE_HOST "registerNativeHost"
+#define COMMAND_FOCUS_ACK "focusAck"
 #define COMMAND_FOCUS_CHATGPT "focusChatGPT"
 #define COMMAND_ARG_WINDOW_TITLE "windowTitle"
 #define COMMAND_ARG_WM_CLASS "wmClass"

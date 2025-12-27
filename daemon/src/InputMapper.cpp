@@ -358,6 +358,34 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             gToggleState_ = 1;
             return;
           }
+        } else if (ev.code == KEY_2) {
+          AppType currentApp;
+          {
+            std::lock_guard<std::mutex> lock(contextMutex_);
+            currentApp = activeApp_;
+          }
+          if (currentApp == AppType::CODE) {
+            logToFile("Triggering G2 End macro for VS Code", LOG_AUTOMATION);
+            emit(EV_KEY, KEY_END, 1);
+            emit(EV_KEY, KEY_END, 0);
+            gToggleState_ = 1;
+            return;
+          }
+        } else if (ev.code == KEY_6) {
+          AppType currentApp;
+          {
+            std::lock_guard<std::mutex> lock(contextMutex_);
+            currentApp = activeApp_;
+          }
+          if (currentApp == AppType::CODE) {
+            logToFile("Triggering G6 Ctrl+C macro for VS Code", LOG_AUTOMATION);
+            emit(EV_KEY, KEY_LEFTCTRL, 1);
+            emit(EV_KEY, KEY_C, 1);
+            emit(EV_KEY, KEY_C, 0);
+            emit(EV_KEY, KEY_LEFTCTRL, 0);
+            gToggleState_ = 1;
+            return;
+          }
         }
         logToFile("G" + std::to_string(ev.code - KEY_1 + 1) + " pressed",
                   LOG_INPUT);

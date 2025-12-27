@@ -303,10 +303,35 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     logToFile("Sanity check: LeftCtrl + 1 detected", LOG_CORE);
   }
 
-  if (!skipMacros && !isKeyboard && ev.type == EV_KEY &&
-      ev.code == BTN_FORWARD) {
-    emit(EV_KEY, KEY_ENTER, ev.value);
-    return;
+  // Check for mouse button combos (e.g., BTN_FORWARD, Ctrl+LeftClick)
+  if (!skipMacros && !isKeyboard && ev.type == EV_KEY) {
+    AppType currentApp;
+    {
+      std::lock_guard<std::mutex> lock(contextMutex_);
+      currentApp = activeApp_;
+    }
+
+    // Look for matching mouse button macro
+    auto it = appMacros_.find(currentApp);
+    if (it != appMacros_.end()) {
+      for (const auto &action : it->second) {
+        // Check for simple button press (no modifiers)
+        if (action.trigger.keyCode == ev.code && action.trigger.modifiers == 0) {
+          executeKeyAction(action);
+          return;  // Consume the mouse button
+        }
+        // Check for button + modifier combo
+        if (action.trigger.keyCode == ev.code &&
+            action.trigger.modifiers != 0 && ev.value == 1) {
+          // Check if modifier is currently held down
+          if ((action.trigger.modifiers == KEY_LEFTCTRL && ctrlDown_) ||
+              (action.trigger.modifiers == KEY_LEFTSHIFT && ev.code == BTN_LEFT)) {
+            executeKeyAction(action);
+            return;  // Consume the mouse button
+          }
+        }
+      }
+    }
   }
 
   // Check for mouse + modifier combos (e.g., Ctrl+LeftClick)
@@ -357,7 +382,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     }
   }
 
-  // 4. Chrome-specific Ctrl+V macro (ChatGPT only)
+  // Ctrl+V macro detection (including context-specific ones like Chrome ChatGPT)
   if (!skipMacros && isKeyboard && ev.type == EV_KEY && ev.code == KEY_V &&
       ctrlDown_ && ev.value == 1) {
     AppType currentApp;
@@ -369,8 +394,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
       currentTitle = activeTitle_;
     }
 
+    // For Chrome, fetch fresh URL on demand
     if (currentApp == AppType::CHROME) {
-      // Fetch fresh URL ON DEMAND
       std::string freshUrl = getChromeTabUrl(currentTitle);
       if (!freshUrl.empty()) {
         currentUrl = freshUrl;
@@ -379,17 +404,27 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
         std::lock_guard<std::mutex> lock(contextMutex_);
         activeUrl_ = currentUrl;
       }
+    }
 
-      if (currentUrl.find("chatgpt.com") != std::string::npos) {
-        logToFile("Triggering ChatGPT Ctrl+V macro (Speculative Parallel "
-                  "Focus). URL: " +
-                      currentUrl,
-                  LOG_AUTOMATION);
-        extern void triggerChromeChatGPTFocus();
-        lastWithholdingStart_ = std::chrono::steady_clock::now();
-        withholdingV_ = true;
-        triggerChromeChatGPTFocus();
-        return;
+    // Look for matching Ctrl+V macro in current app's config
+    auto it = appMacros_.find(currentApp);
+    if (it != appMacros_.end()) {
+      for (const auto &action : it->second) {
+        // Check if this is a Ctrl+V trigger
+        if (action.trigger.keyCode == KEY_V &&
+            action.trigger.modifiers == KEY_LEFTCTRL) {
+          // If contextUrl is specified, check if current URL matches
+          if (!action.trigger.contextUrl.empty()) {
+            if (currentUrl.find(action.trigger.contextUrl) != std::string::npos) {
+              executeKeyAction(action);
+              return;  // Consume the Ctrl+V
+            }
+          } else {
+            // No context restriction, execute for any URL
+            executeKeyAction(action);
+            return;  // Consume the Ctrl+V
+          }
+        }
       }
     }
   }
@@ -472,43 +507,76 @@ std::optional<GKey> InputMapper::detectGKey(const struct input_event &ev) {
 
 void InputMapper::executeKeyAction(const KeyAction &action) {
   logToFile(action.logMessage, LOG_AUTOMATION);
-  emitSequence(action.keySequence);
+  if (action.customHandler) {
+    action.customHandler();  // Call async handler (e.g., Chrome ChatGPT focus)
+  } else {
+    emitSequence(action.keySequence);  // Emit key sequence
+  }
+}
+
+void InputMapper::triggerChromeChatGPTMacro() {
+  extern void triggerChromeChatGPTFocus();
+  lastWithholdingStart_ = std::chrono::steady_clock::now();
+  withholdingV_ = true;
+  triggerChromeChatGPTFocus();
 }
 
 void InputMapper::initializeAppMacros() {
-  // Code: 
-  // G2 -> End key
-  appMacros_[AppType::CODE].push_back(KeyAction{
-      KeyTrigger{2, 0, 0, ""},  // gKeyNumber=2
-      {{KEY_END, 1}, {KEY_END, 0}},
-      "Triggering G2 End macro for VS Code"});
-  // G6 -> Ctrl+C
-  appMacros_[AppType::CODE].push_back(KeyAction{
-      KeyTrigger{6, 0, 0, ""},  // gKeyNumber=6
-      {{KEY_LEFTCTRL, 1}, {KEY_C, 1}, {KEY_C, 0}, {KEY_LEFTCTRL, 0}},
-      "Triggering G6 Ctrl+C macro for VS Code"});
-  // G5 -> Ctrl+V
-  appMacros_[AppType::CODE].push_back(KeyAction{
-      KeyTrigger{5, 0, 0, ""},  // gKeyNumber=6
-      {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}},
-      "Triggering G6 Ctrl+C macro for VS Code"});
+  // === DEFAULT MAPPINGS (apply to all apps unless overridden) ===
+  std::vector<KeyAction> defaultMacros;
 
-  // Terminal: G1 -> Ctrl+Alt+C (SIGINT)
+  // Mouse: Forward Button -> Enter
+  defaultMacros.push_back(KeyAction{
+      KeyTrigger{0, BTN_FORWARD, 0, ""},  // keyCode=BTN_FORWARD, no modifiers
+      {{KEY_ENTER, 1}, {KEY_ENTER, 0}},
+      "Triggering mouse forward button → Enter",
+      nullptr});
+
+  // G5 -> Ctrl+V
+  defaultMacros.push_back(KeyAction{
+      KeyTrigger{5, 0, 0, ""},  // gKeyNumber=5
+      {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}},
+      "Triggering G5 Ctrl+V macro",
+      nullptr});
+
+  // === APP-SPECIFIC MAPPINGS (override defaults) ===
+
+  // --- TERMINAL ---
+  appMacros_[AppType::TERMINAL] = defaultMacros;  // Start with defaults
   appMacros_[AppType::TERMINAL].push_back(KeyAction{
       KeyTrigger{1, 0, 0, ""},  // gKeyNumber=1
       {{KEY_LEFTCTRL, 1}, {KEY_LEFTALT, 1}, {KEY_C, 1}, {KEY_C, 0},
        {KEY_LEFTALT, 0}, {KEY_LEFTCTRL, 0}},
-      "Triggering G1 SIGINT macro (Ctrl+Alt+C) for Gnome Terminal"}); 
-    
-  // Terminal: Ctrl+Left Click -> 5
+      "Triggering G1 SIGINT macro (Ctrl+Alt+C) for Gnome Terminal",
+      nullptr});
   appMacros_[AppType::TERMINAL].push_back(KeyAction{
       KeyTrigger{0, BTN_LEFT, KEY_LEFTCTRL, ""},  // keyCode=BTN_LEFT, modifiers=KEY_LEFTCTRL
-      {{KEY_LEFTCTRL,0},{KEY_5, 1}, {KEY_5, 0}},
-      "Triggering Terminal Ctrl+Left Click macro (5)"});
+      {{KEY_5, 1}, {KEY_5, 0}},
+      "Triggering Terminal Ctrl+Left Click macro (5)",
+      nullptr});
 
-  // Chrome: Ctrl+V on chatgpt.com (special handling - context-based)
-  // Note: This is handled separately in processEvent() due to its async nature
-  
-  // Default: Mouse BTN_FORWARD -> Enter
-  // Note: This is handled separately as it's device-specific, not app-specific
+  // --- CODE (VS Code) ---
+  appMacros_[AppType::CODE] = defaultMacros;  // Start with defaults
+  appMacros_[AppType::CODE].push_back(KeyAction{
+      KeyTrigger{2, 0, 0, ""},  // gKeyNumber=2
+      {{KEY_END, 1}, {KEY_END, 0}},
+      "Triggering G2 End macro for VS Code",
+      nullptr});
+  appMacros_[AppType::CODE].push_back(KeyAction{
+      KeyTrigger{6, 0, 0, ""},  // gKeyNumber=6
+      {{KEY_LEFTCTRL, 1}, {KEY_C, 1}, {KEY_C, 0}, {KEY_LEFTCTRL, 0}},
+      "Triggering G6 Ctrl+C macro for VS Code",
+      nullptr});
+
+  // --- CHROME ---
+  appMacros_[AppType::CHROME] = defaultMacros;  // Start with defaults
+  // Add Chrome ChatGPT Ctrl+V with callback
+  appMacros_[AppType::CHROME].push_back(KeyAction{
+      KeyTrigger{0, KEY_V, KEY_LEFTCTRL, "chatgpt.com"},  // Ctrl+V on chatgpt.com
+      {},  // No key sequence (callback is used instead)
+      "Triggering ChatGPT Ctrl+V macro (Speculative Parallel Focus)",
+      [this]() { this->triggerChromeChatGPTMacro(); }});
+
+  // --- OTHER (default app type) ---
+  appMacros_[AppType::OTHER] = defaultMacros;  // Start with defaults
 }

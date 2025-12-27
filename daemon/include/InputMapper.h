@@ -5,6 +5,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
+#include <functional>
 #include <libevdev/libevdev-uinput.h>
 #include <libevdev/libevdev.h>
 #include <map>
@@ -29,8 +30,9 @@ struct KeyTrigger {
 // Represents an action to execute when a trigger is matched
 struct KeyAction {
   KeyTrigger trigger;
-  std::vector<std::pair<uint16_t, int32_t>> keySequence;  // Key events to emit
+  std::vector<std::pair<uint16_t, int32_t>> keySequence;  // Key events to emit (empty if using callback)
   std::string logMessage;  // Log message for the action
+  std::function<void()> customHandler = nullptr;  // Optional async handler (e.g., for Chrome ChatGPT)
 };
 
 class InputMapper {
@@ -55,6 +57,7 @@ private:
   std::optional<GKey> detectGKey(const struct input_event &ev);
   void executeKeyAction(const KeyAction &action);
   void initializeAppMacros();
+  void triggerChromeChatGPTMacro();
 
   std::string keyboardPath_;
   std::string mousePath_;

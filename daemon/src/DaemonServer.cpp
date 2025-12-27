@@ -14,6 +14,7 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 using namespace std;
@@ -166,9 +167,41 @@ int handle_client_data(int client_fd) {
   return 0;
 }
 
+pid_t g_httpBridgePid = -1;
+
+void launchHttpBridge() {
+  pid_t pid = fork();
+  if (pid == 0) {
+    // Child process
+    // Redirect stdout/stderr to log file or /dev/null
+    int devNull = open("/dev/null", O_WRONLY);
+    dup2(devNull, STDOUT_FILENO);
+    dup2(devNull, STDERR_FILENO);
+    close(devNull);
+
+    // Execute the script
+    // Assuming the script is in the same directory as the daemon executable or
+    // known path We'll use the repository path we know
+    execl("/usr/bin/python3", "python3",
+          "/home/yaniv/coding/automateLinux/daemon/http-bridge.py", NULL);
+
+    // If execl returns, it failed
+    exit(1);
+  } else if (pid > 0) {
+    g_httpBridgePid = pid;
+    cerr << "Started HTTP bridge with PID: " << pid << endl;
+  } else {
+    cerr << "Failed to fork HTTP bridge: " << strerror(errno) << endl;
+  }
+}
+
 void signal_handler(int sig) {
   if (sig == SIGTERM || sig == SIGINT) {
     running = 0;
+    if (g_httpBridgePid > 0) {
+      kill(g_httpBridgePid, SIGTERM);
+      waitpid(g_httpBridgePid, nullptr, 0); // Wait for it to exit
+    }
     if (socket_fd >= 0)
       shutdown(socket_fd, SHUT_RDWR);
     if (g_keyboard_fd >= 0)
@@ -183,6 +216,8 @@ int initialize_daemon() {
   signal(SIGTERM, signal_handler);
   signal(SIGINT, signal_handler);
   signal(SIGPIPE, SIG_IGN);
+
+  launchHttpBridge();
 
   files.initialize(
       directories); // Initialize files (and thus directories.data) first

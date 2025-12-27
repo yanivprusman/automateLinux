@@ -41,7 +41,9 @@ struct ComboState {
 // - suppress: true=withhold this key until combo resolves
 struct KeyTrigger {
   std::vector<std::tuple<uint16_t, uint8_t, bool>>
-      keyCodes; // Sequence of (code, state: 1=press/0=release, suppress: true/false)
+      keyCodes; // Sequence of (code, state: 1=press/0=release, suppress:
+                // true/false)
+  bool hasSuppressedKeys = false; // Cached check for efficiency
 };
 
 // Represents an action to execute when a trigger is matched

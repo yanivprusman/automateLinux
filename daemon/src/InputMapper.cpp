@@ -296,6 +296,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     if (appIt != appMacros_.end()) {
       bool currentlySuppressing = false;
       bool completedSuppressing = false;
+      bool eventConsumed = false;
 
       // Test all combos for this app
       for (size_t comboIdx = 0; comboIdx < appIt->second.size(); ++comboIdx) {
@@ -316,6 +317,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
           if (expectedCode == ev.code && expectedState == ev.value) {
             // Match! Advance state
             state.nextKeyIndex++;
+            eventConsumed = true; // Key matched a combo step
 
             if (shouldSuppress) {
               state.suppressedKeys.push_back({ev.code, (uint8_t)ev.value});
@@ -330,15 +332,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             if (state.nextKeyIndex == action.trigger.keyCodes.size()) {
               logToFile("COMBO COMPLETE: " + action.logMessage, LOG_AUTOMATION);
 
-              bool anySuppressed = false;
-              for (const auto &keyTuple : action.trigger.keyCodes) {
-                if (std::get<2>(keyTuple)) {
-                  anySuppressed = true;
-                  break;
-                }
-              }
-
-              if (anySuppressed) {
+              if (action.trigger.hasSuppressedKeys) {
                 completedSuppressing = true;
                 // Consume trigger from queue (the keys that match the combo)
                 std::lock_guard<std::mutex> lock(pendingEventsMutex_);
@@ -366,33 +360,20 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
         }
       }
 
-      // Check if ANY combo is STILL in progress and suppressing
+      // Check if ANY combo is STILL in progress and has suppressed keys
       for (const auto &pair : comboProgress_[currentApp]) {
         if (pair.first >= appIt->second.size())
           continue;
         const KeyAction &action = appIt->second[pair.first];
-        if (pair.second.nextKeyIndex > 0) {
-          // Check if any key in this combo at any position has suppress=true
-          bool anySuppressed = false;
-          for (const auto &keyTuple : action.trigger.keyCodes) {
-            if (std::get<2>(keyTuple)) {
-              anySuppressed = true;
-              break;
-            }
-          }
-          if (anySuppressed) {
-            currentlySuppressing = true;
-            break;
-          }
+        if (pair.second.nextKeyIndex > 0 && action.trigger.hasSuppressedKeys) {
+          currentlySuppressing = true;
+          break;
         }
       }
 
       if (completedSuppressing) {
         // Current event finished a suppressing combo. Consume it.
-        // It is NOT in pendingEvents_ yet.
         if (!currentlySuppressing) {
-          // No other matching combos are suppressing. Replay the REST of the
-          // queue.
           std::lock_guard<std::mutex> lock(pendingEventsMutex_);
           if (!pendingEvents_.empty()) {
             logToFile("Flushing " + std::to_string(pendingEvents_.size()) +
@@ -404,7 +385,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             pendingEvents_.clear();
           }
         }
-        return; // Event consumed
+        return; // Event consumed by macro
       }
 
       if (currentlySuppressing) {
@@ -425,6 +406,12 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
           }
           pendingEvents_.clear();
         }
+      }
+
+      if (eventConsumed) {
+        // If it matched a combo (even if not suppressed), we consume it here
+        // so it doesn't double-emit via the default path below.
+        return;
       }
     }
   }

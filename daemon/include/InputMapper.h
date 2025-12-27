@@ -1,6 +1,7 @@
 #ifndef INPUT_MAPPER_H
 #define INPUT_MAPPER_H
 
+#include "Types.h"
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
@@ -19,7 +20,7 @@ public:
   bool start(const std::string &keyboardPath, const std::string &mousePath);
   void onFocusAck();
   void stop();
-  void setContext(const std::string &appName, const std::string &url = "",
+  void setContext(AppType appType, const std::string &url = "",
                   const std::string &title = "");
   bool isRunning() const { return running_; }
 
@@ -27,7 +28,7 @@ private:
   void loop();
   bool setupDevices();
   bool setupUinput();
-  void processEvent(struct input_event &ev, bool isKeyboard);
+  void processEvent(struct input_event &ev, bool isKeyboard, bool skipMacros);
   void emit(uint16_t type, uint16_t code, int32_t value);
   void emitSequence(const std::vector<std::pair<uint16_t, int32_t>> &sequence);
 
@@ -56,7 +57,7 @@ private:
   int gToggleState_ = 1; // 1-5
 
   // Window/App detection context
-  std::string activeApp_;
+  AppType activeApp_ = AppType::OTHER;
   std::string activeUrl_;
   std::string activeTitle_;
   std::mutex contextMutex_;

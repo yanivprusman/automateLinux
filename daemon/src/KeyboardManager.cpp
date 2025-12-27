@@ -56,10 +56,9 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
   }
 }
 
-void KeyboardManager::setContext(const std::string &appName,
-                                 const std::string &url,
+void KeyboardManager::setContext(AppType appType, const std::string &url,
                                  const std::string &title) {
-  mapper.setContext(appName, url, title);
+  mapper.setContext(appType, url, title);
 }
 
 void KeyboardManager::onFocusAck() { mapper.onFocusAck(); }

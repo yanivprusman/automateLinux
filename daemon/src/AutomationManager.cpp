@@ -41,7 +41,7 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
   }
 
   // Set the mapping context directly in InputMapper, tracking title too
-  KeyboardManager::setContext(wmClass, url, windowTitle);
+  KeyboardManager::setContext(stringToAppType(wmClass), url, windowTitle);
 
   return CmdResult(0, "Active window info received and mapping updated.\n");
 }

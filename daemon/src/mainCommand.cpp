@@ -3,6 +3,7 @@
 #include "DaemonServer.h"
 #include "Globals.h"
 #include "KeyboardManager.h"
+#include "Utils.h"
 #include "common.h"
 #include "main.h"
 #include "sendKeys.h"
@@ -393,7 +394,7 @@ CmdResult handleSetActiveTabUrl(const json &command) {
     g_activeTabUrl = url;
   }
   logToFile("[Chrome Extension] Active tab changed to: " + url, LOG_CORE);
-  KeyboardManager::setContext(wmClassChrome, url, "");
+  KeyboardManager::setContext(AppType::CHROME, url, "");
   return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
 

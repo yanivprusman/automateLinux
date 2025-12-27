@@ -178,12 +178,11 @@ void InputMapper::loop() {
           logToFile("[InputMapper] Keyboard Sync Status!", LOG_CORE);
           while (libevdev_next_event(keyboardDev_, LIBEVDEV_READ_FLAG_SYNC,
                                      &ev) == LIBEVDEV_READ_STATUS_SYNC) {
-            // Process sync events but don't trigger macros on them to avoid
-            // double triggers
+            processEvent(ev, true, true); // true for sync (skip macros)
           }
           continue;
         }
-        processEvent(ev, true);
+        processEvent(ev, true, false);
       }
     }
 
@@ -197,10 +196,11 @@ void InputMapper::loop() {
         if (rc_event == LIBEVDEV_READ_STATUS_SYNC) {
           while (libevdev_next_event(mouseDev_, LIBEVDEV_READ_FLAG_SYNC, &ev) ==
                  LIBEVDEV_READ_STATUS_SYNC) {
+            processEvent(ev, false, true); // true for sync
           }
           continue;
         }
-        processEvent(ev, false);
+        processEvent(ev, false, false);
       }
     }
   }
@@ -236,18 +236,19 @@ void InputMapper::onFocusAck() {
   }
 }
 
-void InputMapper::setContext(const std::string &appName, const std::string &url,
+void InputMapper::setContext(AppType appType, const std::string &url,
                              const std::string &title) {
   std::lock_guard<std::mutex> lock(contextMutex_);
-  activeApp_ = appName;
+  activeApp_ = appType;
   activeUrl_ = url;
   activeTitle_ = title;
-  logToFile("Context updated: App=[" + activeApp_ + "] URL=[" + activeUrl_ +
-                "] Title=[" + activeTitle_ + "]",
+  logToFile("Context updated: App=[" + appTypeToString(activeApp_) + "] URL=[" +
+                activeUrl_ + "] Title=[" + activeTitle_ + "]",
             LOG_WINDOW);
 }
 
-void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
+void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
+                               bool skipMacros) {
   // 1. Speculative Asynchronous Paste Logic
   if (withholdingV_) {
     auto now = std::chrono::steady_clock::now();
@@ -281,46 +282,33 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
   }
 
   // Debug: Log all Ctrl+V combinations to see current context
-  if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_V && ctrlDown_ &&
-      ev.value == 1) {
-    std::string tmpApp, tmpUrl;
+  if (!skipMacros && isKeyboard && ev.type == EV_KEY && ev.code == KEY_V &&
+      ctrlDown_ && ev.value == 1) {
+    AppType tmpApp;
+    std::string tmpUrl;
     {
       std::lock_guard<std::mutex> lock(contextMutex_);
       tmpApp = activeApp_;
       tmpUrl = activeUrl_;
     }
-    logToFile("Ctrl+V detected. State: App=[" + tmpApp + "] URL=[" + tmpUrl +
+    logToFile("Ctrl+V detected. State: App=[" + appTypeToString(tmpApp) +
+                  "] URL=[" + tmpUrl +
                   "] withholdV=" + std::to_string(withholdingV_),
               LOG_INPUT);
   }
 
-  if (isKeyboard && ctrlDown_ && ev.type == EV_KEY && ev.code == KEY_1 &&
-      ev.value == 1) {
-    std::string logPath;
-    for (const auto &f : files.files) {
-      if (f.name == "combined.log") {
-        logPath = f.fullPath();
-        break;
-      }
-    }
-    if (logPath.empty()) {
-      logPath = directories.data + "combined.log";
-    }
-    std::ofstream sf(logPath, std::ios::app);
-    if (sf.is_open()) {
-      sf << "Sanity check: LeftCtrl + 1 pressed at event time "
-         << ev.input_event_sec << "." << ev.input_event_usec << std::endl;
-      sf.close();
-    }
+  if (!skipMacros && isKeyboard && ctrlDown_ && ev.type == EV_KEY &&
+      ev.code == KEY_1 && ev.value == 1) {
     logToFile("Sanity check: LeftCtrl + 1 detected", LOG_CORE);
   }
 
-  if (!isKeyboard && ev.type == EV_KEY && ev.code == BTN_FORWARD) {
+  if (!skipMacros && !isKeyboard && ev.type == EV_KEY &&
+      ev.code == BTN_FORWARD) {
     emit(EV_KEY, KEY_ENTER, ev.value);
     return;
   }
 
-  if (isKeyboard && ev.type == EV_KEY) {
+  if (!skipMacros && isKeyboard && ev.type == EV_KEY) {
     if (ev.code == KEY_LEFTCTRL) {
       if (ev.value == 1) {
         if (gToggleState_ == 1) {
@@ -352,12 +340,12 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
           logToFile("G1 pressed. Current gToggleState: " +
                         std::to_string(gToggleState_),
                     LOG_CORE);
-          std::string currentApp;
+          AppType currentApp;
           {
             std::lock_guard<std::mutex> lock(contextMutex_);
             currentApp = activeApp_;
           }
-          if (currentApp == wmClassTerminal) {
+          if (currentApp == AppType::TERMINAL) {
             logToFile(
                 "Triggering G1 SIGINT macro (Ctrl+Alt+C) for Gnome Terminal",
                 LOG_AUTOMATION);
@@ -392,16 +380,18 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
   }
 
   // 4. Chrome-specific Ctrl+V macro (ChatGPT only)
-  std::string currentApp, currentUrl, currentTitle;
-  {
-    std::lock_guard<std::mutex> lock(contextMutex_);
-    currentApp = activeApp_;
-    currentUrl = activeUrl_;
-    currentTitle = activeTitle_;
-  }
+  if (!skipMacros && isKeyboard && ev.type == EV_KEY && ev.code == KEY_V &&
+      ctrlDown_ && ev.value == 1) {
+    AppType currentApp;
+    std::string currentUrl, currentTitle;
+    {
+      std::lock_guard<std::mutex> lock(contextMutex_);
+      currentApp = activeApp_;
+      currentUrl = activeUrl_;
+      currentTitle = activeTitle_;
+    }
 
-  if (isKeyboard && currentApp == wmClassChrome && ev.type == EV_KEY) {
-    if (ev.code == KEY_V && ctrlDown_ && ev.value == 1) {
+    if (currentApp == AppType::CHROME) {
       // Fetch fresh URL ON DEMAND
       std::string freshUrl = getChromeTabUrl(currentTitle);
       if (!freshUrl.empty()) {

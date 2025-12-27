@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "Constants.h" // Added for AppType helpers and LOG_CORE
+#include "Types.h"
 #include <chrono>
 #include <string>
 
@@ -38,5 +40,7 @@ std::string substituteVariable(const std::string &content,
 std::string getChromeTabUrl(const std::string &preferredTitle = "");
 std::string httpGet(const std::string &url);
 std::string executeCommand(const char *cmd);
+AppType stringToAppType(const std::string &appName);
+std::string appTypeToString(AppType type);
 
 #endif // UTILS_H

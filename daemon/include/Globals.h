@@ -19,20 +19,35 @@ struct Directories {
   string symlinks;
   string terminal;
   Directories() {
-    std::filesystem::path p = canonical("/proc/self/exe").parent_path();
-    // Go up until we find a directory that contains 'data', 'evsieve', and
-    // 'daemon'
-    while (p != p.root_path()) {
+    std::error_code ec;
+    std::filesystem::path p = std::filesystem::canonical("/proc/self/exe", ec);
+    if (ec) {
+      p = "/home/yaniv/coding/automateLinux/daemon/daemon"; // Fallback to a
+                                                            // guess if
+                                                            // canonical fails
+    }
+    p = p.parent_path();
+
+    bool found = false;
+    // Walk up until we find the repository root defined by these markers
+    while (p.has_parent_path() && p != p.root_path()) {
       if (std::filesystem::exists(p / "data") &&
-          std::filesystem::exists(p / "evsieve") &&
-          std::filesystem::exists(p / "daemon")) {
+          std::filesystem::exists(p / "daemon") &&
+          std::filesystem::exists(p / "symlinks")) {
+        found = true;
         break;
       }
       p = p.parent_path();
     }
-    base = p.string() + "/";
+
+    if (!found) {
+      // Final absolute fallback for this specific environment
+      base = "/home/yaniv/coding/automateLinux/";
+    } else {
+      base = p.string() + "/";
+    }
     data = base + "data/";
-    mappings = base + "evsieve/mappings/";
+    mappings = base + "evsieve/mappings/"; // Historical path, keep as is
     symlinks = base + "symlinks/";
     terminal = base + "terminal/";
   }

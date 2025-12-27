@@ -1,6 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+enum class AppType { OTHER, TERMINAL, CHROME, CODE };
+
 #include <string>
 #include <vector>
 

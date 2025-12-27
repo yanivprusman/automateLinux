@@ -16,17 +16,19 @@ const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
 const shouldLog = true;
 
-// Custom menu item that doesn't close the menu on toggle
+// Custom menu item that closes on left-click, stays open on right-click
 const NonClosingPopupSwitchMenuItem = GObject.registerClass(
     class NonClosingPopupSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
         activate(event) {
-            if (this._switch.mapped) {
-                this.toggle();
+            if (event && event.get_button() === 1) { // left-click
+                // Close the menu on left-click
+                super.activate(event);
+            } else {
+                // Only toggle without closing on other clicks
+                if (this._switch.mapped) {
+                    this.toggle();
+                }
             }
-
-            // We do NOT call super.activate(event) because that eventually calls 
-            // this.emit('activate') which closes the menu.
-            // Instead we allow the toggle to happen and stay open.
         }
     });
 

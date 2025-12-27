@@ -18,6 +18,7 @@ cd build
 cmake .. > /dev/null && \
 make > /dev/null && \
 echo -e "${GREEN}Build complete!${NC}" && \
+cp daemon .. && \
 echo "Restarting daemon.service..." && \
 sudo /usr/bin/systemctl restart daemon.service && \
 sleep 0.1 && \

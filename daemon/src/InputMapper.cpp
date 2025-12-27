@@ -181,6 +181,7 @@ void InputMapper::loop() {
              rc_event == LIBEVDEV_READ_STATUS_SYNC) {
         if (rc_event == LIBEVDEV_READ_STATUS_SYNC) {
           logToFile("[InputMapper] Keyboard Sync Status!", LOG_CORE);
+          flushAndResetState();
           while (libevdev_next_event(keyboardDev_, LIBEVDEV_READ_FLAG_SYNC,
                                      &ev) == LIBEVDEV_READ_STATUS_SYNC) {
             processEvent(ev, true, true); // true for sync (skip macros)
@@ -199,6 +200,8 @@ void InputMapper::loop() {
                  LIBEVDEV_READ_STATUS_SUCCESS ||
              rc_event == LIBEVDEV_READ_STATUS_SYNC) {
         if (rc_event == LIBEVDEV_READ_STATUS_SYNC) {
+          logToFile("[InputMapper] Mouse Sync Status!", LOG_CORE);
+          flushAndResetState();
           while (libevdev_next_event(mouseDev_, LIBEVDEV_READ_FLAG_SYNC, &ev) ==
                  LIBEVDEV_READ_STATUS_SYNC) {
             processEvent(ev, false, true); // true for sync
@@ -226,8 +229,8 @@ void InputMapper::emitSequence(
   std::lock_guard<std::mutex> lock(uinputMutex_);
   for (const auto &p : sequence) {
     libevdev_uinput_write_event(uinputDev_, EV_KEY, p.first, p.second);
+    libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
   }
-  libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
 }
 
 void InputMapper::setContext(AppType appType, const std::string &url,
@@ -248,10 +251,10 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     ctrlDown_ = (ev.value != 0);
   }
 
-  // Filter out MSC events to prevent interference
-  if (ev.type == EV_MSC) {
-    return;
-  }
+  // Filter out MSC events to prevent interference (NOT ANYMORE - let them pass)
+  // if (ev.type == EV_MSC) {
+  //   return;
+  // }
 
   // Debug: Log all Ctrl+V combinations to see current context
   if (!skipMacros && isKeyboard && ev.type == EV_KEY && ev.code == KEY_V &&
@@ -295,7 +298,6 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     auto appIt = appMacros_.find(currentApp);
     if (appIt != appMacros_.end()) {
       bool currentlySuppressing = false;
-      bool completedSuppressing = false;
       bool eventConsumed = false;
 
       bool shouldSuppressThisSpecificEvent = false;
@@ -336,7 +338,6 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
               logToFile("COMBO COMPLETE: " + action.logMessage, LOG_AUTOMATION);
 
               if (action.trigger.hasSuppressedKeys) {
-                completedSuppressing = true;
                 // Consume trigger from queue (the keys that match the combo)
                 std::lock_guard<std::mutex> lock(pendingEventsMutex_);
                 // We only want to remove events that we actually suppressed for
@@ -388,12 +389,14 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
           emit(ev.type, ev.code, ev.value);
         }
 
-        if (completedSuppressing && !anyComboInProgress) {
-          // If we just finished a suppressing combo and nothing else is
-          // in progress, flush the queue.
+        // IMPORTANT: Always check for flush after an event is consumed,
+        // especially if it completed a macro.
+        if (!anyComboInProgress) {
           std::lock_guard<std::mutex> lock(pendingEventsMutex_);
           if (!pendingEvents_.empty()) {
-            logToFile("Flushing remaining after complete", LOG_INPUT);
+            logToFile("Flushing remaining after complete (" +
+                          std::to_string(pendingEvents_.size()) + ")",
+                      LOG_INPUT);
             for (const auto &pe : pendingEvents_) {
               emit(pe.type, pe.code, pe.value);
             }
@@ -420,7 +423,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
         // Not matching anything anymore, or we weren't suppressing. Flush.
         std::lock_guard<std::mutex> lock(pendingEventsMutex_);
         if (!pendingEvents_.empty()) {
-          logToFile("Flushing pending events (mismatch/broken combo)",
+          logToFile("Flushing pending events (mismatch/broken combo: " +
+                        std::to_string(pendingEvents_.size()) + ")",
                     LOG_INPUT);
           for (const auto &pe : pendingEvents_) {
             emit(pe.type, pe.code, pe.value);
@@ -432,7 +436,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
   }
 
   if (ev.type == EV_KEY && (ev.code == KEY_ENTER || ev.code == KEY_KPENTER)) {
-    logToFile("Processing ENTER key (code " + std::to_string(ev.code) +
+    logToFile(string(isKeyboard ? "KBD" : "MOUSE") +
+                  " Processing ENTER key (code " + std::to_string(ev.code) +
                   ", value " + std::to_string(ev.value) + ") -> uinput",
               LOG_INPUT);
   }
@@ -556,4 +561,36 @@ void InputMapper::triggerChromeChatGPTMacro() {
     emitSequence(
         {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}});
   }).detach();
+}
+void InputMapper::flushAndResetState() {
+  logToFile("[InputMapper] Emergency Flush & Reset (Sync Triggered)", LOG_CORE);
+
+  // 1. Emit all pending events
+  {
+    std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+    if (!pendingEvents_.empty()) {
+      logToFile("Flushing " + std::to_string(pendingEvents_.size()) +
+                    " events during Sync",
+                LOG_INPUT);
+      for (const auto &pe : pendingEvents_) {
+        emit(pe.type, pe.code, pe.value);
+      }
+      pendingEvents_.clear();
+    }
+  }
+
+  // 2. Reset ALL combo progress for ALL apps
+  // Note: This is a heavy-handed reset to ensure we don't stay in a "stuck"
+  // suppress state.
+  for (auto &appPair : comboProgress_) {
+    for (auto &comboPair : appPair.second) {
+      comboPair.second.nextKeyIndex = 0;
+      comboPair.second.suppressedKeys.clear();
+    }
+  }
+
+  // 3. Reset G-key toggle state
+  gToggleState_ = 1;
+
+  logToFile("[InputMapper] Reset complete.", LOG_CORE);
 }

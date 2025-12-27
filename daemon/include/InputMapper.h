@@ -65,6 +65,7 @@ public:
   void stop();
   void setContext(AppType appType, const std::string &url = "",
                   const std::string &title = "");
+  void flushAndResetState();
   void onFocusAck();
   bool isRunning() const { return running_; }
 

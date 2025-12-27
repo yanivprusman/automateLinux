@@ -184,6 +184,10 @@ export default class ClockExtension extends Extension {
         let dragData = { dragging: false, offsetX: 0, offsetY: 0 };
         this._label.connect('button-press-event', (_, event) => {
             if (event.get_button() === 1) {
+                if (this._menu.isOpen) {
+                    this.logger.log('Left-click on label while menu is open - closing menu');
+                    this._menu.close();
+                }
                 this.logger.log('Button pressed on label (left-click)');
                 dragData.dragging = true;
                 const [stageX, stageY] = event.get_coords();

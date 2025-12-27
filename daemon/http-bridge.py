@@ -132,7 +132,13 @@ class DaemonLink:
                     continue
             
             try:
-                data = self.sock.recv(4096).decode('utf-8')
+                try:
+                    data = self.sock.recv(4096).decode('utf-8')
+                except socket.timeout:
+                    continue
+                except InterruptedError:
+                    continue
+                    
                 if not data:
                     self.sock = None
                     debug_log("Daemon disconnected (recv returned empty)")
@@ -147,14 +153,23 @@ class DaemonLink:
                     try:
                         msg = json.loads(line)
                         # Broadcast to SSE clients
-                        debug_log(f"Broadcasting: {msg}")
+                        debug_log(f"Broadcasting to SSE: {msg}")
                         with sse_lock:
+                            # Use a list of clients to remove to avoid modifying during iteration
+                            to_remove = []
                             for q in sse_clients:
-                                q.put(msg)
+                                try:
+                                    q.put(msg)
+                                except Exception as e:
+                                    debug_log(f"Fail to queue for SSE: {e}")
+                                    to_remove.append(q)
+                            for q in to_remove:
+                                if q in sse_clients:
+                                    sse_clients.remove(q)
                     except Exception as e:
                         debug_log(f"Error handling msg: {e}")
             except Exception as e:
-                debug_log(f"Socket error: {e}")
+                debug_log(f"Socket error in listen_loop: {e}")
                 self.sock = None
                 time.sleep(1)
 
@@ -168,12 +183,15 @@ def main():
     if not os.path.exists(SOCKET_PATH):
         pass # Wait for daemon
     
-    with socketserver.ThreadingTCPServer(("127.0.0.1", PORT), Handler) as httpd:
-        httpd.daemon_threads = True
-        try:
-            httpd.serve_forever()
-        except KeyboardInterrupt:
-            pass
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    httpd = socketserver.ThreadingTCPServer(("127.0.0.1", PORT), Handler)
+    httpd.daemon_threads = True
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        httpd.server_close()
 
 if __name__ == "__main__":
     main()

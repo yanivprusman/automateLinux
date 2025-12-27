@@ -370,7 +370,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
           triggerChromeChatGPTFocus();
 
           // Minimal delay to ensure focus wins the race against paste
-          usleep(300000); // 300ms
+          usleep(10000); //  10ms
 
           emit(EV_KEY, KEY_LEFTCTRL, 1);
           emit(EV_KEY, KEY_V, 1);

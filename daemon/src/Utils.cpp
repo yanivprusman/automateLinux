@@ -21,13 +21,10 @@ void logToFile(const string &message, unsigned int category) {
   extern unsigned int shouldLog; // Now unsigned int
   static std::mutex logMutex;
   std::lock_guard<std::mutex> lock(logMutex);
+  // logToFile only writes to g_logFile
   if ((shouldLog & category) && g_logFile.is_open()) {
     g_logFile << message << endl; // Add newline for flush consistency
     g_logFile.flush();
-  }
-  // Mirror to stderr for debugging
-  if (shouldLog & category) {
-    std::cerr << "[LOG] " << message << std::endl;
   }
 }
 
@@ -38,8 +35,6 @@ void forceLog(const string &message) {
     sf << message << std::endl;
     sf.close();
   }
-  // Also echo to cerr for journalctl
-  std::cerr << message << std::endl;
 }
 
 std::string getChromeTabUrl(const std::string &preferredTitle) {

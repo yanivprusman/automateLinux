@@ -1,35 +1,30 @@
 // Background service worker for tracking active tab
-// Uses HTTP bridge instead of native messaging to bypass Chrome sandbox issues
-const BRIDGE_URL = "http://localhost:9223/active-tab";
-const EVENTS_URL = "http://localhost:9223/events";
-const FOCUS_ACK_URL = "http://localhost:9223/focus-ack";
+// Uses Native Messaging for high performance and reliability
+const NATIVE_HOST_NAME = "com.automatelinux.tabtracker";
 
-// Establish SSE connection for receiving commands
-function connectToEvents() {
-    const eventSource = new EventSource(EVENTS_URL);
+let nativePort = null;
 
-    eventSource.onopen = () => {
-        console.log("[AutomateLinux] Connected to SSE event stream");
-    };
+function connectToNativeHost() {
+    if (nativePort) {
+        return;
+    }
 
-    eventSource.onmessage = (event) => {
-        try {
-            const message = JSON.parse(event.data);
-            console.log("[AutomateLinux] Received event:", message);
+    console.log("[AutomateLinux] Connecting to native host...");
+    nativePort = chrome.runtime.connectNative(NATIVE_HOST_NAME);
 
-            if (message.action === "focusChatGPT") {
-                focusChatGPTTextarea();
-            }
-        } catch (error) {
-            console.error("[AutomateLinux] Error parsing event:", error);
+    nativePort.onMessage.addListener((message) => {
+        console.log("[AutomateLinux] Received from native host:", message);
+        if (message.action === "focusChatGPT") {
+            focusChatGPTTextarea();
         }
-    };
+    });
 
-    eventSource.onerror = () => {
-        // console.log("[AutomateLinux] SSE connection error (bridge might be down). Retrying...");
-        eventSource.close();
-        setTimeout(connectToEvents, 5000);
-    };
+    nativePort.onDisconnect.addListener(() => {
+        console.log("[AutomateLinux] Native host disconnected:", chrome.runtime.lastError);
+        nativePort = null;
+        // Attempt to reconnect after a delay
+        setTimeout(connectToNativeHost, 5000);
+    });
 }
 
 // Focus ChatGPT textarea by injecting script
@@ -54,16 +49,7 @@ async function focusChatGPTTextarea() {
             // If we successfully focused, send an acknowledgment back immediately
             if (results && results[0] && results[0].result) {
                 console.log("[AutomateLinux] Focus successful/received, result:", results[0].result);
-                console.log("[AutomateLinux] Sending ack to:", FOCUS_ACK_URL);
-                fetch(FOCUS_ACK_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    cache: 'no-cache'
-                }).then(r => {
-                    console.log("[AutomateLinux] Ack response:", r.status);
-                }).catch(err => {
-                    console.error("[AutomateLinux] Ack fetch failed:", err);
-                });
+                sendToNativeHost({ action: "focusAck" });
             }
         }
     } catch (error) {
@@ -71,33 +57,31 @@ async function focusChatGPTTextarea() {
     }
 }
 
-// Send URL to HTTP bridge
-async function updateActiveTabUrl(url) {
-    console.log("[AutomateLinux] Active tab URL:", url);
+// Send message to Native Host
+function sendToNativeHost(message) {
+    if (!nativePort) {
+        connectToNativeHost();
+    }
 
-    try {
-        const response = await fetch(BRIDGE_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url: url })
-        });
-        if (!response.ok) {
-            console.error("[AutomateLinux] Bridge response error:", response.status);
+    if (nativePort) {
+        try {
+            nativePort.postMessage(message);
+        } catch (error) {
+            console.error("[AutomateLinux] Error sending to native host:", error);
         }
-    } catch (error) {
-        console.error("[AutomateLinux] Bridge fetch failed:", error.message);
+    } else {
+        console.error("[AutomateLinux] Cannot send message: no native port");
     }
 }
 
-// Get and update the active tab URL
+// Update the active tab URL
 async function getAndSendActiveTabUrl() {
     try {
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
         if (activeTab && activeTab.url) {
-            await updateActiveTabUrl(activeTab.url);
+            console.log("[AutomateLinux] Active tab URL:", activeTab.url);
+            sendToNativeHost({ url: activeTab.url });
         }
     } catch (error) {
         console.error("[AutomateLinux] Error getting active tab:", error);
@@ -136,6 +120,6 @@ chrome.runtime.onInstalled.addListener(async () => {
     await getAndSendActiveTabUrl();
 });
 
-console.log("[AutomateLinux] Tab tracker extension loaded (HTTP mode)");
-connectToEvents();
+console.log("[AutomateLinux] Tab tracker extension loaded (Native Messaging mode)");
+connectToNativeHost();
 getAndSendActiveTabUrl();

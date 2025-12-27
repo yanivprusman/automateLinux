@@ -136,9 +136,24 @@ def main():
             break
         
         log(f"From Chrome: {message}")
-        url = message.get('url', '')
-        if url:
-            link.send({"command": "setActiveTabUrl", "url": url})
+        if isinstance(message, dict):
+            # If the message already has a 'command', use it. 
+            # Otherwise, check for 'url' (legacy/specific case)
+            if 'command' in message:
+                link.send(message)
+            elif 'url' in message:
+                link.send({"command": "setActiveTabUrl", "url": message['url']})
+            elif 'action' in message:
+                # Handle focusAck and other 'action' style messages from extension
+                if message['action'] == 'focusAck':
+                    link.send({"command": "focusAck"})
+                else:
+                    # Forward any other action as is? Maybe wrap it?
+                    # For now, if it's an action we don't recognize as a daemon command,
+                    # we might need to map it.
+                    log(f"Unknown action from chrome: {message['action']}")
+        else:
+            log(f"Unsupported message type from Chrome: {type(message)}")
 
 if __name__ == '__main__':
     main()

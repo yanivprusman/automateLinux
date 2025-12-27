@@ -11,6 +11,7 @@
 #include <map>
 #include <mutex>
 #include <optional>
+#include <set>
 #include <string>
 #include <thread>
 #include <vector>
@@ -18,12 +19,16 @@
 // G-Key enumeration for type-safe G-key references
 enum class GKey { G1 = 1, G2 = 2, G3 = 3, G4 = 4, G5 = 5, G6 = 6 };
 
+// Represents the state of a key sequence combo during matching
+struct ComboState {
+  size_t nextKeyIndex = 0;  // Next key position to match (0 = start, size = complete)
+  std::vector<uint16_t> suppressedKeys;  // Keys being held back for this combo
+};
+
 // Represents a keyboard/mouse trigger condition
-// Fields are flexible - use gKeyNumber for G-key triggers, keyCode+modifiers for combos, etc.
+// keyCodes is a sequence of keys that must be pressed in order
 struct KeyTrigger {
-  int gKeyNumber = 0;  // G-key number 1-6, or 0 if not a G-key trigger
-  uint16_t keyCode = 0;  // Key or button code (e.g., BTN_LEFT), or 0 if not used
-  uint16_t modifiers = 0;  // Modifier key (e.g., KEY_LEFTCTRL), or 0 if none
+  std::vector<uint16_t> keyCodes;  // Sequence of key codes to match
 };
 
 // Represents an action to execute when a trigger is matched
@@ -90,6 +95,10 @@ private:
 
   // App-specific macro mappings
   std::map<AppType, std::vector<KeyAction>> appMacros_;
+
+  // Combo sequence tracking (per-app)
+  std::map<AppType, std::map<size_t, ComboState>> comboProgress_;  // appType → (comboIndex → progress)
+  std::map<uint16_t, std::set<size_t>> keySuppressedBy_;  // keyCode → {combo indices suppressing it}
 };
 
 #endif // INPUT_MAPPER_H

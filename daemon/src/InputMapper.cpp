@@ -309,6 +309,28 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     return;
   }
 
+  // Check for mouse + modifier combos (e.g., Ctrl+LeftClick)
+  if (!skipMacros && !isKeyboard && ev.type == EV_KEY && ev.code == BTN_LEFT &&
+      ev.value == 1 && ctrlDown_) {
+    AppType currentApp;
+    {
+      std::lock_guard<std::mutex> lock(contextMutex_);
+      currentApp = activeApp_;
+    }
+
+    // Look for matching device combo macro
+    auto it = appMacros_.find(currentApp);
+    if (it != appMacros_.end()) {
+      for (const auto &action : it->second) {
+        if (action.trigger.keyCode == BTN_LEFT &&
+            action.trigger.modifiers == KEY_LEFTCTRL) {
+          executeKeyAction(action);
+          return;  // Consume the mouse click
+        }
+      }
+    }
+  }
+
   if (!skipMacros && isKeyboard && ev.type == EV_KEY) {
     // Detect G-key presses
     std::optional<GKey> gKey = detectGKey(ev);
@@ -324,8 +346,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
       auto it = appMacros_.find(currentApp);
       if (it != appMacros_.end()) {
         for (const auto &action : it->second) {
-          if (action.trigger.type == TriggerType::G_KEY &&
-              action.trigger.gKeyNumber == static_cast<int>(*gKey)) {
+          if (action.trigger.gKeyNumber == static_cast<int>(*gKey)) {
             executeKeyAction(action);
             return;  // Swallow the G-key
           }
@@ -457,22 +478,28 @@ void InputMapper::executeKeyAction(const KeyAction &action) {
 void InputMapper::initializeAppMacros() {
   // Terminal: G1 -> Ctrl+Alt+C (SIGINT)
   appMacros_[AppType::TERMINAL].push_back(KeyAction{
-      KeyTrigger{TriggerType::G_KEY, 1},
+      KeyTrigger{1, 0, 0, ""},  // gKeyNumber=1
       {{KEY_LEFTCTRL, 1}, {KEY_LEFTALT, 1}, {KEY_C, 1}, {KEY_C, 0},
        {KEY_LEFTALT, 0}, {KEY_LEFTCTRL, 0}},
       "Triggering G1 SIGINT macro (Ctrl+Alt+C) for Gnome Terminal"});
 
   // Code: G2 -> End key
   appMacros_[AppType::CODE].push_back(KeyAction{
-      KeyTrigger{TriggerType::G_KEY, 2},
+      KeyTrigger{2, 0, 0, ""},  // gKeyNumber=2
       {{KEY_END, 1}, {KEY_END, 0}},
       "Triggering G2 End macro for VS Code"});
 
   // Code: G6 -> Ctrl+C
   appMacros_[AppType::CODE].push_back(KeyAction{
-      KeyTrigger{TriggerType::G_KEY, 6},
+      KeyTrigger{6, 0, 0, ""},  // gKeyNumber=6
       {{KEY_LEFTCTRL, 1}, {KEY_C, 1}, {KEY_C, 0}, {KEY_LEFTCTRL, 0}},
       "Triggering G6 Ctrl+C macro for VS Code"});
+
+  // Terminal: Ctrl+Left Click -> 5
+  appMacros_[AppType::TERMINAL].push_back(KeyAction{
+      KeyTrigger{0, BTN_LEFT, KEY_LEFTCTRL, ""},  // keyCode=BTN_LEFT, modifiers=KEY_LEFTCTRL
+      {{KEY_5, 1}, {KEY_5, 0}},
+      "Triggering Terminal Ctrl+Left Click macro (5)"});
 
   // Chrome: Ctrl+V on chatgpt.com (special handling - context-based)
   // Note: This is handled separately in processEvent() due to its async nature

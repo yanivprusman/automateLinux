@@ -17,16 +17,13 @@
 // G-Key enumeration for type-safe G-key references
 enum class GKey { G1 = 1, G2 = 2, G3 = 3, G4 = 4, G5 = 5, G6 = 6 };
 
-// Trigger type enumeration
-enum class TriggerType { G_KEY, MODIFIER_COMBO, DEVICE_COMBO, CONTEXT_KEY };
-
 // Represents a keyboard/mouse trigger condition
+// Fields are flexible - use gKeyNumber for G-key triggers, keyCode+modifiers for combos, etc.
 struct KeyTrigger {
-  TriggerType type;
-  int gKeyNumber = 0;  // For G_KEY type: 1-6
-  uint16_t keyCode = 0;  // For MODIFIER_COMBO/DEVICE_COMBO type
-  uint16_t modifiers = 0;  // For MODIFIER_COMBO type (e.g., KEY_LEFTCTRL)
-  std::string contextUrl = "";  // For CONTEXT_KEY type (URL substring to match)
+  int gKeyNumber = 0;  // G-key number 1-6, or 0 if not a G-key trigger
+  uint16_t keyCode = 0;  // Key or button code (e.g., BTN_LEFT), or 0 if not used
+  uint16_t modifiers = 0;  // Modifier key (e.g., KEY_LEFTCTRL), or 0 if none
+  std::string contextUrl = "";  // URL substring to match (for context-specific triggers), or empty if not needed
 };
 
 // Represents an action to execute when a trigger is matched

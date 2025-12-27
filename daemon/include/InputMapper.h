@@ -36,13 +36,12 @@ struct ComboState {
 };
 
 // Represents a keyboard/mouse trigger condition
-// keyCodes is a sequence of (keyCode, state) pairs where state: 1=press,
-// 0=release
+// keyCodes is a sequence of (keyCode, state, suppress) tuples where:
+// - state: 1=press, 0=release
+// - suppress: true=withhold this key until combo resolves
 struct KeyTrigger {
-  std::vector<std::pair<uint16_t, uint8_t>>
-      keyCodes; // Sequence of (key, state: 1=press, 0=release)
-  bool suppressUnmatched =
-      false; // If true, withhold keys until combo matches or breaks
+  std::vector<std::tuple<uint16_t, uint8_t, bool>>
+      keyCodes; // Sequence of (code, state: 1=press/0=release, suppress: true/false)
 };
 
 // Represents an action to execute when a trigger is matched

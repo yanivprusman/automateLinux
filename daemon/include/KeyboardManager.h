@@ -12,6 +12,7 @@ public:
   static bool isKnownKeyboard(const std::string &name);
   static void setContext(AppType appType, const std::string &url = "",
                          const std::string &title = "");
+  static void onFocusAck();
 
 private:
   static const std::vector<std::string> KNOWN_KEYBOARDS;

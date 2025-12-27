@@ -1,6 +1,7 @@
 #include "Utils.h"
 #include "Constants.h"
 #include "Globals.h" // For g_logFile
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <curl/curl.h>
@@ -197,10 +198,19 @@ std::string executeCommand(const char *cmd) {
 AppType stringToAppType(const std::string &appName) {
   if (appName == wmClassTerminal)
     return AppType::TERMINAL;
-  if (appName == wmClassChrome || appName == wmClassAntigravity)
+  if (appName == wmClassChrome || appName == "google-chrome")
     return AppType::CHROME;
-  if (appName == wmClassCode)
+  if (appName == wmClassCode || appName == "code")
     return AppType::CODE;
+
+  // Case-insensitive check for Antigravity or ChatGPT
+  std::string lower = appName;
+  std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+  if (lower.find("antigravity") != std::string::npos ||
+      lower.find("chatgpt") != std::string::npos) {
+    return AppType::CHROME;
+  }
+
   return AppType::OTHER;
 }
 

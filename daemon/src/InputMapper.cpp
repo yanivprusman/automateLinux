@@ -298,6 +298,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
       bool completedSuppressing = false;
       bool eventConsumed = false;
 
+      bool shouldSuppressThisSpecificEvent = false;
+
       // Test all combos for this app
       for (size_t comboIdx = 0; comboIdx < appIt->second.size(); ++comboIdx) {
         const KeyAction &action = appIt->second[comboIdx];
@@ -320,6 +322,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             eventConsumed = true; // Key matched a combo step
 
             if (shouldSuppress) {
+              shouldSuppressThisSpecificEvent = true;
               state.suppressedKeys.push_back({ev.code, (uint8_t)ev.value});
             }
 
@@ -336,11 +339,16 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                 completedSuppressing = true;
                 // Consume trigger from queue (the keys that match the combo)
                 std::lock_guard<std::mutex> lock(pendingEventsMutex_);
-                if (state.suppressedKeys.size() > 1) {
-                  size_t toRemove = state.suppressedKeys.size() - 1;
-                  if (pendingEvents_.size() >= toRemove) {
-                    pendingEvents_.erase(pendingEvents_.begin(),
-                                         pendingEvents_.begin() + toRemove);
+                // We only want to remove events that we actually suppressed for
+                // THIS combo
+                for (const auto &sk : state.suppressedKeys) {
+                  auto it = std::find_if(
+                      pendingEvents_.begin(), pendingEvents_.end(),
+                      [&sk](const PendingEvent &pe) {
+                        return pe.code == sk.first && pe.value == sk.second;
+                      });
+                  if (it != pendingEvents_.end()) {
+                    pendingEvents_.erase(it);
                   }
                 }
                 state.suppressedKeys.clear();
@@ -360,58 +368,65 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
         }
       }
 
-      // Check if ANY combo is STILL in progress and has suppressed keys
+      // Re-evaluate if any combo is still in progress
+      bool anyComboInProgress = false;
       for (const auto &pair : comboProgress_[currentApp]) {
-        if (pair.first >= appIt->second.size())
-          continue;
-        const KeyAction &action = appIt->second[pair.first];
-        if (pair.second.nextKeyIndex > 0 && action.trigger.hasSuppressedKeys) {
-          currentlySuppressing = true;
+        if (pair.second.nextKeyIndex > 0) {
+          anyComboInProgress = true;
           break;
         }
       }
 
-      if (completedSuppressing) {
-        // Current event finished a suppressing combo. Consume it.
-        if (!currentlySuppressing) {
+      if (eventConsumed) {
+        if (shouldSuppressThisSpecificEvent) {
+          // Queue this event
+          std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+          pendingEvents_.push_back(
+              {(uint16_t)ev.type, (uint16_t)ev.code, (int32_t)ev.value});
+        } else {
+          // Not suppressed by any matching combo. Emit now!
+          emit(ev.type, ev.code, ev.value);
+        }
+
+        if (completedSuppressing && !anyComboInProgress) {
+          // If we just finished a suppressing combo and nothing else is
+          // in progress, flush the queue.
           std::lock_guard<std::mutex> lock(pendingEventsMutex_);
           if (!pendingEvents_.empty()) {
-            logToFile("Flushing " + std::to_string(pendingEvents_.size()) +
-                          " pending events (after complete)",
-                      LOG_INPUT);
+            logToFile("Flushing remaining after complete", LOG_INPUT);
             for (const auto &pe : pendingEvents_) {
               emit(pe.type, pe.code, pe.value);
             }
             pendingEvents_.clear();
           }
         }
-        return; // Event consumed by macro
+        return;
       }
 
-      if (currentlySuppressing) {
-        // Queue this event
+      // If we are currently in a suppressed state (holding a trigger key), we
+      // must queue even unmatched keys to preserve order.
+      {
+        std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+        currentlySuppressing = !pendingEvents_.empty();
+      }
+
+      if (currentlySuppressing && anyComboInProgress) {
+        // Still matching some other potential combo, keep queueing
         std::lock_guard<std::mutex> lock(pendingEventsMutex_);
         pendingEvents_.push_back(
             {(uint16_t)ev.type, (uint16_t)ev.code, (int32_t)ev.value});
         return;
       } else {
-        // Not suppressing anymore. If we have pending events, flush them.
+        // Not matching anything anymore, or we weren't suppressing. Flush.
         std::lock_guard<std::mutex> lock(pendingEventsMutex_);
         if (!pendingEvents_.empty()) {
-          logToFile("Flushing " + std::to_string(pendingEvents_.size()) +
-                        " pending events (after mismatch)",
+          logToFile("Flushing pending events (mismatch/broken combo)",
                     LOG_INPUT);
           for (const auto &pe : pendingEvents_) {
             emit(pe.type, pe.code, pe.value);
           }
           pendingEvents_.clear();
         }
-      }
-
-      if (eventConsumed) {
-        // If it matched a combo (even if not suppressed), we consume it here
-        // so it doesn't double-emit via the default path below.
-        return;
       }
     }
   }
@@ -501,15 +516,43 @@ void InputMapper::executeKeyAction(const KeyAction &action) {
   }
 }
 
+void InputMapper::onFocusAck() {
+  logToFile("[InputMapper] Focus ACK received, signaling CV", LOG_AUTOMATION);
+  focusAckReceived_ = true;
+  focusAckCv_.notify_all();
+}
+
 void InputMapper::triggerChromeChatGPTMacro() {
   extern void triggerChromeChatGPTFocus();
+  logToFile("[InputMapper] Triggering ChatGPT focus macro", LOG_AUTOMATION);
+
+  // Clear previous state
+  focusAckReceived_ = false;
+
   triggerChromeChatGPTFocus();
 
-  // Use a detached thread to fire the paste after a short delay
+  // Wait for ACK in a separate thread so we don't block the input loop
   std::thread([this]() {
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    logToFile("[InputMapper] Async speculative paste fired", LOG_AUTOMATION);
-    // Double sequence to ensure focus is solid
+    {
+      std::unique_lock<std::mutex> lock(focusAckMutex_);
+      // Wait for up to 400ms for the extension to respond
+      bool received =
+          focusAckCv_.wait_for(lock, std::chrono::milliseconds(400),
+                               [this] { return (bool)focusAckReceived_; });
+
+      if (received) {
+        logToFile("[InputMapper] Focus ACK confirmed via CV, pasting NOW",
+                  LOG_AUTOMATION);
+      } else {
+        logToFile("[InputMapper] Focus ACK TIMEOUT (400ms), pasting anyway",
+                  LOG_AUTOMATION);
+      }
+    }
+
+    // Small extra safety delay to ensure the browser has processed the focus
+    // event internally
+    std::this_thread::sleep_for(std::chrono::milliseconds(15));
+
     emitSequence(
         {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}});
   }).detach();

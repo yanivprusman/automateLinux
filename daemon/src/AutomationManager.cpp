@@ -32,16 +32,30 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
                 "] Title: [" + windowTitle + "]\n",
             LOG_WINDOW);
   std::string url = "";
-  if (wmClass == wmClassChrome) {
+  if (wmClass == wmClassChrome || wmClass == wmClassAntigravity) {
     // Pass windowTitle to help disambiguate correct tab
     url = getChromeTabUrl(windowTitle);
-    logToFile("[ACTIVE_WINDOW_CHANGED] Chrome detected. Current URL: [" + url +
-                  "]\n",
-              LOG_WINDOW);
+    logToFile(
+        "[ACTIVE_WINDOW_CHANGED] Chrome/Antigravity detected. Current URL: [" +
+            url + "]\n",
+        LOG_WINDOW);
+  }
+
+  AppType appType = stringToAppType(wmClass);
+
+  // Fallback: Check title for Antigravity or ChatGPT to ensure Chrome macros
+  // work in dev
+  std::string lowerTitle = windowTitle;
+  std::transform(lowerTitle.begin(), lowerTitle.end(), lowerTitle.begin(),
+                 ::tolower);
+  if (appType == AppType::OTHER &&
+      (lowerTitle.find("antigravity") != std::string::npos ||
+       lowerTitle.find("chatgpt") != std::string::npos)) {
+    appType = AppType::CHROME;
   }
 
   // Set the mapping context directly in InputMapper, tracking title too
-  KeyboardManager::setContext(stringToAppType(wmClass), url, windowTitle);
+  KeyboardManager::setContext(appType, url, windowTitle);
 
   return CmdResult(0, "Active window info received and mapping updated.\n");
 }

@@ -5,21 +5,18 @@
 void InputMapper::initializeAppMacros() {
   // === DEFAULT MAPPINGS (apply to all apps unless overridden) ===
   std::vector<KeyAction> defaultMacros;
-
   // Mouse: Forward Button (press) -> Enter
   defaultMacros.push_back(
       KeyAction{KeyTrigger{{{BTN_FORWARD, 1, false}}},
                 {{KEY_ENTER, 1}, {KEY_ENTER, 0}},
                 "Triggering mouse forward button (press) → Enter",
                 nullptr});
-
   // G5 (press) -> Ctrl+V
   defaultMacros.push_back(
       KeyAction{KeyTrigger{{{G5_VIRTUAL, 1, false}}},
                 {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}},
                 "Triggering G5 (press) Ctrl+V macro",
                 nullptr});
-
   // G6 (press) -> Ctrl+C
   defaultMacros.push_back(
       KeyAction{KeyTrigger{{{G6_VIRTUAL, 1, false}}},
@@ -29,7 +26,7 @@ void InputMapper::initializeAppMacros() {
 
   // === APP-SPECIFIC MAPPINGS (override defaults) ===
 
-  // --- TERMINAL ---
+// --- TERMINAL ---
   appMacros_[AppType::TERMINAL] = defaultMacros; // Start with defaults
   appMacros_[AppType::TERMINAL].push_back(
       KeyAction{KeyTrigger{{{G1_VIRTUAL, 1, false}}},
@@ -43,7 +40,7 @@ void InputMapper::initializeAppMacros() {
                 nullptr});
   // Ctrl(press, suppress) + LeftClick(press, suppress)
   appMacros_[AppType::TERMINAL].push_back(KeyAction{
-      KeyTrigger{{{KEY_LEFTCTRL, 1, true}, {BTN_LEFT, 1, true}}},
+      KeyTrigger{{{KEY_LEFTCTRL, 1, false}, {BTN_LEFT, 1, true}}},
       {{KEY_LEFTCTRL, 0}, {KEY_5, 1}, {KEY_5, 0}},
       "Triggering Terminal Ctrl+Left Click macro",
       nullptr});

@@ -60,3 +60,5 @@ void KeyboardManager::setContext(AppType appType, const std::string &url,
                                  const std::string &title) {
   mapper.setContext(appType, url, title);
 }
+
+void KeyboardManager::onFocusAck() { mapper.onFocusAck(); }

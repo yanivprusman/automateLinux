@@ -415,6 +415,7 @@ CmdResult handleFocusChatGPT(const json &) {
 }
 
 CmdResult handleFocusAck(const json &) {
+  KeyboardManager::onFocusAck();
   return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
 

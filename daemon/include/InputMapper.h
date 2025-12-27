@@ -65,6 +65,7 @@ public:
   void stop();
   void setContext(AppType appType, const std::string &url = "",
                   const std::string &title = "");
+  void onFocusAck();
   bool isRunning() const { return running_; }
 
 private:
@@ -124,6 +125,11 @@ private:
   };
   std::vector<PendingEvent> pendingEvents_;
   std::mutex pendingEventsMutex_;
+
+  // Focus synchronization
+  std::condition_variable focusAckCv_;
+  std::mutex focusAckMutex_;
+  std::atomic<bool> focusAckReceived_{false};
 };
 
 #endif // INPUT_MAPPER_H

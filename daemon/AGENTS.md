@@ -4,6 +4,12 @@ keep indenting code like:
 std::string getTtyFromPid(pid_t pid) {
     std::string fdPath = "/proc/" + std::to_string(pid) + "/fd";
 }
+
+Building the daemon:
+- Use `bd` function (which sources build.sh) instead of running build.sh directly
+- The `bd` function ensures proper cleanup (stops ghost daemon, clears build artifacts, etc.)
+- Example: `bd` (not `bash build.sh` or `./build.sh`)
+
 Adding Commands:
 - Add `#define COMMAND_NAME "commandName"` and if needed new arguments to `include/common.h`
 - Add `CommandSignature(COMMAND_NAME, {required, args})` to `COMMAND_REGISTRY[]` in `include/common.h`

@@ -7,10 +7,34 @@
 #include <cstdint>
 #include <libevdev/libevdev-uinput.h>
 #include <libevdev/libevdev.h>
+#include <map>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
+
+// G-Key enumeration for type-safe G-key references
+enum class GKey { G1 = 1, G2 = 2, G3 = 3, G4 = 4, G5 = 5, G6 = 6 };
+
+// Trigger type enumeration
+enum class TriggerType { G_KEY, MODIFIER_COMBO, DEVICE_COMBO, CONTEXT_KEY };
+
+// Represents a keyboard/mouse trigger condition
+struct KeyTrigger {
+  TriggerType type;
+  int gKeyNumber = 0;  // For G_KEY type: 1-6
+  uint16_t keyCode = 0;  // For MODIFIER_COMBO/DEVICE_COMBO type
+  uint16_t modifiers = 0;  // For MODIFIER_COMBO type (e.g., KEY_LEFTCTRL)
+  std::string contextUrl = "";  // For CONTEXT_KEY type (URL substring to match)
+};
+
+// Represents an action to execute when a trigger is matched
+struct KeyAction {
+  KeyTrigger trigger;
+  std::vector<std::pair<uint16_t, int32_t>> keySequence;  // Key events to emit
+  std::string logMessage;  // Log message for the action
+};
 
 class InputMapper {
 public:
@@ -31,6 +55,9 @@ private:
   void processEvent(struct input_event &ev, bool isKeyboard, bool skipMacros);
   void emit(uint16_t type, uint16_t code, int32_t value);
   void emitSequence(const std::vector<std::pair<uint16_t, int32_t>> &sequence);
+  std::optional<GKey> detectGKey(const struct input_event &ev);
+  void executeKeyAction(const KeyAction &action);
+  void initializeAppMacros();
 
   std::string keyboardPath_;
   std::string mousePath_;
@@ -61,6 +88,9 @@ private:
   std::string activeUrl_;
   std::string activeTitle_;
   std::mutex contextMutex_;
+
+  // App-specific macro mappings
+  std::map<AppType, std::vector<KeyAction>> appMacros_;
 };
 
 #endif // INPUT_MAPPER_H

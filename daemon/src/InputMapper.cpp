@@ -6,12 +6,13 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
+#include <linux/input-event-codes.h>
 #include <mutex>
 #include <poll.h>
 #include <unistd.h>
 #include <vector>
 
-InputMapper::InputMapper() {}
+InputMapper::InputMapper() { initializeAppMacros(); }
 
 InputMapper::~InputMapper() { stop(); }
 
@@ -309,101 +310,29 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
   }
 
   if (!skipMacros && isKeyboard && ev.type == EV_KEY) {
-    if (ev.code == KEY_LEFTCTRL) {
-      if (ev.value == 1) {
-        if (gToggleState_ == 1) {
-          gToggleState_ = 2;
-          logToFile("G-Key State: 1 -> 2 (Ctrl Down)", LOG_INPUT);
-        } else if (gToggleState_ == 3) {
-          gToggleState_ = 4;
-          logToFile("G-Key State: 3 -> 4 (Ctrl Down)", LOG_INPUT);
-        } else {
-          gToggleState_ = 1;
+    // Detect G-key presses
+    std::optional<GKey> gKey = detectGKey(ev);
+    if (gKey.has_value()) {
+      // A complete G-key sequence was detected
+      AppType currentApp;
+      {
+        std::lock_guard<std::mutex> lock(contextMutex_);
+        currentApp = activeApp_;
+      }
+
+      // Look for a matching macro in the current app's config
+      auto it = appMacros_.find(currentApp);
+      if (it != appMacros_.end()) {
+        for (const auto &action : it->second) {
+          if (action.trigger.type == TriggerType::G_KEY &&
+              action.trigger.gKeyNumber == static_cast<int>(*gKey)) {
+            executeKeyAction(action);
+            return;  // Swallow the G-key
+          }
         }
       }
-    } else if (ev.code == KEY_LEFTSHIFT) {
-      if (ev.value == 1) {
-        if (gToggleState_ == 2) {
-          gToggleState_ = 3;
-          logToFile("G-Key State: 2 -> 3 (Shift Down)", LOG_INPUT);
-        } else if (gToggleState_ == 4) {
-          gToggleState_ = 5;
-          logToFile("G-Key State: 4 -> 5 (Shift Down)", LOG_INPUT);
-        } else {
-          gToggleState_ = 1;
-        }
-      }
-    } else if (gToggleState_ == 5) {
-      logToFile("G ", LOG_CORE);
-      if (ev.code >= KEY_1 && ev.code <= KEY_6) {
-        if (ev.code == KEY_1) {
-          logToFile("G1 pressed. Current gToggleState: " +
-                        std::to_string(gToggleState_),
-                    LOG_CORE);
-          AppType currentApp;
-          {
-            std::lock_guard<std::mutex> lock(contextMutex_);
-            currentApp = activeApp_;
-          }
-          if (currentApp == AppType::TERMINAL) {
-            logToFile(
-                "Triggering G1 SIGINT macro (Ctrl+Alt+C) for Gnome Terminal",
-                LOG_AUTOMATION);
-            emit(EV_KEY, KEY_LEFTCTRL, 1);
-            emit(EV_KEY, KEY_LEFTALT, 1);
-            emit(EV_KEY, KEY_C, 1);
-            emit(EV_KEY, KEY_C, 0);
-            emit(EV_KEY, KEY_LEFTALT, 0);
-            emit(EV_KEY, KEY_LEFTCTRL, 0);
-            gToggleState_ = 1;
-            return;
-          }
-        } else if (ev.code == KEY_2) {
-          AppType currentApp;
-          {
-            std::lock_guard<std::mutex> lock(contextMutex_);
-            currentApp = activeApp_;
-          }
-          if (currentApp == AppType::CODE) {
-            logToFile("Triggering G2 End macro for VS Code", LOG_AUTOMATION);
-            emit(EV_KEY, KEY_END, 1);
-            emit(EV_KEY, KEY_END, 0);
-            gToggleState_ = 1;
-            return;
-          }
-        } else if (ev.code == KEY_6) {
-          AppType currentApp;
-          {
-            std::lock_guard<std::mutex> lock(contextMutex_);
-            currentApp = activeApp_;
-          }
-          if (currentApp == AppType::CODE) {
-            logToFile("Triggering G6 Ctrl+C macro for VS Code", LOG_AUTOMATION);
-            emit(EV_KEY, KEY_LEFTCTRL, 1);
-            emit(EV_KEY, KEY_C, 1);
-            emit(EV_KEY, KEY_C, 0);
-            emit(EV_KEY, KEY_LEFTCTRL, 0);
-            gToggleState_ = 1;
-            return;
-          }
-        }
-        logToFile("G" + std::to_string(ev.code - KEY_1 + 1) + " pressed",
-                  LOG_INPUT);
-        gToggleState_ = 1;
-        return;
-      }
-      logToFile("G-Key State: Reset due to unexpected key code: " +
-                    std::to_string(ev.code),
-                LOG_INPUT);
-      gToggleState_ = 1;
-    } else {
-      if (gToggleState_ != 1) {
-        // Just log if we are resetting a partial state
-        logToFile("G-Key State: Reset from " + std::to_string(gToggleState_) +
-                      " due to key code: " + std::to_string(ev.code),
-                  LOG_INPUT);
-      }
-      gToggleState_ = 1;
+      // If no macro found for this app, silently swallow the G-key
+      return;
     }
   }
 
@@ -461,4 +390,93 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     logToFile("Failed to write to uinput: " + std::string(strerror(-rc)),
               LOG_INPUT);
   }
+}
+
+std::optional<GKey> InputMapper::detectGKey(const struct input_event &ev) {
+  if (ev.type != EV_KEY) {
+    return std::nullopt;
+  }
+
+  if (ev.code == KEY_LEFTCTRL) {
+    if (ev.value == 1) {
+      if (gToggleState_ == 1) {
+        gToggleState_ = 2;
+        logToFile("G-Key State: 1 -> 2 (Ctrl Down)", LOG_INPUT);
+      } else if (gToggleState_ == 3) {
+        gToggleState_ = 4;
+        logToFile("G-Key State: 3 -> 4 (Ctrl Down)", LOG_INPUT);
+      } else {
+        gToggleState_ = 1;
+      }
+    }
+    return std::nullopt;
+  }
+
+  if (ev.code == KEY_LEFTSHIFT) {
+    if (ev.value == 1) {
+      if (gToggleState_ == 2) {
+        gToggleState_ = 3;
+        logToFile("G-Key State: 2 -> 3 (Shift Down)", LOG_INPUT);
+      } else if (gToggleState_ == 4) {
+        gToggleState_ = 5;
+        logToFile("G-Key State: 4 -> 5 (Shift Down)", LOG_INPUT);
+      } else {
+        gToggleState_ = 1;
+      }
+    }
+    return std::nullopt;
+  }
+
+  // Check if we're in the ready state (gToggleState_ == 5)
+  if (gToggleState_ == 5) {
+    if (ev.code >= KEY_1 && ev.code <= KEY_6) {
+      int gKeyNum = ev.code - KEY_1 + 1;  // Convert KEY_1..KEY_6 to 1..6
+      gToggleState_ = 1;  // Reset state after G-key is detected
+      return static_cast<GKey>(gKeyNum);
+    }
+    // Not a G-key number, reset state
+    gToggleState_ = 1;
+    return std::nullopt;
+  }
+
+  // Not in G-key sequence, reset state if needed
+  if (gToggleState_ != 1) {
+    logToFile("G-Key State: Reset from " + std::to_string(gToggleState_) +
+                  " due to key code: " + std::to_string(ev.code),
+              LOG_INPUT);
+  }
+  gToggleState_ = 1;
+  return std::nullopt;
+}
+
+void InputMapper::executeKeyAction(const KeyAction &action) {
+  logToFile(action.logMessage, LOG_AUTOMATION);
+  emitSequence(action.keySequence);
+}
+
+void InputMapper::initializeAppMacros() {
+  // Terminal: G1 -> Ctrl+Alt+C (SIGINT)
+  appMacros_[AppType::TERMINAL].push_back(KeyAction{
+      KeyTrigger{TriggerType::G_KEY, 1},
+      {{KEY_LEFTCTRL, 1}, {KEY_LEFTALT, 1}, {KEY_C, 1}, {KEY_C, 0},
+       {KEY_LEFTALT, 0}, {KEY_LEFTCTRL, 0}},
+      "Triggering G1 SIGINT macro (Ctrl+Alt+C) for Gnome Terminal"});
+
+  // Code: G2 -> End key
+  appMacros_[AppType::CODE].push_back(KeyAction{
+      KeyTrigger{TriggerType::G_KEY, 2},
+      {{KEY_END, 1}, {KEY_END, 0}},
+      "Triggering G2 End macro for VS Code"});
+
+  // Code: G6 -> Ctrl+C
+  appMacros_[AppType::CODE].push_back(KeyAction{
+      KeyTrigger{TriggerType::G_KEY, 6},
+      {{KEY_LEFTCTRL, 1}, {KEY_C, 1}, {KEY_C, 0}, {KEY_LEFTCTRL, 0}},
+      "Triggering G6 Ctrl+C macro for VS Code"});
+
+  // Chrome: Ctrl+V on chatgpt.com (special handling - context-based)
+  // Note: This is handled separately in processEvent() due to its async nature
+  
+  // Default: Mouse BTN_FORWARD -> Enter
+  // Note: This is handled separately as it's device-specific, not app-specific
 }

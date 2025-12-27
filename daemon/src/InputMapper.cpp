@@ -476,25 +476,30 @@ void InputMapper::executeKeyAction(const KeyAction &action) {
 }
 
 void InputMapper::initializeAppMacros() {
+  // Code: 
+  // G2 -> End key
+  appMacros_[AppType::CODE].push_back(KeyAction{
+      KeyTrigger{2, 0, 0, ""},  // gKeyNumber=2
+      {{KEY_END, 1}, {KEY_END, 0}},
+      "Triggering G2 End macro for VS Code"});
+  // G6 -> Ctrl+C
+  appMacros_[AppType::CODE].push_back(KeyAction{
+      KeyTrigger{6, 0, 0, ""},  // gKeyNumber=6
+      {{KEY_LEFTCTRL, 1}, {KEY_C, 1}, {KEY_C, 0}, {KEY_LEFTCTRL, 0}},
+      "Triggering G6 Ctrl+C macro for VS Code"});
+  // G5 -> Ctrl+V
+  appMacros_[AppType::CODE].push_back(KeyAction{
+      KeyTrigger{5, 0, 0, ""},  // gKeyNumber=6
+      {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}},
+      "Triggering G6 Ctrl+C macro for VS Code"});
+
   // Terminal: G1 -> Ctrl+Alt+C (SIGINT)
   appMacros_[AppType::TERMINAL].push_back(KeyAction{
       KeyTrigger{1, 0, 0, ""},  // gKeyNumber=1
       {{KEY_LEFTCTRL, 1}, {KEY_LEFTALT, 1}, {KEY_C, 1}, {KEY_C, 0},
        {KEY_LEFTALT, 0}, {KEY_LEFTCTRL, 0}},
-      "Triggering G1 SIGINT macro (Ctrl+Alt+C) for Gnome Terminal"});
-
-  // Code: G2 -> End key
-  appMacros_[AppType::CODE].push_back(KeyAction{
-      KeyTrigger{2, 0, 0, ""},  // gKeyNumber=2
-      {{KEY_END, 1}, {KEY_END, 0}},
-      "Triggering G2 End macro for VS Code"});
-
-  // Code: G6 -> Ctrl+C
-  appMacros_[AppType::CODE].push_back(KeyAction{
-      KeyTrigger{6, 0, 0, ""},  // gKeyNumber=6
-      {{KEY_LEFTCTRL, 1}, {KEY_C, 1}, {KEY_C, 0}, {KEY_LEFTCTRL, 0}},
-      "Triggering G6 Ctrl+C macro for VS Code"});
-
+      "Triggering G1 SIGINT macro (Ctrl+Alt+C) for Gnome Terminal"}); 
+    
   // Terminal: Ctrl+Left Click -> 5
   appMacros_[AppType::TERMINAL].push_back(KeyAction{
       KeyTrigger{0, BTN_LEFT, KEY_LEFTCTRL, ""},  // keyCode=BTN_LEFT, modifiers=KEY_LEFTCTRL

@@ -36,9 +36,12 @@ bool InputMapper::start(const std::string &keyboardPath,
 }
 
 void InputMapper::stop() {
+  logToFile("InputMapper: Stopping...", LOG_CORE);
   running_ = false;
   if (thread_.joinable()) {
+    logToFile("InputMapper: Joining thread...", LOG_CORE);
     thread_.join();
+    logToFile("InputMapper: Thread joined", LOG_CORE);
   }
 
   if (uinputDev_) {
@@ -63,6 +66,7 @@ void InputMapper::stop() {
     close(mouseFd_);
     mouseFd_ = -1;
   }
+  logToFile("InputMapper: Stopped", LOG_CORE);
 }
 
 bool InputMapper::setupDevices() {
@@ -298,9 +302,24 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
               LOG_INPUT);
   }
 
+  // 3. G-Key sequence detection
+  if (!skipMacros && isKeyboard) {
+    auto gKey = detectGKey(ev);
+    if (gKey) {
+      logToFile("VIRTUAL G-KEY DETECTED: G" +
+                    std::to_string(static_cast<int>(*gKey)),
+                LOG_AUTOMATION);
+      struct input_event virtualEv = ev;
+      virtualEv.code =
+          1000 + static_cast<uint16_t>(*gKey); // Map to G1_VIRTUAL..G6_VIRTUAL
+      processEvent(virtualEv, true, false);
+      return;
+    }
+  }
+
   // === NEW PARALLEL COMBO MATCHING LOGIC ===
   // On key press: test all active combos and track progress
-  if (!skipMacros && ev.type == EV_KEY && ev.value == 1) {  // Key press
+  if (!skipMacros && ev.type == EV_KEY && ev.value == 1) { // Key press
     AppType currentApp;
     {
       std::lock_guard<std::mutex> lock(contextMutex_);
@@ -314,7 +333,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
       // Test all combos for this app
       for (size_t comboIdx = 0; comboIdx < appIt->second.size(); ++comboIdx) {
         const KeyAction &action = appIt->second[comboIdx];
-        if (action.trigger.keyCodes.empty()) continue;
+        if (action.trigger.keyCodes.empty())
+          continue;
 
         // Get or create combo progress for this combo
         auto &comboMap = comboProgress_[currentApp];
@@ -323,24 +343,35 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
         // Check if this is the next expected key
         if (state.nextKeyIndex < action.trigger.keyCodes.size()) {
           uint16_t expectedKey = action.trigger.keyCodes[state.nextKeyIndex];
-          
-          if (expectedKey == ev.code) {
-            // Match! Suppress this key and advance
-            state.suppressedKeys.push_back(ev.code);
-            keySuppressedBy_[ev.code].insert(comboIdx);
-            state.nextKeyIndex++;
-            anyComboSuppressed = true;
 
-            logToFile("Combo " + std::to_string(comboIdx) + " progress: " +
-                          std::to_string(state.nextKeyIndex) + "/" +
-                          std::to_string(action.trigger.keyCodes.size()),
+          if (expectedKey == ev.code) {
+            // Match! Advance state
+            state.nextKeyIndex++;
+
+            // Only suppress if it's NOT a modifier key (allows Ctrl+C to work
+            // while matching)
+            bool isModifier =
+                (ev.code == KEY_LEFTCTRL || ev.code == KEY_RIGHTCTRL ||
+                 ev.code == KEY_LEFTSHIFT || ev.code == KEY_RIGHTSHIFT ||
+                 ev.code == KEY_LEFTALT || ev.code == KEY_RIGHTALT ||
+                 ev.code == KEY_LEFTMETA || ev.code == KEY_RIGHTMETA);
+
+            if (!isModifier) {
+              state.suppressedKeys.push_back(ev.code);
+              keySuppressedBy_[ev.code].insert(comboIdx);
+              anyComboSuppressed = true;
+            }
+
+            logToFile("Combo " + std::to_string(comboIdx) +
+                          " progress: " + std::to_string(state.nextKeyIndex) +
+                          "/" + std::to_string(action.trigger.keyCodes.size()),
                       LOG_INPUT);
 
             // Check if combo is complete
             if (state.nextKeyIndex == action.trigger.keyCodes.size()) {
               logToFile("COMBO COMPLETE: " + action.logMessage, LOG_AUTOMATION);
               executeKeyAction(action);
-              
+
               // Clear suppressed keys and reset combo
               for (uint16_t suppKey : state.suppressedKeys) {
                 keySuppressedBy_[suppKey].erase(comboIdx);
@@ -353,10 +384,13 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             }
           } else {
             // Doesn't match - break this combo
-            logToFile("Combo " + std::to_string(comboIdx) + " broken at step " +
-                          std::to_string(state.nextKeyIndex),
-                      LOG_INPUT);
-            
+            if (state.nextKeyIndex > 0) {
+              logToFile("Combo " + std::to_string(comboIdx) +
+                            " broken at step " +
+                            std::to_string(state.nextKeyIndex),
+                        LOG_INPUT);
+            }
+
             // Release suppressed keys if not needed by other combos
             for (uint16_t suppKey : state.suppressedKeys) {
               keySuppressedBy_[suppKey].erase(comboIdx);
@@ -378,7 +412,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
   }
 
   // On key release: break combos if a key they're tracking is released
-  if (!skipMacros && ev.type == EV_KEY && ev.value == 0) {  // Key release
+  if (!skipMacros && ev.type == EV_KEY && ev.value == 0) { // Key release
     AppType currentApp;
     {
       std::lock_guard<std::mutex> lock(contextMutex_);
@@ -388,17 +422,18 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     auto appIt = appMacros_.find(currentApp);
     if (appIt != appMacros_.end()) {
       auto &comboMap = comboProgress_[currentApp];
-      
+
       // Find combos that are suppressing this key
       auto suppIt = keySuppressedBy_.find(ev.code);
       if (suppIt != keySuppressedBy_.end()) {
         for (size_t comboIdx : suppIt->second) {
           if (comboIdx < appIt->second.size()) {
             ComboState &state = comboMap[comboIdx];
-            
-            logToFile("Combo " + std::to_string(comboIdx) + " broken (key released)",
+
+            logToFile("Combo " + std::to_string(comboIdx) +
+                          " broken (key released)",
                       LOG_INPUT);
-            
+
             // Release all suppressed keys from this combo
             for (uint16_t suppKey : state.suppressedKeys) {
               keySuppressedBy_[suppKey].erase(comboIdx);
@@ -477,8 +512,8 @@ std::optional<GKey> InputMapper::detectGKey(const struct input_event &ev) {
   // Check if we're in the ready state (gToggleState_ == 5)
   if (gToggleState_ == 5) {
     if (ev.code >= KEY_1 && ev.code <= KEY_6) {
-      int gKeyNum = ev.code - KEY_1 + 1;  // Convert KEY_1..KEY_6 to 1..6
-      gToggleState_ = 1;  // Reset state after G-key is detected
+      int gKeyNum = ev.code - KEY_1 + 1; // Convert KEY_1..KEY_6 to 1..6
+      gToggleState_ = 1;                 // Reset state after G-key is detected
       return static_cast<GKey>(gKeyNum);
     }
     // Not a G-key number, reset state
@@ -499,9 +534,9 @@ std::optional<GKey> InputMapper::detectGKey(const struct input_event &ev) {
 void InputMapper::executeKeyAction(const KeyAction &action) {
   logToFile(action.logMessage, LOG_AUTOMATION);
   if (action.customHandler) {
-    action.customHandler();  // Call async handler (e.g., Chrome ChatGPT focus)
+    action.customHandler(); // Call async handler (e.g., Chrome ChatGPT focus)
   } else {
-    emitSequence(action.keySequence);  // Emit key sequence
+    emitSequence(action.keySequence); // Emit key sequence
   }
 }
 
@@ -511,5 +546,3 @@ void InputMapper::triggerChromeChatGPTMacro() {
   withholdingV_ = true;
   triggerChromeChatGPTFocus();
 }
-
-

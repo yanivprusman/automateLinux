@@ -19,24 +19,35 @@
 // G-Key enumeration for type-safe G-key references
 enum class GKey { G1 = 1, G2 = 2, G3 = 3, G4 = 4, G5 = 5, G6 = 6 };
 
+// Virtual codes for G-keys to avoid collision with physical keys
+#define G1_VIRTUAL 1001
+#define G2_VIRTUAL 1002
+#define G3_VIRTUAL 1003
+#define G4_VIRTUAL 1004
+#define G5_VIRTUAL 1005
+#define G6_VIRTUAL 1006
+
 // Represents the state of a key sequence combo during matching
 struct ComboState {
-  size_t nextKeyIndex = 0;  // Next key position to match (0 = start, size = complete)
-  std::vector<uint16_t> suppressedKeys;  // Keys being held back for this combo
+  size_t nextKeyIndex =
+      0; // Next key position to match (0 = start, size = complete)
+  std::vector<uint16_t> suppressedKeys; // Keys being held back for this combo
 };
 
 // Represents a keyboard/mouse trigger condition
 // keyCodes is a sequence of keys that must be pressed in order
 struct KeyTrigger {
-  std::vector<uint16_t> keyCodes;  // Sequence of key codes to match
+  std::vector<uint16_t> keyCodes; // Sequence of key codes to match
 };
 
 // Represents an action to execute when a trigger is matched
 struct KeyAction {
   KeyTrigger trigger;
-  std::vector<std::pair<uint16_t, int32_t>> keySequence;  // Key events to emit (empty if using callback)
-  std::string logMessage;  // Log message for the action
-  std::function<void()> customHandler = nullptr;  // Optional async handler (e.g., for Chrome ChatGPT)
+  std::vector<std::pair<uint16_t, int32_t>>
+      keySequence;        // Key events to emit (empty if using callback)
+  std::string logMessage; // Log message for the action
+  std::function<void()> customHandler =
+      nullptr; // Optional async handler (e.g., for Chrome ChatGPT)
 };
 
 class InputMapper {
@@ -97,8 +108,10 @@ private:
   std::map<AppType, std::vector<KeyAction>> appMacros_;
 
   // Combo sequence tracking (per-app)
-  std::map<AppType, std::map<size_t, ComboState>> comboProgress_;  // appType → (comboIndex → progress)
-  std::map<uint16_t, std::set<size_t>> keySuppressedBy_;  // keyCode → {combo indices suppressing it}
+  std::map<AppType, std::map<size_t, ComboState>>
+      comboProgress_; // appType → (comboIndex → progress)
+  std::map<uint16_t, std::set<size_t>>
+      keySuppressedBy_; // keyCode → {combo indices suppressing it}
 };
 
 #endif // INPUT_MAPPER_H

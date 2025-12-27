@@ -1,22 +1,22 @@
 // Background service worker for tracking active tab
-// Sends URL to daemon via native messaging
+// Uses HTTP bridge instead of native messaging to bypass Chrome sandbox issues
+const BRIDGE_URL = "http://localhost:9223/active-tab";
 
-let currentTabUrl = "";
-
-// Send URL to native messaging host (which forwards to daemon)
+// Send URL to HTTP bridge
 async function updateActiveTabUrl(url) {
-    currentTabUrl = url;
     console.log("[AutomateLinux] Active tab URL:", url);
 
     try {
-        const response = await chrome.runtime.sendNativeMessage(
-            'com.automatelinux.tabtracker',
-            { url: url }
-        );
-        console.log("[AutomateLinux] Sent to daemon:", response);
+        await fetch(BRIDGE_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url: url })
+        });
     } catch (error) {
-        // Native messaging might not be set up yet
-        console.log("[AutomateLinux] Native messaging error (expected on first run):", error.message);
+        // Suppress connection errors if bridge is down to avoid console spam
+        // console.log("[AutomateLinux] Bridge error:", error.message);
     }
 }
 
@@ -41,7 +41,6 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 // Listen for tab updates (URL changes in current tab)
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (changeInfo.url) {
-        // Check if this is the active tab
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (activeTab && activeTab.id === tabId) {
             await getAndSendActiveTabUrl();
@@ -49,7 +48,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     }
 });
 
-// Listen for window focus changes
+// Listen for window focus changes  
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
     if (windowId !== chrome.windows.WINDOW_ID_NONE) {
         await getAndSendActiveTabUrl();
@@ -66,4 +65,5 @@ chrome.runtime.onInstalled.addListener(async () => {
     await getAndSendActiveTabUrl();
 });
 
-console.log("[AutomateLinux] Tab tracker extension loaded");
+console.log("[AutomateLinux] Tab tracker extension loaded (HTTP mode)");
+getAndSendActiveTabUrl();

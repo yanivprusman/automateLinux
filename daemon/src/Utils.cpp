@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <jsoncpp/json/json.h>
+#include <mutex>
 #include <sstream>
 #include <unistd.h>
 #include <vector>
@@ -18,6 +19,8 @@ using std::vector;
 // Centralized logging function that respects the shouldLog flag
 void logToFile(const string &message, unsigned int category) {
   extern unsigned int shouldLog; // Now unsigned int
+  static std::mutex logMutex;
+  std::lock_guard<std::mutex> lock(logMutex);
   if ((shouldLog & category) && g_logFile.is_open()) {
     g_logFile << message << endl; // Add newline for flush consistency
     g_logFile.flush();
@@ -43,7 +46,8 @@ std::string getChromeTabUrl(const std::string &preferredTitle) {
   // First, check if we have an active tab URL from the Chrome extension
   extern std::string getActiveTabUrlFromExtension();
   std::string extensionUrl = getActiveTabUrlFromExtension();
-  if (!extensionUrl.empty()) {
+  extern bool isNativeHostConnected();
+  if (isNativeHostConnected() && !extensionUrl.empty()) {
     logToFile("[getChromeTabUrl] Using URL from Chrome extension: " +
                   extensionUrl,
               LOG_CORE);

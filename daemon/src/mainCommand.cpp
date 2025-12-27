@@ -89,6 +89,11 @@ void triggerChromeChatGPTFocus() {
   }
 }
 
+bool isNativeHostConnected() {
+  std::lock_guard<std::mutex> lock(g_nativeHostSocketMutex);
+  return g_nativeHostSocket != -1;
+}
+
 static string
 formatEntriesAsText(const vector<std::pair<string, string>> &entries) {
   if (entries.empty()) {
@@ -360,8 +365,8 @@ CmdResult handleSetActiveTabUrl(const json &command) {
     std::lock_guard<std::mutex> lock(g_activeTabUrlMutex);
     g_activeTabUrl = url;
   }
-  logToFile("[Chrome Extension] Active tab changed to: " + url, LOG_AUTOMATION);
-  return CmdResult(0, "Active tab URL updated\n");
+  logToFile("[Chrome Extension] Active tab changed to: " + url, LOG_CORE);
+  return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
 
 CmdResult handleRegisterNativeHost(const json &) {
@@ -370,7 +375,8 @@ CmdResult handleRegisterNativeHost(const json &) {
     g_nativeHostSocket = clientSocket;
   }
   logToFile("[Chrome Extension] Native messaging host registered", LOG_CORE);
-  return CmdResult(0, "Native host registered\n");
+  return CmdResult(0, std::string(R"({"status":"registered"})") +
+                          mustEndWithNewLine);
 }
 
 CmdResult handleFocusChatGPT(const json &) {

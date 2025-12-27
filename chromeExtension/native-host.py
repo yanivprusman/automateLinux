@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.12
 """
 Native messaging host for AutomateLinux Chrome extension.
 Threaded Bidirectional version.
@@ -13,7 +13,7 @@ import threading
 import time
 
 SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock"
-LOG_FILE = "/tmp/chrome-native-host.log"
+LOG_FILE = "/home/yaniv/coding/automateLinux/data/combined.log"
 
 def log(message):
     """Log to file for debugging."""

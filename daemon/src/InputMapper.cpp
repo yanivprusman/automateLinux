@@ -498,7 +498,7 @@ void InputMapper::initializeAppMacros() {
   // Terminal: Ctrl+Left Click -> 5
   appMacros_[AppType::TERMINAL].push_back(KeyAction{
       KeyTrigger{0, BTN_LEFT, KEY_LEFTCTRL, ""},  // keyCode=BTN_LEFT, modifiers=KEY_LEFTCTRL
-      {{KEY_5, 1}, {KEY_5, 0}},
+      {{KEY_LEFTCTRL,0},{KEY_5, 1}, {KEY_5, 0}},
       "Triggering Terminal Ctrl+Left Click macro (5)"});
 
   // Chrome: Ctrl+V on chatgpt.com (special handling - context-based)

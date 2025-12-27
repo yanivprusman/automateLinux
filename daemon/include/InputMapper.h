@@ -61,7 +61,6 @@ public:
   ~InputMapper();
 
   bool start(const std::string &keyboardPath, const std::string &mousePath);
-  void onFocusAck();
   void stop();
   void setContext(AppType appType, const std::string &url = "",
                   const std::string &title = "");
@@ -93,8 +92,6 @@ private:
 
   // Thread safety and async flow
   std::mutex uinputMutex_;
-  std::atomic<bool> withholdingV_{false};
-  std::chrono::steady_clock::time_point lastWithholdingStart_;
 
   // --- State Machine for evsieve logic ---
 

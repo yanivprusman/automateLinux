@@ -197,7 +197,7 @@ std::string executeCommand(const char *cmd) {
 AppType stringToAppType(const std::string &appName) {
   if (appName == wmClassTerminal)
     return AppType::TERMINAL;
-  if (appName == wmClassChrome)
+  if (appName == wmClassChrome || appName == wmClassAntigravity)
     return AppType::CHROME;
   if (appName == wmClassCode)
     return AppType::CODE;

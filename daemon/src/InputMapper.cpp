@@ -230,17 +230,6 @@ void InputMapper::emitSequence(
   libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
 }
 
-void InputMapper::onFocusAck() {
-  if (withholdingV_) {
-    logToFile("[InputMapper] Focus ACK received EARLY (before speculative "
-              "delay). Emitting paste.",
-              LOG_AUTOMATION);
-    emitSequence(
-        {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}});
-    withholdingV_ = false;
-  }
-}
-
 void InputMapper::setContext(AppType appType, const std::string &url,
                              const std::string &title) {
   std::lock_guard<std::mutex> lock(contextMutex_);
@@ -254,28 +243,6 @@ void InputMapper::setContext(AppType appType, const std::string &url,
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                                bool skipMacros) {
-  // 1. Speculative Asynchronous Paste Logic
-  if (withholdingV_) {
-    auto now = std::chrono::steady_clock::now();
-    auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-                         now - lastWithholdingStart_)
-                         .count();
-
-    if (elapsedMs > 20) {
-      logToFile(
-          "[InputMapper] Speculative delay (20ms) reached. Emitting paste.",
-          LOG_AUTOMATION);
-      emitSequence(
-          {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}});
-      withholdingV_ = false;
-    }
-  }
-
-  // 2. Withhold physical V events IF we are awaiting speculative paste
-  if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_V && withholdingV_) {
-    return;
-  }
-
   // Update LeftCtrl state for macros (tracked outside Chrome block)
   if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_LEFTCTRL) {
     ctrlDown_ = (ev.value != 0);
@@ -297,8 +264,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
       tmpUrl = activeUrl_;
     }
     logToFile("Ctrl+V detected. State: App=[" + appTypeToString(tmpApp) +
-                  "] URL=[" + tmpUrl +
-                  "] withholdV=" + std::to_string(withholdingV_),
+                  "] URL=[" + tmpUrl + "]",
               LOG_INPUT);
   }
 
@@ -530,7 +496,14 @@ void InputMapper::executeKeyAction(const KeyAction &action) {
 
 void InputMapper::triggerChromeChatGPTMacro() {
   extern void triggerChromeChatGPTFocus();
-  lastWithholdingStart_ = std::chrono::steady_clock::now();
-  withholdingV_ = true;
   triggerChromeChatGPTFocus();
+
+  // Use a detached thread to fire the paste after a short delay
+  std::thread([this]() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    logToFile("[InputMapper] Async speculative paste fired", LOG_AUTOMATION);
+    // Double sequence to ensure focus is solid
+    emitSequence(
+        {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}});
+  }).detach();
 }

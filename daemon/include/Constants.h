@@ -83,6 +83,7 @@
 #define wmClassTerminal "gnome-terminal-server"
 #define wmClassCode "code"
 #define wmClassChrome "google-chrome"
+#define wmClassAntigravity "Antigravity"
 #define CODE_FOR_APP_CODES "codeForAppCodes"
 #define VALUE_FOR_APP_CODES "100"
 #define CODE_FOR_DEFAULT "codeForDefault"

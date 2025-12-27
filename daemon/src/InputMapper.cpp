@@ -318,8 +318,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
   }
 
   // === NEW PARALLEL COMBO MATCHING LOGIC ===
-  // On key press: test all active combos and track progress
-  if (!skipMacros && ev.type == EV_KEY && ev.value == 1) { // Key press
+  // On key press or release: test all active combos and track progress
+  if (!skipMacros && ev.type == EV_KEY) { // Any key event
     AppType currentApp;
     {
       std::lock_guard<std::mutex> lock(contextMutex_);
@@ -342,22 +342,24 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
 
         // Check if this is the next expected key
         if (state.nextKeyIndex < action.trigger.keyCodes.size()) {
-          uint16_t expectedKey = action.trigger.keyCodes[state.nextKeyIndex];
+          const auto &expectedKeyState = action.trigger.keyCodes[state.nextKeyIndex];
+          uint16_t expectedKey = expectedKeyState.first;
+          uint8_t expectedState = expectedKeyState.second; // 1=press, 0=release
 
-          if (expectedKey == ev.code) {
+          // Check both code AND state
+          if (expectedKey == ev.code && expectedState == ev.value) {
             // Match! Advance state
             state.nextKeyIndex++;
 
-            // Only suppress if it's NOT a modifier key (allows Ctrl+C to work
-            // while matching)
+            // Only suppress if suppressUnmatched is true OR it's a non-modifier key
             bool isModifier =
                 (ev.code == KEY_LEFTCTRL || ev.code == KEY_RIGHTCTRL ||
                  ev.code == KEY_LEFTSHIFT || ev.code == KEY_RIGHTSHIFT ||
                  ev.code == KEY_LEFTALT || ev.code == KEY_RIGHTALT ||
                  ev.code == KEY_LEFTMETA || ev.code == KEY_RIGHTMETA);
 
-            if (!isModifier) {
-              state.suppressedKeys.push_back(ev.code);
+            if (action.trigger.suppressUnmatched && !isModifier) {
+              state.suppressedKeys.push_back(expectedKeyState);
               keySuppressedBy_[ev.code].insert(comboIdx);
               anyComboSuppressed = true;
             }
@@ -373,10 +375,10 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
               executeKeyAction(action);
 
               // Clear suppressed keys and reset combo
-              for (uint16_t suppKey : state.suppressedKeys) {
-                keySuppressedBy_[suppKey].erase(comboIdx);
-                if (keySuppressedBy_[suppKey].empty()) {
-                  keySuppressedBy_.erase(suppKey);
+              for (const auto &suppKey : state.suppressedKeys) {
+                keySuppressedBy_[suppKey.first].erase(comboIdx);
+                if (keySuppressedBy_[suppKey.first].empty()) {
+                  keySuppressedBy_.erase(suppKey.first);
                 }
               }
               state.suppressedKeys.clear();
@@ -392,10 +394,10 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             }
 
             // Release suppressed keys if not needed by other combos
-            for (uint16_t suppKey : state.suppressedKeys) {
-              keySuppressedBy_[suppKey].erase(comboIdx);
-              if (keySuppressedBy_[suppKey].empty()) {
-                keySuppressedBy_.erase(suppKey);
+            for (const auto &suppKey : state.suppressedKeys) {
+              keySuppressedBy_[suppKey.first].erase(comboIdx);
+              if (keySuppressedBy_[suppKey.first].empty()) {
+                keySuppressedBy_.erase(suppKey.first);
               }
             }
             state.suppressedKeys.clear();
@@ -435,10 +437,10 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                       LOG_INPUT);
 
             // Release all suppressed keys from this combo
-            for (uint16_t suppKey : state.suppressedKeys) {
-              keySuppressedBy_[suppKey].erase(comboIdx);
-              if (keySuppressedBy_[suppKey].empty()) {
-                keySuppressedBy_.erase(suppKey);
+            for (const auto &suppKey : state.suppressedKeys) {
+              keySuppressedBy_[suppKey.first].erase(comboIdx);
+              if (keySuppressedBy_[suppKey.first].empty()) {
+                keySuppressedBy_.erase(suppKey.first);
               }
             }
             state.suppressedKeys.clear();

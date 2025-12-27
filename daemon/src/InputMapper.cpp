@@ -367,12 +367,13 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
         currentApp = activeApp_;
       }
 
-      // Look for a matching macro in the current app's config
+      // Look for a matching macro in the current app's config (last match wins)
       auto it = appMacros_.find(currentApp);
       if (it != appMacros_.end()) {
-        for (const auto &action : it->second) {
-          if (action.trigger.gKeyNumber == static_cast<int>(*gKey)) {
-            executeKeyAction(action);
+        // Iterate backwards so app-specific overrides (added last) take precedence
+        for (auto rit = it->second.rbegin(); rit != it->second.rend(); ++rit) {
+          if (rit->trigger.gKeyNumber == static_cast<int>(*gKey)) {
+            executeKeyAction(*rit);
             return;  // Swallow the G-key
           }
         }
@@ -406,24 +407,16 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
       }
     }
 
-    // Look for matching Ctrl+V macro in current app's config
+    // Look for matching Ctrl+V macro in current app's config (last match wins)
     auto it = appMacros_.find(currentApp);
     if (it != appMacros_.end()) {
-      for (const auto &action : it->second) {
+      // Iterate backwards so app-specific overrides (added last) take precedence
+      for (auto rit = it->second.rbegin(); rit != it->second.rend(); ++rit) {
         // Check if this is a Ctrl+V trigger
-        if (action.trigger.keyCode == KEY_V &&
-            action.trigger.modifiers == KEY_LEFTCTRL) {
-          // If contextUrl is specified, check if current URL matches
-          if (!action.trigger.contextUrl.empty()) {
-            if (currentUrl.find(action.trigger.contextUrl) != std::string::npos) {
-              executeKeyAction(action);
-              return;  // Consume the Ctrl+V
-            }
-          } else {
-            // No context restriction, execute for any URL
-            executeKeyAction(action);
-            return;  // Consume the Ctrl+V
-          }
+        if (rit->trigger.keyCode == KEY_V &&
+            rit->trigger.modifiers == KEY_LEFTCTRL) {
+          executeKeyAction(*rit);
+          return;  // Consume the Ctrl+V
         }
       }
     }

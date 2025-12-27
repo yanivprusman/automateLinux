@@ -24,7 +24,6 @@ struct KeyTrigger {
   int gKeyNumber = 0;  // G-key number 1-6, or 0 if not a G-key trigger
   uint16_t keyCode = 0;  // Key or button code (e.g., BTN_LEFT), or 0 if not used
   uint16_t modifiers = 0;  // Modifier key (e.g., KEY_LEFTCTRL), or 0 if none
-  std::string contextUrl = "";  // URL substring to match (for context-specific triggers), or empty if not needed
 };
 
 // Represents an action to execute when a trigger is matched

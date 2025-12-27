@@ -82,7 +82,7 @@ bool InputMapper::setupDevices() {
     logToFile("Failed to grab keyboard", LOG_CORE);
     return false;
   }
-  std::cerr << "InputMapper: Keyboard grabbed successfully" << std::endl;
+  logToFile("InputMapper: Keyboard grabbed successfully", LOG_CORE);
 
   if (!mousePath_.empty()) {
     mouseFd_ = open(mousePath_.c_str(), O_RDONLY | O_NONBLOCK);
@@ -159,7 +159,7 @@ void InputMapper::loop() {
 
   int nfds = (mouseFd_ >= 0) ? 2 : 1;
 
-  std::cerr << "InputMapper loop starting..." << std::endl;
+  logToFile("InputMapper loop starting...", LOG_CORE);
   while (running_) {
     int rc = poll(fds, nfds, 100); // 100ms timeout
     if (rc < 0)
@@ -227,14 +227,12 @@ void InputMapper::emitSequence(
 
 void InputMapper::onFocusAck() {
   if (withholdingV_) {
-    logToFile("[InputMapper] Focus ACK received. Emitting withheld paste.",
+    logToFile("[InputMapper] Focus ACK received EARLY (before speculative "
+              "delay). Emitting paste.",
               LOG_AUTOMATION);
     emitSequence(
         {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}});
     withholdingV_ = false;
-  } else {
-    logToFile("[InputMapper] Focus ACK received but no paste was withheld.",
-              LOG_AUTOMATION);
   }
 }
 
@@ -250,32 +248,26 @@ void InputMapper::setContext(const std::string &appName, const std::string &url,
 }
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
-  // Check for withholding timeout
+  // 1. Speculative Asynchronous Paste Logic
   if (withholdingV_) {
-    static auto withholdingStart = std::chrono::steady_clock::now();
-    // Only set withholdingStart when we FIRST enter this state
-    static bool wasWithholding = false;
-    if (!wasWithholding) {
-      withholdingStart = std::chrono::steady_clock::now();
-      wasWithholding = true;
-    }
-
     auto now = std::chrono::steady_clock::now();
-    if (std::chrono::duration_cast<std::chrono::milliseconds>(now -
-                                                              withholdingStart)
-            .count() > 500) {
-      logToFile("[InputMapper] Withholding Ctrl+V timed out. Falling back to "
-                "immediate paste.",
-                LOG_AUTOMATION);
+    auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                         now - lastWithholdingStart_)
+                         .count();
+
+    if (elapsedMs > 20) {
+      logToFile(
+          "[InputMapper] Speculative delay (20ms) reached. Emitting paste.",
+          LOG_AUTOMATION);
       emitSequence(
           {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}});
       withholdingV_ = false;
-      wasWithholding = false;
     }
+  }
 
-    if (!withholdingV_) {
-      wasWithholding = false;
-    }
+  // 2. Withhold physical V events IF we are awaiting speculative paste
+  if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_V && withholdingV_) {
+    return;
   }
 
   // Update LeftCtrl state for macros (tracked outside Chrome block)
@@ -409,43 +401,27 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard) {
   }
 
   if (isKeyboard && currentApp == wmClassChrome && ev.type == EV_KEY) {
-    if (ev.code == KEY_V && ctrlDown_) {
-      // Logic for KEY_V press (value == 1)
-      if (ev.value == 1) {
-        // Fetch fresh URL ON DEMAND using the TITLE hint
-        std::string freshUrl = getChromeTabUrl(currentTitle);
-        if (!freshUrl.empty()) {
-          currentUrl = freshUrl;
-          logToFile("On-demand context update: URL=[" + currentUrl + "]",
-                    LOG_WINDOW);
-          // Update the context via mutex so subsequent logs/logic are correct
-          std::lock_guard<std::mutex> lock(contextMutex_);
-          activeUrl_ = currentUrl;
-        }
+    if (ev.code == KEY_V && ctrlDown_ && ev.value == 1) {
+      // Fetch fresh URL ON DEMAND
+      std::string freshUrl = getChromeTabUrl(currentTitle);
+      if (!freshUrl.empty()) {
+        currentUrl = freshUrl;
+        logToFile("On-demand context update: URL=[" + currentUrl + "]",
+                  LOG_WINDOW);
+        std::lock_guard<std::mutex> lock(contextMutex_);
+        activeUrl_ = currentUrl;
+      }
 
-        // Relaxed URL check (case-insensitive and not necessarily at start)
-        if (currentUrl.find("chatgpt.com") != std::string::npos) {
-          logToFile("Triggering ChatGPT Ctrl+V macro (direct focus). URL: " +
-                        currentUrl,
-                    LOG_AUTOMATION);
-
-          // Request direct focus via Chrome extension
-          extern void triggerChromeChatGPTFocus();
-          logToFile("[InputMapper] Withholding Ctrl+V until focus ACK.",
-                    LOG_AUTOMATION);
-          withholdingV_ = true;
-          triggerChromeChatGPTFocus();
-          return; // Do NOT emit anything till focusAck
-        } else {
-          logToFile("Ctrl+V in Chrome (NOT ChatGPT). URL: [" + currentUrl + "]",
-                    LOG_AUTOMATION);
-          // Fall through to default emit for regular tabs
-        }
-      } else {
-        // For key release (value == 0) or repeat (value == 2)
-        if (currentUrl.find("chatgpt.com") != std::string::npos) {
-          return; // Swallow release/repeat for ChatGPT
-        }
+      if (currentUrl.find("chatgpt.com") != std::string::npos) {
+        logToFile("Triggering ChatGPT Ctrl+V macro (Speculative Parallel "
+                  "Focus). URL: " +
+                      currentUrl,
+                  LOG_AUTOMATION);
+        extern void triggerChromeChatGPTFocus();
+        lastWithholdingStart_ = std::chrono::steady_clock::now();
+        withholdingV_ = true;
+        triggerChromeChatGPTFocus();
+        return;
       }
     }
   }

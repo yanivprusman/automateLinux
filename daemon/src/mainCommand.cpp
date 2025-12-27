@@ -58,8 +58,8 @@ const size_t COMMAND_REGISTRY_SIZE =
     sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
 
 static int clientSocket = -1;
-unsigned int shouldLog = LOG_ALL; // Global state for logging
-bool g_keyboardEnabled = true;    // Global state for keyboard enable/disable
+unsigned int shouldLog = LOG_CORE; // Global state for logging
+bool g_keyboardEnabled = true;     // Global state for keyboard enable/disable
 
 // Global state for active tab URL (set by Chrome extension)
 static std::mutex g_activeTabUrlMutex;
@@ -95,6 +95,15 @@ void triggerChromeChatGPTFocus() {
     logToFile(
         "[Chrome Extension] Cannot focus ChatGPT: native host not registered",
         LOG_AUTOMATION);
+  }
+}
+
+static void syncLoggingWithBridge() {
+  std::lock_guard<std::mutex> lock(g_nativeHostSocketMutex);
+  if (g_nativeHostSocket != -1) {
+    std::string msg = std::string(R"({"action":"updateMask","mask":)") +
+                      std::to_string(shouldLog) + "}" + mustEndWithNewLine;
+    write(g_nativeHostSocket, msg.c_str(), msg.length());
   }
 }
 
@@ -328,6 +337,7 @@ CmdResult handleShouldLog(const json &command) {
 
   shouldLog = newLogMask;
   kvTable.upsert("shouldLogState", to_string(shouldLog));
+  syncLoggingWithBridge();
   return CmdResult(0, string("Logging mask set to: ") + to_string(shouldLog) +
                           "\n");
 }
@@ -393,6 +403,7 @@ CmdResult handleRegisterNativeHost(const json &) {
     g_nativeHostSocket = clientSocket;
   }
   logToFile("[Chrome Extension] Native messaging host registered", LOG_CORE);
+  syncLoggingWithBridge();
   return CmdResult(0, std::string(R"({"status":"registered"})") +
                           mustEndWithNewLine);
 }

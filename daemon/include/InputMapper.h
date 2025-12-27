@@ -46,6 +46,7 @@ private:
   // Thread safety and async flow
   std::mutex uinputMutex_;
   std::atomic<bool> withholdingV_{false};
+  std::chrono::steady_clock::time_point lastWithholdingStart_;
 
   // --- State Machine for evsieve logic ---
 

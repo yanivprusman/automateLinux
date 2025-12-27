@@ -16,7 +16,18 @@ SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock"
 sse_clients = []
 sse_lock = threading.Lock()
 
-def debug_log(msg):
+# Log Categories (Matching C++ Constants.h)
+LOG_NONE = 0
+LOG_INPUT = (1 << 0)
+LOG_WINDOW = (1 << 1)
+LOG_AUTOMATION = (1 << 2)
+LOG_CORE = (1 << 3)
+
+current_logging_mask = LOG_NONE  # Start silent until daemon syncs
+
+def debug_log(msg, level=LOG_CORE):
+    if not (current_logging_mask & level):
+        return
     try:
         with open("/home/yaniv/coding/automateLinux/data/combined.log", "a") as f:
             f.write(f"[Bridge] {msg}\n")
@@ -29,7 +40,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             try:
                 content_length = int(self.headers['Content-Length'])
                 post_data = self.rfile.read(content_length)
-                debug_log(f"POST /active-tab received: {post_data.decode('utf-8')}")
+                debug_log(f"POST /active-tab received: {post_data.decode('utf-8')}", level=LOG_WINDOW)
                 
                 data = json.loads(post_data)
                 url = data.get('url', '')
@@ -48,13 +59,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps(response).encode('utf-8'))
                 
             except Exception as e:
-                debug_log(f"POST /active-tab error: {e}")
+                debug_log(f"POST /active-tab error: {e}", level=LOG_CORE)
                 self.send_response(500)
                 self.end_headers()
                 self.wfile.write(str(e).encode('utf-8'))
         elif self.path == '/focus-ack':
             try:
-                debug_log(f"POST /focus-ack received")
+                debug_log(f"POST /focus-ack received", level=LOG_AUTOMATION)
                 DaemonLink.send_one_off({"command": "focusAck"})
                 
                 self.send_response(200)
@@ -63,7 +74,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"status": "ok"}).encode('utf-8'))
             except Exception as e:
-                debug_log(f"POST /focus-ack error: {e}")
+                debug_log(f"POST /focus-ack error: {e}", level=LOG_CORE)
                 self.send_response(500)
                 self.end_headers()
                 self.wfile.write(str(e).encode('utf-8'))
@@ -89,16 +100,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             q = queue.Queue()
             with sse_lock:
                 sse_clients.append(q)
-            debug_log("New SSE client connected")
+            debug_log("New SSE client connected", level=LOG_CORE)
             
             try:
                 while True:
                     msg = q.get() # Blocks until message available
-                    debug_log(f"Sending SSE: {msg}")
+                    debug_log(f"Sending SSE: {msg}", level=LOG_INPUT)
                     self.wfile.write(f"data: {json.dumps(msg)}\n\n".encode('utf-8'))
                     self.wfile.flush()
             except Exception as e:
-                debug_log(f"SSE client disconnected: {e}")
+                debug_log(f"SSE client disconnected: {e}", level=LOG_CORE)
             finally:
                 with sse_lock:
                     if q in sse_clients:
@@ -159,7 +170,7 @@ class DaemonLink:
                     debug_log("Daemon disconnected (recv returned empty)")
                     continue
                 
-                debug_log(f"Received {len(data)} bytes: {repr(data[:100])}")
+                debug_log(f"Received {len(data)} bytes: {repr(data[:100])}", level=LOG_INPUT)
                 buffer += data
                 while "\n" in buffer:
                     line, buffer = buffer.split("\n", 1)
@@ -167,8 +178,14 @@ class DaemonLink:
                         continue
                     try:
                         msg = json.loads(line)
+                        global current_logging_mask
+                        if msg.get("action") == "updateMask":
+                            current_logging_mask = msg.get("mask", current_logging_mask)
+                            # debug_log(f"Logging mask updated to {current_logging_mask}", level=LOG_CORE)
+                            continue
+
                         # Broadcast to SSE clients
-                        debug_log(f"Broadcasting to SSE: {msg}")
+                        debug_log(f"Broadcasting to SSE: {msg}", level=LOG_INPUT)
                         with sse_lock:
                             # Use a list of clients to remove to avoid modifying during iteration
                             to_remove = []

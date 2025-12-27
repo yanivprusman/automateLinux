@@ -26,32 +26,31 @@ bool KeyboardManager::isKnownKeyboard(const std::string &name) {
 }
 
 CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
-  string logMessage;
-  logMessage = string("[START setKeyboard] ") +
-               (enableKeyboard ? "Enable" : "Disable") + "\n";
-  logToFile(logMessage);
+  logToFile(string("[START setKeyboard] ") +
+                (enableKeyboard ? "Enable" : "Disable"),
+            LOG_CORE);
 
   if (enableKeyboard) {
     if (mapper.isRunning()) {
-      std::cerr << "Keyboard already enabled" << std::endl;
+      logToFile("Keyboard already enabled", LOG_CORE);
       return CmdResult(0, "Keyboard already enabled\n");
     }
     std::string keyboardPath = kvTable.get(KEYBOARD_PATH_KEY);
     std::string mousePath = kvTable.get(MOUSE_PATH_KEY);
 
     if (keyboardPath.empty()) {
-      std::cerr << "ERROR: Keyboard path empty" << std::endl;
+      logToFile("ERROR: Keyboard path empty", LOG_CORE);
       return CmdResult(1, "Keyboard path not found\n");
     }
-    std::cerr << "Enabling keyboard: " << keyboardPath << std::endl;
+    logToFile("Enabling keyboard: " + keyboardPath, LOG_CORE);
     if (mapper.start(keyboardPath, mousePath)) {
       return CmdResult(0, "Keyboard enabled\n");
     } else {
-      std::cerr << "ERROR: Failed to start InputMapper" << std::endl;
+      logToFile("ERROR: Failed to start InputMapper", LOG_CORE);
       return CmdResult(1, "Failed to enable keyboard\n");
     }
   } else {
-    std::cerr << "Disabling keyboard" << std::endl;
+    logToFile("Disabling keyboard", LOG_CORE);
     mapper.stop();
     return CmdResult(0, "Keyboard disabled\n");
   }

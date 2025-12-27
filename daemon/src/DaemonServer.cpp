@@ -220,15 +220,31 @@ int initialize_daemon() {
   signal(SIGINT, signal_handler);
   signal(SIGPIPE, SIG_IGN);
 
-  launchHttpBridge();
+  files.initialize(directories);
 
-  files.initialize(
-      directories); // Initialize files (and thus directories.data) first
+  // Restore logging state EARLY
+  string savedLogState = kvTable.get("shouldLogState");
+  if (!savedLogState.empty()) {
+    try {
+      shouldLog = std::stoul(savedLogState);
+    } catch (...) {
+      shouldLog = LOG_CORE;
+    }
+  } else {
+    shouldLog = LOG_CORE;
+  }
+
   g_logFile.open(directories.data + "combined.log", std::ios::app);
   if (!g_logFile.is_open()) {
     cerr << "ERROR: Could not open log file: " << directories.data
          << "combined.log" << endl;
   }
+
+  logToFile("Logging mask restored/initialized to: " +
+                std::to_string(shouldLog),
+            LOG_CORE);
+
+  launchHttpBridge();
   initializeKeyboardPath();
   initializeMousePath();
   openKeyboardDevice();
@@ -243,22 +259,7 @@ int initialize_daemon() {
 
   // Initialize keyboard to default enabled state on daemon startup
   if (KeyboardManager::setKeyboard(g_keyboardEnabled).status != 0) {
-    cerr << "ERROR: Failed to initialize keyboard mapping" << endl;
-    // Don't return error here, let the daemon loop run so we can debug via
-    // socket
-  }
-  // Restore logging state
-  string savedLogState = kvTable.get("shouldLogState");
-  if (!savedLogState.empty()) {
-    try {
-      shouldLog = std::stoul(savedLogState);
-      logToFile("Restored logging state: " + std::to_string(shouldLog),
-                LOG_CORE);
-    } catch (...) {
-      shouldLog = LOG_INPUT; // Default fallback
-    }
-  } else {
-    shouldLog = LOG_INPUT; // Default if nothing saved
+    logToFile("ERROR: Failed to initialize keyboard mapping", LOG_CORE);
   }
 
   return 0;

@@ -551,8 +551,8 @@ void InputMapper::initializeAppMacros() {
       nullptr});
   appMacros_[AppType::TERMINAL].push_back(KeyAction{
       KeyTrigger{0, BTN_LEFT, KEY_LEFTCTRL, ""},  // keyCode=BTN_LEFT, modifiers=KEY_LEFTCTRL
-      {{KEY_5, 1}, {KEY_5, 0}},
-      "Triggering Terminal Ctrl+Left Click macro (5)",
+      {{KEY_LEFTCTRL,0},{KEY_5, 1}, {KEY_5, 0}},
+      "Triggering Terminal Ctrl+Left Click macro ( UNDO CONTROL AND 5)",
       nullptr});
 
   // --- CODE (VS Code) ---

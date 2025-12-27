@@ -79,9 +79,18 @@ void triggerChromeChatGPTFocus() {
   if (g_nativeHostSocket != -1) {
     std::string msg =
         std::string(R"({"action":"focusChatGPT"})") + mustEndWithNewLine;
-    write(g_nativeHostSocket, msg.c_str(), msg.length());
-    logToFile("[Chrome Extension] Sent focus request to native host",
-              LOG_AUTOMATION);
+    ssize_t written = write(g_nativeHostSocket, msg.c_str(), msg.length());
+    if (written < 0) {
+      logToFile("[Chrome Extension] Write to native host failed (errno=" +
+                    std::to_string(errno) + "). Invalidating socket.",
+                LOG_AUTOMATION);
+      g_nativeHostSocket = -1;
+    } else {
+      logToFile("[Chrome Extension] Sent focus request to native host (fd=" +
+                    std::to_string(g_nativeHostSocket) +
+                    ", written=" + std::to_string(written) + " bytes): " + msg,
+                LOG_AUTOMATION);
+    }
   } else {
     logToFile(
         "[Chrome Extension] Cannot focus ChatGPT: native host not registered",

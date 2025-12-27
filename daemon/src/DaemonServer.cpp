@@ -173,11 +173,14 @@ void launchHttpBridge() {
   pid_t pid = fork();
   if (pid == 0) {
     // Child process
-    // Redirect stdout/stderr to log file or /dev/null
-    int devNull = open("/dev/null", O_WRONLY);
-    dup2(devNull, STDOUT_FILENO);
-    dup2(devNull, STDERR_FILENO);
-    close(devNull);
+    // Redirect stdout/stderr to the combined log file
+    std::string logPath = "/home/yaniv/coding/automateLinux/data/combined.log";
+    int logFd = open(logPath.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644);
+    if (logFd >= 0) {
+      dup2(logFd, STDOUT_FILENO);
+      dup2(logFd, STDERR_FILENO);
+      close(logFd);
+    }
 
     // Execute the script
     // Assuming the script is in the same directory as the daemon executable or

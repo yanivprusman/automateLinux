@@ -25,3 +25,68 @@ The codebase is written in plain JavaScript. The background script uses async/aw
 The extension follows the Manifest V3 specification.
 
 The primary communication mechanism is via HTTP and SSE, not native messaging. The native messaging files are likely deprecated but are kept in the repository. Any new development should likely focus on the HTTP/SSE bridge.
+
+## Critical Feature: Ctrl+V Focus+Paste on ChatGPT
+
+### Behavior Requirements
+
+When the user is on Chrome with a tab URL starting with `https://chatgpt.com` and presses `Ctrl+V`:
+
+1. **Automatic Focus**: The ChatGPT textarea must receive focus automatically (if not already focused)
+2. **Single Paste**: Paste operation happens once (not twice - once for focus, once for paste)
+3. **Speed**: Complete flow must execute in <200ms for optimal UX
+4. **Native Messaging**: Communication must use Native Messaging (Chrome ↔ daemon)
+
+### Communication Flow
+
+```
+User presses Ctrl+V in Chrome
+  ↓
+Daemon detects keypress (InputMapper.cpp)
+  ↓
+Daemon sends focus command via native messaging
+  ↓
+Native host (native-host.py) forwards to extension
+  ↓
+Extension (background.js) focuses textarea
+  ↓
+Extension sends ACK back
+  ↓
+Daemon receives ACK and triggers paste
+  ↓
+Paste completes in focused textarea
+```
+
+### Automated Testing Requirements
+
+Every test must validate the complete flow without manual intervention:
+
+1. **Reload Extension**: `./reload-extension.sh`
+2. **Navigate to ChatGPT**: Open or switch to `https://chatgpt.com` tab
+3. **Defocus Textarea**: Click elsewhere on page to ensure textarea not focused
+4. **Simulate Ctrl+V**: Trigger actual keypress via evemu or similar
+5. **Verify Focus**: Check that textarea received focus
+6. **Verify Paste**: Confirm clipboard content appeared in textarea
+7. **Measure Timing**: Total time must be <200ms
+8. **Handle Verification**: Auto-handle "verify you are human" prompts if present
+
+### Test Scripts
+
+- `/home/yaniv/coding/automateLinux/test-focus-paste-e2e.sh` - Semi-automated with manual verification
+- `/home/yaniv/coding/automateLinux/test-fully-automated.py` - Fully automated using evemu
+- `/home/yaniv/coding/automateLinux/test-real-world.sh` - Real-world manual trigger test
+
+### Current Status
+
+- ✅ ACK timeout issue resolved (extension always sends ACK)
+- ✅ Focus command working (<100ms latency)
+- ✅ Native messaging communication verified
+- ✅ Paste integration working
+- ⚠️ Full automation test pending (Cloudflare handling needed)
+
+### Key Files
+
+- `background.js` - Enhanced with timestamps, sequences, ACK fix
+- `native-host.py` - Python bridge between Chrome and daemon
+- `daemon/src/InputMapper.cpp` - Detects Ctrl+V, triggers focus
+- `daemon/src/mainCommand.cpp` - Handles native host registration, focus commands

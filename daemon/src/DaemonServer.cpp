@@ -1,10 +1,11 @@
 #include "DaemonServer.h"
 #include "KeyboardManager.h"
-#include "Utils.h" // For executeCommand
+#include "Utils.h"
 #include "common.h"
-#include "main.h" // For KVTable, DirHistory, etc. declarations
+#include "main.h"
 #include "mainCommand.h"
 #include "sendKeys.h"
+#include "using.h"
 #include <array>
 #include <csignal>
 #include <cstdlib>
@@ -139,6 +140,7 @@ int handle_client_data(int client_fd) {
   char buffer[512];
   ssize_t bytesRead = read(client_fd, buffer, sizeof(buffer) - 1);
   if (bytesRead <= 0) {
+    unregisterLogSubscriber(client_fd);
     close(client_fd);
     clients.erase(client_fd);
     return 0;
@@ -167,44 +169,9 @@ int handle_client_data(int client_fd) {
   return 0;
 }
 
-pid_t g_httpBridgePid = -1;
-
-void launchHttpBridge() {
-  pid_t pid = fork();
-  if (pid == 0) {
-    // Child process
-    // Redirect stdout/stderr to the combined log file
-    std::string logPath = "/home/yaniv/coding/automateLinux/data/combined.log";
-    int logFd = open(logPath.c_str(), O_WRONLY | O_APPEND | O_CREAT, 0644);
-    if (logFd >= 0) {
-      dup2(logFd, STDOUT_FILENO);
-      dup2(logFd, STDERR_FILENO);
-      close(logFd);
-    }
-
-    // Execute the script
-    // Assuming the script is in the same directory as the daemon executable or
-    // known path We'll use the repository path we know
-    execl("/usr/bin/python3", "python3",
-          "/home/yaniv/coding/automateLinux/daemon/http-bridge.py", NULL);
-
-    // If execl returns, it failed
-    exit(1);
-  } else if (pid > 0) {
-    g_httpBridgePid = pid;
-    cerr << "Started HTTP bridge with PID: " << pid << endl;
-  } else {
-    cerr << "Failed to fork HTTP bridge: " << strerror(errno) << endl;
-  }
-}
-
 void signal_handler(int sig) {
   if (sig == SIGTERM || sig == SIGINT) {
     running = 0;
-    if (g_httpBridgePid > 0) {
-      kill(g_httpBridgePid, SIGTERM);
-      waitpid(g_httpBridgePid, nullptr, 0); // Wait for it to exit
-    }
     if (socket_fd >= 0)
       shutdown(socket_fd, SHUT_RDWR);
     if (g_keyboard_fd >= 0)
@@ -244,9 +211,9 @@ int initialize_daemon() {
                 std::to_string(shouldLog),
             LOG_CORE);
 
-  launchHttpBridge();
   initializeKeyboardPath();
   initializeMousePath();
+  KeyboardManager::mapper.loadPersistence();
   openKeyboardDevice();
   int rc = setup_socket();
   if (rc != 0) {

@@ -115,7 +115,9 @@ export default class ClockExtension extends Extension {
                     { name: 'Automation', mask: 4 },
                     { name: 'Core', mask: 8 },
                     { name: 'Macro Debug', mask: 16 },
-                    { name: 'Network', mask: 32 }
+                    { name: 'Network', mask: 32 },
+                    { name: 'Chrome', mask: 64 },
+                    { name: 'Terminal', mask: 128 }
                 ];
 
                 categories.forEach(cat => {

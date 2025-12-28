@@ -1,21 +1,29 @@
 #include "Utils.h"
 #include "Constants.h"
-#include "Globals.h" // For g_logFile
+#include "Globals.h"
+#include "using.h"
 #include <algorithm>
 #include <array>
 #include <cstdio>
 #include <curl/curl.h>
-#include <fstream>
-#include <iostream>
 #include <jsoncpp/json/json.h>
-#include <mutex>
-#include <sstream>
-#include <unistd.h>
-#include <vector>
+#include <set>
+#include <sys/socket.h>
 
-using std::endl;
-using std::string;
-using std::vector;
+using namespace std;
+
+static std::set<int> g_logSubscribers;
+static std::mutex g_logSubscribersMutex;
+
+void registerLogSubscriber(int fd) {
+  std::lock_guard<std::mutex> lock(g_logSubscribersMutex);
+  g_logSubscribers.insert(fd);
+}
+
+void unregisterLogSubscriber(int fd) {
+  std::lock_guard<std::mutex> lock(g_logSubscribersMutex);
+  g_logSubscribers.erase(fd);
+}
 
 // Centralized logging function that respects the shouldLog flag
 void logToFile(const string &message, unsigned int category) {
@@ -24,8 +32,18 @@ void logToFile(const string &message, unsigned int category) {
   std::lock_guard<std::mutex> lock(logMutex);
   // logToFile only writes to g_logFile
   if ((shouldLog & category) && g_logFile.is_open()) {
-    g_logFile << message << endl; // Add newline for flush consistency
+    g_logFile << message << endl;
     g_logFile.flush();
+
+    // Stream to subscribers
+    std::lock_guard<std::mutex> subLock(g_logSubscribersMutex);
+    if (!g_logSubscribers.empty()) {
+      std::string streamMsg = message + "\n";
+      for (int fd : g_logSubscribers) {
+        // We use send() with MSG_NOSIGNAL to avoid crashing if client closed
+        send(fd, streamMsg.c_str(), streamMsg.length(), MSG_NOSIGNAL);
+      }
+    }
   }
 }
 

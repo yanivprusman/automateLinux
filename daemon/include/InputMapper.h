@@ -2,6 +2,7 @@
 #define INPUT_MAPPER_H
 
 #include "Types.h"
+#include "using.h"
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>
@@ -61,6 +62,8 @@ public:
   InputMapper();
   ~InputMapper();
 
+  void loadPersistence();
+
   bool start(const std::string &keyboardPath, const std::string &mousePath);
   void stop();
   void setContext(AppType appType, const std::string &url = "",
@@ -69,12 +72,22 @@ public:
   void onFocusAck();
   bool isRunning() const { return running_; }
 
+  json getMacrosJson();
+  json getEventFiltersJson();
+  void setMacrosFromJson(const json &j);
+  void setEventFilters(const json &j);
+  void emit(uint16_t type, uint16_t code, int32_t value);
+  void sync();
+
+private:
+  void setMacrosFromJsonInternal(const json &j);
+  void setEventFiltersInternal(const json &j);
+
 private:
   void loop();
   bool setupDevices();
   bool setupUinput();
   void processEvent(struct input_event &ev, bool isKeyboard, bool skipMacros);
-  void emit(uint16_t type, uint16_t code, int32_t value);
   void emitSequence(const std::vector<std::pair<uint16_t, int32_t>> &sequence);
   std::optional<GKey> detectGKey(const struct input_event &ev);
   void executeKeyAction(const KeyAction &action);
@@ -111,6 +124,11 @@ private:
 
   // App-specific macro mappings
   std::map<AppType, std::vector<KeyAction>> appMacros_;
+  std::mutex macrosMutex_;
+
+  // Event filtering state (granular logging)
+  std::set<uint16_t> filteredKeyCodes_;
+  std::mutex filtersMutex_;
 
   // Combo sequence tracking (per-app)
   std::map<AppType, std::map<size_t, ComboState>>

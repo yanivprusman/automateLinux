@@ -1,7 +1,7 @@
-#!/usr/bin/python3.12
+#!/usr/bin/env python3
 """
 Native messaging host for AutomateLinux Chrome extension.
-Threaded Bidirectional version.
+Threaded Bidirectional version with enhanced logging and error handling.
 """
 
 import sys
@@ -11,28 +11,44 @@ import socket
 import os
 import threading
 import time
+from datetime import datetime
 
 SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock"
 LOG_FILE = "/home/yaniv/coding/automateLinux/data/combined.log"
 
+def get_timestamp():
+    """Get ISO format timestamp matching extension logs."""
+    return datetime.now().isoformat()
+
 def log(message):
-    """Log to file for debugging."""
+    """Log to file for debugging with timestamp."""
     try:
         with open(LOG_FILE, 'a') as f:
-            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {message}\n")
+            f.write(f"[{get_timestamp()}] [NativeHost] {message}\n")
             f.flush()
-    except:
-        pass
+    except Exception as e:
+        # Fallback to stderr if log file fails
+        print(f"Log error: {e}", file=sys.stderr)
 
 def send_to_chrome(message):
     """Send a message to Chrome extension through stdout."""
     try:
+        if not isinstance(message, dict):
+            log(f"Error: Message must be dict, got {type(message)}")
+            return False
+        
         encoded_message = json.dumps(message).encode('utf-8')
         sys.stdout.buffer.write(struct.pack('I', len(encoded_message)))
         sys.stdout.buffer.write(encoded_message)
         sys.stdout.buffer.flush()
+        
+        # Log only action/command, not full message to avoid log spam
+        msg_type = message.get('action') or message.get('command') or 'unknown'
+        log(f"→ Chrome: {msg_type} (seq: {message.get('seq', 'N/A')})")
+        return True
     except Exception as e:
         log(f"Error sending to chrome: {e}")
+        return False
 
 def read_from_chrome():
     """Read a message from Chrome extension through stdin."""
@@ -41,8 +57,19 @@ def read_from_chrome():
         if not raw_length:
             return None
         message_length = struct.unpack('I', raw_length)[0]
+        
+        # Sanity check message length (max 10MB)
+        if message_length > 10 * 1024 * 1024:
+            log(f"Error: Message too large: {message_length} bytes")
+            return None
+            
         message = sys.stdin.buffer.read(message_length).decode('utf-8')
-        return json.loads(message)
+        parsed = json.loads(message)
+        
+        # Log only essential info to avoid spam
+        msg_type = parsed.get('action') or parsed.get('command') or parsed.get('url', '').split('/')[-1][:30]
+        log(f"← Chrome: {msg_type} (seq: {parsed.get('seq', 'N/A')})")
+        return parsed
     except Exception as e:
         log(f"Error reading from chrome: {e}")
         return None

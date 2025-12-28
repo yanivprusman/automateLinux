@@ -13,10 +13,10 @@ public:
   static void setContext(AppType appType, const std::string &url = "",
                          const std::string &title = "");
   static void onFocusAck();
+  static InputMapper mapper;
 
 private:
   static const std::vector<std::string> KNOWN_KEYBOARDS;
-  static InputMapper mapper;
 };
 
 #endif // KEYBOARD_MANAGER_H

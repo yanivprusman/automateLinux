@@ -43,4 +43,7 @@ std::string executeCommand(const char *cmd);
 AppType stringToAppType(const std::string &appName);
 std::string appTypeToString(AppType type);
 
+void registerLogSubscriber(int fd);
+void unregisterLogSubscriber(int fd);
+
 #endif // UTILS_H

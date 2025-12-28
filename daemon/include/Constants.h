@@ -72,6 +72,15 @@
 #define COMMAND_REGISTER_NATIVE_HOST "registerNativeHost"
 #define COMMAND_FOCUS_ACK "focusAck"
 #define COMMAND_FOCUS_CHATGPT "focusChatGPT"
+#define COMMAND_GET_MACROS "getMacros"
+#define COMMAND_UPDATE_MACROS "updateMacros"
+#define COMMAND_GET_EVENT_FILTERS "getEventFilters"
+#define COMMAND_SET_EVENT_FILTERS "setEventFilters"
+#define COMMAND_REGISTER_LOG_LISTENER "registerLogListener"
+#define COMMAND_TEST_INTEGRITY "testIntegrity"
+#define COMMAND_SIMULATE_INPUT "simulateInput"
+#define COMMAND_ARG_TYPE "type"
+#define COMMAND_ARG_CODE "code"
 #define COMMAND_ARG_WINDOW_TITLE "windowTitle"
 #define COMMAND_ARG_WM_CLASS "wmClass"
 #define COMMAND_ARG_WM_INSTANCE "wmInstance"
@@ -116,8 +125,10 @@
 #define LOG_CORE (1 << 3)
 #define LOG_MACROS (1 << 4)
 #define LOG_NETWORK (1 << 5)
+#define LOG_CHROME (1 << 6)
+#define LOG_TERMINAL (1 << 7)
 #define LOG_ALL                                                                \
   (LOG_INPUT | LOG_WINDOW | LOG_AUTOMATION | LOG_CORE | LOG_MACROS |           \
-   LOG_NETWORK)
+   LOG_NETWORK | LOG_CHROME | LOG_TERMINAL)
 
 #endif // CONSTANTS_H

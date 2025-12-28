@@ -19,10 +19,3 @@ else
     fi
     echo "Daemon stopped."
 fi
-
-# Also kill the HTTP bridge
-echo "Stopping HTTP bridge..."
-pkill -f "http-bridge.py"
-sleep 0.5
-pkill -9 -f "http-bridge.py" 2>/dev/null
-echo "HTTP bridge stopped."

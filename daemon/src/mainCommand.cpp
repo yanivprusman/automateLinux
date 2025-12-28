@@ -7,13 +7,14 @@
 #include "common.h"
 #include "main.h"
 #include "sendKeys.h"
+#include "using.h"
 #include <algorithm>
 #include <iostream>
+#include <linux/input-event-codes.h>
 #include <string>
+#include <thread>
 
-using std::string;
-using std::to_string;
-using std::vector;
+using namespace std;
 
 const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_EMPTY, {}),
@@ -53,6 +54,15 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_SET_ACTIVE_TAB_URL, {COMMAND_ARG_URL}),
     CommandSignature(COMMAND_REGISTER_NATIVE_HOST, {}),
     CommandSignature(COMMAND_FOCUS_CHATGPT, {}),
+    CommandSignature(COMMAND_FOCUS_ACK, {}),
+    CommandSignature(COMMAND_GET_MACROS, {}),
+    CommandSignature(COMMAND_UPDATE_MACROS, {COMMAND_ARG_VALUE}),
+    CommandSignature(COMMAND_GET_EVENT_FILTERS, {}),
+    CommandSignature(COMMAND_SET_EVENT_FILTERS, {COMMAND_ARG_VALUE}),
+    CommandSignature(COMMAND_REGISTER_LOG_LISTENER, {}),
+    CommandSignature(COMMAND_TEST_INTEGRITY, {}),
+    CommandSignature(COMMAND_SIMULATE_INPUT,
+                     {COMMAND_ARG_TYPE, COMMAND_ARG_CODE, COMMAND_ARG_VALUE}),
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -67,6 +77,27 @@ static std::mutex g_activeTabUrlMutex;
 static std::string g_activeTabUrl = "";
 static int g_nativeHostSocket = -1;
 static std::mutex g_nativeHostSocketMutex;
+
+static std::pair<unsigned int, std::string>
+getCommandLogContext(const std::string &commandName) {
+  if (commandName == COMMAND_FOCUS_CHATGPT ||
+      commandName == COMMAND_SET_ACTIVE_TAB_URL ||
+      commandName == COMMAND_FOCUS_ACK ||
+      commandName == COMMAND_REGISTER_NATIVE_HOST) {
+    return {LOG_CHROME, "[Chrome]"};
+  }
+  if (commandName == COMMAND_UPDATE_DIR_HISTORY ||
+      commandName == COMMAND_OPENED_TTY || commandName == COMMAND_CLOSED_TTY ||
+      commandName == COMMAND_CD_FORWARD || commandName == COMMAND_CD_BACKWARD ||
+      commandName == COMMAND_SHOW_TERMINAL_INSTANCE ||
+      commandName == COMMAND_SHOW_ALL_TERMINAL_INSTANCES) {
+    return {LOG_TERMINAL, "[Terminal]"};
+  }
+  if (commandName == COMMAND_ACTIVE_WINDOW_CHANGED) {
+    return {LOG_WINDOW, "[Window]"};
+  }
+  return {LOG_NETWORK, "[Network]"};
+}
 
 // Function to get active tab URL (called from Utils.cpp)
 std::string getActiveTabUrlFromExtension() {
@@ -84,18 +115,17 @@ void triggerChromeChatGPTFocus() {
     if (written < 0) {
       logToFile("[Chrome Extension] Write to native host failed (errno=" +
                     std::to_string(errno) + "). Invalidating socket.",
-                LOG_AUTOMATION);
+                LOG_CHROME);
       g_nativeHostSocket = -1;
     } else {
-      logToFile("[Chrome Extension] Sent focus request to native host (fd=" +
+      logToFile("[Chrome] Sent focus request to native host (fd=" +
                     std::to_string(g_nativeHostSocket) +
                     ", written=" + std::to_string(written) + " bytes): " + msg,
-                LOG_AUTOMATION);
+                LOG_CHROME);
     }
   } else {
-    logToFile(
-        "[Chrome Extension] Cannot focus ChatGPT: native host not registered",
-        LOG_AUTOMATION);
+    logToFile("[Chrome] Cannot focus ChatGPT: native host not registered",
+              LOG_CHROME);
   }
 }
 
@@ -393,7 +423,7 @@ CmdResult handleSetActiveTabUrl(const json &command) {
     std::lock_guard<std::mutex> lock(g_activeTabUrlMutex);
     g_activeTabUrl = url;
   }
-  logToFile("[Chrome Extension] Active tab changed to: " + url, LOG_CORE);
+  logToFile("[Chrome] Active tab changed to: " + url, LOG_CHROME);
   KeyboardManager::setContext(AppType::CHROME, url, "");
   return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
@@ -403,7 +433,7 @@ CmdResult handleRegisterNativeHost(const json &) {
     std::lock_guard<std::mutex> lock(g_nativeHostSocketMutex);
     g_nativeHostSocket = clientSocket;
   }
-  logToFile("[Chrome Extension] Native messaging host registered", LOG_CORE);
+  logToFile("[Chrome] Native messaging host registered", LOG_CHROME);
   syncLoggingWithBridge();
   return CmdResult(0, std::string(R"({"status":"registered"})") +
                           mustEndWithNewLine);
@@ -425,10 +455,98 @@ CmdResult handleSetKeyboard(const json &command) {
   return KeyboardManager::setKeyboard(g_keyboardEnabled);
 }
 
+CmdResult handleGetMacros(const json &) {
+  return CmdResult(0, KeyboardManager::mapper.getMacrosJson().dump());
+}
+
+CmdResult handleUpdateMacros(const json &command) {
+  try {
+    json j = json::parse(command[COMMAND_ARG_VALUE].get<string>());
+    KeyboardManager::mapper.setMacrosFromJson(j);
+    return CmdResult(0, "Macros updated successfully");
+  } catch (const std::exception &e) {
+    return CmdResult(1, std::string("Failed to parse macros: ") + e.what());
+  }
+}
+
+CmdResult handleGetEventFilters(const json &) {
+  return CmdResult(0, KeyboardManager::mapper.getEventFiltersJson().dump());
+}
+
+CmdResult handleSetEventFilters(const json &command) {
+  try {
+    json j = json::parse(command[COMMAND_ARG_VALUE].get<string>());
+    KeyboardManager::mapper.setEventFilters(j);
+    return CmdResult(0, "Event filters updated successfully");
+  } catch (const std::exception &e) {
+    return CmdResult(1, std::string("Failed to parse filters: ") + e.what());
+  }
+}
+
+CmdResult handleRegisterLogListener(const json &) {
+  registerLogSubscriber(clientSocket);
+  return CmdResult(0, "Subscribed to logs\n");
+}
+
 CmdResult handleGetKeyboard(const json &) {
   return CmdResult(
       0, (g_keyboardEnabled ? COMMAND_VALUE_TRUE : COMMAND_VALUE_FALSE) +
              string("\n"));
+}
+
+CmdResult handleTestIntegrity(const json &command) {
+  // Execute the loopback test script interactively
+  FILE *pipe = popen(
+      "python3 /home/yaniv/coding/automateLinux/test-input-loopback.py", "r");
+  if (!pipe) {
+    return CmdResult(1, "Failed to run diagnostic script");
+  }
+
+  char buffer[128];
+  string output = "";
+  bool readySeen = false;
+
+  // Read output line by line
+  while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+    string line = buffer;
+    output += line;
+
+    // When Python says READY, we emit the test events
+    if (!readySeen && line.find("READY") != string::npos) {
+      readySeen = true;
+
+      // Small delay to ensure Python listener is fully grabbed
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+      // 1. Enter Key
+      KeyboardManager::mapper.emit(EV_KEY, KEY_ENTER, 1);
+      KeyboardManager::mapper.sync();
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      KeyboardManager::mapper.emit(EV_KEY, KEY_ENTER, 0);
+      KeyboardManager::mapper.sync();
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+      // 2. Mouse Click
+      KeyboardManager::mapper.emit(EV_KEY, BTN_LEFT, 1);
+      KeyboardManager::mapper.sync();
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      KeyboardManager::mapper.emit(EV_KEY, BTN_LEFT, 0);
+      KeyboardManager::mapper.sync();
+    }
+  }
+
+  pclose(pipe);
+  return CmdResult(0, output + mustEndWithNewLine);
+}
+
+CmdResult handleSimulateInput(const json &command) {
+  uint16_t type = command[COMMAND_ARG_TYPE].get<uint16_t>();
+  uint16_t code = command[COMMAND_ARG_CODE].get<uint16_t>();
+  int32_t value = command[COMMAND_ARG_VALUE].get<int32_t>();
+  KeyboardManager::mapper.emit(type, code, value);
+  KeyboardManager::mapper.sync();
+  return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
 
 typedef CmdResult (*CommandHandler)(const json &);
@@ -473,12 +591,19 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_REGISTER_NATIVE_HOST, handleRegisterNativeHost},
     {COMMAND_FOCUS_CHATGPT, handleFocusChatGPT},
     {COMMAND_FOCUS_ACK, handleFocusAck},
+    {COMMAND_GET_MACROS, handleGetMacros},
+    {COMMAND_UPDATE_MACROS, handleUpdateMacros},
+    {COMMAND_GET_EVENT_FILTERS, handleGetEventFilters},
+    {COMMAND_SET_EVENT_FILTERS, handleSetEventFilters},
+    {COMMAND_REGISTER_LOG_LISTENER, handleRegisterLogListener},
+    {COMMAND_TEST_INTEGRITY, handleTestIntegrity},
+    {COMMAND_SIMULATE_INPUT, handleSimulateInput},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =
     sizeof(COMMAND_HANDLERS) / sizeof(COMMAND_HANDLERS[0]);
 
-CmdResult testIntegrity(const json &command) {
+CmdResult validateCommand(const json &command) {
   if (!command.contains(COMMAND_KEY)) {
     return CmdResult(1, "Missing command key");
   }
@@ -506,10 +631,13 @@ CmdResult testIntegrity(const json &command) {
 int mainCommand(const json &command, int client_sock) {
   clientSocket = client_sock;
   string commandStr = command.dump();
-  logToFile("[Network] Received command: " + commandStr, LOG_NETWORK);
+  string commandName =
+      command.contains(COMMAND_KEY) ? command[COMMAND_KEY].get<string>() : "";
+  auto logCtx = getCommandLogContext(commandName);
+  logToFile(logCtx.second + " Received command: " + commandStr, logCtx.first);
   CmdResult result;
   try {
-    CmdResult integrityCheck = testIntegrity(command);
+    CmdResult integrityCheck = validateCommand(command);
     if (integrityCheck.status != 0) {
       result = integrityCheck;
     } else {

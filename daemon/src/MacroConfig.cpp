@@ -26,24 +26,24 @@ void InputMapper::initializeAppMacros() {
 
   // === APP-SPECIFIC MAPPINGS (override defaults) ===
 
-// --- TERMINAL ---
+  // --- TERMINAL ---
   appMacros_[AppType::TERMINAL] = defaultMacros; // Start with defaults
-  appMacros_[AppType::TERMINAL].push_back(
-      KeyAction{KeyTrigger{{{G1_VIRTUAL, 1, false}}},
-                {{KEY_LEFTCTRL, 1},
-                 {KEY_LEFTALT, 1},
-                 {KEY_C, 1},
-                 {KEY_C, 0},
-                 {KEY_LEFTALT, 0},
-                 {KEY_LEFTCTRL, 0}},
-                "Triggering G1 (press) SIGINT macro (Ctrl+Alt+C) for Gnome Terminal",
-                nullptr});
-  // Ctrl(press, suppress) + LeftClick(press, suppress)
   appMacros_[AppType::TERMINAL].push_back(KeyAction{
-      KeyTrigger{{{KEY_LEFTCTRL, 1, false}, {BTN_LEFT, 1, true}}},
-      {{KEY_LEFTCTRL, 0}, {KEY_5, 1}, {KEY_5, 0}},
-      "Triggering Terminal Ctrl+Left Click macro",
+      KeyTrigger{{{G1_VIRTUAL, 1, false}}},
+      {{KEY_LEFTCTRL, 1},
+       {KEY_LEFTALT, 1},
+       {KEY_C, 1},
+       {KEY_C, 0},
+       {KEY_LEFTALT, 0},
+       {KEY_LEFTCTRL, 0}},
+      "Triggering G1 (press) SIGINT macro (Ctrl+Alt+C) for Gnome Terminal",
       nullptr});
+  // Ctrl(press, suppress) + LeftClick(press, suppress)
+  appMacros_[AppType::TERMINAL].push_back(
+      KeyAction{KeyTrigger{{{KEY_LEFTCTRL, 1, false}, {BTN_LEFT, 1, true}}},
+                {{KEY_LEFTCTRL, 0}, {KEY_5, 1}, {KEY_5, 0}},
+                "Triggering Terminal Ctrl+Left Click macro",
+                nullptr});
 
   // --- CODE (VS Code) ---
   appMacros_[AppType::CODE] = defaultMacros; // Start with defaults

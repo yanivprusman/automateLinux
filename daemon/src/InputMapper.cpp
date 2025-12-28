@@ -1,7 +1,10 @@
 #include "InputMapper.h"
 #include "Constants.h"
 #include "Globals.h"
+#include "KVTable.h"
 #include "Utils.h"
+#include "using.h"
+#include <algorithm>
 #include <atomic>
 #include <fcntl.h>
 #include <fstream>
@@ -9,12 +12,47 @@
 #include <linux/input-event-codes.h>
 #include <mutex>
 #include <poll.h>
+#include <thread>
 #include <unistd.h>
 #include <vector>
+
+using namespace std;
 
 InputMapper::InputMapper() { initializeAppMacros(); }
 
 InputMapper::~InputMapper() { stop(); }
+
+void InputMapper::loadPersistence() {
+  // Load Macros from DB
+  string savedMacros = kvTable.get("custom_macros");
+  if (!savedMacros.empty()) {
+    try {
+      json j = json::parse(savedMacros);
+      {
+        std::lock_guard<std::mutex> lock(macrosMutex_);
+        setMacrosFromJsonInternal(j);
+      }
+      logToFile("Loaded custom macros from DB", LOG_CORE);
+    } catch (...) {
+      logToFile("Failed to parse saved macros from DB", LOG_CORE);
+    }
+  }
+
+  // Load Filters from DB
+  string savedFilters = kvTable.get("custom_event_filters");
+  if (!savedFilters.empty()) {
+    try {
+      json j = json::parse(savedFilters);
+      {
+        std::lock_guard<std::mutex> lock(filtersMutex_);
+        setEventFiltersInternal(j);
+      }
+      logToFile("Loaded custom event filters from DB", LOG_CORE);
+    } catch (...) {
+      logToFile("Failed to parse saved filters from DB", LOG_CORE);
+    }
+  }
+}
 
 bool InputMapper::start(const std::string &keyboardPath,
                         const std::string &mousePath) {
@@ -97,6 +135,8 @@ bool InputMapper::setupDevices() {
       } else {
         if (libevdev_grab(mouseDev_, LIBEVDEV_GRAB) < 0) {
           logToFile("Failed to grab mouse", LOG_CORE);
+        } else {
+          logToFile("InputMapper: Mouse grabbed successfully", LOG_CORE);
         }
       }
     }
@@ -108,6 +148,14 @@ bool InputMapper::setupDevices() {
 bool InputMapper::setupUinput() {
   struct libevdev *uinput_template = libevdev_new();
   libevdev_set_name(uinput_template, "AutomateLinux Virtual Device");
+
+  // Set ID metadata to look like a real USB device.
+  // This helps desktop environments (GNOME/Mutter) recognize it as a valid
+  // input source.
+  libevdev_set_id_bustype(uinput_template, BUS_USB);
+  libevdev_set_id_vendor(uinput_template, 0x1b1c);  // Corsair
+  libevdev_set_id_product(uinput_template, 0x1bc5); // K100
+  libevdev_set_id_version(uinput_template, 0x0111);
 
   // Helper to enable all bits from a source device
   auto enable_bits = [&](struct libevdev *src) {
@@ -153,6 +201,123 @@ bool InputMapper::setupUinput() {
   }
 
   return true;
+}
+
+json InputMapper::getMacrosJson() {
+  std::lock_guard<std::mutex> lock(macrosMutex_);
+  json j = json::object();
+  for (const auto &pair : appMacros_) {
+    string appName = appTypeToString(pair.first);
+    json appMacros = json::array();
+    for (const auto &action : pair.second) {
+      json a;
+      a["message"] = action.logMessage;
+      json trigger;
+      json triggerKeys = json::array();
+      for (const auto &tk : action.trigger.keyCodes) {
+        triggerKeys.push_back(
+            {std::get<0>(tk), std::get<1>(tk), std::get<2>(tk)});
+      }
+      trigger["keys"] = triggerKeys;
+      a["trigger"] = trigger;
+
+      json seq = json::array();
+      for (const auto &sk : action.keySequence) {
+        seq.push_back({sk.first, sk.second});
+      }
+      a["sequence"] = seq;
+      a["hasHandler"] = (action.customHandler != nullptr);
+      appMacros.push_back(a);
+    }
+    j[appName] = appMacros;
+  }
+  return j;
+}
+
+json InputMapper::getEventFiltersJson() {
+  std::lock_guard<std::mutex> lock(filtersMutex_);
+  json j = json::array();
+  for (uint16_t code : filteredKeyCodes_) {
+    j.push_back(code);
+  }
+  return j;
+}
+
+void InputMapper::setMacrosFromJsonInternal(const json &j) {
+  appMacros_.clear();
+  for (auto it = j.begin(); it != j.end(); ++it) {
+    AppType app = stringToAppType(it.key());
+    vector<KeyAction> macros;
+    for (const auto &ma : it.value()) {
+      KeyAction action;
+      action.logMessage = ma.value("message", "");
+
+      KeyTrigger trigger;
+      if (ma.contains("trigger") && ma["trigger"].contains("keys")) {
+        for (const auto &tk : ma["trigger"]["keys"]) {
+          if (tk.is_array() && tk.size() >= 2) {
+            uint16_t code = tk[0].get<uint16_t>();
+            uint8_t state = tk[1].get<uint8_t>();
+            bool suppress = tk.size() >= 3 ? tk[2].get<bool>() : false;
+            trigger.keyCodes.push_back({code, state, suppress});
+            if (suppress)
+              trigger.hasSuppressedKeys = true;
+          }
+        }
+      }
+      action.trigger = trigger;
+
+      if (ma.contains("sequence")) {
+        for (const auto &seq : ma["sequence"]) {
+          if (seq.is_array() && seq.size() >= 2) {
+            action.keySequence.push_back(
+                {seq[0].get<uint16_t>(), seq[1].get<int32_t>()});
+          }
+        }
+      }
+
+      // Re-bind internal handlers by message or other logic if needed
+      if (ma.value("hasHandler", false)) {
+        if (action.logMessage.find("ChatGPT") != string::npos) {
+          action.customHandler = [this]() {
+            this->triggerChromeChatGPTMacro();
+          };
+        }
+      }
+
+      macros.push_back(action);
+    }
+    appMacros_[app] = macros;
+  }
+}
+
+void InputMapper::setMacrosFromJson(const json &j) {
+  {
+    std::lock_guard<std::mutex> lock(macrosMutex_);
+    setMacrosFromJsonInternal(j);
+  }
+  kvTable.upsert("custom_macros", j.dump());
+  logToFile("Macros updated dynamically and saved to DB", LOG_CORE);
+}
+
+void InputMapper::setEventFiltersInternal(const json &j) {
+  filteredKeyCodes_.clear();
+  if (j.is_array()) {
+    for (const auto &item : j) {
+      filteredKeyCodes_.insert(item.get<uint16_t>());
+    }
+  }
+}
+
+void InputMapper::setEventFilters(const json &j) {
+  {
+    std::lock_guard<std::mutex> lock(filtersMutex_);
+    setEventFiltersInternal(j);
+  }
+  kvTable.upsert("custom_event_filters", j.dump());
+  logToFile("Event filters updated dynamically and saved to DB (count: " +
+                std::to_string(filteredKeyCodes_.size()) + ")",
+            LOG_CORE);
 }
 
 void InputMapper::loop() {
@@ -222,6 +387,13 @@ void InputMapper::emit(uint16_t type, uint16_t code, int32_t value) {
   libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
 }
 
+void InputMapper::sync() {
+  if (!uinputDev_)
+    return;
+  std::lock_guard<std::mutex> lock(uinputMutex_);
+  libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
+}
+
 void InputMapper::emitSequence(
     const std::vector<std::pair<uint16_t, int32_t>> &sequence) {
   if (!uinputDev_)
@@ -288,171 +460,233 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
 
   // === NEW PARALLEL COMBO MATCHING LOGIC ===
   // On key press or release: test all active combos and track progress
-  if (!skipMacros && ev.type == EV_KEY) { // Any key event
-    AppType currentApp;
-    {
-      std::lock_guard<std::mutex> lock(contextMutex_);
-      currentApp = activeApp_;
-    }
+  if (!skipMacros && ev.type == EV_KEY) {
+    // Skip macro logic for basic mouse buttons (Left, Right, Middle)
+    // to prevent keyboard macros from blocking mouse clicks.
+    // We still allow BTN_FORWARD as it's used for our 'Enter' macro.
+    bool isStandardMouseButton =
+        !isKeyboard &&
+        (ev.code == BTN_LEFT || ev.code == BTN_RIGHT || ev.code == BTN_MIDDLE);
 
-    auto appIt = appMacros_.find(currentApp);
-    if (appIt != appMacros_.end()) {
-      bool currentlySuppressing = false;
-      bool eventConsumed = false;
+    if (!isStandardMouseButton) {
+      AppType currentApp;
+      {
+        std::lock_guard<std::mutex> lock(contextMutex_);
+        currentApp = activeApp_;
+      }
 
-      bool shouldSuppressThisSpecificEvent = false;
+      std::lock_guard<std::mutex> macroLock(macrosMutex_);
+      auto appIt = appMacros_.find(currentApp);
+      if (appIt != appMacros_.end()) {
+        bool currentlySuppressing = false;
+        bool eventConsumed = false;
 
-      // Test all combos for this app
-      for (size_t comboIdx = 0; comboIdx < appIt->second.size(); ++comboIdx) {
-        const KeyAction &action = appIt->second[comboIdx];
-        if (action.trigger.keyCodes.empty())
-          continue;
+        bool shouldSuppressThisSpecificEvent = false;
 
-        auto &comboMap = comboProgress_[currentApp];
-        ComboState &state = comboMap[comboIdx];
+        // Test all combos for this app
+        for (size_t comboIdx = 0; comboIdx < appIt->second.size(); ++comboIdx) {
+          const KeyAction &action = appIt->second[comboIdx];
+          if (action.trigger.keyCodes.empty())
+            continue;
 
-        if (state.nextKeyIndex < action.trigger.keyCodes.size()) {
-          const auto &expectedKeyTuple =
-              action.trigger.keyCodes[state.nextKeyIndex];
-          uint16_t expectedCode = std::get<0>(expectedKeyTuple);
-          uint8_t expectedState = std::get<1>(expectedKeyTuple);
-          bool shouldSuppress = std::get<2>(expectedKeyTuple);
+          auto &comboMap = comboProgress_[currentApp];
+          ComboState &state = comboMap[comboIdx];
 
-          if (expectedCode == ev.code && expectedState == ev.value) {
-            // Match! Advance state
-            state.nextKeyIndex++;
-            eventConsumed = true; // Key matched a combo step
+          if (state.nextKeyIndex < action.trigger.keyCodes.size()) {
+            const auto &expectedKeyTuple =
+                action.trigger.keyCodes[state.nextKeyIndex];
+            uint16_t expectedCode = std::get<0>(expectedKeyTuple);
+            uint8_t expectedState = std::get<1>(expectedKeyTuple);
+            bool shouldSuppress = std::get<2>(expectedKeyTuple);
 
-            if (shouldSuppress) {
-              shouldSuppressThisSpecificEvent = true;
-              state.suppressedKeys.push_back({ev.code, (uint8_t)ev.value});
-            }
+            if (expectedCode == ev.code && expectedState == ev.value) {
+              // Match! Advance state
+              state.nextKeyIndex++;
+              eventConsumed = true; // Key matched a combo step
 
-            logToFile("Combo " + std::to_string(comboIdx) +
-                          " progress: " + std::to_string(state.nextKeyIndex) +
-                          "/" + std::to_string(action.trigger.keyCodes.size()),
-                      LOG_MACROS);
-
-            // Check if combo is complete
-            if (state.nextKeyIndex == action.trigger.keyCodes.size()) {
-              logToFile("COMBO COMPLETE: " + action.logMessage, LOG_AUTOMATION);
-
-              if (action.trigger.hasSuppressedKeys) {
-                // Consume trigger from queue (the keys that match the combo)
-                std::lock_guard<std::mutex> lock(pendingEventsMutex_);
-                // We only want to remove events that we actually suppressed for
-                // THIS combo
-                for (const auto &sk : state.suppressedKeys) {
-                  auto it = std::find_if(
-                      pendingEvents_.begin(), pendingEvents_.end(),
-                      [&sk](const PendingEvent &pe) {
-                        return pe.code == sk.first && pe.value == sk.second;
-                      });
-                  if (it != pendingEvents_.end()) {
-                    pendingEvents_.erase(it);
-                  }
-                }
-                state.suppressedKeys.clear();
+              if (shouldSuppress) {
+                shouldSuppressThisSpecificEvent = true;
+                state.suppressedKeys.push_back({ev.code, (uint8_t)ev.value});
               }
 
-              executeKeyAction(action);
+              logToFile("Combo " + std::to_string(comboIdx) + " progress: " +
+                            std::to_string(state.nextKeyIndex) + "/" +
+                            std::to_string(action.trigger.keyCodes.size()),
+                        LOG_MACROS);
+
+              // Check if combo is complete
+              if (state.nextKeyIndex == action.trigger.keyCodes.size()) {
+                logToFile("COMBO COMPLETE: " + action.logMessage,
+                          LOG_AUTOMATION);
+
+                if (action.trigger.hasSuppressedKeys) {
+                  // Consume trigger from queue (the keys that match the combo)
+                  std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+                  // We only want to remove events that we actually suppressed
+                  // for THIS combo
+                  for (const auto &sk : state.suppressedKeys) {
+                    auto it = std::find_if(
+                        pendingEvents_.begin(), pendingEvents_.end(),
+                        [&sk](const PendingEvent &pe) {
+                          return pe.code == sk.first && pe.value == sk.second;
+                        });
+                    if (it != pendingEvents_.end()) {
+                      pendingEvents_.erase(it);
+                    }
+                  }
+                  state.suppressedKeys.clear();
+                }
+
+                executeKeyAction(action);
+                state.nextKeyIndex = 0;
+              }
+            } else if (state.nextKeyIndex > 0) {
+              // Broke an existing combo
+              logToFile("Combo " + std::to_string(comboIdx) +
+                            " broken at step " +
+                            std::to_string(state.nextKeyIndex),
+                        LOG_MACROS);
               state.nextKeyIndex = 0;
+              state.suppressedKeys.clear();
             }
-          } else if (state.nextKeyIndex > 0) {
-            // Broke an existing combo
-            logToFile("Combo " + std::to_string(comboIdx) + " broken at step " +
-                          std::to_string(state.nextKeyIndex),
-                      LOG_MACROS);
-            state.nextKeyIndex = 0;
-            state.suppressedKeys.clear();
           }
         }
-      }
 
-      // Re-evaluate if any combo is still in progress
-      bool anyComboInProgress = false;
-      for (const auto &pair : comboProgress_[currentApp]) {
-        if (pair.second.nextKeyIndex > 0) {
-          anyComboInProgress = true;
-          break;
+        // Re-evaluate if any combo is still in progress
+        bool anyComboInProgress = false;
+        for (const auto &pair : comboProgress_[currentApp]) {
+          if (pair.second.nextKeyIndex > 0) {
+            anyComboInProgress = true;
+            break;
+          }
         }
-      }
 
-      if (eventConsumed) {
-        if (shouldSuppressThisSpecificEvent) {
-          // Queue this event
+        if (eventConsumed) {
+          if (shouldSuppressThisSpecificEvent) {
+            // Queue this event
+            std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+            pendingEvents_.push_back(
+                {(uint16_t)ev.type, (uint16_t)ev.code, (int32_t)ev.value});
+          } else {
+            // Not suppressed by any matching combo. Emit now!
+            emit(ev.type, ev.code, ev.value);
+          }
+
+          // IMPORTANT: Always check for flush after an event is consumed,
+          // especially if it completed a macro.
+          if (!anyComboInProgress) {
+            std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+            if (!pendingEvents_.empty()) {
+              logToFile("Flushing remaining after complete (" +
+                            std::to_string(pendingEvents_.size()) + ")",
+                        LOG_MACROS);
+              for (const auto &pe : pendingEvents_) {
+                emit(pe.type, pe.code, pe.value);
+              }
+              sync(); // Sync after flushing unblocked queue
+              pendingEvents_.clear();
+            }
+          }
+          return;
+        }
+
+        // If we are currently in a suppressed state (holding a trigger key), we
+        // must queue even unmatched keys to preserve order.
+        {
+          std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+          currentlySuppressing = !pendingEvents_.empty();
+        }
+
+        // Critical unblocking: ENTER and KPENTER should never be stuck in a
+        // queue if they are not part of an active macro.
+        if (!anyComboInProgress &&
+            (ev.code == KEY_ENTER || ev.code == KEY_KPENTER)) {
+          std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+          if (!pendingEvents_.empty()) {
+            logToFile("Unblocking queue via ENTER key (" +
+                          std::to_string(pendingEvents_.size()) + " queued)",
+                      LOG_MACROS);
+            for (const auto &pe : pendingEvents_) {
+              emit(pe.type, pe.code, pe.value);
+            }
+            pendingEvents_.clear();
+            sync(); // Sync after flushing unblocked queue
+          }
+        }
+
+        if (currentlySuppressing && anyComboInProgress) {
+          // Still matching some other potential combo, keep queueing
           std::lock_guard<std::mutex> lock(pendingEventsMutex_);
           pendingEvents_.push_back(
               {(uint16_t)ev.type, (uint16_t)ev.code, (int32_t)ev.value});
+          return;
         } else {
-          // Not suppressed by any matching combo. Emit now!
-          emit(ev.type, ev.code, ev.value);
-        }
-
-        // IMPORTANT: Always check for flush after an event is consumed,
-        // especially if it completed a macro.
-        if (!anyComboInProgress) {
+          // Not matching anything anymore, or we weren't suppressing.
           std::lock_guard<std::mutex> lock(pendingEventsMutex_);
           if (!pendingEvents_.empty()) {
-            logToFile("Flushing remaining after complete (" +
+            logToFile("Flushing pending events (mismatch/broken combo: " +
                           std::to_string(pendingEvents_.size()) + ")",
                       LOG_MACROS);
             for (const auto &pe : pendingEvents_) {
               emit(pe.type, pe.code, pe.value);
             }
             pendingEvents_.clear();
+            sync(); // Sync after flushing unblocked queue
           }
-        }
-        return;
-      }
-
-      // If we are currently in a suppressed state (holding a trigger key), we
-      // must queue even unmatched keys to preserve order.
-      {
-        std::lock_guard<std::mutex> lock(pendingEventsMutex_);
-        currentlySuppressing = !pendingEvents_.empty();
-      }
-
-      if (currentlySuppressing && anyComboInProgress) {
-        // Still matching some other potential combo, keep queueing
-        std::lock_guard<std::mutex> lock(pendingEventsMutex_);
-        pendingEvents_.push_back(
-            {(uint16_t)ev.type, (uint16_t)ev.code, (int32_t)ev.value});
-        return;
-      } else {
-        // Not matching anything anymore, or we weren't suppressing.
-        std::lock_guard<std::mutex> lock(pendingEventsMutex_);
-        if (!pendingEvents_.empty()) {
-          logToFile("Flushing pending events (mismatch/broken combo: " +
-                        std::to_string(pendingEvents_.size()) + ")",
-                    LOG_MACROS);
-          for (const auto &pe : pendingEvents_) {
-            emit(pe.type, pe.code, pe.value);
-          }
-          pendingEvents_.clear();
         }
       }
     }
   }
 
-  if (ev.type == EV_KEY && (ev.code == KEY_ENTER || ev.code == KEY_KPENTER)) {
-    // Keep LOG_INPUT for basic Enter/Exit tracking
+  bool forcedLog = false;
+  {
+    std::lock_guard<std::mutex> lock(filtersMutex_);
+    if (filteredKeyCodes_.count(ev.code)) {
+      forcedLog = true;
+    }
+  }
+
+  bool isMouseButton =
+      (ev.type == EV_KEY && ev.code >= BTN_MOUSE && ev.code <= BTN_GEAR_UP);
+  if (forcedLog ||
+      (ev.type == EV_KEY &&
+       (ev.code == KEY_ENTER || ev.code == KEY_KPENTER || isMouseButton))) {
+    // Keep LOG_INPUT for basic tracking
     logToFile(std::string(isKeyboard ? "KBD" : "MOUSE") +
-                  " Processing ENTER key (code " + std::to_string(ev.code) +
-                  ", value " + std::to_string(ev.value) + ") -> uinput",
+                  " Processing event (type " + std::to_string(ev.type) +
+                  ", code " + std::to_string(ev.code) + ", value " +
+                  std::to_string(ev.value) + ") -> uinput",
               LOG_INPUT);
   }
 
-  std::lock_guard<std::mutex> lock(uinputMutex_);
-  int rc = libevdev_uinput_write_event(uinputDev_, ev.type, ev.code, ev.value);
-  if (rc < 0) {
-    char errBuf[128];
-    int len = snprintf(errBuf, sizeof(errBuf),
-                       "Failed to write to uinput: %s (type=%d, code=%d)\n",
-                       strerror(-rc), ev.type, ev.code);
-    write(STDERR_FILENO, errBuf, len);
-    logToFile("Failed to write to uinput: " + std::string(strerror(-rc)),
-              LOG_INPUT);
+  // Use emit() for keys and mouse movements to ensure immediate EV_SYN.
+  // This prevents the kernel from delaying events until the next physical
+  // sync.
+  if (ev.type == EV_KEY || ev.type == EV_REL || ev.type == EV_ABS) {
+    emit(ev.type, ev.code, ev.value);
+  } else {
+    // Detailed logging for MSC/SYN events when they follow or precede Enters
+    if (ev.type == EV_MSC || ev.type == EV_SYN) {
+      if (ev.type == EV_SYN) {
+        logToFile("--- EV_SYN ---", LOG_INPUT);
+      } else {
+        logToFile("Meta Event: type=" + std::to_string(ev.type) +
+                      " code=" + std::to_string(ev.code) +
+                      " value=" + std::to_string(ev.value),
+                  LOG_INPUT);
+      }
+    }
+
+    // Pure synchronization or metadata events pass through as-is
+    std::lock_guard<std::mutex> lock(uinputMutex_);
+    int rc =
+        libevdev_uinput_write_event(uinputDev_, ev.type, ev.code, ev.value);
+    if (rc < 0) {
+      logToFile(
+          "Failed to write to uinput (raw type=" + std::to_string(ev.type) +
+              "): " + std::string(strerror(-rc)),
+          LOG_INPUT);
+    }
   }
 }
 
@@ -556,11 +790,12 @@ void InputMapper::triggerChromeChatGPTMacro() {
     }
 
     // Small extra safety delay to ensure the browser has processed the focus
-    // event internally
-    std::this_thread::sleep_for(std::chrono::milliseconds(15));
+    // event internally AND to prevent window-switch race
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     emitSequence(
         {{KEY_LEFTCTRL, 1}, {KEY_V, 1}, {KEY_V, 0}, {KEY_LEFTCTRL, 0}});
+    sync(); // Ensure sequence is flushed
   }).detach();
 }
 void InputMapper::flushAndResetState() {
@@ -576,6 +811,7 @@ void InputMapper::flushAndResetState() {
       for (const auto &pe : pendingEvents_) {
         emit(pe.type, pe.code, pe.value);
       }
+      sync(); // Final sync after flush
       pendingEvents_.clear();
     }
   }

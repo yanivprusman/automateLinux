@@ -71,6 +71,7 @@ public:
   void flushAndResetState();
   void onFocusAck();
   bool isRunning() const { return running_; }
+  void setPendingGrab(bool value); // NEW PUBLIC SETTER
 
   json getMacrosJson();
   json getEventFiltersJson();
@@ -83,6 +84,8 @@ public:
 private:
   void setMacrosFromJsonInternal(const json &j);
   void setEventFiltersInternal(const json &j);
+  void grabDevices();   // New: performs the libevdev_grab
+  void ungrabDevices(); // New: performs the libevdev_ungrab
 
 private:
   void loop();
@@ -105,6 +108,9 @@ private:
 
   std::thread thread_;
   std::atomic<bool> running_{false};
+  std::set<uint16_t> pressedKeys_; // To track currently pressed keys
+  std::atomic<bool> pendingGrab_{false}; // True if grab is desired but waiting for keys to be released
+  std::atomic<bool> monitoringMode_{false}; // True if devices are open but not grabbed
   bool ctrlDown_ = false; // Track LeftCtrl state for macros
 
   // Thread safety and async flow

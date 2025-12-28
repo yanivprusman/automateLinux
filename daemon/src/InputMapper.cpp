@@ -82,17 +82,22 @@ void InputMapper::stop() {
     logToFile("InputMapper: Thread joined", LOG_CORE);
   }
 
+  // If devices were grabbed, ungrab them first
+  if (!monitoringMode_) {
+    ungrabDevices();
+  }
+
   if (uinputDev_) {
     libevdev_uinput_destroy(uinputDev_);
     uinputDev_ = nullptr;
   }
   if (keyboardDev_) {
-    libevdev_grab(keyboardDev_, LIBEVDEV_UNGRAB);
+    // libevdev_grab(keyboardDev_, LIBEVDEV_UNGRAB); // Removed, handled by ungrabDevices()
     libevdev_free(keyboardDev_);
     keyboardDev_ = nullptr;
   }
   if (mouseDev_) {
-    libevdev_grab(mouseDev_, LIBEVDEV_UNGRAB);
+    // libevdev_grab(mouseDev_, LIBEVDEV_UNGRAB); // Removed, handled by ungrabDevices()
     libevdev_free(mouseDev_);
     mouseDev_ = nullptr;
   }
@@ -119,13 +124,17 @@ bool InputMapper::setupDevices() {
     return false;
   }
 
-  if (libevdev_grab(keyboardDev_, LIBEVDEV_GRAB) < 0) {
-    std::cerr << "CRITICAL: Failed to grab keyboard: " << strerror(errno)
-              << std::endl;
-    logToFile("Failed to grab keyboard", LOG_CORE);
-    return false;
+  // Query initial state of all keys and populate pressedKeys_
+  for (int code = 0; code < KEY_CNT; ++code) {
+    if (libevdev_has_event_code(keyboardDev_, EV_KEY, code) &&
+        libevdev_get_event_value(keyboardDev_, EV_KEY, code) == 1) {
+      pressedKeys_.insert(code);
+      logToFile("DEBUG_KEYS: Initial pressed key: " + std::to_string(code), LOG_MACROS);
+    }
   }
-  logToFile("InputMapper: Keyboard grabbed successfully", LOG_CORE);
+  logToFile("DEBUG_KEYS: Initial pressed keys count: " + std::to_string(pressedKeys_.size()), LOG_MACROS);
+
+
 
   if (!mousePath_.empty()) {
     mouseFd_ = open(mousePath_.c_str(), O_RDONLY | O_NONBLOCK);
@@ -133,15 +142,12 @@ bool InputMapper::setupDevices() {
       if (libevdev_new_from_fd(mouseFd_, &mouseDev_) < 0) {
         logToFile("Failed to initialize libevdev for mouse", LOG_CORE);
       } else {
-        if (libevdev_grab(mouseDev_, LIBEVDEV_GRAB) < 0) {
-          logToFile("Failed to grab mouse", LOG_CORE);
-        } else {
-          logToFile("InputMapper: Mouse grabbed successfully", LOG_CORE);
-        }
+
       }
     }
   }
 
+  monitoringMode_ = true; // Devices are open but not grabbed
   return true;
 }
 
@@ -359,6 +365,12 @@ void InputMapper::loop() {
 
   logToFile("InputMapper loop starting...", LOG_CORE);
   while (running_) {
+    // Check for pending grab
+    if (pendingGrab_ && pressedKeys_.empty()) {
+      logToFile("InputMapper: All keys released, performing deferred grab.", LOG_CORE);
+      grabDevices();
+      pendingGrab_ = false;
+    }
     int rc = poll(fds, nfds, 100); // 100ms timeout
     if (rc < 0)
       break;
@@ -422,6 +434,10 @@ void InputMapper::sync() {
   libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
 }
 
+void InputMapper::setPendingGrab(bool value) {
+  pendingGrab_ = value;
+}
+
 void InputMapper::emitSequence(
     const std::vector<std::pair<uint16_t, int32_t>> &sequence) {
   if (!uinputDev_)
@@ -431,6 +447,36 @@ void InputMapper::emitSequence(
     libevdev_uinput_write_event(uinputDev_, EV_KEY, p.first, p.second);
     libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
   }
+}
+
+void InputMapper::grabDevices() {
+  if (keyboardDev_) {
+    if (libevdev_grab(keyboardDev_, LIBEVDEV_GRAB) < 0) {
+      logToFile("Failed to grab keyboard", LOG_CORE);
+    } else {
+      logToFile("InputMapper: Keyboard grabbed successfully", LOG_CORE);
+    }
+  }
+  if (mouseDev_) {
+    if (libevdev_grab(mouseDev_, LIBEVDEV_GRAB) < 0) {
+      logToFile("Failed to grab mouse", LOG_CORE);
+    } else {
+      logToFile("InputMapper: Mouse grabbed successfully", LOG_CORE);
+    }
+  }
+  monitoringMode_ = false; // We are no longer just monitoring
+}
+
+void InputMapper::ungrabDevices() {
+  if (keyboardDev_) {
+    libevdev_grab(keyboardDev_, LIBEVDEV_UNGRAB);
+    logToFile("InputMapper: Keyboard ungrabbed", LOG_CORE);
+  }
+  if (mouseDev_) {
+    libevdev_grab(mouseDev_, LIBEVDEV_UNGRAB);
+    logToFile("InputMapper: Mouse ungrabbed", LOG_CORE);
+  }
+  monitoringMode_ = true; // We are back to monitoring (if devices are still open)
 }
 
 void InputMapper::setContext(AppType appType, const std::string &url,
@@ -452,6 +498,17 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             ", isKBD=" + std::to_string(isKeyboard) +
             ", skipMacros=" + std::to_string(skipMacros) +
             ", Device=" + devicePath, LOG_MACROS);
+
+  // NEW KEY TRACKING LOGIC
+  if (ev.type == EV_KEY) {
+    if (ev.value == 1) { // Key press
+      pressedKeys_.insert(ev.code);
+      logToFile("DEBUG_KEYS: Key " + std::to_string(ev.code) + " pressed. Total: " + std::to_string(pressedKeys_.size()), LOG_MACROS);
+    } else if (ev.value == 0) { // Key release
+      pressedKeys_.erase(ev.code);
+      logToFile("DEBUG_KEYS: Key " + std::to_string(ev.code) + " released. Total: " + std::to_string(pressedKeys_.size()), LOG_MACROS);
+    }
+  }
   // Update LeftCtrl state for macros (tracked outside Chrome block)
   if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_LEFTCTRL) {
     ctrlDown_ = (ev.value != 0);

@@ -31,10 +31,14 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
             LOG_CORE);
 
   if (enableKeyboard) {
+    // If mapper is already running (in monitoring mode or grabbed),
+    // we just need to ensure pendingGrab_ is set and grab will happen when keys are released.
     if (mapper.isRunning()) {
-      logToFile("Keyboard already enabled", LOG_CORE);
-      return CmdResult(0, "Keyboard already enabled\n");
+        logToFile("Mapper already running. Ensuring pendingGrab is set.", LOG_CORE);
+        mapper.setPendingGrab(true); // Ensure grab happens when keys are released
+        return CmdResult(0, "Keyboard enable pending (waiting for key release)\n");
     }
+
     std::string keyboardPath = kvTable.get(KEYBOARD_PATH_KEY);
     std::string mousePath = kvTable.get(MOUSE_PATH_KEY);
 
@@ -43,15 +47,18 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
       return CmdResult(1, "Keyboard path not found\n");
     }
     logToFile("Enabling keyboard: " + keyboardPath, LOG_CORE);
-    if (mapper.start(keyboardPath, mousePath)) {
-      return CmdResult(0, "Keyboard enabled\n");
+
+    // Start mapper in monitoring mode, then set pendingGrab_
+    if (mapper.start(keyboardPath, mousePath)) { // start() now just opens devices and sets monitoringMode_
+      mapper.setPendingGrab(true); // Request a grab once keys are released
+      return CmdResult(0, "Keyboard enable pending (waiting for key release)\n");
     } else {
-      logToFile("ERROR: Failed to start InputMapper", LOG_CORE);
+      logToFile("ERROR: Failed to start InputMapper for monitoring", LOG_CORE);
       return CmdResult(1, "Failed to enable keyboard\n");
     }
   } else {
     logToFile("Disabling keyboard", LOG_CORE);
-    mapper.stop();
+    mapper.stop(); // stop() now handles ungrabbing and freeing devices
     return CmdResult(0, "Keyboard disabled\n");
   }
 }

@@ -19,6 +19,12 @@ function App() {
       .then(data => setMacros(data))
       .catch(console.error);
 
+    // Fetch filters
+    fetch('http://localhost:9224/api/filters')
+      .then(res => res.json())
+      .then(data => setFilters(data))
+      .catch(console.error);
+
     // WebSocket for logs
     const ws = new WebSocket('ws://localhost:9224');
     ws.onopen = () => console.log('WebSocket Connected');

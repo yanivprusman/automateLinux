@@ -70,8 +70,8 @@ const size_t COMMAND_REGISTRY_SIZE =
     sizeof(COMMAND_REGISTRY) / sizeof(COMMAND_REGISTRY[0]);
 
 static int clientSocket = -1;
-unsigned int shouldLog = LOG_CORE; // Global state for logging
-bool g_keyboardEnabled = true;     // Global state for keyboard enable/disable
+unsigned int shouldLog = LOG_ALL; // Global state for logging
+bool g_keyboardEnabled = true;    // Global state for keyboard enable/disable
 
 // Global state for active tab URL (set by Chrome extension)
 static std::mutex g_activeTabUrlMutex;

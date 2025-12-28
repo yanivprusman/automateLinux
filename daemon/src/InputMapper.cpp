@@ -169,6 +169,12 @@ bool InputMapper::setupUinput() {
           if (libevdev_has_event_code(src, type, code)) {
             libevdev_enable_event_code(uinput_template, type, code,
                                        libevdev_get_abs_info(src, code));
+            // Force log to bypass shouldLog filter for debugging
+            extern void forceLog(const std::string &message);
+            std::string debugMsg =
+                "Enabled event code: type=" + std::to_string(type) +
+                ", code=" + std::to_string(code);
+            forceLog(debugMsg);
           }
         }
       }
@@ -211,12 +217,15 @@ json InputMapper::getMacrosJson() {
     json appMacros = json::array();
     for (const auto &action : pair.second) {
       json a;
-      a["message"] = action.logMessage;
+      a["logMessage"] = action.logMessage;
       json trigger;
       json triggerKeys = json::array();
       for (const auto &tk : action.trigger.keyCodes) {
-        triggerKeys.push_back(
-            {std::get<0>(tk), std::get<1>(tk), std::get<2>(tk)});
+        json k;
+        k["code"] = std::get<0>(tk);
+        k["state"] = std::get<1>(tk);
+        k["suppress"] = std::get<2>(tk);
+        triggerKeys.push_back(k);
       }
       trigger["keys"] = triggerKeys;
       a["trigger"] = trigger;
@@ -253,10 +262,17 @@ json InputMapper::getEventFiltersJson() {
 }
 
 void InputMapper::setMacrosFromJsonInternal(const json &j) {
-  appMacros_.clear();
-  // Clear combo progress to prevent stale states ("ghost macros") from locking
-  // input
-  comboProgress_.clear(); // Fix for ENTER key / keyboard lockup
+  // Ensure defaults are present if map is empty (though constructor calls init)
+  if (appMacros_.empty()) {
+    initializeAppMacros();
+  }
+  // Clear combo progress to prevent stale states
+  comboProgress_.clear();
+
+  // We DO NOT clear appMacros_ here because we want to keep defaults.
+  // Instead, the JSON loading acts as an overlay/addition.
+  // If the user wants to truly 'reset', they must restart daemon or we need a
+  // separate reset command.
   for (auto it = j.begin(); it != j.end(); ++it) {
     AppType app = stringToAppType(it.key());
     vector<KeyAction> macros;
@@ -573,6 +589,13 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
           }
         }
 
+        if (ev.code == KEY_ENTER || ev.code == KEY_KPENTER) {
+          extern void forceLog(const std::string &message);
+          forceLog(
+              "ENTER DEBUG [1]: Consumed=" + std::to_string(eventConsumed) +
+              " AnyCombo=" + std::to_string(anyComboInProgress));
+        }
+
         if (eventConsumed) {
           if (shouldSuppressThisSpecificEvent) {
             // Queue this event
@@ -607,6 +630,13 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
         {
           std::lock_guard<std::mutex> lock(pendingEventsMutex_);
           currentlySuppressing = !pendingEvents_.empty();
+        }
+
+        if (ev.code == KEY_ENTER || ev.code == KEY_KPENTER) {
+          extern void forceLog(const std::string &message);
+          forceLog("ENTER DEBUG [2]: Suppressing=" +
+                   std::to_string(currentlySuppressing) +
+                   " AnyCombo=" + std::to_string(anyComboInProgress));
         }
 
         // Critical unblocking: ENTER and KPENTER should never be stuck in a
@@ -650,20 +680,20 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     }
   }
 
-  bool forcedLog = false;
-  {
+  // Filter Logic:
+  // 1. If filters are empty -> Log ALL keys/buttons
+  // 2. If filters exist -> Log ONLY matching keys
+  bool shouldLogInput = false;
+  if (ev.type == EV_KEY) {
     std::lock_guard<std::mutex> lock(filtersMutex_);
-    if (filteredKeyCodes_.count(ev.code)) {
-      forcedLog = true;
+    if (filteredKeyCodes_.empty()) {
+      shouldLogInput = true; // No filter = Log everything
+    } else {
+      shouldLogInput = (filteredKeyCodes_.count(ev.code) > 0);
     }
   }
 
-  bool isMouseButton =
-      (ev.type == EV_KEY && ev.code >= BTN_MOUSE && ev.code <= BTN_GEAR_UP);
-  if (forcedLog ||
-      (ev.type == EV_KEY &&
-       (ev.code == KEY_ENTER || ev.code == KEY_KPENTER || isMouseButton))) {
-    // Keep LOG_INPUT for basic tracking
+  if (shouldLogInput) {
     logToFile(std::string(isKeyboard ? "KBD" : "MOUSE") +
                   " Processing event (type " + std::to_string(ev.type) +
                   ", code " + std::to_string(ev.code) + ", value " +

@@ -111,21 +111,38 @@ const MacroBuilder: React.FC<MacroBuilderProps> = ({ initialAction, onSave, onCa
                         ))}
                     </select>
                 ) : (
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                        {triggerKeys.map((code, idx) => (
-                            <div key={idx} className="key-badge" style={{
-                                background: '#333', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '5px'
-                            }}>
-                                {COMMON_KEYS[code] || code}
-                                <button onClick={() => setTriggerKeys(triggerKeys.filter((_, i) => i !== idx))} style={{ border: 'none', background: 'transparent', color: 'red' }}>×</button>
-                            </div>
-                        ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                            {triggerKeys.map((code, idx) => (
+                                <div key={idx} className="key-badge" style={{
+                                    background: 'rgba(0, 243, 255, 0.2)', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '5px', border: '1px solid var(--accent-cyan)'
+                                }}>
+                                    {COMMON_KEYS[code] || code}
+                                    <button onClick={() => setTriggerKeys(triggerKeys.filter((_, i) => i !== idx))} style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem', padding: '0 2px' }}>×</button>
+                                </div>
+                            ))}
+                        </div>
                         <div style={{ display: 'flex', gap: '5px' }}>
+                            <select
+                                className="glass-input"
+                                style={{ flex: 1 }}
+                                onChange={(e) => {
+                                    if (e.target.value) {
+                                        setTriggerKeys([...triggerKeys, Number(e.target.value)]);
+                                        e.target.value = '';
+                                    }
+                                }}
+                            >
+                                <option value="">+ Add Trigger Key...</option>
+                                {Object.entries(COMMON_KEYS).sort((a, b) => a[1].localeCompare(b[1])).map(([code, name]) => (
+                                    <option key={code} value={code}>{name} ({code})</option>
+                                ))}
+                            </select>
                             <input
                                 type="number"
-                                placeholder="Code"
+                                placeholder="Raw Code"
                                 className="glass-input"
-                                style={{ width: '60px' }}
+                                style={{ width: '100px' }}
                                 onKeyDown={e => {
                                     if (e.key === 'Enter') {
                                         setTriggerKeys([...triggerKeys, Number(e.currentTarget.value)]);
@@ -133,7 +150,6 @@ const MacroBuilder: React.FC<MacroBuilderProps> = ({ initialAction, onSave, onCa
                                     }
                                 }}
                             />
-                            <button className="glass-button secondary">Add</button>
                         </div>
                     </div>
                 )}
@@ -152,7 +168,7 @@ const MacroBuilder: React.FC<MacroBuilderProps> = ({ initialAction, onSave, onCa
                                 style={{ width: '120px' }}
                             >
                                 <option value={step.code}>{COMMON_KEYS[step.code] || `Key ${step.code}`}</option>
-                                {Object.entries(COMMON_KEYS).map(([c, n]) => (
+                                {Object.entries(COMMON_KEYS).sort((a, b) => a[1].localeCompare(b[1])).map(([c, n]) => (
                                     <option key={c} value={c}>{n}</option>
                                 ))}
                             </select>

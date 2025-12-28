@@ -41,7 +41,7 @@ void InputMapper::initializeAppMacros() {
   // Ctrl(press, suppress) + LeftClick(press, suppress)
   appMacros_[AppType::TERMINAL].push_back(
       KeyAction{KeyTrigger{{{KEY_LEFTCTRL, 1, false}, {BTN_LEFT, 1, true}}},
-                {{KEY_LEFTCTRL, 0}, {KEY_5, 1}, {KEY_5, 0}},
+                {{KEY_5, 1}, {KEY_5, 0}},
                 "Triggering Terminal Ctrl+Left Click macro",
                 nullptr});
 

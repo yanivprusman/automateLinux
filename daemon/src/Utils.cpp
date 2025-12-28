@@ -37,10 +37,10 @@ void logToFile(const string &message, unsigned int category) {
     }
   }
 
-  // Stream to subscribers (Always stream, regardless of file logging settings)
+  // Stream to subscribers (ONLY stream input events for the live dashboard)
   {
     std::lock_guard<std::mutex> subLock(g_logSubscribersMutex);
-    if (!g_logSubscribers.empty()) {
+    if (!g_logSubscribers.empty() && category == LOG_INPUT) {
       std::string streamMsg = message + "\n";
       for (int fd : g_logSubscribers) {
         // We use send() with MSG_NOSIGNAL to avoid crashing if client closed

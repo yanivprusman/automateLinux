@@ -8,7 +8,7 @@ daemonAlternative() {
 
     local formatOutput="false"
     local formatOutputTrueFunctions=("" "--help" "showDB" "showTerminalInstance" 
-        "showAllTerminalInstances" "showEntriesByPrefix" "printDirHistory" "setKeyboard")
+        "showAllTerminalInstances" "showEntriesByPrefix" "printDirHistory" "enableKeyboard" "disableKeyboard")
 
     if [[ " ${formatOutputTrueFunctions[*]} " == "* $1 *" ]]; then
         formatOutput="true"

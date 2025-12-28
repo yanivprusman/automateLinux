@@ -56,7 +56,7 @@ restartEvsieveOnSave(){
         if [[ "$f" == "$base" ]]; then
             # Small debounce to avoid race conditions during rapid saves
             sleep 0.2
-            daemon send setKeyboard --enable true > /dev/null 2>&1
+            daemon send enableKeyboard > /dev/null 2>&1
         fi
     done
 }

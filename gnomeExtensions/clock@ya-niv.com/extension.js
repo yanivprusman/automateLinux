@@ -297,10 +297,11 @@ export default class ClockExtension extends Extension {
             this._keyboardEnabled = !this._keyboardEnabled;
 
             // Send command to daemon
-            const response = await this.daemon.connectAndSendMessage({
-                command: 'setKeyboard',
-                enable: this._keyboardEnabled ? 'true' : 'false'
-            });
+            if (this._keyboardEnabled) {
+                await this.daemon.connectAndSendMessage({ command: 'enableKeyboard' });
+            } else {
+                await this.daemon.connectAndSendMessage({ command: 'disableKeyboard' });
+            }
 
             // Update menu item text
             this._toggleKeyboardMenuItem.label.text = this._keyboardEnabled

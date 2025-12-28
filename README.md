@@ -32,7 +32,7 @@ The daemon is a C++ application built using CMake and Make. It can operate as a 
     {daemon|d} send ping
 
     # Example: Send a command with arguments
-    {daemon|d} send setKeyboard --enable true
+    {daemon|d} send enableKeyboard / disableKeyboard
     ```
     Commands are parsed from command-line arguments using a `--key value` format.
 

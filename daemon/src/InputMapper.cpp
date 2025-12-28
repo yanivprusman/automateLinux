@@ -446,6 +446,12 @@ void InputMapper::setContext(AppType appType, const std::string &url,
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                                bool skipMacros, const std::string& devicePath) {
+  logToFile("DEBUG_EV: Type=" + std::to_string(ev.type) +
+            ", Code=" + std::to_string(ev.code) +
+            ", Value=" + std::to_string(ev.value) +
+            ", isKBD=" + std::to_string(isKeyboard) +
+            ", skipMacros=" + std::to_string(skipMacros) +
+            ", Device=" + devicePath, LOG_MACROS);
   // Update LeftCtrl state for macros (tracked outside Chrome block)
   if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_LEFTCTRL) {
     ctrlDown_ = (ev.value != 0);
@@ -506,6 +512,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
       std::lock_guard<std::mutex> macroLock(macrosMutex_);
       auto appIt = appMacros_.find(currentApp);
       if (appIt != appMacros_.end()) {
+        logToFile("DEBUG_MACRO: Found " + std::to_string(appIt->second.size()) +
+                  " macros for app: " + appTypeToString(currentApp), LOG_MACROS);
         bool currentlySuppressing = false;
         bool eventConsumed = false;
 

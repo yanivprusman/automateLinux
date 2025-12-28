@@ -8,7 +8,7 @@ _daemon_completion() {
     
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit"
     }
 
     # Find the real command word and previous word, accounting for 'send'
@@ -48,7 +48,7 @@ _daemon_completion() {
     command_args[deleteEntriesByPrefix]="--prefix"
     command_args[upsertEntry]="--key --value"
     command_args[getEntry]="--key"
-    command_args[setKeyboard]="--enable"
+
     command_args[shouldLog]="--enable"
     command_args[toggleKeyboard]="--enable"
     command_args[getDir]="--dirName"

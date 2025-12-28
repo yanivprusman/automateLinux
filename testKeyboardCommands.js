@@ -31,16 +31,14 @@ async function runTests() {
         const initial = await sendCommand({ command: 'getKeyboard' });
         console.log('Initial state:', initial);
 
-        console.log('Testing setKeyboard enable=false...');
-        const setFalse = await sendCommand({ command: 'setKeyboard', enable: 'false' });
-        console.log('Set false response:', setFalse);
+        console.log('Testing disableKeyboard...');
+        const setFalse = await sendCommand({ command: 'disableKeyboard' });        console.log('Set false response:', setFalse);
 
         const afterFalse = await sendCommand({ command: 'getKeyboard' });
         console.log('State after false:', afterFalse);
 
-        console.log('Testing setKeyboard enable=true...');
-        const setTrue = await sendCommand({ command: 'setKeyboard', enable: 'true' });
-        console.log('Set true response:', setTrue);
+        console.log('Testing enableKeyboard...');
+        const setTrue = await sendCommand({ command: 'enableKeyboard' });        console.log('Set true response:', setTrue);
 
         const final = await sendCommand({ command: 'getKeyboard' });
         console.log('Final state:', final);

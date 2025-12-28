@@ -37,7 +37,7 @@
 #define COMMAND_GET_KEYBOARD_PATH "getKeyboardPath"
 #define COMMAND_GET_MOUSE_PATH "getMousePath"
 #define COMMAND_GET_SOCKET_PATH "getSocketPath"
-#define COMMAND_SET_KEYBOARD "setKeyboard"
+
 #define COMMAND_GET_KEYBOARD "getKeyboard"
 #define COMMAND_GET_KEYBOARD_ENABLED "getKeyboardEnabled"
 #define COMMAND_ARG_KEYBOARD_NAME "keyboardName"
@@ -78,6 +78,8 @@
 #define COMMAND_GET_EVENT_FILTERS "getEventFilters"
 #define COMMAND_SET_EVENT_FILTERS "setEventFilters"
 #define COMMAND_REGISTER_LOG_LISTENER "registerLogListener"
+#define COMMAND_DISABLE_KEYBOARD "disableKeyboard"
+#define COMMAND_ENABLE_KEYBOARD "enableKeyboard"
 #define COMMAND_TEST_INTEGRITY "testIntegrity"
 #define COMMAND_SIMULATE_INPUT "simulateInput"
 #define COMMAND_ARG_TYPE "type"

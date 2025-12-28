@@ -39,12 +39,14 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
     CommandSignature(COMMAND_GET_MOUSE_PATH, {}),
     CommandSignature(COMMAND_GET_SOCKET_PATH, {}),
-    CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_ENABLE}),
+
     CommandSignature(COMMAND_GET_KEYBOARD, {}),
     CommandSignature(COMMAND_GET_KEYBOARD_ENABLED, {}),
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
     CommandSignature(COMMAND_GET_SHOULD_LOG, {}),
     CommandSignature(COMMAND_TOGGLE_KEYBOARD, {COMMAND_ARG_ENABLE}),
+    CommandSignature(COMMAND_DISABLE_KEYBOARD, {}),
+    CommandSignature(COMMAND_ENABLE_KEYBOARD, {}),
     CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
     CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME}),
     CommandSignature(COMMAND_QUIT, {}),
@@ -183,7 +185,9 @@ static const string HELP_MESSAGE =
     "  getMousePath            Get the path to the mouse input device.\n"
     "  getSocketPath           Get the path to the daemon's UNIX domain "
     "socket.\n"
-    "  setKeyboard             Enable or disable keyboard (true/false).\n"
+
+    "  disableKeyboard         Disable the keyboard.\n"
+    "  enableKeyboard          Enable the keyboard.\n"
     "  getKeyboardEnabled      Get whether keyboard is enabled (true/false).\n"
     "  shouldLog               Enable or disable logging (true/false).\n"
     "  toggleKeyboard  Toggle automatic keyboard "
@@ -450,10 +454,16 @@ CmdResult handleFocusAck(const json &) {
   return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
 
-CmdResult handleSetKeyboard(const json &command) {
-  string enableStr = command[COMMAND_ARG_ENABLE].get<string>();
-  g_keyboardEnabled = (enableStr == COMMAND_VALUE_TRUE);
-  return KeyboardManager::setKeyboard(g_keyboardEnabled);
+
+
+CmdResult handleDisableKeyboard(const json &) {
+  g_keyboardEnabled = false;
+  return KeyboardManager::setKeyboard(false);
+}
+
+CmdResult handleEnableKeyboard(const json &) {
+  g_keyboardEnabled = true;
+  return KeyboardManager::setKeyboard(true);
 }
 
 CmdResult handleGetMacros(const json &) {
@@ -582,7 +592,10 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_KEYBOARD_PATH, handleGetKeyboardPath},
     {COMMAND_GET_MOUSE_PATH, handleGetMousePath},
     {COMMAND_GET_SOCKET_PATH, handleGetSocketPath},
-    {COMMAND_SET_KEYBOARD, handleSetKeyboard},
+
+    {COMMAND_DISABLE_KEYBOARD, handleDisableKeyboard},
+    {COMMAND_ENABLE_KEYBOARD, handleEnableKeyboard},
+    {COMMAND_GET_KEYBOARD, handleGetKeyboard},
     {COMMAND_GET_KEYBOARD, handleGetKeyboard},
     {COMMAND_GET_KEYBOARD_ENABLED, handleGetKeyboard},
     {COMMAND_SHOULD_LOG, handleShouldLog},

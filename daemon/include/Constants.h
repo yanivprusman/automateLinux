@@ -114,6 +114,10 @@
 #define LOG_WINDOW (1 << 1)
 #define LOG_AUTOMATION (1 << 2)
 #define LOG_CORE (1 << 3)
-#define LOG_ALL (LOG_INPUT | LOG_WINDOW | LOG_AUTOMATION | LOG_CORE)
+#define LOG_MACROS (1 << 4)
+#define LOG_NETWORK (1 << 5)
+#define LOG_ALL                                                                \
+  (LOG_INPUT | LOG_WINDOW | LOG_AUTOMATION | LOG_CORE | LOG_MACROS |           \
+   LOG_NETWORK)
 
 #endif // CONSTANTS_H

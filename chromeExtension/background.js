@@ -3,28 +3,42 @@
 const NATIVE_HOST_NAME = "com.automatelinux.tabtracker";
 
 let nativePort = null;
+let isNativeConnecting = false;
 
 function connectToNativeHost() {
-    if (nativePort) {
+    if (nativePort || isNativeConnecting) {
         return;
     }
 
+    isNativeConnecting = true;
     console.log("[AutomateLinux] Connecting to native host...");
-    nativePort = chrome.runtime.connectNative(NATIVE_HOST_NAME);
+    try {
+        const port = chrome.runtime.connectNative(NATIVE_HOST_NAME);
 
-    nativePort.onMessage.addListener((message) => {
-        console.log("[AutomateLinux] Received from native host:", message);
-        if (message.action === "focusChatGPT") {
-            focusChatGPTTextarea();
-        }
-    });
+        port.onMessage.addListener((message) => {
+            console.log("[AutomateLinux] Received from native host:", message);
+            if (message.action === "focusChatGPT") {
+                focusChatGPTTextarea();
+            }
+        });
 
-    nativePort.onDisconnect.addListener(() => {
-        console.log("[AutomateLinux] Native host disconnected:", chrome.runtime.lastError);
-        nativePort = null;
-        // Attempt to reconnect after a delay
-        setTimeout(connectToNativeHost, 5000);
-    });
+        port.onDisconnect.addListener(() => {
+            const error = chrome.runtime.lastError ? chrome.runtime.lastError.message : "Unknown error";
+            console.warn("[AutomateLinux] Native host disconnected:", error);
+            nativePort = null;
+            isNativeConnecting = false;
+
+            // Retry connection lazily
+            setTimeout(connectToNativeHost, 5000);
+        });
+
+        nativePort = port;
+        isNativeConnecting = false;
+        console.log("[AutomateLinux] Native host connected");
+    } catch (e) {
+        console.error("[AutomateLinux] Connection error:", e);
+        isNativeConnecting = false;
+    }
 }
 
 // Focus ChatGPT textarea by injecting script

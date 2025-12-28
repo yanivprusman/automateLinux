@@ -506,6 +506,7 @@ CmdResult testIntegrity(const json &command) {
 int mainCommand(const json &command, int client_sock) {
   clientSocket = client_sock;
   string commandStr = command.dump();
+  logToFile("[Network] Received command: " + commandStr, LOG_NETWORK);
   CmdResult result;
   try {
     CmdResult integrityCheck = testIntegrity(command);

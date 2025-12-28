@@ -20,15 +20,7 @@ const shouldLog = true;
 const NonClosingPopupSwitchMenuItem = GObject.registerClass(
     class NonClosingPopupSwitchMenuItem extends PopupMenu.PopupSwitchMenuItem {
         activate(event) {
-            if (event && event.get_button() === 1) { // left-click
-                // Close the menu on left-click
-                super.activate(event);
-            } else {
-                // Only toggle without closing on other clicks
-                if (this._switch.mapped) {
-                    this.toggle();
-                }
-            }
+            this.toggle();
         }
     });
 
@@ -121,7 +113,9 @@ export default class ClockExtension extends Extension {
                     { name: 'Input', mask: 1 },
                     { name: 'Window', mask: 2 },
                     { name: 'Automation', mask: 4 },
-                    { name: 'Core', mask: 8 }
+                    { name: 'Core', mask: 8 },
+                    { name: 'Macro Debug', mask: 16 },
+                    { name: 'Network', mask: 32 }
                 ];
 
                 categories.forEach(cat => {

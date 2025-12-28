@@ -1,5 +1,6 @@
 {
     "manifest_version": 3,
+    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzh65KzYp9horpaUsl41Qe7a5NsiOIN8z19Oqp8P+0sTUltqPuNwhbdam03OuepWDYj0UK7sVetg/lOKsqjWYF58jwlJ2+vC6Ar7yaLQNxvvAsYHbR5y0HN4/Lvg/BWpwEIHr0KnIh3ANCRwd5A5F/d+MgdwoKnI049UfR8XYFRo2IsVo2HECfW7sKQYEE1A13ssWz1yhRZCEnAj/O4lMIk+pNCQ4s1Je5Oqgn3CYRkK2RsXDOtBBvAt5OU7Xn2h8pkiqCv2hnX8LieUp/T4bjLvDSWfpPi8MENwYBFz5boYdj2oMFdyT4Qnd9jPOVE4ruIBZ2ks/JijJjWSjQ6UrKwIDAQAB",
     "name": "AutomateLinux Active Tab Tracker",
     "version": "1.0",
     "description": "Tracks the active Chrome tab URL for AutomateLinux daemon",

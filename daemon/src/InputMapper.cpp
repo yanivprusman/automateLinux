@@ -268,7 +268,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     }
     logToFile("Ctrl+V detected. State: App=[" + appTypeToString(tmpApp) +
                   "] URL=[" + tmpUrl + "]",
-              LOG_INPUT);
+              LOG_MACROS);
   }
 
   // 3. G-Key sequence detection
@@ -331,7 +331,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             logToFile("Combo " + std::to_string(comboIdx) +
                           " progress: " + std::to_string(state.nextKeyIndex) +
                           "/" + std::to_string(action.trigger.keyCodes.size()),
-                      LOG_INPUT);
+                      LOG_MACROS);
 
             // Check if combo is complete
             if (state.nextKeyIndex == action.trigger.keyCodes.size()) {
@@ -362,7 +362,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             // Broke an existing combo
             logToFile("Combo " + std::to_string(comboIdx) + " broken at step " +
                           std::to_string(state.nextKeyIndex),
-                      LOG_INPUT);
+                      LOG_MACROS);
             state.nextKeyIndex = 0;
             state.suppressedKeys.clear();
           }
@@ -396,7 +396,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
           if (!pendingEvents_.empty()) {
             logToFile("Flushing remaining after complete (" +
                           std::to_string(pendingEvents_.size()) + ")",
-                      LOG_INPUT);
+                      LOG_MACROS);
             for (const auto &pe : pendingEvents_) {
               emit(pe.type, pe.code, pe.value);
             }
@@ -420,12 +420,12 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             {(uint16_t)ev.type, (uint16_t)ev.code, (int32_t)ev.value});
         return;
       } else {
-        // Not matching anything anymore, or we weren't suppressing. Flush.
+        // Not matching anything anymore, or we weren't suppressing.
         std::lock_guard<std::mutex> lock(pendingEventsMutex_);
         if (!pendingEvents_.empty()) {
           logToFile("Flushing pending events (mismatch/broken combo: " +
                         std::to_string(pendingEvents_.size()) + ")",
-                    LOG_INPUT);
+                    LOG_MACROS);
           for (const auto &pe : pendingEvents_) {
             emit(pe.type, pe.code, pe.value);
           }
@@ -436,7 +436,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
   }
 
   if (ev.type == EV_KEY && (ev.code == KEY_ENTER || ev.code == KEY_KPENTER)) {
-    logToFile(string(isKeyboard ? "KBD" : "MOUSE") +
+    // Keep LOG_INPUT for basic Enter/Exit tracking
+    logToFile(std::string(isKeyboard ? "KBD" : "MOUSE") +
                   " Processing ENTER key (code " + std::to_string(ev.code) +
                   ", value " + std::to_string(ev.value) + ") -> uinput",
               LOG_INPUT);
@@ -464,10 +465,10 @@ std::optional<GKey> InputMapper::detectGKey(const struct input_event &ev) {
     if (ev.value == 1) {
       if (gToggleState_ == 1) {
         gToggleState_ = 2;
-        logToFile("G-Key State: 1 -> 2 (Ctrl Down)", LOG_INPUT);
+        logToFile("G-Key State: 1 -> 2 (Ctrl Down)", LOG_MACROS);
       } else if (gToggleState_ == 3) {
         gToggleState_ = 4;
-        logToFile("G-Key State: 3 -> 4 (Ctrl Down)", LOG_INPUT);
+        logToFile("G-Key State: 3 -> 4 (Ctrl Down)", LOG_MACROS);
       } else {
         gToggleState_ = 1;
       }
@@ -479,10 +480,10 @@ std::optional<GKey> InputMapper::detectGKey(const struct input_event &ev) {
     if (ev.value == 1) {
       if (gToggleState_ == 2) {
         gToggleState_ = 3;
-        logToFile("G-Key State: 2 -> 3 (Shift Down)", LOG_INPUT);
+        logToFile("G-Key State: 2 -> 3 (Shift Down)", LOG_MACROS);
       } else if (gToggleState_ == 4) {
         gToggleState_ = 5;
-        logToFile("G-Key State: 4 -> 5 (Shift Down)", LOG_INPUT);
+        logToFile("G-Key State: 4 -> 5 (Shift Down)", LOG_MACROS);
       } else {
         gToggleState_ = 1;
       }
@@ -506,7 +507,7 @@ std::optional<GKey> InputMapper::detectGKey(const struct input_event &ev) {
   if (gToggleState_ != 1) {
     logToFile("G-Key State: Reset from " + std::to_string(gToggleState_) +
                   " due to key code: " + std::to_string(ev.code),
-              LOG_INPUT);
+              LOG_MACROS);
   }
   gToggleState_ = 1;
   return std::nullopt;
@@ -571,7 +572,7 @@ void InputMapper::flushAndResetState() {
     if (!pendingEvents_.empty()) {
       logToFile("Flushing " + std::to_string(pendingEvents_.size()) +
                     " events during Sync",
-                LOG_INPUT);
+                LOG_MACROS);
       for (const auto &pe : pendingEvents_) {
         emit(pe.type, pe.code, pe.value);
       }

@@ -39,6 +39,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
     CommandSignature(COMMAND_GET_MOUSE_PATH, {}),
     CommandSignature(COMMAND_GET_SOCKET_PATH, {}),
+    CommandSignature(COMMAND_SET_KEYBOARD, {COMMAND_ARG_WINDOW_TITLE, COMMAND_ARG_WM_CLASS, COMMAND_ARG_WM_INSTANCE, COMMAND_ARG_WINDOW_ID}),
 
     CommandSignature(COMMAND_GET_KEYBOARD, {}),
     CommandSignature(COMMAND_GET_KEYBOARD_ENABLED, {}),
@@ -185,6 +186,7 @@ static const string HELP_MESSAGE =
     "  getMousePath            Get the path to the mouse input device.\n"
     "  getSocketPath           Get the path to the daemon's UNIX domain "
     "socket.\n"
+    "  setKeyboard             Simulate active window change for debugging.\n"
 
     "  disableKeyboard         Disable the keyboard.\n"
     "  enableKeyboard          Enable the keyboard.\n"
@@ -346,6 +348,10 @@ CmdResult handleGetMousePath(const json &) {
 
 CmdResult handleGetSocketPath(const json &) {
   return CmdResult(0, SOCKET_PATH + string("\n"));
+}
+
+CmdResult handleSetKeyboard(const json &command) {
+  return AutomationManager::onActiveWindowChanged(command);
 }
 
 CmdResult handleShouldLog(const json &command) {
@@ -592,6 +598,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_KEYBOARD_PATH, handleGetKeyboardPath},
     {COMMAND_GET_MOUSE_PATH, handleGetMousePath},
     {COMMAND_GET_SOCKET_PATH, handleGetSocketPath},
+    {COMMAND_SET_KEYBOARD, handleSetKeyboard},
+    {COMMAND_SET_KEYBOARD, handleSetKeyboard},
 
     {COMMAND_DISABLE_KEYBOARD, handleDisableKeyboard},
     {COMMAND_ENABLE_KEYBOARD, handleEnableKeyboard},

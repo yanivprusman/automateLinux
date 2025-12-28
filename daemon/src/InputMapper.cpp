@@ -592,7 +592,9 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             uint8_t expectedState = std::get<1>(expectedKeyTuple);
             bool shouldSuppress = std::get<2>(expectedKeyTuple);
 
-            if (expectedCode == ev.code && expectedState == ev.value) {
+            if (expectedCode == ev.code &&
+                ((expectedState == 1 && (ev.value == 1 || ev.value == 2)) ||
+                 (expectedState == 0 && ev.value == 0))) {
               // Match! Advance state
               state.nextKeyIndex++;
               eventConsumed = true; // Key matched a combo step
@@ -634,14 +636,42 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                 state.nextKeyIndex = 0;
               }
             } else if (state.nextKeyIndex > 0) {
-              // Broke an existing combo
-              logToFile("Combo " + std::to_string(comboIdx) +
-                            " broken at step " +
-                            std::to_string(state.nextKeyIndex),
-                        LOG_MACROS);
-              state.nextKeyIndex = 0;
-              state.suppressedKeys.clear();
-            }
+              // The current event 'ev' did not match the next expected step in the combo.
+              // We need to decide if this event should break the combo.
+
+              bool shouldBreak = false;
+              if (ev.type == EV_KEY) {
+                  if (ev.value == 1) { // A new key was pressed. If it's not the expected key, it breaks.
+                      shouldBreak = true;
+                  } else if (ev.value == 0) { // A key was released. If it was a key required for a previous combo step, it breaks.
+                      // Check if the released key was part of the combo's already matched steps.
+                      bool wasPreviouslyMatchedKey = false;
+                      for (size_t i = 0; i < state.nextKeyIndex; ++i) {
+                          if (std::get<0>(action.trigger.keyCodes[i]) == ev.code) {
+                              wasPreviouslyMatchedKey = true;
+                              break;
+                          }
+                      }
+                      if (wasPreviouslyMatchedKey) {
+                          shouldBreak = true;
+                      }
+                  }
+                  // Key repeats (ev.value == 2) do not break a combo if they are not the next expected step.
+              } else {
+                  // Non-key events (e.g., EV_REL, EV_ABS) currently do not break combos.
+                  // This might need refinement for more complex scenarios, but for now, keep it simple.
+              }
+
+              if (shouldBreak) {
+                logToFile("Combo " + std::to_string(comboIdx) +
+                                " broken at step " +
+                                std::to_string(state.nextKeyIndex) +
+                                " by non-matching event (code=" + std::to_string(ev.code) +
+                                ", value=" + std::to_string(ev.value) + ")",
+                                LOG_MACROS);
+                state.nextKeyIndex = 0;
+                state.suppressedKeys.clear();
+              }
           }
         }
 

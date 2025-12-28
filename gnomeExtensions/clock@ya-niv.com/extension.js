@@ -127,6 +127,14 @@ export default class ClockExtension extends Extension {
                     this._logItems[cat.mask] = item;
                 });
 
+                // Add Open Keybindings menu item
+                this._openKeybindingsMenuItem = new PopupMenu.PopupMenuItem('Open Keybindings');
+                this._openKeybindingsMenuItem.connect('activate', () => {
+                    this.logger.log('Opening Keybindings Dashboard...');
+                    this.shellExecutor.execute('google-chrome http://localhost:5173');
+                });
+                this._menu.addMenuItem(this._openKeybindingsMenuItem);
+
                 // Add toggle daemon menu item
                 this._toggleDaemonMenuItem = new PopupMenu.PopupMenuItem('Checking Daemon Status...');
                 this._toggleDaemonMenuItem.connect('activate', () => this._onToggleDaemonActivated());
@@ -328,19 +336,9 @@ export default class ClockExtension extends Extension {
 
     _updateDaemonStatus() {
         try {
-            // First check if it's a user service
-            let output = this.shellExecutor.executeSync('systemctl --user show -p LoadState daemon.service');
-            let loadState = output ? output.trim() : '';
-
-            if (loadState === 'LoadState=loaded') {
-                this._isUserService = true;
-                output = this.shellExecutor.executeSync('systemctl --user is-active daemon.service');
-            } else {
-                // Not a user service, default to system service
-                this._isUserService = false;
-                output = this.shellExecutor.executeSync('systemctl is-active daemon.service');
-            }
-
+            // FORCE SYSTEM SERVICE CHECK
+            this._isUserService = false;
+            let output = this.shellExecutor.executeSync('systemctl is-active daemon.service');
             let status = output ? output.trim() : 'unknown';
 
             this._isDaemonActive = (status === 'active');
@@ -364,11 +362,11 @@ export default class ClockExtension extends Extension {
 
         let command;
         if (this._isDaemonActive) {
-            // Stop daemon
-            command = this._isUserService ? 'systemctl --user stop daemon.service' : 'pkexec systemctl stop daemon.service';
+            // Stop daemon (System)
+            command = 'pkexec systemctl stop daemon.service';
         } else {
-            // Start daemon
-            command = this._isUserService ? 'systemctl --user start daemon.service' : 'pkexec systemctl start daemon.service';
+            // Start daemon (System)
+            command = 'pkexec systemctl start daemon.service';
         }
 
         this.logger.log(`Executing command: ${command}`);

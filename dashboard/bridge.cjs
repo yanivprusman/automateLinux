@@ -45,6 +45,15 @@ function sendToDaemon(commandObj) {
 }
 
 // REST API for macros and filters
+app.get('/api/activeContext', async (req, res) => {
+    try {
+        const result = await sendToDaemon({ command: 'getActiveContext' });
+        res.json(JSON.parse(result));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/macros', async (req, res) => {
     try {
         const result = await sendToDaemon({ command: 'getMacros' });
@@ -61,6 +70,15 @@ app.post('/api/macros', async (req, res) => {
             value: JSON.stringify(req.body)
         });
         res.send(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/filters', async (req, res) => {
+    try {
+        const result = await sendToDaemon({ command: 'getEventFilters' });
+        res.json(JSON.parse(result));
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -74,6 +74,7 @@
 #define COMMAND_FOCUS_CHATGPT "focusChatGPT"
 #define COMMAND_GET_MACROS "getMacros"
 #define COMMAND_UPDATE_MACROS "updateMacros"
+#define COMMAND_GET_ACTIVE_CONTEXT "getActiveContext"
 #define COMMAND_GET_EVENT_FILTERS "getEventFilters"
 #define COMMAND_SET_EVENT_FILTERS "setEventFilters"
 #define COMMAND_REGISTER_LOG_LISTENER "registerLogListener"

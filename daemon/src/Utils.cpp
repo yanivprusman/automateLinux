@@ -29,13 +29,16 @@ void unregisterLogSubscriber(int fd) {
 void logToFile(const string &message, unsigned int category) {
   extern unsigned int shouldLog; // Now unsigned int
   static std::mutex logMutex;
-  std::lock_guard<std::mutex> lock(logMutex);
-  // logToFile only writes to g_logFile
-  if ((shouldLog & category) && g_logFile.is_open()) {
-    g_logFile << message << endl;
-    g_logFile.flush();
+  {
+    std::lock_guard<std::mutex> lock(logMutex);
+    if ((shouldLog & category) && g_logFile.is_open()) {
+      g_logFile << message << endl;
+      g_logFile.flush();
+    }
+  }
 
-    // Stream to subscribers
+  // Stream to subscribers (Always stream, regardless of file logging settings)
+  {
     std::lock_guard<std::mutex> subLock(g_logSubscribersMutex);
     if (!g_logSubscribers.empty()) {
       std::string streamMsg = message + "\n";

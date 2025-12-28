@@ -74,6 +74,7 @@ public:
 
   json getMacrosJson();
   json getEventFiltersJson();
+  json getActiveContextJson();
   void setMacrosFromJson(const json &j);
   void setEventFilters(const json &j);
   void emit(uint16_t type, uint16_t code, int32_t value);

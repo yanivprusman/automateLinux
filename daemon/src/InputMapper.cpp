@@ -234,6 +234,15 @@ json InputMapper::getMacrosJson() {
   return j;
 }
 
+json InputMapper::getActiveContextJson() {
+  std::lock_guard<std::mutex> lock(contextMutex_);
+  json j;
+  j["activeApp"] = appTypeToString(activeApp_);
+  j["activeUrl"] = activeUrl_;
+  j["activeTitle"] = activeTitle_;
+  return j;
+}
+
 json InputMapper::getEventFiltersJson() {
   std::lock_guard<std::mutex> lock(filtersMutex_);
   json j = json::array();

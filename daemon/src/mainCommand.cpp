@@ -57,6 +57,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_FOCUS_ACK, {}),
     CommandSignature(COMMAND_GET_MACROS, {}),
     CommandSignature(COMMAND_UPDATE_MACROS, {COMMAND_ARG_VALUE}),
+    CommandSignature(COMMAND_GET_ACTIVE_CONTEXT, {}),
     CommandSignature(COMMAND_GET_EVENT_FILTERS, {}),
     CommandSignature(COMMAND_SET_EVENT_FILTERS, {COMMAND_ARG_VALUE}),
     CommandSignature(COMMAND_REGISTER_LOG_LISTENER, {}),
@@ -459,6 +460,10 @@ CmdResult handleGetMacros(const json &) {
   return CmdResult(0, KeyboardManager::mapper.getMacrosJson().dump());
 }
 
+CmdResult handleGetActiveContext(const json &) {
+  return CmdResult(0, KeyboardManager::mapper.getActiveContextJson().dump());
+}
+
 CmdResult handleUpdateMacros(const json &command) {
   try {
     json j = json::parse(command[COMMAND_ARG_VALUE].get<string>());
@@ -592,7 +597,9 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_FOCUS_CHATGPT, handleFocusChatGPT},
     {COMMAND_FOCUS_ACK, handleFocusAck},
     {COMMAND_GET_MACROS, handleGetMacros},
+    {COMMAND_GET_ACTIVE_CONTEXT, handleGetActiveContext},
     {COMMAND_UPDATE_MACROS, handleUpdateMacros},
+    {COMMAND_GET_ACTIVE_CONTEXT, handleGetActiveContext},
     {COMMAND_GET_EVENT_FILTERS, handleGetEventFilters},
     {COMMAND_SET_EVENT_FILTERS, handleSetEventFilters},
     {COMMAND_REGISTER_LOG_LISTENER, handleRegisterLogListener},

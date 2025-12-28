@@ -130,8 +130,9 @@
 #define LOG_NETWORK (1 << 5)
 #define LOG_CHROME (1 << 6)
 #define LOG_TERMINAL (1 << 7)
+#define LOG_INPUT_DEBUG (1 << 8)
 #define LOG_ALL                                                                \
   (LOG_INPUT | LOG_WINDOW | LOG_AUTOMATION | LOG_CORE | LOG_MACROS |           \
-   LOG_NETWORK | LOG_CHROME | LOG_TERMINAL)
+   LOG_NETWORK | LOG_CHROME | LOG_TERMINAL | LOG_INPUT_DEBUG)
 
 #endif // CONSTANTS_H

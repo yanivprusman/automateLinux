@@ -92,12 +92,14 @@ void InputMapper::stop() {
     uinputDev_ = nullptr;
   }
   if (keyboardDev_) {
-    // libevdev_grab(keyboardDev_, LIBEVDEV_UNGRAB); // Removed, handled by ungrabDevices()
+    // libevdev_grab(keyboardDev_, LIBEVDEV_UNGRAB); // Removed, handled by
+    // ungrabDevices()
     libevdev_free(keyboardDev_);
     keyboardDev_ = nullptr;
   }
   if (mouseDev_) {
-    // libevdev_grab(mouseDev_, LIBEVDEV_UNGRAB); // Removed, handled by ungrabDevices()
+    // libevdev_grab(mouseDev_, LIBEVDEV_UNGRAB); // Removed, handled by
+    // ungrabDevices()
     libevdev_free(mouseDev_);
     mouseDev_ = nullptr;
   }
@@ -129,12 +131,13 @@ bool InputMapper::setupDevices() {
     if (libevdev_has_event_code(keyboardDev_, EV_KEY, code) &&
         libevdev_get_event_value(keyboardDev_, EV_KEY, code) == 1) {
       pressedKeys_.insert(code);
-      logToFile("DEBUG_KEYS: Initial pressed key: " + std::to_string(code), LOG_MACROS);
+      logToFile("DEBUG_KEYS: Initial pressed key: " + std::to_string(code),
+                LOG_MACROS);
     }
   }
-  logToFile("DEBUG_KEYS: Initial pressed keys count: " + std::to_string(pressedKeys_.size()), LOG_MACROS);
-
-
+  logToFile("DEBUG_KEYS: Initial pressed keys count: " +
+                std::to_string(pressedKeys_.size()),
+            LOG_MACROS);
 
   if (!mousePath_.empty()) {
     mouseFd_ = open(mousePath_.c_str(), O_RDONLY | O_NONBLOCK);
@@ -142,7 +145,16 @@ bool InputMapper::setupDevices() {
       if (libevdev_new_from_fd(mouseFd_, &mouseDev_) < 0) {
         logToFile("Failed to initialize libevdev for mouse", LOG_CORE);
       } else {
-
+        // Scan for pressed mouse buttons (e.g. holding click)
+        for (int code = BTN_MOUSE; code < BTN_JOYSTICK; ++code) {
+          if (libevdev_has_event_code(mouseDev_, EV_KEY, code) &&
+              libevdev_get_event_value(mouseDev_, EV_KEY, code) == 1) {
+            pressedKeys_.insert(code);
+            logToFile("DEBUG_KEYS: Initial pressed mouse btn: " +
+                          std::to_string(code),
+                      LOG_MACROS);
+          }
+        }
       }
     }
   }
@@ -367,7 +379,10 @@ void InputMapper::loop() {
   while (running_) {
     // Check for pending grab
     if (pendingGrab_ && pressedKeys_.empty()) {
-      logToFile("InputMapper: All keys released, performing deferred grab.", LOG_CORE);
+      extern void forceLog(const std::string &message);
+      forceLog("InputMapper: All keys released (" +
+               std::to_string(pressedKeys_.size()) +
+               "), performing deferred grab.");
       grabDevices();
       pendingGrab_ = false;
     }
@@ -389,7 +404,8 @@ void InputMapper::loop() {
           flushAndResetState();
           while (libevdev_next_event(keyboardDev_, LIBEVDEV_READ_FLAG_SYNC,
                                      &ev) == LIBEVDEV_READ_STATUS_SYNC) {
-            processEvent(ev, true, true, keyboardPath_); // true for sync (skip macros)
+            processEvent(ev, true, true,
+                         keyboardPath_); // true for sync (skip macros)
           }
           continue;
         }
@@ -435,6 +451,8 @@ void InputMapper::sync() {
 }
 
 void InputMapper::setPendingGrab(bool value) {
+  extern void forceLog(const std::string &message);
+  forceLog("InputMapper: setPendingGrab(" + std::to_string(value) + ")");
   pendingGrab_ = value;
 }
 
@@ -450,33 +468,38 @@ void InputMapper::emitSequence(
 }
 
 void InputMapper::grabDevices() {
+  extern void forceLog(const std::string &message);
+  forceLog("InputMapper: Attempting GRAB...");
   if (keyboardDev_) {
     if (libevdev_grab(keyboardDev_, LIBEVDEV_GRAB) < 0) {
-      logToFile("Failed to grab keyboard", LOG_CORE);
+      forceLog("Failed to grab keyboard");
     } else {
-      logToFile("InputMapper: Keyboard grabbed successfully", LOG_CORE);
+      forceLog("InputMapper: Keyboard grabbed successfully");
     }
   }
   if (mouseDev_) {
     if (libevdev_grab(mouseDev_, LIBEVDEV_GRAB) < 0) {
-      logToFile("Failed to grab mouse", LOG_CORE);
+      forceLog("Failed to grab mouse");
     } else {
-      logToFile("InputMapper: Mouse grabbed successfully", LOG_CORE);
+      forceLog("InputMapper: Mouse grabbed successfully");
     }
   }
   monitoringMode_ = false; // We are no longer just monitoring
+  forceLog("InputMapper: GRAB complete. monitoringMode_=false");
 }
 
 void InputMapper::ungrabDevices() {
+  extern void forceLog(const std::string &message);
   if (keyboardDev_) {
     libevdev_grab(keyboardDev_, LIBEVDEV_UNGRAB);
-    logToFile("InputMapper: Keyboard ungrabbed", LOG_CORE);
+    forceLog("InputMapper: Keyboard ungrabbed");
   }
   if (mouseDev_) {
     libevdev_grab(mouseDev_, LIBEVDEV_UNGRAB);
-    logToFile("InputMapper: Mouse ungrabbed", LOG_CORE);
+    forceLog("InputMapper: Mouse ungrabbed");
   }
-  monitoringMode_ = true; // We are back to monitoring (if devices are still open)
+  monitoringMode_ =
+      true; // We are back to monitoring (if devices are still open)
 }
 
 void InputMapper::setContext(AppType appType, const std::string &url,
@@ -491,28 +514,50 @@ void InputMapper::setContext(AppType appType, const std::string &url,
 }
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
-                               bool skipMacros, const std::string& devicePath) {
-  logToFile("DEBUG_EV: Type=" + std::to_string(ev.type) +
-            ", Code=" + std::to_string(ev.code) +
-            ", Value=" + std::to_string(ev.value) +
-            ", isKBD=" + std::to_string(isKeyboard) +
-            ", skipMacros=" + std::to_string(skipMacros) +
-            ", Device=" + devicePath, LOG_MACROS);
+                               bool skipMacros, const std::string &devicePath) {
+  logToFile("IN: Type=" + std::to_string(ev.type) +
+                ", Code=" + std::to_string(ev.code) +
+                ", Value=" + std::to_string(ev.value) +
+                ", Method=" + (monitoringMode_ ? "MONITOR" : "GRABBED"),
+            LOG_INPUT_DEBUG);
 
-  // NEW KEY TRACKING LOGIC
+  // NEW KEY TRACKING LOGIC (Must run before monitoring check!)
   if (ev.type == EV_KEY) {
     if (ev.value == 1) { // Key press
       pressedKeys_.insert(ev.code);
-      logToFile("DEBUG_KEYS: Key " + std::to_string(ev.code) + " pressed. Total: " + std::to_string(pressedKeys_.size()), LOG_MACROS);
+      logToFile("DEBUG_KEYS: Key " + std::to_string(ev.code) +
+                    " pressed. Total: " + std::to_string(pressedKeys_.size()),
+                LOG_MACROS);
     } else if (ev.value == 0) { // Key release
       pressedKeys_.erase(ev.code);
-      logToFile("DEBUG_KEYS: Key " + std::to_string(ev.code) + " released. Total: " + std::to_string(pressedKeys_.size()), LOG_MACROS);
+      logToFile("DEBUG_KEYS: Key " + std::to_string(ev.code) +
+                    " released. Total: " + std::to_string(pressedKeys_.size()),
+                LOG_MACROS);
     }
   }
   // Update LeftCtrl state for macros (tracked outside Chrome block)
   if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_LEFTCTRL) {
     ctrlDown_ = (ev.value != 0);
   }
+
+  // If we are in monitoring mode (devices open but not grabbed),
+  // we do NOT emit events to uinput to avoid double-input.
+  // Grabbing only happens once ALL keys are released.
+  if (monitoringMode_) {
+    logToFile("SKIPPED (monitoring): Type=" + std::to_string(ev.type) +
+                  " Code=" + std::to_string(ev.code),
+              LOG_INPUT_DEBUG);
+    return;
+  }
+
+  logToFile("DEBUG_EV: Type=" + std::to_string(ev.type) +
+                ", Code=" + std::to_string(ev.code) +
+                ", Value=" + std::to_string(ev.value) +
+                ", isKBD=" + std::to_string(isKeyboard) + ", skipMacros=" +
+                std::to_string(skipMacros) + ", Device=" + devicePath,
+            LOG_MACROS);
+
+  // Key tracking logic moved up
 
   // Filter out MSC events to prevent interference (NOT ANYMORE - let them pass)
   // if (ev.type == EV_MSC) {
@@ -570,7 +615,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
       auto appIt = appMacros_.find(currentApp);
       if (appIt != appMacros_.end()) {
         logToFile("DEBUG_MACRO: Found " + std::to_string(appIt->second.size()) +
-                  " macros for app: " + appTypeToString(currentApp), LOG_MACROS);
+                      " macros for app: " + appTypeToString(currentApp),
+                  LOG_MACROS);
         bool currentlySuppressing = false;
         bool eventConsumed = false;
 
@@ -636,139 +682,148 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                 state.nextKeyIndex = 0;
               }
             } else if (state.nextKeyIndex > 0) {
-              // The current event 'ev' did not match the next expected step in the combo.
-              // We need to decide if this event should break the combo.
+              // The current event 'ev' did not match the next expected step in
+              // the combo. We need to decide if this event should break the
+              // combo.
 
               bool shouldBreak = false;
               if (ev.type == EV_KEY) {
-                  if (ev.value == 1) { // A new key was pressed. If it's not the expected key, it breaks.
-                      shouldBreak = true;
-                  } else if (ev.value == 0) { // A key was released. If it was a key required for a previous combo step, it breaks.
-                      // Check if the released key was part of the combo's already matched steps.
-                      bool wasPreviouslyMatchedKey = false;
-                      for (size_t i = 0; i < state.nextKeyIndex; ++i) {
-                          if (std::get<0>(action.trigger.keyCodes[i]) == ev.code) {
-                              wasPreviouslyMatchedKey = true;
-                              break;
-                          }
-                      }
-                      if (wasPreviouslyMatchedKey) {
-                          shouldBreak = true;
-                      }
+                if (ev.value == 1) { // A new key was pressed. If it's not the
+                                     // expected key, it breaks.
+                  shouldBreak = true;
+                } else if (ev.value ==
+                           0) { // A key was released. If it was a key required
+                                // for a previous combo step, it breaks.
+                  // Check if the released key was part of the combo's already
+                  // matched steps.
+                  bool wasPreviouslyMatchedKey = false;
+                  for (size_t i = 0; i < state.nextKeyIndex; ++i) {
+                    if (std::get<0>(action.trigger.keyCodes[i]) == ev.code) {
+                      wasPreviouslyMatchedKey = true;
+                      break;
+                    }
                   }
-                  // Key repeats (ev.value == 2) do not break a combo if they are not the next expected step.
+                  if (wasPreviouslyMatchedKey) {
+                    shouldBreak = true;
+                  }
+                }
+                // Key repeats (ev.value == 2) do not break a combo if they are
+                // not the next expected step.
               } else {
-                  // Non-key events (e.g., EV_REL, EV_ABS) currently do not break combos.
-                  // This might need refinement for more complex scenarios, but for now, keep it simple.
+                // Non-key events (e.g., EV_REL, EV_ABS) currently do not break
+                // combos. This might need refinement for more complex
+                // scenarios, but for now, keep it simple.
               }
 
               if (shouldBreak) {
                 logToFile("Combo " + std::to_string(comboIdx) +
-                                " broken at step " +
-                                std::to_string(state.nextKeyIndex) +
-                                " by non-matching event (code=" + std::to_string(ev.code) +
-                                ", value=" + std::to_string(ev.value) + ")",
-                                LOG_MACROS);
+                              " broken at step " +
+                              std::to_string(state.nextKeyIndex) +
+                              " by non-matching event (code=" +
+                              std::to_string(ev.code) +
+                              ", value=" + std::to_string(ev.value) + ")",
+                          LOG_MACROS);
                 state.nextKeyIndex = 0;
                 state.suppressedKeys.clear();
               }
+            }
           }
-        }
 
-        // Re-evaluate if any combo is still in progress
-        bool anyComboInProgress = false;
-        for (const auto &pair : comboProgress_[currentApp]) {
-          if (pair.second.nextKeyIndex > 0) {
-            anyComboInProgress = true;
-            break;
+          // Re-evaluate if any combo is still in progress
+          bool anyComboInProgress = false;
+          for (const auto &pair : comboProgress_[currentApp]) {
+            if (pair.second.nextKeyIndex > 0) {
+              anyComboInProgress = true;
+              break;
+            }
           }
-        }
 
-        if (ev.code == KEY_ENTER || ev.code == KEY_KPENTER) {
-          extern void forceLog(const std::string &message);
-          forceLog(
-              "ENTER DEBUG [1]: Consumed=" + std::to_string(eventConsumed) +
-              " AnyCombo=" + std::to_string(anyComboInProgress));
-        }
+          if (ev.code == KEY_ENTER || ev.code == KEY_KPENTER) {
+            extern void forceLog(const std::string &message);
+            forceLog(
+                "ENTER DEBUG [1]: Consumed=" + std::to_string(eventConsumed) +
+                " AnyCombo=" + std::to_string(anyComboInProgress));
+          }
 
-        if (eventConsumed) {
-          if (shouldSuppressThisSpecificEvent) {
-            // Queue this event
+          if (eventConsumed) {
+            if (shouldSuppressThisSpecificEvent) {
+              // Queue this event
+              std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+              pendingEvents_.push_back(
+                  {(uint16_t)ev.type, (uint16_t)ev.code, (int32_t)ev.value});
+            } else {
+              // Not suppressed by any matching combo. Emit now!
+              emit(ev.type, ev.code, ev.value);
+            }
+
+            // IMPORTANT: Always check for flush after an event is consumed,
+            // especially if it completed a macro.
+            if (!anyComboInProgress) {
+              std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+              if (!pendingEvents_.empty()) {
+                logToFile("Flushing remaining after complete (" +
+                              std::to_string(pendingEvents_.size()) + ")",
+                          LOG_MACROS);
+                for (const auto &pe : pendingEvents_) {
+                  emit(pe.type, pe.code, pe.value);
+                }
+                sync(); // Sync after flushing unblocked queue
+                pendingEvents_.clear();
+              }
+            }
+            return;
+          }
+
+          // If we are currently in a suppressed state (holding a trigger key),
+          // we must queue even unmatched keys to preserve order.
+          {
+            std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+            currentlySuppressing = !pendingEvents_.empty();
+          }
+
+          if (ev.code == KEY_ENTER || ev.code == KEY_KPENTER) {
+            extern void forceLog(const std::string &message);
+            forceLog("ENTER DEBUG [2]: Suppressing=" +
+                     std::to_string(currentlySuppressing) +
+                     " AnyCombo=" + std::to_string(anyComboInProgress));
+          }
+
+          // Critical unblocking: ENTER and KPENTER should never be stuck in a
+          // queue if they are not part of an active macro.
+          if (!anyComboInProgress &&
+              (ev.code == KEY_ENTER || ev.code == KEY_KPENTER)) {
+            std::lock_guard<std::mutex> lock(pendingEventsMutex_);
+            if (!pendingEvents_.empty()) {
+              logToFile("Unblocking queue via ENTER key (" +
+                            std::to_string(pendingEvents_.size()) + " queued)",
+                        LOG_MACROS);
+              for (const auto &pe : pendingEvents_) {
+                emit(pe.type, pe.code, pe.value);
+              }
+              pendingEvents_.clear();
+              sync(); // Sync after flushing unblocked queue
+            }
+          }
+
+          if (currentlySuppressing && anyComboInProgress) {
+            // Still matching some other potential combo, keep queueing
             std::lock_guard<std::mutex> lock(pendingEventsMutex_);
             pendingEvents_.push_back(
                 {(uint16_t)ev.type, (uint16_t)ev.code, (int32_t)ev.value});
+            return;
           } else {
-            // Not suppressed by any matching combo. Emit now!
-            emit(ev.type, ev.code, ev.value);
-          }
-
-          // IMPORTANT: Always check for flush after an event is consumed,
-          // especially if it completed a macro.
-          if (!anyComboInProgress) {
+            // Not matching anything anymore, or we weren't suppressing.
             std::lock_guard<std::mutex> lock(pendingEventsMutex_);
             if (!pendingEvents_.empty()) {
-              logToFile("Flushing remaining after complete (" +
+              logToFile("Flushing pending events (mismatch/broken combo: " +
                             std::to_string(pendingEvents_.size()) + ")",
                         LOG_MACROS);
               for (const auto &pe : pendingEvents_) {
                 emit(pe.type, pe.code, pe.value);
               }
-              sync(); // Sync after flushing unblocked queue
               pendingEvents_.clear();
+              sync(); // Sync after flushing unblocked queue
             }
-          }
-          return;
-        }
-
-        // If we are currently in a suppressed state (holding a trigger key), we
-        // must queue even unmatched keys to preserve order.
-        {
-          std::lock_guard<std::mutex> lock(pendingEventsMutex_);
-          currentlySuppressing = !pendingEvents_.empty();
-        }
-
-        if (ev.code == KEY_ENTER || ev.code == KEY_KPENTER) {
-          extern void forceLog(const std::string &message);
-          forceLog("ENTER DEBUG [2]: Suppressing=" +
-                   std::to_string(currentlySuppressing) +
-                   " AnyCombo=" + std::to_string(anyComboInProgress));
-        }
-
-        // Critical unblocking: ENTER and KPENTER should never be stuck in a
-        // queue if they are not part of an active macro.
-        if (!anyComboInProgress &&
-            (ev.code == KEY_ENTER || ev.code == KEY_KPENTER)) {
-          std::lock_guard<std::mutex> lock(pendingEventsMutex_);
-          if (!pendingEvents_.empty()) {
-            logToFile("Unblocking queue via ENTER key (" +
-                          std::to_string(pendingEvents_.size()) + " queued)",
-                      LOG_MACROS);
-            for (const auto &pe : pendingEvents_) {
-              emit(pe.type, pe.code, pe.value);
-            }
-            pendingEvents_.clear();
-            sync(); // Sync after flushing unblocked queue
-          }
-        }
-
-        if (currentlySuppressing && anyComboInProgress) {
-          // Still matching some other potential combo, keep queueing
-          std::lock_guard<std::mutex> lock(pendingEventsMutex_);
-          pendingEvents_.push_back(
-              {(uint16_t)ev.type, (uint16_t)ev.code, (int32_t)ev.value});
-          return;
-        } else {
-          // Not matching anything anymore, or we weren't suppressing.
-          std::lock_guard<std::mutex> lock(pendingEventsMutex_);
-          if (!pendingEvents_.empty()) {
-            logToFile("Flushing pending events (mismatch/broken combo: " +
-                          std::to_string(pendingEvents_.size()) + ")",
-                      LOG_MACROS);
-            for (const auto &pe : pendingEvents_) {
-              emit(pe.type, pe.code, pe.value);
-            }
-            pendingEvents_.clear();
-            sync(); // Sync after flushing unblocked queue
           }
         }
       }
@@ -792,15 +847,29 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     logToFile(std::string(isKeyboard ? "KBD" : "MOUSE") +
                   " Processing event (type " + std::to_string(ev.type) +
                   ", code " + std::to_string(ev.code) + ", value " +
-                  std::to_string(ev.value) + ") -> uinput",
+                  std::to_string(ev.value) + ")",
               LOG_INPUT);
   }
 
-  // Use emit() for keys and mouse movements to ensure immediate EV_SYN.
-  // This prevents the kernel from delaying events until the next physical
-  // sync.
-  if (ev.type == EV_KEY || ev.type == EV_REL || ev.type == EV_ABS) {
+  // Use emit() for keys to ensure immediate EV_SYN (for macros/combos or single
+  // presses). For REL/ABS (mouse movement), use direct write to preserve
+  // grouping with the subsequent hardware SYN.
+  if (ev.type == EV_KEY) {
     emit(ev.type, ev.code, ev.value);
+  } else if (ev.type == EV_REL || ev.type == EV_ABS) {
+    std::lock_guard<std::mutex> lock(uinputMutex_);
+    int rc =
+        libevdev_uinput_write_event(uinputDev_, ev.type, ev.code, ev.value);
+    if (rc < 0) {
+      logToFile("Failed to write to uinput (REL/ABS): " +
+                    std::string(strerror(-rc)),
+                LOG_INPUT);
+    } else {
+      logToFile("OUT: Type=" + std::to_string(ev.type) +
+                    " Code=" + std::to_string(ev.code) +
+                    " Val=" + std::to_string(ev.value),
+                LOG_INPUT_DEBUG);
+    }
   } else {
     // Detailed logging for MSC/SYN events when they follow or precede Enters
     if (ev.type == EV_MSC || ev.type == EV_SYN) {
@@ -821,9 +890,15 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
           "Failed to write to uinput (raw type=" + std::to_string(ev.type) +
               "): " + std::string(strerror(-rc)),
           LOG_INPUT);
+    } else {
+      // Log SUCCESSFUL write for verification
+      logToFile("OUT: Type=" + std::to_string(ev.type) +
+                    " Code=" + std::to_string(ev.code) +
+                    " Val=" + std::to_string(ev.value),
+                LOG_INPUT_DEBUG);
     }
   }
-}
+} // This is the missing brace for processEvent
 
 std::optional<GKey> InputMapper::detectGKey(const struct input_event &ev) {
   if (ev.type != EV_KEY) {

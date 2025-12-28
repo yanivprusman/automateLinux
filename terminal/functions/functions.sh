@@ -12,3 +12,4 @@
 . $(theRealPath log.sh)
 . $(theRealPath gemini.sh)
 . $(theRealPath evsieve.sh)
+. $(theRealPath wireguard.sh)

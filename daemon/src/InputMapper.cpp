@@ -254,6 +254,9 @@ json InputMapper::getEventFiltersJson() {
 
 void InputMapper::setMacrosFromJsonInternal(const json &j) {
   appMacros_.clear();
+  // Clear combo progress to prevent stale states ("ghost macros") from locking
+  // input
+  comboProgress_.clear(); // Fix for ENTER key / keyboard lockup
   for (auto it = j.begin(); it != j.end(); ++it) {
     AppType app = stringToAppType(it.key());
     vector<KeyAction> macros;

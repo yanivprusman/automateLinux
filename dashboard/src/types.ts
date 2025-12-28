@@ -26,6 +26,7 @@ export interface KeyAction {
     }>;
     logMessage: string;
     hasHandler: boolean;
+    customHandlerName?: string;
 }
 
 export type MacrosByApp = Record<string, KeyAction[]>;

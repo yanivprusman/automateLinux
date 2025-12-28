@@ -377,11 +377,11 @@ void InputMapper::loop() {
           flushAndResetState();
           while (libevdev_next_event(keyboardDev_, LIBEVDEV_READ_FLAG_SYNC,
                                      &ev) == LIBEVDEV_READ_STATUS_SYNC) {
-            processEvent(ev, true, true); // true for sync (skip macros)
+            processEvent(ev, true, true, keyboardPath_); // true for sync (skip macros)
           }
           continue;
         }
-        processEvent(ev, true, false);
+        processEvent(ev, true, false, keyboardPath_);
       }
     }
 
@@ -397,11 +397,11 @@ void InputMapper::loop() {
           flushAndResetState();
           while (libevdev_next_event(mouseDev_, LIBEVDEV_READ_FLAG_SYNC, &ev) ==
                  LIBEVDEV_READ_STATUS_SYNC) {
-            processEvent(ev, false, true); // true for sync
+            processEvent(ev, false, true, mousePath_); // true for sync
           }
           continue;
         }
-        processEvent(ev, false, false);
+        processEvent(ev, false, false, mousePath_);
       }
     }
   }
@@ -445,7 +445,7 @@ void InputMapper::setContext(AppType appType, const std::string &url,
 }
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
-                               bool skipMacros) {
+                               bool skipMacros, const std::string& devicePath) {
   // Update LeftCtrl state for macros (tracked outside Chrome block)
   if (isKeyboard && ev.type == EV_KEY && ev.code == KEY_LEFTCTRL) {
     ctrlDown_ = (ev.value != 0);
@@ -481,7 +481,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
       struct input_event virtualEv = ev;
       virtualEv.code =
           1000 + static_cast<uint16_t>(*gKey); // Map to G1_VIRTUAL..G6_VIRTUAL
-      processEvent(virtualEv, true, false);
+      processEvent(virtualEv, true, false, keyboardPath_);
       return;
     }
   }
@@ -711,10 +711,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     if (ev.type == EV_MSC || ev.type == EV_SYN) {
       if (ev.type == EV_SYN) {
         logToFile("--- EV_SYN ---", LOG_INPUT);
-      } else {
-        logToFile("Meta Event: type=" + std::to_string(ev.type) +
-                      " code=" + std::to_string(ev.code) +
-                      " value=" + std::to_string(ev.value),
+      } else { // ev.type == EV_MSC
+        logToFile("msc:scan:" + std::to_string(ev.value) + "@" + devicePath,
                   LOG_INPUT);
       }
     }

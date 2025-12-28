@@ -88,7 +88,7 @@ private:
   void loop();
   bool setupDevices();
   bool setupUinput();
-  void processEvent(struct input_event &ev, bool isKeyboard, bool skipMacros);
+  void processEvent(struct input_event &ev, bool isKeyboard, bool skipMacros, const std::string& devicePath);
   void emitSequence(const std::vector<std::pair<uint16_t, int32_t>> &sequence);
   std::optional<GKey> detectGKey(const struct input_event &ev);
   void executeKeyAction(const KeyAction &action);

@@ -163,4 +163,8 @@ tailCombinedLog() {
 }
 export -f tailCombinedLog
 
+clc() {
+    "$@" 2>&1 | tee /dev/tty | tail -n 1 | xclip -selection clipboard
+}
+export -f clc
 

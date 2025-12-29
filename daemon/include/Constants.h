@@ -150,4 +150,6 @@
 #define WITHHOLD_NO false
 #define KEY_REPEAT_BREAKS_YES true
 #define KEY_REPEAT_BREAKS_NO false
+#define NOISE_BREAKS_YES true
+#define NOISE_BREAKS_NO false
 #endif // CONSTANTS_H

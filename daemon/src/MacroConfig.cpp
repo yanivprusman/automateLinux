@@ -71,14 +71,17 @@ void InputMapper::initializeAppMacros() {
   terminalSpecificMacros.push_back(KeyAction{
       KeyTrigger{
           {{EV_KEY, KEY_LEFTCTRL, KEY_PRESS, WITHHOLD_NO, KEY_REPEAT_BREAKS_NO},
-           {EV_KEY, BTN_LEFT, KEY_PRESS, WITHHOLD_NO, KEY_REPEAT_BREAKS_NO}}},
+           {EV_KEY, BTN_LEFT, KEY_PRESS, WITHHOLD_YES, KEY_REPEAT_BREAKS_NO}},
+          true,           // hasSuppressedKeys
+          NOISE_BREAKS_NO // noiseBreaks
+      },
       {{KEY_LEFTCTRL, KEY_RELEASE},
        {KEY_7, KEY_PRESS},
-       {KEY_7,
-        KEY_RELEASE}}, // we must add the control up so that the 5 will print
-      "Triggering Terminal Ctrl+Left Click macro",
-      nullptr}
-    );
+       {KEY_7, KEY_RELEASE},
+       {KEY_LEFTCTRL,
+        KEY_PRESS}}, // Re-press Ctrl so it stays "down" for the next click!
+      "Triggering Terminal Ctrl+Left Click macro (map to '7')",
+      nullptr});
   //   terminalSpecificMacros.push_back(
   //       KeyAction{KeyTrigger{{{KEY_A, KEY_PRESS, WITHHOLD_NO,
   //       KEY_REPEAT_BREAKS_NO}}},

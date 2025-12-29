@@ -4,7 +4,7 @@
 enum class AppType { OTHER, TERMINAL, CHROME, CODE };
 
 // G-Key number constants
-constexpr int G_NONE = 0;  // No G-key (regular key/mouse button)
+constexpr int G_NONE = 0; // No G-key (regular key/mouse button)
 constexpr int G1 = 1;
 constexpr int G2 = 2;
 constexpr int G5 = 5;

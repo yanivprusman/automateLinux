@@ -13,3 +13,49 @@ Format
 The format should be printed like so:
 key:a:1@/dev/input/by-id/keyboard
  
+filtering device events (keyboard/mouse/etc.)
+[EVENTS...] 
+The print variable governs what events to print.
+if empty print all events
+This is mostly useful for debugging and for discovering what certain events are named.
+For example, the following filter will print key b events
+key b 0
+key b 1
+key b 2
+For example, @foo will only print events that have domain foo, domain is the id of the input source for example "Corsair CORSAIR K100 RGB Optical-Mechanical Gaming Keyboard" or we can reassign to a custom name like foo.
+If no filter is specified, all events are printed.
+Format
+The format should be printed like so:
+key:a:1@/dev/input/by-id/keyboard
+1. i want to make the numlock act as a disabler of macros. when on disable macros (dont disable keyboard only macros) when off use the macros.
+2. i think it is a good idea when we change active window any withheld(wupressed) keys will be released.
+3. change the log from
+[2025-12-29 09:00:54] IN: Type=1, Code=30, Value=1, Method=GRABBED
+to
+[2025-12-29 09:00:54] key:a:1@/dev/input/by-id/keyboard
+(or any domain)
+what is the IN and OUT mean?
+ 
+here is an example of what i expect the log of the key/mouse related events to look like
+rel:x:-1@/dev/input/event24
+rel:x:-1@/dev/input/event24
+rel:x:-1@/dev/input/event24
+msc:scan:458756@/dev/input/event24
+key:a:1@/dev/input/event24
+amsc:scan:458774@/dev/input/event24
+key:s:1@/dev/input/event24
+smsc:scan:458759@/dev/input/event24
+key:d:1@/dev/input/event24
+dmsc:scan:458761@/dev/input/event24
+key:f:1@/dev/input/event24
+fmsc:scan:458756@/dev/input/event24
+key:a:0@/dev/input/event24
+msc:scan:458774@/dev/input/event24
+key:s:0@/dev/input/event24
+msc:scan:458759@/dev/input/event24
+key:d:0@/dev/input/event24
+msc:scan:458759@/dev/input/event24
+key:d:1@/dev/input/event24
+
+keep in mind that to build and restart the daemon we can use the bash function bd
+if we want to source bashrc we can use sb

@@ -4,13 +4,15 @@ interface ContextData {
     activeApp: string;
     activeUrl: string;
     activeTitle: string;
+    numLockActive: boolean;
 }
 
 const ContextMonitor: React.FC = () => {
     const [context, setContext] = useState<ContextData>({
         activeApp: 'loading...',
         activeUrl: '',
-        activeTitle: ''
+        activeTitle: '',
+        numLockActive: false
     });
 
     useEffect(() => {
@@ -51,6 +53,13 @@ const ContextMonitor: React.FC = () => {
                 }}>
                     {context.activeApp}
                 </span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <div className={`macro-status-badge ${context.numLockActive ? 'disabled' : 'enabled'}`}>
+                    <div className="status-dot"></div>
+                    <span>Macros: {context.numLockActive ? 'DISABLED' : 'ENABLED'}</span>
+                </div>
             </div>
 
             <div style={{ textAlign: 'right', maxWidth: '60%' }}>

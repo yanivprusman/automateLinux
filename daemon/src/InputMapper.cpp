@@ -282,6 +282,7 @@ json InputMapper::getActiveContextJson() {
   j["activeApp"] = appTypeToString(activeApp_);
   j["activeUrl"] = activeUrl_;
   j["activeTitle"] = activeTitle_;
+  j["numLockActive"] = (bool)numLockActive_;
   return j;
 }
 
@@ -786,6 +787,11 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
 
   // === NEW PARALLEL COMBO MATCHING LOGIC ===
   // On key press or release: test all active combos and track progress
+  if (!skipMacros && ev.type == EV_KEY && numLockActive_) {
+    logToFile("Macros DISABLED (NumLock ON)", LOG_MACROS);
+    skipMacros = true;
+  }
+
   if (!skipMacros && ev.type == EV_KEY) {
     // Skip macro logic for basic mouse buttons (Left, Right, Middle)
     // to prevent keyboard macros from blocking mouse clicks.
@@ -1245,6 +1251,8 @@ void InputMapper::setNumLockState(bool active) {
                                                       ? "ON (Macros Disabled)"
                                                       : "OFF (Macros Enabled)"),
               LOG_CORE);
+    // Release any stuck keys on toggle
+    releaseAllPressedKeys();
   }
 }
 

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { KeyAction, KeyTrigger } from '../types';
 import { COMMON_KEYS } from '../types';
+import Button from './UI/Button';
+import Input from './UI/Input';
 
 interface MacroBuilderProps {
     initialAction?: KeyAction;
@@ -8,51 +10,48 @@ interface MacroBuilderProps {
     onCancel: () => void;
 }
 
-const MacroBuilder: React.FC<MacroBuilderProps> = ({ initialAction, onSave, onCancel }) => {
+const MacroBuilder = ({ initialAction, onSave, onCancel }: MacroBuilderProps) => {
     const [logMessage, setLogMessage] = useState(initialAction?.logMessage || '');
-    const [triggerKeys, setTriggerKeys] = useState<number[]>(
-        initialAction?.trigger?.keys?.map(k => k.code) || []
+    const [triggerKeys, setTriggerKeys] = useState<KeyTrigger['keys']>(
+        initialAction?.trigger?.keys || []
     );
     const [sequence, setSequence] = useState<{ code: number, value: number }[]>(
         initialAction?.sequence || []
     );
-    const [isGKeyMode, setIsGKeyMode] = useState(
-        initialAction?.trigger?.keys?.length === 1 &&
-        initialAction.trigger.keys[0].code >= 1001 &&
-        initialAction.trigger.keys[0].code <= 1006
-    );
-
-    const availableGKeys = [
-        { code: 1001, name: 'G1' },
-        { code: 1002, name: 'G2' },
-        { code: 1003, name: 'G3' },
-        { code: 1004, name: 'G4' },
-        { code: 1005, name: 'G5' },
-        { code: 1006, name: 'G6' },
-    ];
 
     const handleSave = () => {
         const newTrigger: KeyTrigger = {
-            keys: triggerKeys.map(code => ({
-                code,
-                state: 1, // Default to press
-                suppress: true // Default to suppress
-            })),
-            hasSuppressedKeys: true
+            keys: triggerKeys,
+            hasSuppressedKeys: triggerKeys.some(k => k.suppress)
         };
 
         const newAction: KeyAction = {
             trigger: newTrigger,
             sequence: sequence,
             logMessage: logMessage || 'Untitled Macro',
-            hasHandler: false // handlers are special cased for now
+            hasHandler: initialAction?.hasHandler || false
         };
 
         onSave(newAction);
     };
 
+    const addTriggerKey = (code: number) => {
+        if (!code) return;
+        setTriggerKeys([...triggerKeys, {
+            code,
+            state: 1, // Default to press
+            suppress: true,
+            ignoreRepeat: false
+        }]);
+    };
+
+    const updateTriggerKey = (index: number, updates: Partial<KeyTrigger['keys'][0]>) => {
+        const newKeys = [...triggerKeys];
+        newKeys[index] = { ...newKeys[index], ...updates };
+        setTriggerKeys(newKeys);
+    };
+
     const addSequenceStep = () => {
-        // Default to A key press (30)
         setSequence([...sequence, { code: 30, value: 1 }, { code: 30, value: 0 }]);
     };
 
@@ -67,129 +66,173 @@ const MacroBuilder: React.FC<MacroBuilderProps> = ({ initialAction, onSave, onCa
     };
 
     return (
-        <div className="macro-builder glass" style={{ padding: '20px' }}>
-            <h3>{initialAction ? 'Edit Macro' : 'New Macro'}</h3>
-
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label>Name / Log Message</label>
-                <input
-                    type="text"
-                    value={logMessage}
-                    onChange={e => setLogMessage(e.target.value)}
-                    className="glass-input"
-                    style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-                />
+        <div className="configs-container" style={{ padding: 0 }}>
+            <div className="panel-header" style={{ marginBottom: '30px', border: 'none', padding: 0 }}>
+                <div>
+                    <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>
+                        {initialAction ? 'Edit Macro' : 'Create New Macro'}
+                    </h2>
+                    <p style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>
+                        Configure triggers and output sequences with precision.
+                    </p>
+                </div>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <Button onClick={onCancel}>Cancel</Button>
+                    <Button variant="primary" onClick={handleSave}>Save Macro</Button>
+                </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label>Trigger</label>
-                <div style={{ margin: '10px 0' }}>
-                    <label style={{ marginRight: '15px' }}>
-                        <input
-                            type="radio"
-                            checked={!isGKeyMode}
-                            onChange={() => setIsGKeyMode(false)}
-                        /> Key Sequence
-                    </label>
-                    <label>
-                        <input
-                            type="radio"
-                            checked={isGKeyMode}
-                            onChange={() => setIsGKeyMode(true)}
-                        /> G-Key
-                    </label>
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                <div className="glass" style={{ padding: '24px' }}>
+                    <Input
+                        label="Macro Discovery Name"
+                        placeholder="e.g., Terminal SIGINT Macro"
+                        value={logMessage}
+                        onChange={e => setLogMessage(e.target.value)}
+                    />
 
-                {isGKeyMode ? (
-                    <select
-                        className="glass-input"
-                        value={triggerKeys[0] || 1001}
-                        onChange={e => setTriggerKeys([Number(e.target.value)])}
-                    >
-                        {availableGKeys.map(gk => (
-                            <option key={gk.code} value={gk.code}>{gk.name}</option>
-                        ))}
-                    </select>
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                            {triggerKeys.map((code, idx) => (
-                                <div key={idx} className="key-badge" style={{
-                                    background: 'rgba(0, 243, 255, 0.2)', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '5px', border: '1px solid var(--accent-cyan)'
+                    <div style={{ marginTop: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                                Trigger Keys
+                            </label>
+
+                            <select
+                                className="glass-input"
+                                style={{ padding: '4px 12px', fontSize: '0.8rem', borderRadius: '8px' }}
+                                onChange={(e) => {
+                                    addTriggerKey(Number(e.target.value));
+                                    e.target.value = '';
+                                }}
+                            >
+                                <option value="">+ Add Key...</option>
+                                {Object.entries(COMMON_KEYS)
+                                    .sort((a, b) => a[1].localeCompare(b[1]))
+                                    .map(([code, name]) => (
+                                        <option key={code} value={code}>{name}</option>
+                                    ))
+                                }
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {triggerKeys.map((k, idx) => (
+                                <div key={idx} className="glass" style={{
+                                    padding: '16px',
+                                    background: 'rgba(255,255,255,0.02)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '12px'
                                 }}>
-                                    {COMMON_KEYS[code] || code}
-                                    <button onClick={() => setTriggerKeys(triggerKeys.filter((_, i) => i !== idx))} style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.2rem', padding: '0 2px' }}>×</button>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: '700', color: 'var(--accent-cyan)' }}>
+                                            {COMMON_KEYS[k.code] || `Key ${k.code}`}
+                                        </span>
+                                        <Button
+                                            size="small"
+                                            style={{ color: 'var(--danger)', padding: '4px 8px' }}
+                                            onClick={() => setTriggerKeys(triggerKeys.filter((_, i) => i !== idx))}
+                                        >
+                                            Remove
+                                        </Button>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <Button
+                                            variant={k.state === 1 ? 'primary' : 'default'}
+                                            size="small"
+                                            onClick={() => updateTriggerKey(idx, { state: k.state === 1 ? 0 : 1 })}
+                                            style={{ flex: 1, fontSize: '0.75rem' }}
+                                        >
+                                            {k.state === 1 ? 'PRESS' : 'RELEASE'}
+                                        </Button>
+                                        <Button
+                                            variant={k.suppress ? 'secondary' : 'default'}
+                                            size="small"
+                                            onClick={() => updateTriggerKey(idx, { suppress: !k.suppress })}
+                                            style={{ flex: 1, fontSize: '0.75rem', color: k.suppress ? 'var(--warning)' : '' }}
+                                        >
+                                            WITHHOLD
+                                        </Button>
+                                        <Button
+                                            variant={k.ignoreRepeat ? 'secondary' : 'default'}
+                                            size="small"
+                                            onClick={() => updateTriggerKey(idx, { ignoreRepeat: !k.ignoreRepeat })}
+                                            style={{ flex: 1, fontSize: '0.75rem', color: k.ignoreRepeat ? 'var(--danger)' : '' }}
+                                        >
+                                            BREAK REPEAT
+                                        </Button>
+                                    </div>
                                 </div>
                             ))}
-                        </div>
-                        <div style={{ display: 'flex', gap: '5px' }}>
-                            <select
-                                className="glass-input"
-                                style={{ flex: 1 }}
-                                onChange={(e) => {
-                                    if (e.target.value) {
-                                        setTriggerKeys([...triggerKeys, Number(e.target.value)]);
-                                        e.target.value = '';
-                                    }
-                                }}
-                            >
-                                <option value="">+ Add Trigger Key...</option>
-                                {Object.entries(COMMON_KEYS).sort((a, b) => a[1].localeCompare(b[1])).map(([code, name]) => (
-                                    <option key={code} value={code}>{name} ({code})</option>
-                                ))}
-                            </select>
-                            <input
-                                type="number"
-                                placeholder="Raw Code"
-                                className="glass-input"
-                                style={{ width: '100px' }}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter') {
-                                        setTriggerKeys([...triggerKeys, Number(e.currentTarget.value)]);
-                                        e.currentTarget.value = '';
-                                    }
-                                }}
-                            />
+
+                            {triggerKeys.length === 0 && (
+                                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.9rem', border: '1px dashed var(--glass-border)', borderRadius: '12px' }}>
+                                    No trigger keys defined.
+                                </div>
+                            )}
                         </div>
                     </div>
-                )}
-            </div>
-
-            <div className="form-group" style={{ marginBottom: '15px' }}>
-                <label>Output Sequence</label>
-                <div className="sequence-list" style={{ maxHeight: '200px', overflowY: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '4px', padding: '10px' }}>
-                    {sequence.map((step, idx) => (
-                        <div key={idx} className="sequence-step" style={{ display: 'flex', gap: '10px', marginBottom: '5px', alignItems: 'center' }}>
-                            <span style={{ color: '#888', width: '20px' }}>{idx + 1}.</span>
-                            <select
-                                className="glass-input"
-                                value={step.code}
-                                onChange={e => updateSequenceStep(idx, 'code', Number(e.target.value))}
-                                style={{ width: '120px' }}
-                            >
-                                <option value={step.code}>{COMMON_KEYS[step.code] || `Key ${step.code}`}</option>
-                                {Object.entries(COMMON_KEYS).sort((a, b) => a[1].localeCompare(b[1])).map(([c, n]) => (
-                                    <option key={c} value={c}>{n}</option>
-                                ))}
-                            </select>
-                            <select
-                                className="glass-input"
-                                value={step.value}
-                                onChange={e => updateSequenceStep(idx, 'value', Number(e.target.value))}
-                            >
-                                <option value={1}>Press</option>
-                                <option value={0}>Release</option>
-                            </select>
-                            <button onClick={() => removeSequenceStep(idx)} className="glass-button secondary" style={{ color: 'red' }}>×</button>
-                        </div>
-                    ))}
                 </div>
-                <button onClick={addSequenceStep} className="glass-button secondary" style={{ marginTop: '5px' }}>+ Add Key Press</button>
-            </div>
 
-            <div className="actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button onClick={onCancel} className="glass-button">Cancel</button>
-                <button onClick={handleSave} className="glass-button primary">Save Macro</button>
+                <div className="glass" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                            Output Sequence
+                        </label>
+                        <Button variant="secondary" size="small" onClick={addSequenceStep}>
+                            + Add Step
+                        </Button>
+                    </div>
+
+                    <div style={{ flex: 1, overflowY: 'auto', maxHeight: '500px' }}>
+                        {sequence.map((step, idx) => (
+                            <div key={idx} style={{
+                                display: 'flex',
+                                gap: '12px',
+                                marginBottom: '8px',
+                                alignItems: 'center',
+                                padding: '8px',
+                                background: 'rgba(255,255,255,0.01)',
+                                borderRadius: '8px'
+                            }}>
+                                <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem', width: '20px' }}>{idx + 1}</span>
+                                <select
+                                    className="glass-input"
+                                    style={{ flex: 1, padding: '8px' }}
+                                    value={step.code}
+                                    onChange={e => updateSequenceStep(idx, 'code', Number(e.target.value))}
+                                >
+                                    {Object.entries(COMMON_KEYS).sort((a, b) => a[1].localeCompare(b[1])).map(([c, n]) => (
+                                        <option key={c} value={c}>{n}</option>
+                                    ))}
+                                </select>
+                                <select
+                                    className="glass-input"
+                                    style={{ width: '100px', padding: '8px' }}
+                                    value={step.value}
+                                    onChange={e => updateSequenceStep(idx, 'value', Number(e.target.value))}
+                                >
+                                    <option value={1}>Press</option>
+                                    <option value={0}>Release</option>
+                                </select>
+                                <Button
+                                    size="small"
+                                    style={{ color: 'var(--danger)' }}
+                                    onClick={() => removeSequenceStep(idx)}
+                                >
+                                    ×
+                                </Button>
+                            </div>
+                        ))}
+
+                        {sequence.length === 0 && (
+                            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.9rem', border: '1px dashed var(--glass-border)', borderRadius: '12px' }}>
+                                No output sequence defined.
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

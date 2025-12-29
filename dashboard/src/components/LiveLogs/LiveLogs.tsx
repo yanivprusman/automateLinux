@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { COMMON_KEYS } from '../../types';
+import Button from '../UI/Button';
 
 interface LiveLogsProps {
     logs: string[];
@@ -8,7 +9,7 @@ interface LiveLogsProps {
     onClearLogs: () => void;
 }
 
-const LiveLogs: React.FC<LiveLogsProps> = ({ logs, filters, onToggleFilter, onClearLogs }) => {
+const LiveLogs = ({ logs, filters, onToggleFilter, onClearLogs }: LiveLogsProps) => {
     const logEndRef = useRef<HTMLDivElement>(null);
     const [autoScroll, setAutoScroll] = useState(true);
 
@@ -25,41 +26,82 @@ const LiveLogs: React.FC<LiveLogsProps> = ({ logs, filters, onToggleFilter, onCl
     };
 
     return (
-        <div className="live-logs-container glass">
-            <div className="panel-header">
-                <h2>Live Event Stream</h2>
-                <div className="header-actions">
-                    <button className="btn-secondary" onClick={onClearLogs}>Clear</button>
-                    <label className="auto-scroll-toggle">
-                        <input type="checkbox" checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} />
-                        Auto-scroll
-                    </label>
+        <div className="live-logs-container">
+            <div className="panel-header glass" style={{ borderBottom: 'none', marginBottom: '16px' }}>
+                <div>
+                    <h2 style={{ fontSize: '1.2rem' }}>Live System Monitor</h2>
+                    <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem', marginTop: '4px' }}>
+                        Real-time input events and macro execution traces.
+                    </p>
+                </div>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <Button
+                        size="small"
+                        variant={autoScroll ? 'primary' : 'default'}
+                        onClick={() => setAutoScroll(!autoScroll)}
+                        style={{ fontSize: '0.75rem' }}
+                    >
+                        {autoScroll ? 'AUTO-SCROLL ON' : 'AUTO-SCROLL OFF'}
+                    </Button>
+                    <Button size="small" onClick={onClearLogs} style={{ fontSize: '0.75rem' }}>
+                        Clear Logs
+                    </Button>
                 </div>
             </div>
 
-            <div className="logs-viewer" onScroll={onScroll}>
+            <div className="logs-viewer glass" onScroll={onScroll}>
                 {logs.map((log, i) => (
                     <div key={i} className="log-entry">
-                        <span className="log-timestamp">{new Date().toLocaleTimeString()}</span>
+                        <span className="log-timestamp" style={{ fontSize: '0.75rem' }}>
+                            [{new Date().toLocaleTimeString('en-US', { hour12: false, fractionDigits: 3 } as any)}]
+                        </span>
                         <span className="log-content">{log}</span>
                     </div>
                 ))}
                 <div ref={logEndRef} />
+                {logs.length === 0 && (
+                    <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontStyle: 'italic' }}>
+                        Waiting for events...
+                    </div>
+                )}
             </div>
 
-            <div className="filters-panel glass">
-                <h3>Event Filters</h3>
+            <div className="filters-panel glass" style={{ marginTop: '16px', border: 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                    <h3 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', margin: 0 }}>
+                        Event Isolation Filters
+                    </h3>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                        {filters.length} active filters
+                    </span>
+                </div>
+
                 <div className="chips-grid">
-                    {Object.entries(COMMON_KEYS).map(([code, name]) => (
-                        <label key={code} className={`filter-chip ${filters.includes(Number(code)) ? 'active' : ''}`}>
-                            <input
-                                type="checkbox"
-                                checked={filters.includes(Number(code))}
-                                onChange={() => onToggleFilter(Number(code))}
-                            />
-                            {name} ({code})
-                        </label>
+                    {/* Common filters first */}
+                    {[1, 28, 57, 272, 273, 275, 277].map(code => (
+                        <div
+                            key={code}
+                            className={`filter-chip ${filters.includes(code) ? 'active' : ''}`}
+                            onClick={() => onToggleFilter(code)}
+                        >
+                            {COMMON_KEYS[code]}
+                        </div>
                     ))}
+                    <div style={{ width: '1px', background: 'var(--glass-border)', margin: '0 8px' }} />
+                    {/* Others */}
+                    {Object.entries(COMMON_KEYS)
+                        .filter(([code]) => ![1, 28, 57, 272, 273, 275, 277].includes(Number(code)))
+                        .slice(0, 15) // Limit viewable filters
+                        .map(([code, name]) => (
+                            <div
+                                key={code}
+                                className={`filter-chip ${filters.includes(Number(code)) ? 'active' : ''}`}
+                                onClick={() => onToggleFilter(Number(code))}
+                            >
+                                {name}
+                            </div>
+                        ))
+                    }
                 </div>
             </div>
         </div>

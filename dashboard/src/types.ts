@@ -14,6 +14,7 @@ export interface KeyTrigger {
         code: number;
         state: number; // 1=press, 0=release
         suppress: boolean;
+        ignoreRepeat: boolean;
     }>;
     hasSuppressedKeys: boolean;
 }

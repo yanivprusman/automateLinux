@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ContextData {
     activeApp: string;
@@ -7,7 +7,7 @@ interface ContextData {
     numLockActive: boolean;
 }
 
-const ContextMonitor: React.FC = () => {
+const ContextMonitor = () => {
     const [context, setContext] = useState<ContextData>({
         activeApp: 'loading...',
         activeUrl: '',
@@ -23,54 +23,62 @@ const ContextMonitor: React.FC = () => {
                 .catch(err => console.error("Context fetch failed", err));
         };
 
-        fetchContext(); // Initial fetch
-        const interval = setInterval(fetchContext, 1000); // Poll every second
-
+        fetchContext();
+        const interval = setInterval(fetchContext, 1000);
         return () => clearInterval(interval);
     }, []);
 
     return (
-        <div className="glass" style={{
-            padding: '12px 20px',
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'rgba(20, 22, 30, 0.8)',
-            border: '1px solid rgba(0, 243, 255, 0.3)'
-        }}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{
-                    fontSize: '0.8rem',
-                    color: 'var(--text-secondary)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px'
-                }}>Active Context</span>
-                <span style={{
-                    fontSize: '1.2rem',
-                    fontWeight: 'bold',
-                    color: context.activeApp === 'CHROME' ? 'var(--accent-purple)' : 'var(--accent-cyan)'
-                }}>
-                    {context.activeApp}
-                </span>
-            </div>
+        <header className="context-monitor glass">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--text-dim)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '1.5px',
+                        fontWeight: '700',
+                        marginBottom: '2px'
+                    }}>Active Context</span>
+                    <span style={{
+                        fontSize: '1.1rem',
+                        fontWeight: '800',
+                        color: context.activeApp === 'CHROME' ? 'var(--accent-purple)' : 'var(--accent-cyan)',
+                        letterSpacing: '0.5px'
+                    }}>
+                        {context.activeApp}
+                    </span>
+                </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 <div className={`macro-status-badge ${context.numLockActive ? 'disabled' : 'enabled'}`}>
                     <div className="status-dot"></div>
-                    <span>Macros: {context.numLockActive ? 'DISABLED' : 'ENABLED'}</span>
+                    <span>Macros: {context.numLockActive ? 'OFF' : 'ON'}</span>
                 </div>
             </div>
 
-            <div style={{ textAlign: 'right', maxWidth: '60%' }}>
-                <div style={{ fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {context.activeTitle || "(No Title)"}
+            <div style={{ textAlign: 'right', flex: 1, marginLeft: '40px', overflow: 'hidden' }}>
+                <div style={{
+                    fontSize: '0.95rem',
+                    fontWeight: '600',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    color: 'var(--text-primary)'
+                }}>
+                    {context.activeTitle || "System Idle"}
                 </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {context.activeUrl || "..."}
+                <div style={{
+                    fontSize: '0.8rem',
+                    color: 'var(--text-dim)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    fontFamily: 'JetBrains Mono, monospace'
+                }}>
+                    {context.activeUrl || "Waiting for interaction..."}
                 </div>
             </div>
-        </div>
+        </header>
     );
 };
 

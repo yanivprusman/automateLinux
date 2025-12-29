@@ -10,7 +10,7 @@ function App() {
   const [currentView, setCurrentView] = useState<ViewType>('logs');
   const [logs, setLogs] = useState<string[]>([]);
   const [macros, setMacros] = useState<any>({});
-  const [filters, setFilters] = useState<number[]>([]);
+  const [filters, setFilters] = useState<string[]>([]);
 
   useEffect(() => {
     // Fetch macros
@@ -53,10 +53,7 @@ function App() {
       .catch(err => alert('Error saving macros: ' + err.message));
   };
 
-  const toggleFilter = (code: number) => {
-    const newFilters = filters.includes(code)
-      ? filters.filter(c => c !== code)
-      : [...filters, code];
+  const setEventFilters = (newFilters: string[]) => {
     setFilters(newFilters);
     fetch('http://localhost:9224/api/filters', {
       method: 'POST',
@@ -80,7 +77,7 @@ function App() {
           <LiveLogs
             logs={logs}
             filters={filters}
-            onToggleFilter={toggleFilter}
+            onSetFilters={setEventFilters}
             onClearLogs={clearLogs}
           />
         )}

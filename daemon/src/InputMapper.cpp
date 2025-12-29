@@ -53,21 +53,6 @@ void InputMapper::loadPersistence() {
       logToFile("Failed to parse saved filters from DB", LOG_CORE);
     }
   }
-
-  // Load Input Log Filters from DB
-  string savedInputLogFilters = kvTable.get("custom_input_log_filters");
-  if (!savedInputLogFilters.empty()) {
-    try {
-      json j = json::parse(savedInputLogFilters);
-      {
-        std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
-        setInputLogFiltersInternal(j);
-      }
-      logToFile("Loaded custom input log filters from DB", LOG_CORE);
-    } catch (...) {
-      logToFile("Failed to parse saved input log filters from DB", LOG_CORE);
-    }
-  }
 }
 
 bool InputMapper::start(const std::string &keyboardPath,
@@ -289,8 +274,8 @@ json InputMapper::getActiveContextJson() {
 json InputMapper::getEventFiltersJson() {
   std::lock_guard<std::mutex> lock(filtersMutex_);
   json j = json::array();
-  for (uint16_t code : filteredKeyCodes_) {
-    j.push_back(code);
+  for (const string &pattern : logFilterPatterns_) {
+    j.push_back(pattern);
   }
   return j;
 }
@@ -366,10 +351,12 @@ void InputMapper::setMacrosFromJson(const json &j) {
 }
 
 void InputMapper::setEventFiltersInternal(const json &j) {
-  filteredKeyCodes_.clear();
+  logFilterPatterns_.clear();
   if (j.is_array()) {
     for (const auto &item : j) {
-      filteredKeyCodes_.insert(item.get<uint16_t>());
+      if (item.is_string()) {
+        logFilterPatterns_.push_back(item.get<string>());
+      }
     }
   }
 }
@@ -381,125 +368,8 @@ void InputMapper::setEventFilters(const json &j) {
   }
   kvTable.upsert("custom_event_filters", j.dump());
   logToFile("Event filters updated dynamically and saved to DB (count: " +
-                std::to_string(filteredKeyCodes_.size()) + ")",
+                std::to_string(logFilterPatterns_.size()) + ")",
             LOG_CORE);
-}
-
-// =========================================================================
-// Granular Input Log Filters Implementation
-// =========================================================================
-
-json InputMapper::getInputLogFiltersJson() {
-  std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
-  json j = json::array();
-  for (const auto &filter : inputLogFilters_) {
-    json filter_j;
-    if (filter.type.has_value())
-      filter_j["type"] = filter.type.value();
-    if (filter.code.has_value())
-      filter_j["code"] = filter.code.value();
-    if (filter.value.has_value())
-      filter_j["value"] = filter.value.value();
-    if (filter.devicePathRegex.has_value())
-      filter_j["devicePathRegex"] = filter.devicePathRegex.value();
-    if (filter.isKeyboard.has_value())
-      filter_j["isKeyboard"] = filter.isKeyboard.value();
-    filter_j["actionShow"] = filter.actionShow;
-    j.push_back(filter_j);
-  }
-  return j;
-}
-
-void InputMapper::setInputLogFiltersInternal(const json &j) {
-  inputLogFilters_.clear();
-  if (j.is_array()) {
-    for (const auto &item_j : j) {
-      InputLogFilter filter;
-      if (item_j.contains("type"))
-        filter.type = item_j["type"].get<uint16_t>();
-      if (item_j.contains("code"))
-        filter.code = item_j["code"].get<uint16_t>();
-      if (item_j.contains("value"))
-        filter.value = item_j["value"].get<int32_t>();
-      if (item_j.contains("devicePathRegex"))
-        filter.devicePathRegex = item_j["devicePathRegex"].get<std::string>();
-      if (item_j.contains("isKeyboard"))
-        filter.isKeyboard = item_j["isKeyboard"].get<bool>();
-      if (item_j.contains("actionShow"))
-        filter.actionShow = item_j["actionShow"].get<bool>();
-      else
-        filter.actionShow = true; // Default to show if not specified
-
-      inputLogFilters_.push_back(filter);
-    }
-    // Sort by specificity
-    std::sort(inputLogFilters_.begin(), inputLogFilters_.end(),
-              [](const InputLogFilter &a, const InputLogFilter &b) {
-                return a < b; // Use the overloaded operator< for sorting
-              });
-  }
-}
-
-// =========================================================================
-// Granular Input Log Filters Implementation (continuation)
-// =========================================================================
-
-void InputMapper::addInputLogFilter(const InputLogFilter &filter) {
-  std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
-  // Check if an identical filter already exists to avoid duplicates
-  for (const auto &existingFilter : inputLogFilters_) {
-    if (existingFilter.type == filter.type &&
-        existingFilter.code == filter.code &&
-        existingFilter.value == filter.value &&
-        existingFilter.devicePathRegex == filter.devicePathRegex &&
-        existingFilter.isKeyboard == filter.isKeyboard &&
-        existingFilter.actionShow == filter.actionShow) {
-      logToFile("InputMapper: Identical log filter already exists. Not adding.",
-                LOG_CORE);
-      return;
-    }
-  }
-  inputLogFilters_.push_back(filter);
-  std::sort(inputLogFilters_.begin(), inputLogFilters_.end(),
-            [](const InputLogFilter &a, const InputLogFilter &b) {
-              return a < b; // Keep sorted by specificity
-            });
-  kvTable.upsert("custom_input_log_filters", getInputLogFiltersJson().dump());
-  logToFile("InputMapper: Added granular log filter (size: " +
-                std::to_string(inputLogFilters_.size()) + ")",
-            LOG_CORE);
-}
-
-void InputMapper::removeInputLogFilter(const InputLogFilter &filter) {
-  std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
-  auto it = std::remove_if(
-      inputLogFilters_.begin(), inputLogFilters_.end(),
-      [&](const InputLogFilter &f) {
-        // Match based on all fields
-        return f.type == filter.type && f.code == filter.code &&
-               f.value == filter.value &&
-               f.devicePathRegex == filter.devicePathRegex &&
-               f.isKeyboard == filter.isKeyboard &&
-               f.actionShow ==
-                   filter.actionShow; // Must be an exact match for removal
-      });
-  if (it != inputLogFilters_.end()) {
-    inputLogFilters_.erase(it, inputLogFilters_.end());
-    kvTable.upsert("custom_input_log_filters", getInputLogFiltersJson().dump());
-    logToFile("InputMapper: Removed granular log filter (size: " +
-                  std::to_string(inputLogFilters_.size()) + ")",
-              LOG_CORE);
-  } else {
-    logToFile("InputMapper: No matching log filter found for removal.",
-              LOG_CORE);
-  }
-}
-
-void InputMapper::clearInputLogFilters() {
-  std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
-  inputLogFilters_.clear();
-  kvTable.upsert("custom_input_log_filters", getInputLogFiltersJson().dump());
-  logToFile("InputMapper: Cleared all granular log filters.", LOG_CORE);
 }
 
 void InputMapper::loop() {
@@ -661,45 +531,26 @@ void InputMapper::setContext(AppType appType, const std::string &url,
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                                bool skipMacros, const std::string &devicePath) {
-  bool shouldLogThisEvent = true; // Default to log
-  std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
+  // Enhanced Logging & Filter Logic:
+  string formattedEvent = formatEvent(ev, devicePath);
 
-  // Evaluate filters from most specific to least specific
-  for (const auto &filter : inputLogFilters_) {
-    bool type_match =
-        !filter.type.has_value() || (filter.type.value() == ev.type);
-    bool code_match =
-        !filter.code.has_value() || (filter.code.value() == ev.code);
-    bool value_match =
-        !filter.value.has_value() || (filter.value.value() == ev.value);
-    bool isKeyboard_match = !filter.isKeyboard.has_value() ||
-                            (filter.isKeyboard.value() == isKeyboard);
-
-    bool devicePath_match = true;
-    if (filter.devicePathRegex.has_value()) {
-      try {
-        std::regex re(filter.devicePathRegex.value());
-        devicePath_match = std::regex_search(devicePath, re);
-      } catch (const std::regex_error &e) {
-        logToFile("InputMapper: Invalid regex in log filter: " +
-                      filter.devicePathRegex.value(),
-                  LOG_CORE);
-        devicePath_match = false; // Treat as no match if regex is invalid
+  bool shouldLog = false;
+  if (!formattedEvent.empty()) {
+    std::lock_guard<std::mutex> lock(filtersMutex_);
+    if (logFilterPatterns_.empty()) {
+      shouldLog = true; // No filter = Log everything
+    } else {
+      for (const auto &pattern : logFilterPatterns_) {
+        if (formattedEvent.find(pattern) != std::string::npos) {
+          shouldLog = true;
+          break;
+        }
       }
-    }
-
-    if (type_match && code_match && value_match && isKeyboard_match &&
-        devicePath_match) {
-      shouldLogThisEvent = filter.actionShow;
-      break; // First match determines the action
     }
   }
 
-  if (shouldLogThisEvent) {
-    std::string formatted = formatEvent(ev, isKeyboard, devicePath);
-    if (!formatted.empty()) {
-      logToFile(formatted, LOG_INPUT_DEBUG);
-    }
+  if (shouldLog) {
+    logToFile(formattedEvent, LOG_INPUT);
   }
 
   // NumLock Tracking
@@ -731,7 +582,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
   // we do NOT emit events to uinput to avoid double-input.
   // Grabbing only happens once ALL keys are released.
   if (monitoringMode_) {
-    if (shouldLogThisEvent) { // Only log if filter allows
+    if (shouldLog) { // Only log if filter allows
       logToFile("SKIPPED (monitoring): Type=" + std::to_string(ev.type) +
                     " Code=" + std::to_string(ev.code),
                 LOG_INPUT_DEBUG);
@@ -739,7 +590,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     return;
   }
 
-  if (shouldLogThisEvent) { // Only log if filter allows
+  if (shouldLog) { // Only log if filter allows
     logToFile("DEBUG_EV: Type=" + std::to_string(ev.type) +
                   ", Code=" + std::to_string(ev.code) +
                   ", Value=" + std::to_string(ev.value) +
@@ -750,8 +601,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
 
   // Key tracking logic moved up
 
-  // Filter out MSC events to prevent interference (NOT ANYMORE - let them pass)
-  // if (ev.type == EV_MSC) {
+  // Filter out MSC events to prevent interference (NOT ANYMORE - let them
+  // pass) if (ev.type == EV_MSC) {
   //   return;
   // }
 
@@ -864,7 +715,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                           LOG_AUTOMATION);
 
                 if (action.trigger.hasSuppressedKeys) {
-                  // Consume trigger from queue (the keys that match the combo)
+                  // Consume trigger from queue (the keys that match the
+                  // combo)
                   std::lock_guard<std::mutex> lock(pendingEventsMutex_);
                   // We only want to remove events that we actually suppressed
                   // for THIS combo
@@ -885,18 +737,18 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                 state.nextKeyIndex = 0;
               }
             } else if (state.nextKeyIndex > 0) {
-              // The current event 'ev' did not match the next expected step in
-              // the combo. We need to decide if this event should break the
-              // combo.
+              // The current event 'ev' did not match the next expected step
+              // in the combo. We need to decide if this event should break
+              // the combo.
 
               bool shouldBreak = false;
               if (ev.type == EV_KEY) {
                 if (ev.value == 1) { // A new key was pressed. If it's not the
                                      // expected key, it breaks.
                   shouldBreak = true;
-                } else if (ev.value ==
-                           0) { // A key was released. If it was a key required
-                                // for a previous combo step, it breaks.
+                } else if (ev.value == 0) { // A key was released. If it was a
+                                            // key required for a previous
+                                            // combo step, it breaks.
                   // Check if the released key was part of the combo's already
                   // matched steps.
                   bool wasPreviouslyMatchedKey = false;
@@ -911,7 +763,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                   }
                 } else if (ev.value == 2) { // A key repeat
                   if (ignoreRepeat) {
-                    // This repeat is explicitly ignored for breaking the combo.
+                    // This repeat is explicitly ignored for breaking the
+                    // combo.
                     shouldBreak = false;
                   } else {
                     // If ignoreRepeat is false, then this repeat breaks the
@@ -919,8 +772,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                     shouldBreak = true;
                   }
                 }
-                // Non-key events (e.g., EV_REL, EV_ABS) currently do not break
-                // combos. This might need refinement for more complex
+                // Non-key events (e.g., EV_REL, EV_ABS) currently do not
+                // break combos. This might need refinement for more complex
                 // scenarios, but for now, keep it simple.
               }
 
@@ -983,8 +836,8 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             return;
           }
 
-          // If we are currently in a suppressed state (holding a trigger key),
-          // we must queue even unmatched keys to preserve order.
+          // If we are currently in a suppressed state (holding a trigger
+          // key), we must queue even unmatched keys to preserve order.
           {
             std::lock_guard<std::mutex> lock(pendingEventsMutex_);
             currentlySuppressing = !pendingEvents_.empty();
@@ -1039,30 +892,9 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     }
   }
 
-  // Filter Logic:
-  // 1. If filters are empty -> Log ALL keys/buttons
-  // 2. If filters exist -> Log ONLY matching keys
-  bool shouldLogInput = false;
-  if (ev.type == EV_KEY) {
-    std::lock_guard<std::mutex> lock(filtersMutex_);
-    if (filteredKeyCodes_.empty()) {
-      shouldLogInput = true; // No filter = Log everything
-    } else {
-      shouldLogInput = (filteredKeyCodes_.count(ev.code) > 0);
-    }
-  }
-
-  if (shouldLogInput) {
-    logToFile(std::string(isKeyboard ? "KBD" : "MOUSE") +
-                  " Processing event (type " + std::to_string(ev.type) +
-                  ", code " + std::to_string(ev.code) + ", value " +
-                  std::to_string(ev.value) + ")",
-              LOG_INPUT);
-  }
-
-  // Use emit() for keys to ensure immediate EV_SYN (for macros/combos or single
-  // presses). For REL/ABS (mouse movement), use direct write to preserve
-  // grouping with the subsequent hardware SYN.
+  // Use emit() for keys to ensure immediate EV_SYN (for macros/combos or
+  // single presses). For REL/ABS (mouse movement), use direct write to
+  // preserve grouping with the subsequent hardware SYN.
   if (ev.type == EV_KEY) {
     emit(ev.type, ev.code, ev.value);
   } else if (ev.type == EV_REL || ev.type == EV_ABS) {
@@ -1073,16 +905,16 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
       logToFile("Failed to write to uinput (REL/ABS): " +
                     std::string(strerror(-rc)),
                 LOG_INPUT);
-    } else if (shouldLogThisEvent) {
-      logToFile(formatEvent(ev, isKeyboard, devicePath), LOG_INPUT_DEBUG);
+    } else if (shouldLog) {
+      logToFile(formatEvent(ev, devicePath), LOG_INPUT_DEBUG);
     }
   } else {
     // Detailed logging for MSC/SYN events when they follow or precede Enters
     if (ev.type == EV_MSC || ev.type == EV_SYN) {
       if (ev.type == EV_SYN) {
         // logToFile("--- EV_SYN ---", LOG_INPUT);
-      } else if (shouldLogThisEvent) { // ev.type == EV_MSC
-        logToFile(formatEvent(ev, isKeyboard, devicePath), LOG_INPUT);
+      } else if (shouldLog) { // ev.type == EV_MSC
+        logToFile(formatEvent(ev, devicePath), LOG_INPUT);
       }
     }
 
@@ -1095,9 +927,9 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
           "Failed to write to uinput (raw type=" + std::to_string(ev.type) +
               "): " + std::string(strerror(-rc)),
           LOG_INPUT);
-    } else if (shouldLogThisEvent && ev.type != EV_SYN) {
+    } else if (shouldLog && ev.type != EV_SYN) {
       // Log SUCCESSFUL write for verification
-      logToFile(formatEvent(ev, isKeyboard, devicePath), LOG_INPUT_DEBUG);
+      logToFile(formatEvent(ev, devicePath), LOG_INPUT_DEBUG);
     }
   }
 } // This is the final closing brace for processEvent.
@@ -1257,10 +1089,10 @@ void InputMapper::setNumLockState(bool active) {
 }
 
 bool InputMapper::isKeyboardOnlyMacro(const KeyAction &action) const {
-  // A macro is "keyboard only" if all its trigger keys and target sequence keys
-  // are standard keyboard keys. Standard keyboard keys are typically < 256, but
-  // let's be more specific: We exclude mouse buttons (BTN_MOUSE, etc.) and our
-  // virtual G-keys.
+  // A macro is "keyboard only" if all its trigger keys and target sequence
+  // keys are standard keyboard keys. Standard keyboard keys are typically <
+  // 256, but let's be more specific: We exclude mouse buttons (BTN_MOUSE,
+  // etc.) and our virtual G-keys.
   for (const auto &tk : action.trigger.keyCodes) {
     uint16_t code = std::get<0>(tk);
     if (code >= BTN_MISC && code < KEY_OK)
@@ -1318,26 +1150,25 @@ void InputMapper::releaseAllPressedKeys() {
 }
 
 std::string InputMapper::formatEvent(const struct input_event &ev,
-                                     bool isKeyboard,
                                      const std::string &devicePath) const {
   std::string typeStr;
   std::string codeStr;
 
   if (ev.type == EV_KEY) {
-    typeStr = "key";
     const char *name = libevdev_event_code_get_name(ev.type, ev.code);
     if (name) {
-      codeStr = name;
-      // Strip "KEY_" prefix and convert to lowercase
-      if (codeStr.find("KEY_") == 0) {
-        codeStr = codeStr.substr(4);
-      }
-      if (codeStr.find("BTN_") == 0) {
-        codeStr = codeStr.substr(4);
+      string n(name);
+      if (n.find("BTN_") == 0) {
+        typeStr = "btn";
+        codeStr = n.substr(4);
+      } else {
+        typeStr = "key";
+        codeStr = (n.find("KEY_") == 0) ? n.substr(4) : n;
       }
       std::transform(codeStr.begin(), codeStr.end(), codeStr.begin(),
                      ::tolower);
     } else {
+      typeStr = "key";
       codeStr = std::to_string(ev.code);
     }
   } else if (ev.type == EV_REL) {

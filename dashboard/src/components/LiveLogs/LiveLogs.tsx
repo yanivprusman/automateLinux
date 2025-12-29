@@ -1,17 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
-import { COMMON_KEYS } from '../../types';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import Button from '../UI/Button';
+import Input from '../UI/Input';
+import Badge from '../UI/Badge';
 
 interface LiveLogsProps {
     logs: string[];
-    filters: number[];
-    onToggleFilter: (code: number) => void;
+    filters: string[];
+    onSetFilters: (filters: string[]) => void;
     onClearLogs: () => void;
 }
 
-const LiveLogs = ({ logs, filters, onToggleFilter, onClearLogs }: LiveLogsProps) => {
+const LiveLogs = ({ logs, filters, onSetFilters, onClearLogs }: LiveLogsProps) => {
     const logEndRef = useRef<HTMLDivElement>(null);
     const [autoScroll, setAutoScroll] = useState(true);
+    const [newPattern, setNewPattern] = useState('');
 
     useEffect(() => {
         if (autoScroll) {
@@ -24,6 +26,32 @@ const LiveLogs = ({ logs, filters, onToggleFilter, onClearLogs }: LiveLogsProps)
         const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
         setAutoScroll(isAtBottom);
     };
+
+    const handleAddPattern = () => {
+        if (newPattern && !filters.includes(newPattern)) {
+            onSetFilters([...filters, newPattern]);
+            setNewPattern('');
+        }
+    };
+
+    const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleAddPattern();
+        }
+    };
+
+    const removeFilter = (pattern: string) => {
+        onSetFilters(filters.filter(f => f !== pattern));
+    };
+
+    const presets = [
+        { label: 'All Keys', pattern: 'key' },
+        { label: 'All Buttons', pattern: 'btn' },
+        { label: 'All Misc', pattern: 'msc' },
+        { label: 'Down Only', pattern: '::1' },
+        { label: 'Up Only', pattern: '::0' },
+        { label: 'Repeat Only', pattern: '::2' },
+    ];
 
     return (
         <div className="live-logs-container">
@@ -71,37 +99,81 @@ const LiveLogs = ({ logs, filters, onToggleFilter, onClearLogs }: LiveLogsProps)
                     <h3 style={{ fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', margin: 0 }}>
                         Event Isolation Filters
                     </h3>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                        {filters.length} active filters
-                    </span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        {filters.length > 0 && (
+                            <Button size="small" variant="secondary" onClick={() => onSetFilters([])} style={{ fontSize: '0.65rem', padding: '2px 8px' }}>
+                                Clear All
+                            </Button>
+                        )}
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                            {filters.length} active criteria
+                        </span>
+                    </div>
                 </div>
 
-                <div className="chips-grid">
-                    {/* Common filters first */}
-                    {[1, 28, 57, 272, 273, 275, 277].map(code => (
-                        <div
-                            key={code}
-                            className={`filter-chip ${filters.includes(code) ? 'active' : ''}`}
-                            onClick={() => onToggleFilter(code)}
-                        >
-                            {COMMON_KEYS[code]}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                        <div style={{ flex: 1 }}>
+                            <Input
+                                placeholder="Add pattern (e.g. key:a, ::1, btn:left...)"
+                                value={newPattern}
+                                onChange={(e) => setNewPattern(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                style={{ height: '40px' }}
+                            />
                         </div>
-                    ))}
-                    <div style={{ width: '1px', background: 'var(--glass-border)', margin: '0 8px' }} />
-                    {/* Others */}
-                    {Object.entries(COMMON_KEYS)
-                        .filter(([code]) => ![1, 28, 57, 272, 273, 275, 277].includes(Number(code)))
-                        .slice(0, 15) // Limit viewable filters
-                        .map(([code, name]) => (
-                            <div
-                                key={code}
-                                className={`filter-chip ${filters.includes(Number(code)) ? 'active' : ''}`}
-                                onClick={() => onToggleFilter(Number(code))}
+                        <Button variant="primary" onClick={handleAddPattern} style={{ height: '40px' }}>
+                            Add Filter
+                        </Button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', alignSelf: 'center', marginRight: '4px' }}>PRESETS:</span>
+                        {presets.map(p => (
+                            <button
+                                key={p.pattern}
+                                className={`filter-chip ${filters.includes(p.pattern) ? 'active' : ''}`}
+                                onClick={() => filters.includes(p.pattern) ? removeFilter(p.pattern) : onSetFilters([...filters, p.pattern])}
+                                style={{ fontSize: '0.7rem', padding: '4px 10px' }}
                             >
-                                {name}
-                            </div>
-                        ))
-                    }
+                                {p.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {filters.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                            {filters.map(f => (
+                                <Badge
+                                    key={f}
+                                    variant="primary"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '4px 8px',
+                                        cursor: 'default'
+                                    }}
+                                >
+                                    {f}
+                                    <span
+                                        onClick={() => removeFilter(f)}
+                                        style={{
+                                            cursor: 'pointer',
+                                            opacity: 0.6,
+                                            fontSize: '1rem',
+                                            lineHeight: 1,
+                                            marginLeft: '4px',
+                                            display: 'inline-block'
+                                        }}
+                                        title="Remove filter"
+                                    >
+                                        ×
+                                    </span>
+                                </Badge>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

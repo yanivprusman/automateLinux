@@ -27,49 +27,6 @@ enum class GKey { G1 = 1, G2 = 2, G3 = 3, G4 = 4, G5 = 5, G6 = 6 };
 #define G5_VIRTUAL 1005
 #define G6_VIRTUAL 1006
 
-// Structure to define a granular input log filter
-struct InputLogFilter {
-  std::optional<uint16_t> type;
-  std::optional<uint16_t> code;
-  std::optional<int32_t> value;
-  std::optional<std::string> devicePathRegex;
-  std::optional<bool> isKeyboard;
-  bool actionShow; // true to show, false to hide
-
-  // Comparison operator for use in std::set or std::sort
-  // More specific filters should come before less specific ones.
-  bool operator<(const InputLogFilter &other) const {
-    // Prioritize by number of defined fields (more defined = more specific)
-    int this_specificity =
-        (type.has_value() ? 1 : 0) + (code.has_value() ? 1 : 0) +
-        (value.has_value() ? 1 : 0) + (devicePathRegex.has_value() ? 1 : 0) +
-        (isKeyboard.has_value() ? 1 : 0);
-    int other_specificity = (other.type.has_value() ? 1 : 0) +
-                            (other.code.has_value() ? 1 : 0) +
-                            (other.value.has_value() ? 1 : 0) +
-                            (other.devicePathRegex.has_value() ? 1 : 0) +
-                            (other.isKeyboard.has_value() ? 1 : 0);
-
-    if (this_specificity != other_specificity) {
-      return this_specificity >
-             other_specificity; // Higher specificity comes first
-    }
-
-    // Fallback to lexicographical comparison for consistent ordering
-    if (type != other.type)
-      return type < other.type;
-    if (code != other.code)
-      return code < other.code;
-    if (value != other.value)
-      return value < other.value;
-    if (devicePathRegex != other.devicePathRegex)
-      return devicePathRegex < other.devicePathRegex;
-    if (isKeyboard != other.isKeyboard)
-      return isKeyboard < other.isKeyboard;
-    return actionShow < other.actionShow;
-  }
-};
-
 // Represents the state of a key sequence combo during matching
 struct ComboState {
   size_t nextKeyIndex =
@@ -130,18 +87,6 @@ private:
   void grabDevices();   // New: performs the libevdev_grab
   void ungrabDevices(); // New: performs the libevdev_ungrab
 
-public: // Granular Input Log Filters - Public interface
-  json getInputLogFiltersJson();
-  void addInputLogFilter(const InputLogFilter &filter);
-  void removeInputLogFilter(const InputLogFilter &filter);
-  void clearInputLogFilters();
-
-private: // Granular Input Log Filters - Private implementation details
-  std::vector<InputLogFilter> inputLogFilters_;
-  std::mutex inputLogFiltersMutex_;
-  void setInputLogFiltersInternal(
-      const json &j); // Still private, called by loadPersistence
-
 private:
   void loop();
   bool setupDevices();
@@ -153,7 +98,7 @@ private:
   void executeKeyAction(const KeyAction &action);
   bool isKeyboardOnlyMacro(const KeyAction &action) const;
   void releaseAllPressedKeys();
-  std::string formatEvent(const struct input_event &ev, bool isKeyboard,
+  std::string formatEvent(const struct input_event &ev,
                           const std::string &devicePath) const;
   void initializeAppMacros();
   void triggerChromeChatGPTMacro();
@@ -197,7 +142,7 @@ private:
   std::mutex macrosMutex_;
 
   // Event filtering state (granular logging)
-  std::set<uint16_t> filteredKeyCodes_;
+  std::vector<std::string> logFilterPatterns_;
   std::mutex filtersMutex_;
 
   // Combo sequence tracking (per-app)

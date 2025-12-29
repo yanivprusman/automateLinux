@@ -31,23 +31,20 @@ enum class GKey { G1 = 1, G2 = 2, G3 = 3, G4 = 4, G5 = 5, G6 = 6 };
 struct ComboState {
   size_t nextKeyIndex =
       0; // Next key position to match (0 = start, size = complete)
-  std::vector<std::pair<uint16_t, uint8_t>>
-      suppressedKeys; // (keyCode, state) pairs held back for this combo
+  std::vector<std::tuple<uint16_t, uint16_t, int32_t>>
+      suppressedEvents; // (type, code, value) tuples held back for this combo
 };
 
 // Represents a keyboard/mouse trigger condition
-// keyCodes is a sequence of (keyCode, state, suppress) tuples where:
-// - state: 1=press, 0=release
-// - suppress: true=withhold this key until combo resolves
+// events is a sequence of (type, code, value, suppress, ignoreRepeat) tuples
 struct KeyTrigger {
-  std::vector<std::tuple<uint16_t, uint8_t, bool, bool>>
-      keyCodes; // Sequence of (code, state: 1=press/0=release, suppress:
-                // true/false, ignoreRepeat: true/false)
+  std::vector<std::tuple<uint16_t, uint16_t, int32_t, bool, bool>>
+      events; // Sequence of (type, code, value, suppress, ignoreRepeat)
   bool hasSuppressedKeys = false; // Cached check for efficiency
 
   // Operator== for KeyTrigger
-  bool operator==(const KeyTrigger& other) const {
-    return keyCodes == other.keyCodes &&
+  bool operator==(const KeyTrigger &other) const {
+    return events == other.events &&
            hasSuppressedKeys == other.hasSuppressedKeys;
   }
 };

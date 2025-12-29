@@ -801,10 +801,10 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
           }
 
           if (ev.code == KEY_ENTER || ev.code == KEY_KPENTER) {
-            extern void forceLog(const std::string &message);
-            forceLog(
-                "ENTER DEBUG [1]: Consumed=" + std::to_string(eventConsumed) +
-                " AnyCombo=" + std::to_string(anyComboInProgress));
+            // extern void forceLog(const std::string &message);
+            // forceLog(
+            //     "ENTER DEBUG [1]: Consumed=" + std::to_string(eventConsumed) +
+            //     " AnyCombo=" + std::to_string(anyComboInProgress));
           }
 
           if (eventConsumed) {
@@ -844,10 +844,10 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
           }
 
           if (ev.code == KEY_ENTER || ev.code == KEY_KPENTER) {
-            extern void forceLog(const std::string &message);
-            forceLog("ENTER DEBUG [2]: Suppressing=" +
-                     std::to_string(currentlySuppressing) +
-                     " AnyCombo=" + std::to_string(anyComboInProgress));
+            // extern void forceLog(const std::string &message);
+            // forceLog("ENTER DEBUG [2]: Suppressing=" +
+            //          std::to_string(currentlySuppressing) +
+            //          " AnyCombo=" + std::to_string(anyComboInProgress));
           }
 
           // Critical unblocking: ENTER and KPENTER should never be stuck in a

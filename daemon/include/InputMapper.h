@@ -44,6 +44,12 @@ struct KeyTrigger {
       keyCodes; // Sequence of (code, state: 1=press/0=release, suppress:
                 // true/false, ignoreRepeat: true/false)
   bool hasSuppressedKeys = false; // Cached check for efficiency
+
+  // Operator== for KeyTrigger
+  bool operator==(const KeyTrigger& other) const {
+    return keyCodes == other.keyCodes &&
+           hasSuppressedKeys == other.hasSuppressedKeys;
+  }
 };
 
 // Represents an action to execute when a trigger is matched

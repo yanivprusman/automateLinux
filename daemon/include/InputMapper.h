@@ -1,8 +1,7 @@
 #ifndef INPUT_MAPPER_H
 #define INPUT_MAPPER_H
 
-#include "Types.h"
-#include "using.h"
+#include "common.h"
 #include <atomic>
 #include <condition_variable>
 #include <cstdint>

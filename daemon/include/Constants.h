@@ -143,5 +143,11 @@
 #define LOG_ALL                                                                \
   (LOG_INPUT | LOG_WINDOW | LOG_AUTOMATION | LOG_CORE | LOG_MACROS |           \
    LOG_NETWORK | LOG_CHROME | LOG_TERMINAL | LOG_INPUT_DEBUG)
-
+#define KEY_PRESS 1
+#define KEY_RELEASE 0
+#define KEY_REPEAT 2
+#define WITHHOLD_YES true
+#define WITHHOLD_NO false
+#define KEY_REPEAT_BREAKS_YES true
+#define KEY_REPEAT_BREAKS_NO false
 #endif // CONSTANTS_H

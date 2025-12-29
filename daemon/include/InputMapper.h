@@ -39,30 +39,35 @@ struct InputLogFilter {
 
   // Comparison operator for use in std::set or std::sort
   // More specific filters should come before less specific ones.
-  bool operator<(const InputLogFilter& other) const {
-      // Prioritize by number of defined fields (more defined = more specific)
-      int this_specificity = (type.has_value() ? 1 : 0) +
-                             (code.has_value() ? 1 : 0) +
-                             (value.has_value() ? 1 : 0) +
-                             (devicePathRegex.has_value() ? 1 : 0) +
-                             (isKeyboard.has_value() ? 1 : 0);
-      int other_specificity = (other.type.has_value() ? 1 : 0) +
-                              (other.code.has_value() ? 1 : 0) +
-                              (other.value.has_value() ? 1 : 0) +
-                              (other.devicePathRegex.has_value() ? 1 : 0) +
-                              (other.isKeyboard.has_value() ? 1 : 0);
+  bool operator<(const InputLogFilter &other) const {
+    // Prioritize by number of defined fields (more defined = more specific)
+    int this_specificity =
+        (type.has_value() ? 1 : 0) + (code.has_value() ? 1 : 0) +
+        (value.has_value() ? 1 : 0) + (devicePathRegex.has_value() ? 1 : 0) +
+        (isKeyboard.has_value() ? 1 : 0);
+    int other_specificity = (other.type.has_value() ? 1 : 0) +
+                            (other.code.has_value() ? 1 : 0) +
+                            (other.value.has_value() ? 1 : 0) +
+                            (other.devicePathRegex.has_value() ? 1 : 0) +
+                            (other.isKeyboard.has_value() ? 1 : 0);
 
-      if (this_specificity != other_specificity) {
-          return this_specificity > other_specificity; // Higher specificity comes first
-      }
+    if (this_specificity != other_specificity) {
+      return this_specificity >
+             other_specificity; // Higher specificity comes first
+    }
 
-      // Fallback to lexicographical comparison for consistent ordering
-      if (type != other.type) return type < other.type;
-      if (code != other.code) return code < other.code;
-      if (value != other.value) return value < other.value;
-      if (devicePathRegex != other.devicePathRegex) return devicePathRegex < other.devicePathRegex;
-      if (isKeyboard != other.isKeyboard) return isKeyboard < other.isKeyboard;
-      return actionShow < other.actionShow;
+    // Fallback to lexicographical comparison for consistent ordering
+    if (type != other.type)
+      return type < other.type;
+    if (code != other.code)
+      return code < other.code;
+    if (value != other.value)
+      return value < other.value;
+    if (devicePathRegex != other.devicePathRegex)
+      return devicePathRegex < other.devicePathRegex;
+    if (isKeyboard != other.isKeyboard)
+      return isKeyboard < other.isKeyboard;
+    return actionShow < other.actionShow;
   }
 };
 
@@ -109,7 +114,7 @@ public:
   void flushAndResetState();
   void onFocusAck();
   bool isRunning() const { return running_; }
-  void setPendingGrab(bool value); // NEW PUBLIC SETTER
+  void setPendingGrab(bool value);   // NEW PUBLIC SETTER
   void setNumLockState(bool active); // NEW PUBLIC SETTER for NumLock state
 
   json getMacrosJson();
@@ -135,16 +140,22 @@ public: // Granular Input Log Filters - Public interface
 private: // Granular Input Log Filters - Private implementation details
   std::vector<InputLogFilter> inputLogFilters_;
   std::mutex inputLogFiltersMutex_;
-  void setInputLogFiltersInternal(const json &j); // Still private, called by loadPersistence
+  void setInputLogFiltersInternal(
+      const json &j); // Still private, called by loadPersistence
 
 private:
   void loop();
   bool setupDevices();
   bool setupUinput();
-  void processEvent(struct input_event &ev, bool isKeyboard, bool skipMacros, const std::string& devicePath);
+  void processEvent(struct input_event &ev, bool isKeyboard, bool skipMacros,
+                    const std::string &devicePath);
   void emitSequence(const std::vector<std::pair<uint16_t, int32_t>> &sequence);
   std::optional<GKey> detectGKey(const struct input_event &ev);
   void executeKeyAction(const KeyAction &action);
+  bool isKeyboardOnlyMacro(const KeyAction &action) const;
+  void releaseAllPressedKeys();
+  std::string formatEvent(const struct input_event &ev, bool isKeyboard,
+                          const std::string &devicePath) const;
   void initializeAppMacros();
   void triggerChromeChatGPTMacro();
 
@@ -159,11 +170,12 @@ private:
   std::thread thread_;
   std::atomic<bool> running_{false};
   std::set<uint16_t> pressedKeys_; // To track currently pressed keys
-  std::atomic<bool> pendingGrab_{false}; // True if grab is desired but waiting for keys to be released
-  std::atomic<bool> monitoringMode_{false}; // True if devices are open but not grabbed
-  bool ctrlDown_ = false; // Track LeftCtrl state for macros
+  std::atomic<bool> pendingGrab_{
+      false}; // True if grab is desired but waiting for keys to be released
+  std::atomic<bool> monitoringMode_{
+      false};                  // True if devices are open but not grabbed
+  bool ctrlDown_ = false;      // Track LeftCtrl state for macros
   bool numLockActive_ = false; // NEW: Track NumLock state to disable macros
-
 
   // Thread safety and async flow
   std::mutex uinputMutex_;

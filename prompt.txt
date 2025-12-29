@@ -1,0 +1,15 @@
+filtering device events (keyboard/mouse/etc.)
+[EVENTS...] 
+The print variable governs what events to print.
+if empty print all events
+This is mostly useful for debugging and for discovering what certain events are named.
+For example, the following filter will print key b events
+key b 0
+key b 1
+key b 2
+For example, @foo will only print events that have domain foo, domain is the id of the input source for example "Corsair CORSAIR K100 RGB Optical-Mechanical Gaming Keyboard" or we can reassign to a custom name like foo.
+If no filter is specified, all events are printed.
+Format
+The format should be printed like so:
+key:a:1@/dev/input/by-id/keyboard
+ 

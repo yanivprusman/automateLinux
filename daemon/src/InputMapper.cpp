@@ -15,6 +15,7 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include <regex> // For devicePathRegex matching
 
 using namespace std;
 
@@ -50,6 +51,21 @@ void InputMapper::loadPersistence() {
       logToFile("Loaded custom event filters from DB", LOG_CORE);
     } catch (...) {
       logToFile("Failed to parse saved filters from DB", LOG_CORE);
+    }
+  }
+
+  // Load Input Log Filters from DB
+  string savedInputLogFilters = kvTable.get("custom_input_log_filters");
+  if (!savedInputLogFilters.empty()) {
+    try {
+      json j = json::parse(savedInputLogFilters);
+      {
+        std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
+        setInputLogFiltersInternal(j);
+      }
+      logToFile("Loaded custom input log filters from DB", LOG_CORE);
+    } catch (...) {
+      logToFile("Failed to parse saved input log filters from DB", LOG_CORE);
     }
   }
 }
@@ -92,14 +108,12 @@ void InputMapper::stop() {
     uinputDev_ = nullptr;
   }
   if (keyboardDev_) {
-    // libevdev_grab(keyboardDev_, LIBEVDEV_UNGRAB); // Removed, handled by
-    // ungrabDevices()
+    libevdev_grab(keyboardDev_, LIBEVDEV_UNGRAB);
     libevdev_free(keyboardDev_);
     keyboardDev_ = nullptr;
   }
   if (mouseDev_) {
-    // libevdev_grab(mouseDev_, LIBEVDEV_UNGRAB); // Removed, handled by
-    // ungrabDevices()
+    libevdev_grab(mouseDev_, LIBEVDEV_UNGRAB);
     libevdev_free(mouseDev_);
     mouseDev_ = nullptr;
   }
@@ -243,6 +257,7 @@ json InputMapper::getMacrosJson() {
         k["code"] = std::get<0>(tk);
         k["state"] = std::get<1>(tk);
         k["suppress"] = std::get<2>(tk);
+        k["ignoreRepeat"] = std::get<3>(tk);
         triggerKeys.push_back(k);
       }
       trigger["keys"] = triggerKeys;
@@ -305,7 +320,8 @@ void InputMapper::setMacrosFromJsonInternal(const json &j) {
             uint16_t code = tk[0].get<uint16_t>();
             uint8_t state = tk[1].get<uint8_t>();
             bool suppress = tk.size() >= 3 ? tk[2].get<bool>() : false;
-            trigger.keyCodes.push_back({code, state, suppress});
+            bool ignoreRepeat = tk.size() >= 4 ? tk[3].get<bool>() : false; // NEW: parse ignoreRepeat
+            trigger.keyCodes.push_back({code, state, suppress, ignoreRepeat});
             if (suppress)
               trigger.hasSuppressedKeys = true;
           }
@@ -365,6 +381,47 @@ void InputMapper::setEventFilters(const json &j) {
                 std::to_string(filteredKeyCodes_.size()) + ")",
             LOG_CORE);
 }
+
+// =========================================================================
+// Granular Input Log Filters Implementation
+// =========================================================================
+
+json InputMapper::getInputLogFiltersJson() {
+    std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
+    json j = json::array();
+    for (const auto& filter : inputLogFilters_) {
+        json filter_j;
+        if (filter.type.has_value()) filter_j["type"] = filter.type.value();
+        if (filter.code.has_value()) filter_j["code"] = filter.code.value();
+        if (filter.value.has_value()) filter_j["value"] = filter.value.value();
+        if (filter.devicePathRegex.has_value()) filter_j["devicePathRegex"] = filter.devicePathRegex.value();
+        if (filter.isKeyboard.has_value()) filter_j["isKeyboard"] = filter.isKeyboard.value();
+        filter_j["actionShow"] = filter.actionShow;
+        j.push_back(filter_j);
+    }
+    return j;
+}
+
+void InputMapper::setInputLogFiltersInternal(const json &j) {
+    inputLogFilters_.clear();
+    if (j.is_array()) {
+        for (const auto& item_j : j) {
+            InputLogFilter filter;
+            if (item_j.contains("type")) filter.type = item_j["type"].get<uint16_t>();
+            if (item_j.contains("code")) filter.code = item_j["code"].get<uint16_t>();
+            if (item_j.contains("value")) filter.value = item_j["value"].get<int32_t>();
+            if (item_j.contains("devicePathRegex")) filter.devicePathRegex = item_j["devicePathRegex"].get<std::string>();
+            if (item_j.contains("isKeyboard")) filter.isKeyboard = item_j["isKeyboard"].get<bool>();
+            if (item_j.contains("actionShow")) filter.actionShow = item_j["actionShow"].get<bool>();
+            else filter.actionShow = true; // Default to show if not specified
+
+            inputLogFilters_.push_back(filter);
+        }
+        // Sort by specificity
+        std::sort(inputLogFilters_.begin(), inputLogFilters_.end());
+    }
+}
+
 
 void InputMapper::loop() {
   struct pollfd fds[2];
@@ -514,12 +571,42 @@ void InputMapper::setContext(AppType appType, const std::string &url,
 }
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
-                               bool skipMacros, const std::string &devicePath) {
-  logToFile("IN: Type=" + std::to_string(ev.type) +
-                ", Code=" + std::to_string(ev.code) +
-                ", Value=" + std::to_string(ev.value) +
-                ", Method=" + (monitoringMode_ ? "MONITOR" : "GRABBED"),
-            LOG_INPUT_DEBUG);
+                               bool skipMacros,
+                               const std::string &devicePath) {
+  bool shouldLogThisEvent = true; // Default to log
+  std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
+
+  // Evaluate filters from most specific to least specific
+  for (const auto &filter : inputLogFilters_) {
+    bool type_match = !filter.type.has_value() || (filter.type.value() == ev.type);
+    bool code_match = !filter.code.has_value() || (filter.code.value() == ev.code);
+    bool value_match = !filter.value.has_value() || (filter.value.value() == ev.value);
+    bool isKeyboard_match = !filter.isKeyboard.has_value() || (filter.isKeyboard.value() == isKeyboard);
+
+    bool devicePath_match = true;
+    if (filter.devicePathRegex.has_value()) {
+        try {
+            std::regex re(filter.devicePathRegex.value());
+            devicePath_match = std::regex_search(devicePath, re);
+        } catch (const std::regex_error& e) {
+            logToFile("InputMapper: Invalid regex in log filter: " + filter.devicePathRegex.value(), LOG_CORE);
+            devicePath_match = false; // Treat as no match if regex is invalid
+        }
+    }
+
+    if (type_match && code_match && value_match && isKeyboard_match && devicePath_match) {
+        shouldLogThisEvent = filter.actionShow;
+        break; // First match determines the action
+    }
+  }
+
+  if (shouldLogThisEvent) {
+    logToFile("IN: Type=" + std::to_string(ev.type) +
+                  ", Code=" + std::to_string(ev.code) +
+                  ", Value=" + std::to_string(ev.value) +
+                  ", Method=" + (monitoringMode_ ? "MONITOR" : "GRABBED"),
+              LOG_INPUT_DEBUG);
+  }
 
   // NEW KEY TRACKING LOGIC (Must run before monitoring check!)
   if (ev.type == EV_KEY) {
@@ -544,18 +631,22 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
   // we do NOT emit events to uinput to avoid double-input.
   // Grabbing only happens once ALL keys are released.
   if (monitoringMode_) {
-    logToFile("SKIPPED (monitoring): Type=" + std::to_string(ev.type) +
-                  " Code=" + std::to_string(ev.code),
-              LOG_INPUT_DEBUG);
+    if (shouldLogThisEvent) { // Only log if filter allows
+      logToFile("SKIPPED (monitoring): Type=" + std::to_string(ev.type) +
+                    " Code=" + std::to_string(ev.code),
+                LOG_INPUT_DEBUG);
+    }
     return;
   }
 
-  logToFile("DEBUG_EV: Type=" + std::to_string(ev.type) +
-                ", Code=" + std::to_string(ev.code) +
-                ", Value=" + std::to_string(ev.value) +
-                ", isKBD=" + std::to_string(isKeyboard) + ", skipMacros=" +
-                std::to_string(skipMacros) + ", Device=" + devicePath,
-            LOG_MACROS);
+  if (shouldLogThisEvent) { // Only log if filter allows
+    logToFile("DEBUG_EV: Type=" + std::to_string(ev.type) +
+                  ", Code=" + std::to_string(ev.code) +
+                  ", Value=" + std::to_string(ev.value) +
+                  ", isKBD=" + std::to_string(isKeyboard) + ", skipMacros=" +
+                  std::to_string(skipMacros) + ", Device=" + devicePath,
+              LOG_MACROS);
+  }
 
   // Key tracking logic moved up
 
@@ -637,6 +728,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
             uint16_t expectedCode = std::get<0>(expectedKeyTuple);
             uint8_t expectedState = std::get<1>(expectedKeyTuple);
             bool shouldSuppress = std::get<2>(expectedKeyTuple);
+            bool ignoreRepeat = std::get<3>(expectedKeyTuple); // NEW: Get ignoreRepeat flag
 
             if (expectedCode == ev.code &&
                 ((expectedState == 1 && (ev.value == 1 || ev.value == 2)) ||
@@ -706,10 +798,16 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                   if (wasPreviouslyMatchedKey) {
                     shouldBreak = true;
                   }
+                } else if (ev.value == 2) { // A key repeat
+                  if (ignoreRepeat) {
+                    // This repeat is explicitly ignored for breaking the combo.
+                    shouldBreak = false;
+                  } else {
+                    // If ignoreRepeat is false, then this repeat breaks the
+                    // combo.
+                    shouldBreak = true;
+                  }
                 }
-                // Key repeats (ev.value == 2) do not break a combo if they are
-                // not the next expected step.
-              } else {
                 // Non-key events (e.g., EV_REL, EV_ABS) currently do not break
                 // combos. This might need refinement for more complex
                 // scenarios, but for now, keep it simple.
@@ -898,7 +996,7 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                 LOG_INPUT_DEBUG);
     }
   }
-} // This is the missing brace for processEvent
+} // This is the final closing brace for processEvent.
 
 std::optional<GKey> InputMapper::detectGKey(const struct input_event &ev) {
   if (ev.type != EV_KEY) {

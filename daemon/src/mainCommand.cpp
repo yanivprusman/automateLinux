@@ -515,7 +515,7 @@ CmdResult handleGetKeyboard(const json &) {
              string("\n"));
 }
 
-CmdResult handleTestIntegrity(const json &command) {
+CmdResult handleTestIntegrity(const json &) {
   // Execute the loopback test script interactively
   FILE *pipe = popen(
       "python3 /home/yaniv/coding/automateLinux/test-input-loopback.py", "r");

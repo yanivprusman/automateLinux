@@ -28,6 +28,44 @@ enum class GKey { G1 = 1, G2 = 2, G3 = 3, G4 = 4, G5 = 5, G6 = 6 };
 #define G5_VIRTUAL 1005
 #define G6_VIRTUAL 1006
 
+// Structure to define a granular input log filter
+struct InputLogFilter {
+  std::optional<uint16_t> type;
+  std::optional<uint16_t> code;
+  std::optional<int32_t> value;
+  std::optional<std::string> devicePathRegex;
+  std::optional<bool> isKeyboard;
+  bool actionShow; // true to show, false to hide
+
+  // Comparison operator for use in std::set or std::sort
+  // More specific filters should come before less specific ones.
+  bool operator<(const InputLogFilter& other) const {
+      // Prioritize by number of defined fields (more defined = more specific)
+      int this_specificity = (type.has_value() ? 1 : 0) +
+                             (code.has_value() ? 1 : 0) +
+                             (value.has_value() ? 1 : 0) +
+                             (devicePathRegex.has_value() ? 1 : 0) +
+                             (isKeyboard.has_value() ? 1 : 0);
+      int other_specificity = (other.type.has_value() ? 1 : 0) +
+                              (other.code.has_value() ? 1 : 0) +
+                              (other.value.has_value() ? 1 : 0) +
+                              (other.devicePathRegex.has_value() ? 1 : 0) +
+                              (other.isKeyboard.has_value() ? 1 : 0);
+
+      if (this_specificity != other_specificity) {
+          return this_specificity > other_specificity; // Higher specificity comes first
+      }
+
+      // Fallback to lexicographical comparison for consistent ordering
+      if (type != other.type) return type < other.type;
+      if (code != other.code) return code < other.code;
+      if (value != other.value) return value < other.value;
+      if (devicePathRegex != other.devicePathRegex) return devicePathRegex < other.devicePathRegex;
+      if (isKeyboard != other.isKeyboard) return isKeyboard < other.isKeyboard;
+      return actionShow < other.actionShow;
+  }
+};
+
 // Represents the state of a key sequence combo during matching
 struct ComboState {
   size_t nextKeyIndex =
@@ -41,9 +79,9 @@ struct ComboState {
 // - state: 1=press, 0=release
 // - suppress: true=withhold this key until combo resolves
 struct KeyTrigger {
-  std::vector<std::tuple<uint16_t, uint8_t, bool>>
+  std::vector<std::tuple<uint16_t, uint8_t, bool, bool>>
       keyCodes; // Sequence of (code, state: 1=press/0=release, suppress:
-                // true/false)
+                // true/false, ignoreRepeat: true/false)
   bool hasSuppressedKeys = false; // Cached check for efficiency
 };
 
@@ -136,6 +174,12 @@ private:
   // Event filtering state (granular logging)
   std::set<uint16_t> filteredKeyCodes_;
   std::mutex filtersMutex_;
+
+  // Granular Input Log Filters
+  std::vector<InputLogFilter> inputLogFilters_;
+  std::mutex inputLogFiltersMutex_;
+  void setInputLogFiltersInternal(const json &j);
+  json getInputLogFiltersJson();
 
   // Combo sequence tracking (per-app)
   std::map<AppType, std::map<size_t, ComboState>>

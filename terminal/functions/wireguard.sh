@@ -1,125 +1,46 @@
-catWireGuard() {
+# Complete WireGuard Proxy Setup - Run this once from your PC
+setupWireGuardProxyFromScratch() {
     local SERVER_USER="root"
     local SERVER_IP="31.133.102.195"
     
     echo "=========================================="
-    echo "  WIREGUARD & NGINX CONFIGURATION DUMP"
+    echo "  COMPLETE WIREGUARD PROXY SETUP"
     echo "=========================================="
     echo
     
-    echo "===== LOCAL PC FILES ====="
-    echo
+    # STEP 1: Fix WireGuard keys to match reality
+    echo "🔑 Step 1: Syncing WireGuard keys..."
     
-    echo "--- /etc/wireguard/wg0.conf ---"
-    if sudo cat /etc/wireguard/wg0.conf 2>/dev/null; then
-        echo
-    else
-        echo "[File not found or no permission]"
-        echo
+    local SERVER_ACTUAL_KEY=$(ssh "$SERVER_USER@$SERVER_IP" "wg show wg0 public-key 2>/dev/null")
+    
+    if [ -z "$SERVER_ACTUAL_KEY" ]; then
+        echo "   Starting WireGuard on server first..."
+        ssh "$SERVER_USER@$SERVER_IP" "wg-quick up wg0 2>/dev/null"
+        sleep 2
+        SERVER_ACTUAL_KEY=$(ssh "$SERVER_USER@$SERVER_IP" "wg show wg0 public-key")
     fi
     
-    echo "--- /etc/nginx/sites-available/default ---"
-    if sudo cat /etc/nginx/sites-available/default 2>/dev/null; then
-        echo
-    else
-        echo "[File not found or Nginx not installed]"
-        echo
-    fi
+    echo "   Server's public key: $SERVER_ACTUAL_KEY"
     
-    echo "--- /etc/nginx/sites-available/pc-proxy ---"
-    if sudo cat /etc/nginx/sites-available/pc-proxy 2>/dev/null; then
-        echo
-    else
-        echo "[File not found]"
-        echo
-    fi
+    # Update PC config with server's actual key
+    sudo sed -i "/^\[Peer\]/,/^$/ s|^PublicKey = .*|PublicKey = $SERVER_ACTUAL_KEY|" /etc/wireguard/wg0.conf
     
-    echo "--- /etc/nginx/sites-enabled/ (symlinks) ---"
-    if sudo ls -la /etc/nginx/sites-enabled/ 2>/dev/null; then
-        echo
-    else
-        echo "[Directory not found]"
-        echo
-    fi
+    # Restart WireGuard on PC
+    sudo wg-quick down wg0 2>/dev/null
+    sudo wg-quick up wg0
     
-    echo "=========================================="
-    echo "===== SERVER ($SERVER_IP) FILES ====="
-    echo "=========================================="
+    echo "   ✓ Keys synced"
     echo
     
-    if ssh -o BatchMode=yes -o ConnectTimeout=10 "$SERVER_USER@$SERVER_IP" bash << 'EOF'
-echo "--- /etc/wireguard/wg0.conf ---"
-if cat /etc/wireguard/wg0.conf 2>/dev/null; then
-    echo
-else
-    echo "[File not found or no permission]"
-    echo
-fi
-
-echo "--- /etc/nginx/sites-available/default ---"
-if cat /etc/nginx/sites-available/default 2>/dev/null; then
-    echo
-else
-    echo "[File not found or Nginx not installed]"
-    echo
-fi
-
-echo "--- /etc/nginx/sites-available/pc-proxy ---"
-if cat /etc/nginx/sites-available/pc-proxy 2>/dev/null; then
-    echo
-else
-    echo "[File not found]"
-    echo
-fi
-
-echo "--- /etc/nginx/sites-enabled/ (symlinks) ---"
-if ls -la /etc/nginx/sites-enabled/ 2>/dev/null; then
-    echo
-else
-    echo "[Directory not found]"
-    echo
-fi
-
-echo "--- Nginx status ---"
-systemctl status nginx --no-pager -l 2>/dev/null || echo "[Nginx not running or not installed]"
-echo
-
-echo "--- WireGuard status ---"
-wg show 2>/dev/null || echo "[WireGuard not active]"
-echo
-EOF
-    then
-        echo
-        echo "=========================================="
-        echo "  DUMP COMPLETE"
-        echo "=========================================="
-    else
-        echo
-        echo "[ERROR: Could not connect to server]"
-        echo "Check SSH connection or add your key with: ssh-copy-id $SERVER_USER@$SERVER_IP"
-    fi
-}
-
-setupWireGuardProxy() {
-    local SERVER_USER="root"
-    local SERVER_IP="31.133.102.195"
-    local TEST_DIR="$HOME/wireguard-test-site"
-    local SERVER_PORT="8080"
-    local PC_PORT="80"
+    # STEP 2: Create and serve test page
+    echo "📄 Step 2: Setting up web server on PC..."
     
-    echo "=========================================="
-    echo "  WIREGUARD PROXY SETUP"
-    echo "=========================================="
-    echo
-    
-    # Step 1: Create test site on PC
-    echo "📁 Creating test site on PC..."
-    mkdir -p "$TEST_DIR"
-    cat > "$TEST_DIR/index.html" << 'HTML'
+    mkdir -p ~/wireguard-test-site
+    cat > ~/wireguard-test-site/index.html << 'HTML'
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WireGuard Test Site</title>
+    <title>WireGuard Working!</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -135,18 +56,16 @@ setupWireGuardProxy() {
             border-radius: 10px;
             backdrop-filter: blur(10px);
         }
-        h1 { margin-top: 0; }
-        .success { color: #00ff00; font-weight: bold; }
+        .success { color: #00ff00; font-weight: bold; font-size: 1.2em; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎉 WireGuard Proxy Working!</h1>
-        <p class="success">✓ Connection successful through WireGuard tunnel</p>
-        <p>This page is being served from your PC at <code>10.0.0.2</code></p>
-        <p>You're accessing it via your Kamatera server at <code>31.133.102.195:8080</code></p>
-        <hr>
-        <p><strong>Server time:</strong> <span id="time"></span></p>
+        <h1>🎉 Success!</h1>
+        <p class="success">✓ WireGuard proxy is working!</p>
+        <p>This page is served from your PC (10.0.0.2)</p>
+        <p>Via your server (31.133.102.195:8080)</p>
+        <p><strong>Time:</strong> <span id="time"></span></p>
         <script>
             setInterval(() => {
                 document.getElementById('time').textContent = new Date().toLocaleString();
@@ -156,125 +75,105 @@ setupWireGuardProxy() {
 </body>
 </html>
 HTML
-    echo "✓ Test site created at $TEST_DIR"
-    echo
     
-    # Step 2: Check if Nginx is installed on PC
-    echo "🔍 Checking for Nginx on PC..."
-    if command -v nginx &> /dev/null; then
-        echo "✓ Nginx found on PC"
-        
-        # Configure Nginx on PC
-        echo "⚙️  Configuring Nginx on PC..."
-        sudo tee /etc/nginx/sites-available/wireguard-test > /dev/null << NGINX
+    # Configure Nginx on PC
+    sudo tee /etc/nginx/sites-available/wireguard-test > /dev/null << 'NGINX'
 server {
-    listen $PC_PORT;
-    listen [::]:$PC_PORT;
-    
-    root $TEST_DIR;
+    listen 80;
+    listen [::]:80;
+    root /home/$USER/wireguard-test-site;
     index index.html;
-    
     server_name _;
-    
     location / {
-        try_files \$uri \$uri/ =404;
+        try_files $uri $uri/ =404;
     }
 }
 NGINX
-        
-        # Enable the site
-        sudo ln -sf /etc/nginx/sites-available/wireguard-test /etc/nginx/sites-enabled/wireguard-test
-        
-        # Test and reload
-        if sudo nginx -t 2>&1; then
-            sudo systemctl reload nginx
-            echo "✓ Nginx configured and reloaded"
-            PC_WEBSERVER="nginx"
-        else
-            echo "⚠️  Nginx configuration error, falling back to Python"
-            PC_WEBSERVER="python"
-        fi
-    else
-        echo "⚠️  Nginx not found, will use Python HTTP server"
-        PC_WEBSERVER="python"
-    fi
+    
+    sudo sed -i "s|\$USER|$USER|g" /etc/nginx/sites-available/wireguard-test
+    sudo ln -sf /etc/nginx/sites-available/wireguard-test /etc/nginx/sites-enabled/wireguard-test
+    sudo nginx -t && sudo systemctl reload nginx
+    
+    echo "   ✓ Web server configured"
     echo
     
-    # Step 3: Setup server-side proxy
-    echo "🌐 Setting up reverse proxy on server..."
+    # STEP 3: Setup reverse proxy on server
+    echo "🌐 Step 3: Setting up reverse proxy on server..."
     
-    if ssh "$SERVER_USER@$SERVER_IP" bash << EOF
-# Create pc-proxy config
+    ssh "$SERVER_USER@$SERVER_IP" bash << 'EOF'
 cat > /etc/nginx/sites-available/pc-proxy << 'PROXY'
 server {
-    listen $SERVER_PORT;
-    listen [::]:$SERVER_PORT;
+    listen 8080;
+    listen [::]:8080;
     
     location / {
-        proxy_pass http://10.0.0.2:$PC_PORT;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        
-        # Timeout settings
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
+        proxy_pass http://10.0.0.2:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_connect_timeout 10s;
+        proxy_send_timeout 10s;
+        proxy_read_timeout 10s;
     }
 }
 PROXY
 
-# Enable the site
 ln -sf /etc/nginx/sites-available/pc-proxy /etc/nginx/sites-enabled/pc-proxy
-
-# Test and reload
-if nginx -t 2>&1; then
-    systemctl reload nginx
-    echo "✓ Server Nginx configured and reloaded"
-    exit 0
-else
-    echo "✗ Server Nginx configuration error"
-    exit 1
-fi
+nginx -t && systemctl reload nginx
 EOF
-    then
-        echo "✓ Server configuration complete"
-    else
-        echo "✗ Failed to configure server"
-        return 1
-    fi
+    
+    echo "   ✓ Reverse proxy configured"
     echo
     
-    # Step 4: Start Python server if needed
-    if [ "$PC_WEBSERVER" = "python" ]; then
-        echo "🐍 Starting Python HTTP server on port $PC_PORT..."
-        echo "   (Press Ctrl+C to stop when done testing)"
+    # STEP 4: Test everything
+    echo "🧪 Step 4: Testing connection..."
+    sleep 2
+    
+    if curl -s --max-time 5 http://$SERVER_IP:8080 | grep -q "Success"; then
         echo
-        cd "$TEST_DIR"
-        sudo python3 -m http.server $PC_PORT
+        echo "=========================================="
+        echo "   ✅ SUCCESS! EVERYTHING WORKS!"
+        echo "=========================================="
+        echo
+        echo "🌍 Access your PC from anywhere:"
+        echo "   http://$SERVER_IP:8080"
+        echo
+        echo "Test it: curl http://$SERVER_IP:8080"
+        echo
+    else
+        echo "   ⚠️  Connection test failed"
+        echo
+        echo "   Run diagnostics: testWireGuardProxy"
+    fi
+}
+
+# Quick test function
+testWireGuardProxy() {
+    echo "Testing WireGuard connection..."
+    echo
+    
+    if ping -c 2 -W 2 10.0.0.1 &>/dev/null; then
+        echo "✓ PC can reach server (10.0.0.1)"
+    else
+        echo "✗ PC cannot reach server"
     fi
     
-    # Step 5: Test the connection
-    echo "=========================================="
-    echo "  SETUP COMPLETE!"
-    echo "=========================================="
-    echo
-    echo "📍 Access your PC from anywhere at:"
-    echo "   http://$SERVER_IP:$SERVER_PORT"
-    echo
-    echo "🧪 Test it now:"
-    echo "   curl http://$SERVER_IP:$SERVER_PORT"
-    echo
-    
-    if [ "$PC_WEBSERVER" = "nginx" ]; then
-        echo "✓ Using Nginx (will run in background)"
-        echo
-        echo "To stop: sudo systemctl stop nginx"
-        echo "To restart: sudo systemctl restart nginx"
+    if ssh root@31.133.102.195 "ping -c 2 -W 2 10.0.0.2" &>/dev/null; then
+        echo "✓ Server can reach PC (10.0.0.2)"
     else
-        echo "⚠️  Python server running in foreground"
-        echo "   Keep this terminal open for testing"
-        echo "   Press Ctrl+C when done"
+        echo "✗ Server cannot reach PC"
+    fi
+    
+    echo
+    echo "Testing web access..."
+    
+    if curl -s --max-time 5 http://31.133.102.195:8080 | head -n 1; then
+        echo
+        echo "✅ Web proxy is working!"
+        echo "Access at: http://31.133.102.195:8080"
+    else
+        echo "✗ Web proxy failed"
+        echo
+        echo "Check: sudo wg show"
+        echo "Check: sudo systemctl status nginx"
     fi
 }

@@ -110,6 +110,7 @@ public:
   void onFocusAck();
   bool isRunning() const { return running_; }
   void setPendingGrab(bool value); // NEW PUBLIC SETTER
+  void setNumLockState(bool active); // NEW PUBLIC SETTER for NumLock state
 
   json getMacrosJson();
   json getEventFiltersJson();
@@ -124,6 +125,17 @@ private:
   void setEventFiltersInternal(const json &j);
   void grabDevices();   // New: performs the libevdev_grab
   void ungrabDevices(); // New: performs the libevdev_ungrab
+
+public: // Granular Input Log Filters - Public interface
+  json getInputLogFiltersJson();
+  void addInputLogFilter(const InputLogFilter &filter);
+  void removeInputLogFilter(const InputLogFilter &filter);
+  void clearInputLogFilters();
+
+private: // Granular Input Log Filters - Private implementation details
+  std::vector<InputLogFilter> inputLogFilters_;
+  std::mutex inputLogFiltersMutex_;
+  void setInputLogFiltersInternal(const json &j); // Still private, called by loadPersistence
 
 private:
   void loop();
@@ -150,6 +162,8 @@ private:
   std::atomic<bool> pendingGrab_{false}; // True if grab is desired but waiting for keys to be released
   std::atomic<bool> monitoringMode_{false}; // True if devices are open but not grabbed
   bool ctrlDown_ = false; // Track LeftCtrl state for macros
+  bool numLockActive_ = false; // NEW: Track NumLock state to disable macros
+
 
   // Thread safety and async flow
   std::mutex uinputMutex_;
@@ -174,12 +188,6 @@ private:
   // Event filtering state (granular logging)
   std::set<uint16_t> filteredKeyCodes_;
   std::mutex filtersMutex_;
-
-  // Granular Input Log Filters
-  std::vector<InputLogFilter> inputLogFilters_;
-  std::mutex inputLogFiltersMutex_;
-  void setInputLogFiltersInternal(const json &j);
-  json getInputLogFiltersJson();
 
   // Combo sequence tracking (per-app)
   std::map<AppType, std::map<size_t, ComboState>>

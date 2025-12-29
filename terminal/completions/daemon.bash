@@ -8,7 +8,7 @@ _daemon_completion() {
     
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters"
     }
 
     # Find the real command word and previous word, accounting for 'send'
@@ -59,6 +59,10 @@ _daemon_completion() {
     command_args[getSocketPath]=""
     command_args[activeWindowChanged]=""
     command_args[help]="--help"
+    command_args[addLogFilter]="--type --code --value --devicePathRegex --isKeyboard --action"
+    command_args[removeLogFilter]="--type --code --value --devicePathRegex --isKeyboard"
+    command_args[listLogFilters]=""
+    command_args[clearLogFilters]=""
 
     # Define possible values for specific arguments
     declare -A arg_values
@@ -71,6 +75,12 @@ _daemon_completion() {
     arg_values[--key]="" # Can be dynamically fetched from daemon
     arg_values[--value]=""
     arg_values[--prefix]=""
+    arg_values[--action]="show hide"
+    arg_values[--isKeyboard]="true false"
+    arg_values[--type]="0 1 2 3 4 5 17 20 21" # Common EV_ types for now
+    arg_values[--code]="" # Can be dynamically fetched or extensive, leave blank for now
+    arg_values[--value]="" # Leave blank for now
+    arg_values[--devicePathRegex]="" # Leave blank for now
 
 
     if [[ "${COMP_WORDS[1]}" == "send" ]]; then

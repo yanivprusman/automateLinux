@@ -67,6 +67,11 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_TEST_INTEGRITY, {}),
     CommandSignature(COMMAND_SIMULATE_INPUT,
                      {COMMAND_ARG_TYPE, COMMAND_ARG_CODE, COMMAND_ARG_VALUE}),
+    CommandSignature(COMMAND_ADD_LOG_FILTER, {COMMAND_ARG_ACTION}),
+    CommandSignature(COMMAND_REMOVE_LOG_FILTER, {}),
+    CommandSignature(COMMAND_LIST_LOG_FILTERS, {}),
+    CommandSignature(COMMAND_CLEAR_LOG_FILTERS, {}),
+
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -196,10 +201,17 @@ static const string HELP_MESSAGE =
     "switching on window change.\n"
     "  getDir                  Get a daemon directory path by name (base, "
     "data, mappings).\n"
+    "  simulateInput           Simulate an input event (type, code, value).\n"
+    "  addLogFilter            Add a granular filter for input event logging. "
+                                "Args: --type --code --value --devicePathRegex --isKeyboard --action (show/hide).\n"
+    "  removeLogFilter         Remove a granular filter for input event logging. "
+                                "Args: --type --code --value --devicePathRegex --isKeyboard.\n"
+    "  listLogFilters          List all active granular log filters.\n"
+    "  clearLogFilters         Clear all granular log filters.\n\n"
+    "  getDir                  Get a daemon directory path by name (base, "
+    "data, mappings).\n"
     "  getFile                 Get file path by name from data or mapping "
     "directories.\n\n"
-    "  getDir                  Get a daemon directory path by name (base, "
-    "data, mappings).\n\n"
     "Options:\n"
     "  --help                  Display this help message.\n"
     "  --json                  Output results in JSON format.\n\n"
@@ -570,6 +582,68 @@ CmdResult handleSimulateInput(const json &command) {
   return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
 
+CmdResult handleAddLogFilter(const json &command) {
+  InputLogFilter filter;
+  if (command.contains(COMMAND_ARG_TYPE)) filter.type = command[COMMAND_ARG_TYPE].get<uint16_t>();
+  if (command.contains(COMMAND_ARG_CODE)) filter.code = command[COMMAND_ARG_CODE].get<uint16_t>();
+  if (command.contains(COMMAND_ARG_VALUE)) filter.value = command[COMMAND_ARG_VALUE].get<int32_t>();
+  if (command.contains(COMMAND_ARG_DEVICE_PATH_REGEX)) filter.devicePathRegex = command[COMMAND_ARG_DEVICE_PATH_REGEX].get<std::string>();
+
+  if (command.contains(COMMAND_ARG_IS_KEYBOARD)) {
+    auto val = command[COMMAND_ARG_IS_KEYBOARD];
+    if (val.is_string()) {
+        filter.isKeyboard = (val.get<string>() == COMMAND_VALUE_TRUE);
+    } else if (val.is_boolean()) {
+        filter.isKeyboard = val.get<bool>();
+    } else {
+        return CmdResult(1, "Invalid value type for --isKeyboard.\n");
+    }
+  }
+
+  if (command.contains(COMMAND_ARG_ACTION)) {
+      filter.actionShow = (command[COMMAND_ARG_ACTION].get<string>() == "show");
+  } else {
+      filter.actionShow = true; // Default to show if action not specified
+  }
+
+  KeyboardManager::mapper.addInputLogFilter(filter);
+
+  return CmdResult(0, "Log filter added\n");
+}
+
+CmdResult handleRemoveLogFilter(const json &command) {
+  InputLogFilter filter;
+  if (command.contains(COMMAND_ARG_TYPE)) filter.type = command[COMMAND_ARG_TYPE].get<uint16_t>();
+  if (command.contains(COMMAND_ARG_CODE)) filter.code = command[COMMAND_ARG_CODE].get<uint16_t>();
+  if (command.contains(COMMAND_ARG_VALUE)) filter.value = command[COMMAND_ARG_VALUE].get<int32_t>();
+  if (command.contains(COMMAND_ARG_DEVICE_PATH_REGEX)) filter.devicePathRegex = command[COMMAND_ARG_DEVICE_PATH_REGEX].get<std::string>();
+
+  if (command.contains(COMMAND_ARG_IS_KEYBOARD)) {
+    auto val = command[COMMAND_ARG_IS_KEYBOARD];
+    if (val.is_string()) {
+        filter.isKeyboard = (val.get<string>() == COMMAND_VALUE_TRUE);
+    } else if (val.is_boolean()) {
+        filter.isKeyboard = val.get<bool>();
+    } else {
+        return CmdResult(1, "Invalid value type for --isKeyboard.\n");
+    }
+  }
+  filter.actionShow = (command.contains(COMMAND_ARG_ACTION) && command[COMMAND_ARG_ACTION].get<string>() == "show"); // Action doesn't matter for removal match, but include for full filter construction
+
+  KeyboardManager::mapper.removeInputLogFilter(filter);
+
+  return CmdResult(0, "Log filter removed\n");
+}
+
+CmdResult handleListLogFilters(const json &) {
+  return CmdResult(0, KeyboardManager::mapper.getInputLogFiltersJson().dump() + "\n");
+}
+
+CmdResult handleClearLogFilters(const json &) {
+  KeyboardManager::mapper.clearInputLogFilters();
+  return CmdResult(0, "Log filters cleared\n");
+}
+
 typedef CmdResult (*CommandHandler)(const json &);
 
 struct CommandDispatch {
@@ -626,6 +700,11 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_REGISTER_LOG_LISTENER, handleRegisterLogListener},
     {COMMAND_TEST_INTEGRITY, handleTestIntegrity},
     {COMMAND_SIMULATE_INPUT, handleSimulateInput},
+    {COMMAND_ADD_LOG_FILTER, handleAddLogFilter},
+    {COMMAND_REMOVE_LOG_FILTER, handleRemoveLogFilter},
+    {COMMAND_LIST_LOG_FILTERS, handleListLogFilters},
+    {COMMAND_CLEAR_LOG_FILTERS, handleClearLogFilters},
+
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =

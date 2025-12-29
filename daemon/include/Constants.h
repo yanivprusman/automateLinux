@@ -82,6 +82,15 @@
 #define COMMAND_ENABLE_KEYBOARD "enableKeyboard"
 #define COMMAND_TEST_INTEGRITY "testIntegrity"
 #define COMMAND_SIMULATE_INPUT "simulateInput"
+#define COMMAND_ADD_LOG_FILTER "addLogFilter"
+#define COMMAND_REMOVE_LOG_FILTER "removeLogFilter"
+#define COMMAND_LIST_LOG_FILTERS "listLogFilters"
+#define COMMAND_CLEAR_LOG_FILTERS "clearLogFilters"
+
+#define COMMAND_ARG_DEVICE_PATH_REGEX "devicePathRegex"
+#define COMMAND_ARG_IS_KEYBOARD "isKeyboard"
+#define COMMAND_ARG_ACTION "action"
+
 #define COMMAND_ARG_TYPE "type"
 #define COMMAND_ARG_CODE "code"
 #define COMMAND_ARG_WINDOW_TITLE "windowTitle"

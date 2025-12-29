@@ -418,8 +418,64 @@ void InputMapper::setInputLogFiltersInternal(const json &j) {
             inputLogFilters_.push_back(filter);
         }
         // Sort by specificity
-        std::sort(inputLogFilters_.begin(), inputLogFilters_.end());
+        std::sort(inputLogFilters_.begin(), inputLogFilters_.end(), [](const InputLogFilter& a, const InputLogFilter& b) {
+            return a < b; // Use the overloaded operator< for sorting
+        });
     }
+}
+
+// =========================================================================
+// Granular Input Log Filters Implementation (continuation)
+// =========================================================================
+
+void InputMapper::addInputLogFilter(const InputLogFilter &filter) {
+    std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
+    // Check if an identical filter already exists to avoid duplicates
+    for (const auto& existingFilter : inputLogFilters_) {
+        if (existingFilter.type == filter.type &&
+            existingFilter.code == filter.code &&
+            existingFilter.value == filter.value &&
+            existingFilter.devicePathRegex == filter.devicePathRegex &&
+            existingFilter.isKeyboard == filter.isKeyboard &&
+            existingFilter.actionShow == filter.actionShow) {
+            logToFile("InputMapper: Identical log filter already exists. Not adding.", LOG_CORE);
+            return;
+        }
+    }
+    inputLogFilters_.push_back(filter);
+    std::sort(inputLogFilters_.begin(), inputLogFilters_.end(), [](const InputLogFilter& a, const InputLogFilter& b) {
+        return a < b; // Keep sorted by specificity
+    });
+    kvTable.upsert("custom_input_log_filters", getInputLogFiltersJson().dump());
+    logToFile("InputMapper: Added granular log filter (size: " + std::to_string(inputLogFilters_.size()) + ")", LOG_CORE);
+}
+
+void InputMapper::removeInputLogFilter(const InputLogFilter &filter) {
+    std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
+    auto it = std::remove_if(inputLogFilters_.begin(), inputLogFilters_.end(),
+                             [&](const InputLogFilter &f) {
+                                 // Match based on all fields
+                                 return f.type == filter.type &&
+                                        f.code == filter.code &&
+                                        f.value == filter.value &&
+                                        f.devicePathRegex == filter.devicePathRegex &&
+                                        f.isKeyboard == filter.isKeyboard &&
+                                        f.actionShow == filter.actionShow; // Must be an exact match for removal
+                             });
+    if (it != inputLogFilters_.end()) {
+        inputLogFilters_.erase(it, inputLogFilters_.end());
+        kvTable.upsert("custom_input_log_filters", getInputLogFiltersJson().dump());
+        logToFile("InputMapper: Removed granular log filter (size: " + std::to_string(inputLogFilters_.size()) + ")", LOG_CORE);
+    } else {
+        logToFile("InputMapper: No matching log filter found for removal.", LOG_CORE);
+    }
+}
+
+void InputMapper::clearInputLogFilters() {
+    std::lock_guard<std::mutex> lock(inputLogFiltersMutex_);
+    inputLogFilters_.clear();
+    kvTable.upsert("custom_input_log_filters", getInputLogFiltersJson().dump());
+    logToFile("InputMapper: Cleared all granular log filters.", LOG_CORE);
 }
 
 

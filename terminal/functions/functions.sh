@@ -13,3 +13,4 @@
 . $(theRealPath gemini.sh)
 . $(theRealPath evsieve.sh)
 . $(theRealPath wireguard.sh)
+. $(theRealPath test_dirhistory.sh)

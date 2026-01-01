@@ -214,9 +214,7 @@ CmdResult Terminal::_cdForward(const json &command) {
 
   if (index >= maxIndex) {
     result.status = 0;
-    result.message = "echo 'END OF HISTORY reached'; cd " +
-                     standardizePath(getDirHistoryEntry(index)) +
-                     mustEndWithNewLine;
+    result.message = string ("echo 'END OF HISTORY reached';") + mustEndWithNewLine;
     return result;
   }
 
@@ -262,8 +260,7 @@ CmdResult Terminal::_cdBackward(const json &command) {
     string currentDir = standardizePath(getDirHistoryEntry(0));
     if (currentDir.empty() || currentDir == "/")
       currentDir = standardizePath(DIR_HISTORY_DEFAULT_DIR);
-    result.message = "echo 'BEGINNING OF HISTORY reached'; cd " + currentDir +
-                     mustEndWithNewLine;
+    result.message = string("echo 'BEGINNING OF HISTORY reached'") + mustEndWithNewLine;
     return result;
   }
 

@@ -51,11 +51,36 @@ function testNavigation() {
 }
 
 function cleanupDirHistoryTest() {
+  # Clean up filesystem directories
   if [ -d "$BASE_DIR_DIRHISTORY_TEST" ]; then
     echo "Cleaning up test directories: $BASE_DIR_DIRHISTORY_TEST"
     rm -rf "$BASE_DIR_DIRHISTORY_TEST"
     echo "Cleaned up test directories."
   else
     echo "Test directories not found at $BASE_DIR_DIRHISTORY_TEST, no cleanup needed."
+  fi
+  
+  # Clean up database entries
+  echo "Cleaning up database entries for test directories..."
+  local db_script="${AUTOMATE_LINUX_DAEMON_DIR}showDb.sh"
+  if [ -f "$db_script" ]; then
+    # Use the same connection method as showDb.sh
+    local PORT=$(grep "port=" "${AUTOMATE_LINUX_DAEMON_DIR}data/mysql/conf/my.cnf" | cut -d= -f2 | head -n 1)
+    local USER="automate_user"
+    local PASSWORD="automate_password"
+    local DATABASE="automate_db"
+    
+    # Delete test entries
+    mysql -h 127.0.0.1 -P "$PORT" -u "$USER" -p"$PASSWORD" "$DATABASE" \
+          -e "DELETE FROM terminal_history WHERE path LIKE '/tmp/dirhistory_test/%'" 2>/dev/null
+    
+    local deleted_count=$?
+    if [ $deleted_count -eq 0 ]; then
+      echo "Database cleanup complete."
+    else
+      echo "Database cleanup may have failed (exit code: $deleted_count)"
+    fi
+  else
+    echo "Database script not found, skipping database cleanup."
   fi
 }

@@ -264,7 +264,7 @@ CmdResult handleShowEntriesByPrefix(const json &command) {
 CmdResult handleDeleteEntriesByPrefix(const json &command) {
   string prefix = command[COMMAND_ARG_PREFIX].get<string>();
   int rc = kvTable.deleteByPrefix(prefix);
-  if (rc == SQLITE_OK) {
+  if (rc == 1) {
     return CmdResult(0, "Entries deleted\n");
   }
   return CmdResult(1, errorDeleteFailed(prefix));
@@ -277,7 +277,7 @@ CmdResult handleShowDb(const json &) {
 CmdResult handleDeleteEntry(const json &command) {
   string key = command[COMMAND_ARG_KEY].get<string>();
   int rc = kvTable.deleteEntry(key);
-  if (rc == SQLITE_OK) {
+  if (rc == 1) {
     return CmdResult(0, "Entry deleted\n");
   }
   return CmdResult(1, errorEntryNotFound(key));
@@ -329,12 +329,10 @@ CmdResult handleUpsertEntry(const json &command) {
   string key = command[COMMAND_ARG_KEY].get<string>();
   string value = command[COMMAND_ARG_VALUE].get<string>();
   int rc = kvTable.upsert(key, value);
-  if (rc == SQLITE_OK) {
+  if (rc == 1) {
     return CmdResult(0, "Entry upserted\n");
   }
-  string errorMsg = string("Upsert failed with code ") + to_string(rc) + ": " +
-                    sqlite3_errstr(rc) + "\n";
-  return CmdResult(rc, errorMsg);
+  return CmdResult(1, "Upsert failed (check logs for details)\n");
 }
 
 CmdResult handleGetEntry(const json &command) {

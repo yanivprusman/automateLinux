@@ -14,6 +14,8 @@ public:
   static void initializeAndStartMySQL();
   static void stopMySQL();
   static sql::Connection *getConnection();
+  static void dropTable(const std::string &tableName);
+  static void emptyTable(const std::string &tableName);
 
 private:
   static int findFreePort();
@@ -27,6 +29,7 @@ private:
                                const std::string &configFile);
   static void createDatabaseAndUser(int port, const std::string &socketPath);
   static bool isServerRunning(const std::string &socketPath);
+
 
   static pid_t mysqlPid;
   static std::string mysqlSocket;

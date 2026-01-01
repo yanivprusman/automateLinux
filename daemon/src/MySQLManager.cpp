@@ -279,3 +279,41 @@ sql::Connection *MySQLManager::getConnection() {
     return nullptr;
   }
 }
+
+void MySQLManager::dropTable(const std::string &tableName) {
+  try {
+    std::unique_ptr<sql::Connection> con(getConnection());
+    if (con) {
+      std::unique_ptr<sql::Statement> stmt(con->createStatement());
+      stmt->execute("DROP TABLE IF EXISTS " + tableName);
+      logToFile("MySQLManager: Dropped table " + tableName);
+    } else {
+      logToFile("MySQLManager: Failed to get connection to drop table " +
+                    tableName,
+                0xFFFFFFFF);
+    }
+  } catch (sql::SQLException &e) {
+    logToFile("MySQLManager: Error dropping table " + tableName + ": " +
+                  std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
+void MySQLManager::emptyTable(const std::string &tableName) {
+  try {
+    std::unique_ptr<sql::Connection> con(getConnection());
+    if (con) {
+      std::unique_ptr<sql::Statement> stmt(con->createStatement());
+      stmt->execute("DELETE FROM " + tableName);
+      logToFile("MySQLManager: Emptied table " + tableName);
+    } else {
+      logToFile("MySQLManager: Failed to get connection to empty table " +
+                    tableName,
+                0xFFFFFFFF);
+    }
+  } catch (sql::SQLException &e) {
+    logToFile("MySQLManager: Error emptying table " + tableName + ": " +
+                  std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}

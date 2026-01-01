@@ -15,6 +15,7 @@
 #include <string>
 #include <thread>
 #include <tuple>
+#include "MySQLManager.h"
 
 using namespace std;
 
@@ -76,6 +77,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_REMOVE_LOG_FILTER, {}),
     CommandSignature(COMMAND_LIST_LOG_FILTERS, {}),
     CommandSignature(COMMAND_CLEAR_LOG_FILTERS, {}),
+    CommandSignature(COMMAND_EMPTY_DIR_HISTORY_TABLE, {}),
 
 };
 
@@ -585,6 +587,12 @@ CmdResult handleSimulateInput(const json &command) {
   return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
 
+CmdResult handleEmptyDirHistoryTable(const json &) {
+  MySQLManager::emptyTable("terminal_history");
+  return CmdResult(0, "terminal_history table emptied.\n");
+}
+
+
 typedef CmdResult (*CommandHandler)(const json &);
 
 struct CommandDispatch {
@@ -642,6 +650,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_REGISTER_LOG_LISTENER, handleRegisterLogListener},
     {COMMAND_TEST_INTEGRITY, handleTestIntegrity},
     {COMMAND_SIMULATE_INPUT, handleSimulateInput},
+    {COMMAND_EMPTY_DIR_HISTORY_TABLE, handleEmptyDirHistoryTable},
 
 };
 

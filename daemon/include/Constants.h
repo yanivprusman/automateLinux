@@ -88,6 +88,7 @@
 #define COMMAND_REMOVE_LOG_FILTER "removeLogFilter"
 #define COMMAND_LIST_LOG_FILTERS "listLogFilters"
 #define COMMAND_CLEAR_LOG_FILTERS "clearLogFilters"
+#define COMMAND_EMPTY_DIR_HISTORY_TABLE "emptyDirHistoryTable"
 
 #define COMMAND_ARG_DEVICE_PATH_REGEX "devicePathRegex"
 #define COMMAND_ARG_IS_KEYBOARD "isKeyboard"

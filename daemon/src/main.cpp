@@ -12,9 +12,6 @@ Directories actualDirectories;
 Directories &directories = actualDirectories;
 Files actualFiles;
 Files &files = actualFiles;
-KVTable actualKvTable;
-KVTable &kvTable = actualKvTable;
-DirHistory actualDirHistory;
 volatile int running = 1;
 int g_keyboard_fd = -1;
 std::ofstream g_logFile;
@@ -42,7 +39,6 @@ int main(int argc, char *argv[]) {
       signal(SIGTERM, signalHandler);
 
       MySQLManager::initializeAndStartMySQL();
-      KVTable::createDB();
 
       // Ensure socket directory exists
       std::filesystem::path socketDir =

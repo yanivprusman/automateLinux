@@ -125,7 +125,39 @@ void MySQLManager::createDatabaseAndUser(int port,
                   mysqlUser + "'@'localhost'");
     stmt->execute("FLUSH PRIVILEGES");
 
-    logToFile("MySQLManager: Database and user configured successfully.");
+    // Connect to the database to create tables
+    con->setSchema(mysqlDatabase);
+    std::unique_ptr<sql::Statement> tableStmt(con->createStatement());
+
+    // 1. Terminal History Table
+    tableStmt->execute("CREATE TABLE IF NOT EXISTS terminal_history ("
+                       "tty INT, "
+                       "entry_index INT, "
+                       "path TEXT NOT NULL, "
+                       "PRIMARY KEY (tty, entry_index))");
+
+    // 2. Terminal Sessions (TTY pointers)
+    tableStmt->execute("CREATE TABLE IF NOT EXISTS terminal_sessions ("
+                       "tty INT PRIMARY KEY, "
+                       "history_index INT NOT NULL)");
+
+    // 3. Automation Configs (Macros and Filters)
+    tableStmt->execute("CREATE TABLE IF NOT EXISTS automation_configs ("
+                       "config_key VARCHAR(255) PRIMARY KEY, "
+                       "config_value JSON NOT NULL)");
+
+    // 4. Device Registry
+    tableStmt->execute("CREATE TABLE IF NOT EXISTS device_registry ("
+                       "device_type VARCHAR(50) PRIMARY KEY, "
+                       "path TEXT NOT NULL)");
+
+    // 5. System Settings
+    tableStmt->execute("CREATE TABLE IF NOT EXISTS system_settings ("
+                       "setting_key VARCHAR(255) PRIMARY KEY, "
+                       "setting_value TEXT NOT NULL)");
+
+    logToFile(
+        "MySQLManager: Database, user, and tables configured successfully.");
   } catch (sql::SQLException &e) {
     logToFile("MySQLManager: Error configuring database: " +
                   std::string(e.what()),

@@ -1,4 +1,5 @@
 #include "DaemonServer.h"
+#include "DatabaseTableManagers.h"
 #include "KeyboardManager.h"
 #include "Utils.h"
 #include "common.h"
@@ -38,7 +39,7 @@ void initializeKeyboardPath() {
   string deviceName = executeCommand(KEYBOARD_DISCOVERY_CMD);
   if (!deviceName.empty()) {
     string fullPath = KEYBOARD_INPUT_PATH + deviceName;
-    kvTable.upsert(KEYBOARD_PATH_KEY, fullPath);
+    DeviceTable::setDevicePath("keyboard", fullPath);
     cerr << "Keyboard path initialized: " << fullPath << endl;
   }
 }
@@ -47,13 +48,13 @@ void initializeMousePath() {
   string eventNum = executeCommand(MOUSE_DISCOVERY_CMD);
   if (!eventNum.empty()) {
     string fullPath = MOUSE_INPUT_PATH + eventNum;
-    kvTable.upsert(MOUSE_PATH_KEY, fullPath);
+    DeviceTable::setDevicePath("mouse", fullPath);
     cerr << "Mouse path initialized: " << fullPath << endl;
   }
 }
 
 void openKeyboardDevice() {
-  string keyboard_path = kvTable.get(KEYBOARD_PATH_KEY);
+  string keyboard_path = DeviceTable::getDevicePath("keyboard");
   if (keyboard_path.empty()) {
     cerr << "ERROR: Keyboard path not set, cannot open device" << endl;
     return;
@@ -190,7 +191,7 @@ int initialize_daemon() {
   files.initialize(directories);
 
   // Restore logging state EARLY
-  string savedLogState = kvTable.get("shouldLogState");
+  string savedLogState = SettingsTable::getSetting("shouldLogState");
   if (!savedLogState.empty()) {
     try {
       shouldLog = std::stoul(savedLogState);

@@ -82,10 +82,6 @@ struct Files {
 extern Directories &directories;
 extern Files &files;
 extern string socketPath;
-class KVTable;
-extern KVTable &kvTable;
-class DirHistory;
-extern DirHistory &dirHistory;
 extern std::ofstream g_logFile;
 extern unsigned int shouldLog; // Global logging control bitmask
 extern bool g_keyboardEnabled; // Global keyboard enable/disable flag

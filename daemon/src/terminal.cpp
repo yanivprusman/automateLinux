@@ -1,17 +1,16 @@
 #include "terminal.h"
+#include "DatabaseTableManagers.h"
 
 vector<Terminal *> Terminal::instances;
 
 Terminal::Terminal(int tty) : tty(tty) {
   instances.push_back(this);
-  string indexString = kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
-  if (indexString.empty()) {
-    kvTable.upsert(dirHistoryEntryKey(0), DIR_HISTORY_DEFAULT_DIR);
-    kvTable.upsert(INDEX_OF_LAST_TOUCHED_DIR_KEY, "0");
-    indexString = kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
+  int lastIndex = TerminalTable::getMaxHistoryIndex(tty);
+  if (lastIndex < 0) {
+    lastIndex = 0;
+    TerminalTable::upsertHistory(tty, 0, DIR_HISTORY_DEFAULT_DIR);
   }
-  dirHistoryPointerKey = DIR_HISTORY_POINTER_PREFIX + to_string(tty);
-  kvTable.upsert(dirHistoryPointerKey, indexString);
+  TerminalTable::setSessionPointer(tty, lastIndex);
 }
 
 Terminal::~Terminal() {
@@ -19,7 +18,7 @@ Terminal::~Terminal() {
   if (it != instances.end()) {
     instances.erase(it);
   }
-  kvTable.deleteEntry(dirHistoryPointerKey);
+  TerminalTable::deleteSession(tty);
 }
 
 Terminal *Terminal::getInstanceByTTY(int tty) {
@@ -58,18 +57,16 @@ CmdResult Terminal::_openedTty(const json &command) {
   (void)command;
   CmdResult result;
   try {
-    string indexStr = kvTable.get(dirHistoryPointerKey);
-    if (indexStr.empty()) {
-      indexStr = "0"; // Fall back to default index
-      kvTable.upsert(dirHistoryPointerKey, "0");
+    int index = TerminalTable::getSessionPointer(tty);
+    if (index < 0) {
+      index = 0; // Fall back to default index
+      TerminalTable::setSessionPointer(tty, 0);
+      TerminalTable::upsertHistory(tty, 0, DIR_HISTORY_DEFAULT_DIR);
     }
-    int index = stoi(indexStr);
-    string dir = kvTable.get(dirHistoryEntryKey(index));
+    string dir = TerminalTable::getHistory(tty, index);
     if (dir.empty()) {
-      result.status = 1;
-      result.message =
-          "Directory not found at index " + to_string(index) + "\n";
-      return result;
+      dir = DIR_HISTORY_DEFAULT_DIR;
+      TerminalTable::upsertHistory(tty, index, dir);
     }
     result.message = dir + mustEndWithNewLine;
     result.status = 0;
@@ -103,16 +100,14 @@ CmdResult Terminal::_closedTty(const json &command) {
   if (it != instances.end()) {
     instances.erase(it);
   }
-  kvTable.deleteEntry(dirHistoryPointerKey);
+  TerminalTable::deleteSession(tty);
   result.status = 0;
   result.message = "\n";
   delete this;
   return result;
 }
 
-string Terminal::dirHistoryEntryKey(int index) {
-  return DIR_HISTORY_ENTRY_PREFIX + to_string(index);
-}
+// removed dirHistoryEntryKey
 
 CmdResult Terminal::updateDirHistory(const json &command) {
   string ttyStr = getJsonString(command, TTY_KEY);
@@ -133,8 +128,11 @@ CmdResult Terminal::_updateDirHistory(const json &command) {
   int index = getIndex();
   string pwd = getPWD(command);
   string currentDir = getDirHistoryEntry(index);
+
+  // check next entry to see if we're just moving forward in existing history
   string nextDir = getDirHistoryEntry(index + 1);
-  kvTable.upsert(INDEX_OF_LAST_TOUCHED_DIR_KEY, to_string(index));
+
+  SettingsTable::setSetting(INDEX_OF_LAST_TOUCHED_DIR_KEY, to_string(index));
   result.status = 0;
   result.message = "\n";
   if (pwd.empty()) {
@@ -142,28 +140,33 @@ CmdResult Terminal::_updateDirHistory(const json &command) {
     result.message = "No directory provided to updateDirHistory\n";
     return result;
   } else if (currentDir == pwd) {
+    // already there
   } else if (nextDir == pwd) {
-    kvTable.upsert(dirHistoryPointerKey, to_string(index + 1));
+    TerminalTable::setSessionPointer(tty, index + 1);
   } else {
-    int insertIndex = index + 1;
-    kvTable.insertAt(dirHistoryKeyPrefix(), insertIndex, pwd);
-    kvTable.upsert(dirHistoryPointerKey, to_string(insertIndex));
-    kvTable.upsert(INDEX_OF_LAST_TOUCHED_DIR_KEY, to_string(index + 1));
+    int insertIndex = TerminalTable::getMaxHistoryIndex(tty) + 1;
+    TerminalTable::upsertHistory(tty, insertIndex, pwd);
+    TerminalTable::setSessionPointer(tty, insertIndex);
+    SettingsTable::setSetting(INDEX_OF_LAST_TOUCHED_DIR_KEY,
+                              to_string(insertIndex));
   }
   return result;
 }
 
-int Terminal::getIndex() { return stoi(kvTable.get(dirHistoryPointerKey)); }
+int Terminal::getIndex() {
+  int idx = TerminalTable::getSessionPointer(tty);
+  return idx >= 0 ? idx : 0;
+}
 
 string Terminal::getPWD(const json &command) {
   return command[PWD_KEY].get<string>();
 }
 
 string Terminal::getDirHistoryEntry(int index) {
-  return kvTable.get(dirHistoryEntryKey(index));
+  return TerminalTable::getHistory(tty, index);
 }
 
-string Terminal::dirHistoryKeyPrefix() { return DIR_HISTORY_ENTRY_PREFIX; }
+// removed dirHistoryKeyPrefix
 
 CmdResult Terminal::cdForward(const json &command) {
   string ttyStr = getJsonString(command, TTY_KEY);
@@ -178,22 +181,31 @@ CmdResult Terminal::cdForward(const json &command) {
 }
 
 CmdResult Terminal::_cdForward(const json &command) {
-  (void)command; // unused
+  (void)command;
   CmdResult result;
   int index = getIndex();
-  string nextDir = getDirHistoryEntry(index + 1);
+  int maxIndex = TerminalTable::getMaxHistoryIndex(tty);
 
-  if (nextDir.empty()) {
-    result.status = 0; // Return success but stay in current dir?
-    // Actually, cdForward should return the path to cd to.
-    // If it's empty, bash 'cd' will fail if we return an error message.
-    // Let's return the current dir as a fallback to avoid bash errors.
-    result.message = getDirHistoryEntry(index) + mustEndWithNewLine;
+  if (index >= maxIndex) {
+    result.status = 0;
+    result.message = "echo 'END OF HISTORY reached'; cd " +
+                     getDirHistoryEntry(index) + mustEndWithNewLine;
     return result;
   }
 
-  kvTable.upsert(dirHistoryPointerKey, to_string(index + 1));
-  result.message = nextDir + mustEndWithNewLine;
+  int nextIndex = index + 1;
+  string nextDir = getDirHistoryEntry(nextIndex);
+
+  if (nextDir.empty()) {
+    // Safety fallback if there's a gap or error
+    result.status = 1;
+    result.message = "echo 'Empty history entry at " + to_string(nextIndex) +
+                     "'; cd ." + mustEndWithNewLine;
+    return result;
+  }
+
+  TerminalTable::setSessionPointer(tty, nextIndex);
+  result.message = "cd " + nextDir + mustEndWithNewLine;
   result.status = 0;
   return result;
 }
@@ -211,19 +223,32 @@ CmdResult Terminal::cdBackward(const json &command) {
 }
 
 CmdResult Terminal::_cdBackward(const json &command) {
-  (void)command; // unused
+  (void)command;
   CmdResult result;
   int index = getIndex();
 
-  if (index == 0) {
+  if (index <= 0) {
     result.status = 0;
-    result.message = getDirHistoryEntry(index) + mustEndWithNewLine;
+    string currentDir = getDirHistoryEntry(0);
+    if (currentDir.empty())
+      currentDir = ".";
+    result.message = "echo 'BEGINNING OF HISTORY reached'; cd " + currentDir +
+                     mustEndWithNewLine;
     return result;
   }
 
-  string prevDir = getDirHistoryEntry(index - 1);
-  kvTable.upsert(dirHistoryPointerKey, to_string(index - 1));
-  result.message = prevDir + mustEndWithNewLine;
+  int prevIndex = index - 1;
+  string prevDir = getDirHistoryEntry(prevIndex);
+
+  if (prevDir.empty()) {
+    result.status = 1;
+    result.message = "echo 'Empty history entry at " + to_string(prevIndex) +
+                     "'; cd ." + mustEndWithNewLine;
+    return result;
+  }
+
+  TerminalTable::setSessionPointer(tty, prevIndex);
+  result.message = "cd " + prevDir + mustEndWithNewLine;
   result.status = 0;
   return result;
 }

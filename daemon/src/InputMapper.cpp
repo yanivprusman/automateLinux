@@ -1,7 +1,7 @@
 #include "InputMapper.h"
 #include "Constants.h"
+#include "DatabaseTableManagers.h"
 #include "Globals.h"
-#include "KVTable.h"
 #include "Utils.h"
 #include "using.h"
 #include <algorithm>
@@ -25,7 +25,7 @@ InputMapper::~InputMapper() { stop(); }
 
 void InputMapper::loadPersistence() {
   // Load Macros from DB
-  string savedMacros = kvTable.get("custom_macros");
+  string savedMacros = ConfigTable::getConfig("custom_macros");
   if (!savedMacros.empty()) {
     try {
       json j = json::parse(savedMacros);
@@ -40,7 +40,7 @@ void InputMapper::loadPersistence() {
   }
 
   // Load Filters from DB
-  string savedFilters = kvTable.get("custom_event_filters");
+  string savedFilters = ConfigTable::getConfig("custom_event_filters");
   if (!savedFilters.empty()) {
     try {
       json j = json::parse(savedFilters);
@@ -362,7 +362,7 @@ void InputMapper::setMacrosFromJson(const json &j) {
     std::lock_guard<std::mutex> lock(macrosMutex_);
     setMacrosFromJsonInternal(j);
   }
-  kvTable.upsert("custom_macros", j.dump());
+  ConfigTable::setConfig("custom_macros", j.dump());
   logToFile("Macros updated dynamically and saved to DB", LOG_CORE);
 }
 
@@ -382,7 +382,7 @@ void InputMapper::setEventFilters(const json &j) {
     std::lock_guard<std::mutex> lock(filtersMutex_);
     setEventFiltersInternal(j);
   }
-  kvTable.upsert("custom_event_filters", j.dump());
+  ConfigTable::setConfig("custom_event_filters", j.dump());
   logToFile("Event filters updated dynamically and saved to DB (count: " +
                 std::to_string(logFilterPatterns_.size()) + ")",
             LOG_CORE);
@@ -546,7 +546,8 @@ void InputMapper::setContext(AppType appType, const std::string &url,
 }
 
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
-                               bool skipMacros, const std::string &devicePath) {
+                               bool isMouse, const std::string &devicePath) {
+  (void)isKeyboard;
   // If we are in monitoring mode (devices open but not grabbed),
   // we do NOT emit events to uinput to avoid double-input.
   if (monitoringMode_) {
@@ -567,11 +568,11 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
     return;
 
   // Stage 2: G-Key Interaction
-  if (!skipMacros && stageGKey(ev) == PipelineResult::CONSUMED)
+  if (!isMouse && stageGKey(ev) == PipelineResult::CONSUMED)
     return;
 
   // Stage 3: Macro Matching & Suppression
-  if (stageMacros(ev, skipMacros) == PipelineResult::DROP)
+  if (stageMacros(ev, isMouse) == PipelineResult::DROP)
     return;
 
   // Stage 4: Final Emission
@@ -1044,6 +1045,7 @@ std::string InputMapper::formatEvent(const struct input_event &ev,
 
 void InputMapper::emitFinal(const struct input_event &ev,
                             const std::string &devicePath) {
+  (void)devicePath;
   if (ev.type == EV_REL || ev.type == EV_ABS) {
     std::lock_guard<std::mutex> lock(uinputMutex_);
     if (uinputDev_) {

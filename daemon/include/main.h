@@ -2,10 +2,8 @@
 #define MAIN_H
 
 #include "common.h"
-#include "system.h"
-#include "KVTable.h"
-#include "dirHistory.h"
 #include "mainCommand.h"
+#include "system.h"
 
 extern volatile int running;
 

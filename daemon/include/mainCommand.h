@@ -1,8 +1,6 @@
 #ifndef MAINCOMMAND_H
 #define MAINCOMMAND_H
-#include "KVTable.h"
 #include "common.h"
-#include "dirHistory.h"
 #include "system.h"
 #include "terminal.h"
 #include <unordered_map>

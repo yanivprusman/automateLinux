@@ -1,8 +1,9 @@
 #include "KeyboardManager.h"
 #include "Constants.h"
+#include "DatabaseTableManagers.h"
 #include "Globals.h"
 #include "Utils.h"
-#include "main.h" // For KVTable definition
+#include "main.h" // For any global flags
 #include <cstdio>
 #include <iostream>
 #include <vector>
@@ -32,15 +33,18 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
 
   if (enableKeyboard) {
     // If mapper is already running (in monitoring mode or grabbed),
-    // we just need to ensure pendingGrab_ is set and grab will happen when keys are released.
+    // we just need to ensure pendingGrab_ is set and grab will happen when keys
+    // are released.
     if (mapper.isRunning()) {
-        logToFile("Mapper already running. Ensuring pendingGrab is set.", LOG_CORE);
-        mapper.setPendingGrab(true); // Ensure grab happens when keys are released
-        return CmdResult(0, "Keyboard enable pending (waiting for key release)\n");
+      logToFile("Mapper already running. Ensuring pendingGrab is set.",
+                LOG_CORE);
+      mapper.setPendingGrab(true); // Ensure grab happens when keys are released
+      return CmdResult(0,
+                       "Keyboard enable pending (waiting for key release)\n");
     }
 
-    std::string keyboardPath = kvTable.get(KEYBOARD_PATH_KEY);
-    std::string mousePath = kvTable.get(MOUSE_PATH_KEY);
+    std::string keyboardPath = DeviceTable::getDevicePath("keyboard");
+    std::string mousePath = DeviceTable::getDevicePath("mouse");
 
     if (keyboardPath.empty()) {
       logToFile("ERROR: Keyboard path empty", LOG_CORE);
@@ -49,9 +53,12 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
     logToFile("Enabling keyboard: " + keyboardPath, LOG_CORE);
 
     // Start mapper in monitoring mode, then set pendingGrab_
-    if (mapper.start(keyboardPath, mousePath)) { // start() now just opens devices and sets monitoringMode_
+    if (mapper.start(keyboardPath,
+                     mousePath)) { // start() now just opens devices and sets
+                                   // monitoringMode_
       mapper.setPendingGrab(true); // Request a grab once keys are released
-      return CmdResult(0, "Keyboard enable pending (waiting for key release)\n");
+      return CmdResult(0,
+                       "Keyboard enable pending (waiting for key release)\n");
     } else {
       logToFile("ERROR: Failed to start InputMapper for monitoring", LOG_CORE);
       return CmdResult(1, "Failed to enable keyboard\n");

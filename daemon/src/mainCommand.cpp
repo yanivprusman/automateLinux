@@ -1,6 +1,7 @@
 #include "mainCommand.h"
 #include "AutomationManager.h"
 #include "DaemonServer.h"
+#include "DatabaseTableManagers.h"
 #include "Globals.h"
 #include "KeyboardManager.h"
 #include "Utils.h"
@@ -13,6 +14,7 @@
 #include <linux/input-event-codes.h>
 #include <string>
 #include <thread>
+#include <tuple>
 
 using namespace std;
 
@@ -154,25 +156,8 @@ bool isNativeHostConnected() {
   return g_nativeHostSocket != -1;
 }
 
-static string
-formatEntriesAsText(const vector<std::pair<string, string>> &entries) {
-  if (entries.empty()) {
-    return "<no entries>\n";
-  }
-  string result;
-  for (const auto &pair : entries) {
-    result += pair.first + "|" + pair.second + "\n";
-  }
-  return result;
-}
-
 static string errorEntryNotFound(const string &key) {
   return string("Entry not found for key ") + key + mustEndWithNewLine;
-}
-
-static string errorDeleteFailed(const string &prefix) {
-  return string("Error deleting entries with prefix: ") + prefix +
-         mustEndWithNewLine;
 }
 
 static const string HELP_MESSAGE =
@@ -257,28 +242,45 @@ CmdResult handleShowAllTerminalInstances(const json &command) {
 
 CmdResult handleShowEntriesByPrefix(const json &command) {
   string prefix = command[COMMAND_ARG_PREFIX].get<string>();
-  auto entries = kvTable.getByPrefix(prefix);
-  return CmdResult(0, formatEntriesAsText(entries));
+  // This command is now ambiguous since we have multiple tables.
+  // For backward compatibility, let's treat it as a generic setting query if it
+  // doesn't match specific logic. Or better, return a message that it's
+  // deprecated.
+  return CmdResult(
+      1, "showEntriesByPrefix is deprecated in the new multi-table schema.\n");
 }
 
 CmdResult handleDeleteEntriesByPrefix(const json &command) {
-  string prefix = command[COMMAND_ARG_PREFIX].get<string>();
-  int rc = kvTable.deleteByPrefix(prefix);
-  if (rc == 1) {
-    return CmdResult(0, "Entries deleted\n");
-  }
-  return CmdResult(1, errorDeleteFailed(prefix));
+  return CmdResult(1, "deleteEntriesByPrefix is deprecated.\n");
 }
 
 CmdResult handleShowDb(const json &) {
-  return CmdResult(0, formatEntriesAsText(kvTable.getAll()));
+  // Show summary of all tables
+  std::stringstream ss;
+  ss << "--- Terminal History ---\n";
+  for (const auto &p : TerminalTable::getAllHistory()) {
+    ss << "TTY " << std::get<0>(p) << " Index " << std::get<1>(p) << ": "
+       << std::get<2>(p) << "\n";
+  }
+  ss << "--- Terminal Sessions ---\n";
+  for (const auto &p : TerminalTable::getAllSessions()) {
+    ss << "TTY " << p.first << " -> Index " << p.second << "\n";
+  }
+  ss << "--- Device Registry ---\n";
+  ss << "Keyboard: " << DeviceTable::getDevicePath("keyboard") << "\n";
+  ss << "Mouse: " << DeviceTable::getDevicePath("mouse") << "\n";
+  ss << "--- System Settings ---\n";
+  ss << "shouldLogState: " << SettingsTable::getSetting("shouldLogState")
+     << "\n";
+
+  return CmdResult(0, ss.str());
 }
 
 CmdResult handleDeleteEntry(const json &command) {
   string key = command[COMMAND_ARG_KEY].get<string>();
-  int rc = kvTable.deleteEntry(key);
-  if (rc == 1) {
-    return CmdResult(0, "Entry deleted\n");
+  int rc = SettingsTable::deleteSetting(key);
+  if (rc >= 1) {
+    return CmdResult(0, "Entry deleted from settings table\n");
   }
   return CmdResult(1, errorEntryNotFound(key));
 }
@@ -286,38 +288,32 @@ CmdResult handleDeleteEntry(const json &command) {
 CmdResult handlePrintDirHistory(const json &) {
   std::stringstream ss;
   ss << "--- Directory History Entries ---\n";
-  vector<std::pair<string, string>> dirs =
-      kvTable.getByPrefix(DIR_HISTORY_ENTRY_PREFIX);
-  std::sort(dirs.begin(), dirs.end(),
-            [](const auto &a, const auto &b) { return a.first < b.first; });
-  if (dirs.empty()) {
+  auto history = TerminalTable::getAllHistory();
+  if (history.empty()) {
     ss << "No directory entries found.\n";
   } else {
-    for (const auto &pair : dirs) {
-      ss << "  " << pair.first << ": " << pair.second << "\n";
+    for (const auto &t : history) {
+      ss << "  TTY " << std::get<0>(t) << " Index " << std::get<1>(t) << ": "
+         << std::get<2>(t) << "\n";
     }
   }
 
-  ss << "\n--- TTY Pointers to History Entries ---\n";
-  vector<std::pair<string, string>> ptsPointers =
-      kvTable.getByPrefix(DIR_HISTORY_POINTER_PREFIX);
-  std::sort(ptsPointers.begin(), ptsPointers.end(),
-            [](const auto &a, const auto &b) { return a.first < b.first; });
-  if (ptsPointers.empty()) {
-    ss << "No TTY pointers found.\n";
+  ss << "\n--- Terminal Sessions ---\n";
+  auto sessions = TerminalTable::getAllSessions();
+  if (sessions.empty()) {
+    ss << "No active sessions found.\n";
   } else {
-    for (const auto &pair : ptsPointers) {
-      ss << "  " << pair.first << ": " << pair.second << "\n";
+    for (const auto &pair : sessions) {
+      ss << "  TTY " << pair.first << ": Index " << pair.second << "\n";
     }
   }
 
   ss << "\n--- Last Touched Directory ---\n";
-  string lastTouchedIndex = kvTable.get(INDEX_OF_LAST_TOUCHED_DIR_KEY);
+  string lastTouchedIndex =
+      SettingsTable::getSetting(INDEX_OF_LAST_TOUCHED_DIR_KEY);
   if (!lastTouchedIndex.empty()) {
-    string lastTouchedKey = string(DIR_HISTORY_ENTRY_PREFIX) + lastTouchedIndex;
-    string lastTouchedValue = kvTable.get(lastTouchedKey);
-    ss << "  Index: " << lastTouchedIndex << ", Path: " << lastTouchedValue
-       << "\n";
+    ss << "  Index: " << lastTouchedIndex
+       << " (lookup disabled due to per-TTY schema)\n";
   } else {
     ss << "No last touched directory recorded.\n";
   }
@@ -328,16 +324,13 @@ CmdResult handlePrintDirHistory(const json &) {
 CmdResult handleUpsertEntry(const json &command) {
   string key = command[COMMAND_ARG_KEY].get<string>();
   string value = command[COMMAND_ARG_VALUE].get<string>();
-  int rc = kvTable.upsert(key, value);
-  if (rc == 1) {
-    return CmdResult(0, "Entry upserted\n");
-  }
-  return CmdResult(1, "Upsert failed (check logs for details)\n");
+  SettingsTable::setSetting(key, value);
+  return CmdResult(0, "Entry upserted to settings table\n");
 }
 
 CmdResult handleGetEntry(const json &command) {
   string key = command[COMMAND_ARG_KEY].get<string>();
-  string value = kvTable.get(key);
+  string value = SettingsTable::getSetting(key);
   if (value.empty()) {
     return CmdResult(1, "\n");
   }
@@ -345,7 +338,7 @@ CmdResult handleGetEntry(const json &command) {
 }
 CmdResult handlePing(const json &) { return CmdResult(0, "pong\n"); }
 CmdResult handleGetKeyboardPath(const json &) {
-  string path = kvTable.get("keyboardPath");
+  string path = DeviceTable::getDevicePath("keyboard");
   if (path.empty()) {
     return CmdResult(1, "Keyboard path not found");
   }
@@ -353,7 +346,7 @@ CmdResult handleGetKeyboardPath(const json &) {
 }
 
 CmdResult handleGetMousePath(const json &) {
-  string path = kvTable.get("mousePath");
+  string path = DeviceTable::getDevicePath("mouse");
   if (path.empty()) {
     return CmdResult(1, "Mouse path not found");
   }
@@ -392,7 +385,7 @@ CmdResult handleShouldLog(const json &command) {
   }
 
   shouldLog = newLogMask;
-  kvTable.upsert("shouldLogState", to_string(shouldLog));
+  SettingsTable::setSetting("shouldLogState", to_string(shouldLog));
   syncLoggingWithBridge();
   return CmdResult(0, string("Logging mask set to: ") + to_string(shouldLog) +
                           "\n");

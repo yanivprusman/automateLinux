@@ -21,6 +21,7 @@ public:
   CmdResult _cdBackward(const json &command);
   static CmdResult showTerminalInstance(const json &command);
   static CmdResult showAllTerminalInstances(const json &command);
+  static string standardizePath(string path);
   int tty;
   int getIndex();
   static string getPWD(const json &command);

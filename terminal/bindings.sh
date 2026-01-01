@@ -11,26 +11,31 @@ AUTOMATE_LINUX_LAST_NAV_SIGNAL=""
 doCdForward() {
     local output
     output=$(daemon send cdForward --tty "$AUTOMATE_LINUX_TTY_NUMBER")
-    
-    # Clean up signal state
-    if [[ -n "$AUTOMATE_LINUX_LAST_NAV_SIGNAL" ]]; then
-        echo -ne "\r\033[2K\033[1A\033[2K"
-        AUTOMATE_LINUX_LAST_NAV_SIGNAL=""
-    fi
-
     if [[ "$output" == *echo* ]]; then
+        # Clean up signal state if it was set from a previous navigation
+        if [[ -n "$AUTOMATE_LINUX_LAST_NAV_SIGNAL" ]]; then
+            echo -ne "\r\033[2K\033[1A\033[2K"
+            AUTOMATE_LINUX_LAST_NAV_SIGNAL=""
+        fi
         echo -ne "\r\033[2K"
         eval "$output"
         AUTOMATE_LINUX_LAST_NAV_SIGNAL="1"
     else
-        # Clear the line where bind -x might have printed something
+        # If the last navigation was a signal, move up and clear
+        if [[ -n "$AUTOMATE_LINUX_LAST_NAV_SIGNAL" ]]; then
+            echo -ne "\r\033[2K\033[1A\033[2K"
+            AUTOMATE_LINUX_LAST_NAV_SIGNAL=""
+        fi
+
+        # Clear current line where binding might have leaked chars
         echo -ne "\r\033[2K"
         eval "$output"
-        # Force prompt redraw by touching readline state
-        READLINE_LINE=" "
-        READLINE_POINT=1
-        READLINE_LINE=""
-        READLINE_POINT=0
+        
+        # Force prompt redraw via daemon signal command
+        # This works around bind -x blocking signals
+        local redraw_cmd
+        redraw_cmd=$(daemon send shellSignal --signal WINCH)
+        eval "$redraw_cmd"
     fi
     history -d -1
 }
@@ -41,24 +46,24 @@ doCdBack() {
     local output
     output=$(daemon send cdBackward --tty "$AUTOMATE_LINUX_TTY_NUMBER")
 
-    # Clean up signal state
-    if [[ -n "$AUTOMATE_LINUX_LAST_NAV_SIGNAL" ]]; then
-        echo -ne "\r\033[2K\033[1A\033[2K"
-        AUTOMATE_LINUX_LAST_NAV_SIGNAL=""
-    fi
-
     if [[ "$output" == *echo* ]]; then
         echo -ne "\r\033[2K"
         eval "$output"
         AUTOMATE_LINUX_LAST_NAV_SIGNAL="1"
     else
+        # If the last navigation was a signal, move up and clear
+        if [[ -n "$AUTOMATE_LINUX_LAST_NAV_SIGNAL" ]]; then
+            echo -ne "\r\033[2K\033[1A\033[2K"
+            AUTOMATE_LINUX_LAST_NAV_SIGNAL=""
+        fi
+
         echo -ne "\r\033[2K"
         eval "$output"
-        # Force prompt redraw by touching readline state
-        READLINE_LINE=" "
-        READLINE_POINT=1
-        READLINE_LINE=""
-        READLINE_POINT=0
+        
+        # Force prompt redraw via daemon signal command
+        local redraw_cmd
+        redraw_cmd=$(daemon send shellSignal --signal WINCH)
+        eval "$redraw_cmd"
     fi
     history -d -1
 }

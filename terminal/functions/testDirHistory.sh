@@ -25,7 +25,7 @@ function testDirHistory() {
   local db_script="${AUTOMATE_LINUX_DAEMON_DIR}showDb.sh"
   if [ -f "$db_script" ]; then
     echo "Verifying row count in database..."
-    "$db_script" terminal_history | grep -c "^$AUTOMATE_LINUX_TTY_NUMBER"
+    "$db_script" terminal_history | grep -c "dir_"
   fi
 }
 

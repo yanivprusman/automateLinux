@@ -47,7 +47,7 @@ else
 
     # Specialized viewing for terminal_history
     if [ "$TABLE_NAME" == "terminal_history" ]; then
-        run_sql -e "SELECT tty, entry_index, path FROM terminal_history ORDER BY tty ASC, entry_index ASC;"
+        run_sql -e "SELECT entry_index, path FROM terminal_history ORDER BY entry_index ASC;"
     elif [ "$TABLE_NAME" == "terminal_sessions" ]; then
          run_sql -e "SELECT tty, history_index as current_ptr FROM terminal_sessions ORDER BY tty ASC;"
     else

@@ -27,6 +27,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      {COMMAND_ARG_TTY, COMMAND_ARG_PWD}),
     CommandSignature(COMMAND_CD_FORWARD, {COMMAND_ARG_TTY}),
     CommandSignature(COMMAND_CD_BACKWARD, {COMMAND_ARG_TTY}),
+    CommandSignature(COMMAND_SHELL_SIGNAL, {COMMAND_ARG_SIGNAL}),
     CommandSignature(COMMAND_SHOW_TERMINAL_INSTANCE, {COMMAND_ARG_TTY}),
     CommandSignature(COMMAND_SHOW_ALL_TERMINAL_INSTANCES, {}),
     CommandSignature(COMMAND_DELETE_ENTRY, {COMMAND_ARG_KEY}),
@@ -467,6 +468,15 @@ CmdResult handleFocusAck(const json &) {
   return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
 }
 
+CmdResult handleShellSignal(const json &command) {
+  string signal = command[COMMAND_ARG_SIGNAL].get<string>();
+  // We return a bash command that the shell will eval.
+  // This allows the shell to signal itself (e.g. SIGWINCH)
+  // after the bind -x call completes.
+  string bashCmd = "kill -" + signal + " $$" + mustEndWithNewLine;
+  return CmdResult(0, bashCmd);
+}
+
 CmdResult handleDisableKeyboard(const json &) {
   g_keyboardEnabled = false;
   return KeyboardManager::setKeyboard(false);
@@ -590,6 +600,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_UPDATE_DIR_HISTORY, handleUpdateDirHistory},
     {COMMAND_CD_FORWARD, handleCdForward},
     {COMMAND_CD_BACKWARD, handleCdBackward},
+    {COMMAND_SHELL_SIGNAL, handleShellSignal},
     {COMMAND_SHOW_TERMINAL_INSTANCE, handleShowTerminalInstance},
     {COMMAND_SHOW_ALL_TERMINAL_INSTANCES, handleShowAllTerminalInstances},
     {COMMAND_SHOW_ENTRIES_BY_PREFIX, handleShowEntriesByPrefix},

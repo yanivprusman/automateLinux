@@ -1,7 +1,0 @@
-Starting daemon...
-Keyboard path initialized: /dev/input/by-id/usb-Corsair_CORSAIR_K100_RGB_Optical-Mechanical_Gaming_Keyboard_502A81D24AAA7CC6-event-kbd
-Mouse path initialized: /dev/input/event8
-Keyboard device opened: /dev/input/by-id/usb-Corsair_CORSAIR_K100_RGB_Optical-Mechanical_Gaming_Keyboard_502A81D24AAA7CC6-event-kbd (fd=7)
-ERROR: bind() failed for /run/automatelinux/automatelinux-daemon.sock: No such file or directory
-TIP: Ensure the parent directory of the socket exists.
-Failed to initialize daemon.

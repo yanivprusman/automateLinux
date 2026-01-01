@@ -138,7 +138,7 @@ void accept_new_client() {
 
 int handle_client_data(int client_fd) {
   ClientState &state = clients[client_fd];
-  char buffer[512];
+  char buffer[4096];
   ssize_t bytesRead = read(client_fd, buffer, sizeof(buffer) - 1);
   if (bytesRead <= 0) {
     unregisterLogSubscriber(client_fd);
@@ -165,7 +165,16 @@ int handle_client_data(int client_fd) {
       write(client_fd, result.c_str(), result.length());
       continue;
     }
-    mainCommand(j, client_fd);
+    if (mainCommand(j, client_fd) == 1) {
+      // If mainCommand returns 1, it means we should close the connection.
+      // We don't need to call close() here as mainCommand already might have or
+      // we will. Actually mainCommand shouldn't close it, handle_client_data
+      // should.
+      unregisterLogSubscriber(client_fd);
+      close(client_fd);
+      clients.erase(client_fd);
+      return 0;
+    }
   }
   return 0;
 }

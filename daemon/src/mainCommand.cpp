@@ -698,9 +698,15 @@ int mainCommand(const json &command, int client_sock) {
   if (!result.message.empty() && result.message.back() != '\n') {
     result.message += "\n";
   }
+  write(client_sock, result.message.c_str(), result.message.length());
+
   if (command[COMMAND_KEY] == "closedTty") {
+    return 1;
+  }
+
+  // Return 1 (close) for regular commands, 0 (keep) for log listeners.
+  if (commandName == COMMAND_REGISTER_LOG_LISTENER) {
     return 0;
   }
-  write(client_sock, result.message.c_str(), result.message.length());
-  return 0;
+  return 1;
 }

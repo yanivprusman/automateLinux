@@ -29,11 +29,17 @@ int send_command_to_daemon(const ordered_json &jsonCmd) {
   write(client_fd, jsonCmdStr.c_str(), jsonCmdStr.length());
   write(client_fd, "\n", 1);
 
-  char buffer[512];
-  ssize_t n = read(client_fd, buffer, sizeof(buffer) - 1);
-  if (n > 0) {
+  char buffer[4096];
+  string response;
+  while (true) {
+    ssize_t n = read(client_fd, buffer, sizeof(buffer) - 1);
+    if (n <= 0)
+      break;
     buffer[n] = '\0';
-    cout << buffer << endl;
+    response += buffer;
+  }
+  if (!response.empty()) {
+    cout << response;
   }
 
   close(client_fd);

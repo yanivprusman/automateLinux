@@ -184,6 +184,9 @@ int TerminalTable::getMaxHistoryIndex(int tty) {
     pstmt->setInt(1, tty);
     std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
     if (res->next()) {
+      if (res->isNull("max_idx")) {
+        return -1;
+      }
       return res->getInt("max_idx");
     }
   } catch (sql::SQLException &e) {

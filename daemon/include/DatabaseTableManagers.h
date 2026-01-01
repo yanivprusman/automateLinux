@@ -8,16 +8,16 @@
 
 class TerminalTable {
 public:
-  static void upsertHistory(int tty, int index, const std::string &path);
-  static std::string getHistory(int tty, int index);
+  static void upsertHistory(int index, const std::string &path);
+  static std::string getHistory(int index);
   static void setSessionPointer(int tty, int index);
   static int getSessionPointer(int tty);
   static void deleteSession(int tty);
-  static std::vector<std::pair<int, std::string>> getAllHistoryForTty(int tty);
+  static std::vector<std::pair<int, std::string>> getAllHistoryEntries();
   static std::vector<std::tuple<int, int, std::string>>
-  getAllHistory(); // Global for showDB
+  getAllHistory(); // For showDB - session-history join
   static std::vector<std::pair<int, int>> getAllSessions();
-  static int getMaxHistoryIndex(int tty);
+  static int getMaxHistoryIndex();
 };
 
 class ConfigTable {

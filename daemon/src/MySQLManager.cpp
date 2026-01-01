@@ -129,12 +129,10 @@ void MySQLManager::createDatabaseAndUser(int port,
     con->setSchema(mysqlDatabase);
     std::unique_ptr<sql::Statement> tableStmt(con->createStatement());
 
-    // 1. Terminal History Table
+    // 1. Terminal History Table (Global sequence)
     tableStmt->execute("CREATE TABLE IF NOT EXISTS terminal_history ("
-                       "tty INT, "
-                       "entry_index INT, "
-                       "path TEXT NOT NULL, "
-                       "PRIMARY KEY (tty, entry_index))");
+                       "entry_index INT PRIMARY KEY, "
+                       "path TEXT NOT NULL)");
 
     // 2. Terminal Sessions (TTY pointers)
     tableStmt->execute("CREATE TABLE IF NOT EXISTS terminal_sessions ("

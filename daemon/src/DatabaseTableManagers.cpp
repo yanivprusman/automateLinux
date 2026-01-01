@@ -17,19 +17,18 @@ static sql::Connection *getCon() {
 
 // TerminalTable Implementation
 
-void TerminalTable::upsertHistory(int tty, int index, const std::string &path) {
+void TerminalTable::upsertHistory(int index, const std::string &path) {
   std::unique_ptr<sql::Connection> con(getCon());
   if (!con)
     return;
   try {
     std::unique_ptr<sql::PreparedStatement> pstmt(
-        con->prepareStatement("INSERT INTO terminal_history (tty, entry_index, "
-                              "path) VALUES (?, ?, ?) "
+        con->prepareStatement("INSERT INTO terminal_history (entry_index, "
+                              "path) VALUES (?, ?) "
                               "ON DUPLICATE KEY UPDATE path = ?"));
-    pstmt->setInt(1, tty);
-    pstmt->setInt(2, index);
+    pstmt->setInt(1, index);
+    pstmt->setString(2, path);
     pstmt->setString(3, path);
-    pstmt->setString(4, path);
     pstmt->executeUpdate();
   } catch (sql::SQLException &e) {
     logToFile("TerminalTable: upsertHistory error: " + std::string(e.what()),
@@ -37,15 +36,14 @@ void TerminalTable::upsertHistory(int tty, int index, const std::string &path) {
   }
 }
 
-std::string TerminalTable::getHistory(int tty, int index) {
+std::string TerminalTable::getHistory(int index) {
   std::unique_ptr<sql::Connection> con(getCon());
   if (!con)
     return "";
   try {
     std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
-        "SELECT path FROM terminal_history WHERE tty = ? AND entry_index = ?"));
-    pstmt->setInt(1, tty);
-    pstmt->setInt(2, index);
+        "SELECT path FROM terminal_history WHERE entry_index = ?"));
+    pstmt->setInt(1, index);
     std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
     if (res->next())
       return res->getString("path");
@@ -109,23 +107,21 @@ void TerminalTable::deleteSession(int tty) {
   }
 }
 
-std::vector<std::pair<int, std::string>>
-TerminalTable::getAllHistoryForTty(int tty) {
+std::vector<std::pair<int, std::string>> TerminalTable::getAllHistoryEntries() {
   std::vector<std::pair<int, std::string>> results;
   std::unique_ptr<sql::Connection> con(getCon());
   if (!con)
     return results;
   try {
-    std::unique_ptr<sql::PreparedStatement> pstmt(
-        con->prepareStatement("SELECT entry_index, path FROM terminal_history "
-                              "WHERE tty = ? ORDER BY entry_index"));
-    pstmt->setInt(1, tty);
-    std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+    std::unique_ptr<sql::Statement> stmt(con->createStatement());
+    std::unique_ptr<sql::ResultSet> res(
+        stmt->executeQuery("SELECT entry_index, path FROM terminal_history "
+                           "ORDER BY entry_index"));
     while (res->next()) {
       results.push_back({res->getInt("entry_index"), res->getString("path")});
     }
   } catch (sql::SQLException &e) {
-    logToFile("TerminalTable: getAllHistoryForTty error: " +
+    logToFile("TerminalTable: getAllHistoryEntries error: " +
                   std::string(e.what()),
               0xFFFFFFFF);
   }
@@ -139,9 +135,11 @@ std::vector<std::tuple<int, int, std::string>> TerminalTable::getAllHistory() {
     return results;
   try {
     std::unique_ptr<sql::Statement> stmt(con->createStatement());
-    std::unique_ptr<sql::ResultSet> res(
-        stmt->executeQuery("SELECT tty, entry_index, path FROM "
-                           "terminal_history ORDER BY tty, entry_index"));
+    // Joining with sessions to show current state for each TTY
+    std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
+        "SELECT s.tty, h.entry_index, h.path FROM "
+        "terminal_history h JOIN terminal_sessions s ON "
+        "h.entry_index = s.history_index ORDER BY s.tty, h.entry_index"));
     while (res->next()) {
       results.push_back(std::make_tuple(res->getInt("tty"),
                                         res->getInt("entry_index"),
@@ -173,16 +171,14 @@ std::vector<std::pair<int, int>> TerminalTable::getAllSessions() {
   return results;
 }
 
-int TerminalTable::getMaxHistoryIndex(int tty) {
+int TerminalTable::getMaxHistoryIndex() {
   std::unique_ptr<sql::Connection> con(getCon());
   if (!con)
     return -1;
   try {
-    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
-        "SELECT MAX(entry_index) as max_idx FROM terminal_history WHERE tty "
-        "= ?"));
-    pstmt->setInt(1, tty);
-    std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+    std::unique_ptr<sql::Statement> stmt(con->createStatement());
+    std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
+        "SELECT MAX(entry_index) as max_idx FROM terminal_history"));
     if (res->next()) {
       if (res->isNull("max_idx")) {
         return -1;

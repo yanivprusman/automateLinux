@@ -3,9 +3,11 @@ BASE_DIR_DIRHISTORY_TEST="/tmp/dirhistory_test"
 function testDirHistory() {
   local count=100
   [ -n "$1" ] && count=$1
+
   mkdir -p "$BASE_DIR_DIRHISTORY_TEST"
   echo "--- Starting DirHistory Population Test ($count entries) ---"
   echo "Base directory: $BASE_DIR_DIRHISTORY_TEST"
+
   for i in $(seq 1 "$count"); do
     local new_dir="$BASE_DIR_DIRHISTORY_TEST/dir_$i"
     mkdir -p "$new_dir"
@@ -16,7 +18,9 @@ function testDirHistory() {
         daemon send updateDirHistory --tty "$AUTOMATE_LINUX_TTY_NUMBER" --pwd "${PWD}/" > /dev/null
     fi
   done
+
   echo "Finished populating history."
+  
   # Verify via showDb
   local db_script="${AUTOMATE_LINUX_DAEMON_DIR}showDb.sh"
   if [ -f "$db_script" ]; then
@@ -28,13 +32,16 @@ function testDirHistory() {
 function testNavigation() {
   local steps=50
   [ -n "$1" ] && steps=$1
+  
   echo "--- Starting Navigation Stress Test ($steps steps) ---"
+  
   echo "Moving BACKWARD $steps times..."
   for i in $(seq 1 "$steps"); do
     local cmd=$(daemon send cdBackward --tty "$AUTOMATE_LINUX_TTY_NUMBER")
     eval "$cmd"
   done
   echo "Current Position: $PWD"
+
   echo "Moving FORWARD $steps times..."
   for i in $(seq 1 "$steps"); do
     local cmd=$(daemon send cdForward --tty "$AUTOMATE_LINUX_TTY_NUMBER")
@@ -43,7 +50,7 @@ function testNavigation() {
   echo "Test complete. Final Position: $PWD"
 }
 
-function cleanup_dirhistory_test() {
+function cleanupDirHistoryTest() {
   if [ -d "$BASE_DIR_DIRHISTORY_TEST" ]; then
     echo "Cleaning up test directories: $BASE_DIR_DIRHISTORY_TEST"
     rm -rf "$BASE_DIR_DIRHISTORY_TEST"

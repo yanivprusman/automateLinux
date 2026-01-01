@@ -12,19 +12,25 @@ doCdForward() {
     local output
     output=$(daemon send cdForward --tty "$AUTOMATE_LINUX_TTY_NUMBER")
     
-    # If the last navigation was a signal, clear it before printing anything new
+    # Clean up signal state
     if [[ -n "$AUTOMATE_LINUX_LAST_NAV_SIGNAL" ]]; then
-        echo -ne "\033[2K\033[1A\033[2K"
+        echo -ne "\r\033[2K\033[1A\033[2K"
+        AUTOMATE_LINUX_LAST_NAV_SIGNAL=""
     fi
 
-    eval "$output"
-
     if [[ "$output" == *echo* ]]; then
+        echo -ne "\r\033[2K"
+        eval "$output"
         AUTOMATE_LINUX_LAST_NAV_SIGNAL="1"
     else
-        AUTOMATE_LINUX_LAST_NAV_SIGNAL=""
-        # Clear the "phantom" line created by bind -x if we did a real 'cd'
-        echo -ne "\033[2K\033[1A\033[2K"
+        # Clear the line where bind -x might have printed something
+        echo -ne "\r\033[2K"
+        eval "$output"
+        # Force prompt redraw by touching readline state
+        READLINE_LINE=" "
+        READLINE_POINT=1
+        READLINE_LINE=""
+        READLINE_POINT=0
     fi
     history -d -1
 }
@@ -35,18 +41,24 @@ doCdBack() {
     local output
     output=$(daemon send cdBackward --tty "$AUTOMATE_LINUX_TTY_NUMBER")
 
-    # If the last navigation was a signal, clear it before printing anything new
+    # Clean up signal state
     if [[ -n "$AUTOMATE_LINUX_LAST_NAV_SIGNAL" ]]; then
-        echo -ne "\033[2K\033[1A\033[2K"
+        echo -ne "\r\033[2K\033[1A\033[2K"
+        AUTOMATE_LINUX_LAST_NAV_SIGNAL=""
     fi
 
-    eval "$output"
-
     if [[ "$output" == *echo* ]]; then
+        echo -ne "\r\033[2K"
+        eval "$output"
         AUTOMATE_LINUX_LAST_NAV_SIGNAL="1"
     else
-        AUTOMATE_LINUX_LAST_NAV_SIGNAL=""
-        echo -ne "\033[2K\033[1A\033[2K"
+        echo -ne "\r\033[2K"
+        eval "$output"
+        # Force prompt redraw by touching readline state
+        READLINE_LINE=" "
+        READLINE_POINT=1
+        READLINE_LINE=""
+        READLINE_POINT=0
     fi
     history -d -1
 }

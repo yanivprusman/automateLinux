@@ -15,11 +15,11 @@ string Terminal::standardizePath(string path) {
 
 Terminal::Terminal(int tty) : tty(tty) {
   instances.push_back(this);
-  int lastIndex = TerminalTable::getMaxHistoryIndex(tty);
+  int lastIndex = TerminalTable::getMaxHistoryIndex();
   if (lastIndex < 0) {
     lastIndex = 0;
     string defaultDir = standardizePath(DIR_HISTORY_DEFAULT_DIR);
-    TerminalTable::upsertHistory(tty, 0, defaultDir);
+    TerminalTable::upsertHistory(0, defaultDir);
   }
   TerminalTable::setSessionPointer(tty, lastIndex);
 }
@@ -80,12 +80,12 @@ CmdResult Terminal::_openedTty(const json &command) {
       index = 0;
       TerminalTable::setSessionPointer(tty, 0);
       string defaultDir = standardizePath(DIR_HISTORY_DEFAULT_DIR);
-      TerminalTable::upsertHistory(tty, 0, defaultDir);
+      TerminalTable::upsertHistory(0, defaultDir);
     }
-    string dir = standardizePath(TerminalTable::getHistory(tty, index));
+    string dir = standardizePath(TerminalTable::getHistory(index));
     if (dir.empty() || dir == "/") {
       dir = standardizePath(DIR_HISTORY_DEFAULT_DIR);
-      TerminalTable::upsertHistory(tty, index, dir);
+      TerminalTable::upsertHistory(index, dir);
     }
     result.message = dir + mustEndWithNewLine;
     result.status = 0;
@@ -167,8 +167,8 @@ CmdResult Terminal::_updateDirHistory(const json &command) {
   } else if (nextDir == pwd) {
     TerminalTable::setSessionPointer(tty, index + 1);
   } else {
-    int insertIndex = TerminalTable::getMaxHistoryIndex(tty) + 1;
-    TerminalTable::upsertHistory(tty, insertIndex, pwd);
+    int insertIndex = TerminalTable::getMaxHistoryIndex() + 1;
+    TerminalTable::upsertHistory(insertIndex, pwd);
     TerminalTable::setSessionPointer(tty, insertIndex);
     SettingsTable::setSetting(INDEX_OF_LAST_TOUCHED_DIR_KEY,
                               to_string(insertIndex));
@@ -186,7 +186,7 @@ string Terminal::getPWD(const json &command) {
 }
 
 string Terminal::getDirHistoryEntry(int index) {
-  return TerminalTable::getHistory(tty, index);
+  return TerminalTable::getHistory(index);
 }
 
 // removed dirHistoryKeyPrefix
@@ -207,7 +207,7 @@ CmdResult Terminal::_cdForward(const json &command) {
   (void)command;
   CmdResult result;
   int index = getIndex();
-  int maxIndex = TerminalTable::getMaxHistoryIndex(tty);
+  int maxIndex = TerminalTable::getMaxHistoryIndex();
 
   forceLog("[Terminal] cdForward tty=" + to_string(tty) +
            " index=" + to_string(index) + " max=" + to_string(maxIndex));

@@ -400,13 +400,40 @@ void InputMapper::loop() {
   logToFile("InputMapper loop starting...", LOG_CORE);
   while (running_) {
     // Check for pending grab
-    if (pendingGrab_ && pressedKeys_.empty()) {
-      extern void forceLog(const std::string &message);
-      forceLog("InputMapper: All keys released (" +
-               std::to_string(pressedKeys_.size()) +
-               "), performing deferred grab.");
-      grabDevices();
-      pendingGrab_ = false;
+    if (pendingGrab_) {
+      bool allReleased = pressedKeys_.empty();
+      auto now = std::chrono::steady_clock::now();
+      auto requestAge = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            now - lastPendingGrabRequest_)
+                            .count();
+      auto logAge = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        now - lastPendingGrabLog_)
+                        .count();
+
+      if (allReleased || requestAge > 2000) {
+        extern void forceLog(const std::string &message);
+        if (allReleased) {
+          forceLog("InputMapper: All keys released, performing deferred grab.");
+        } else {
+          forceLog("InputMapper: Grab TIMEOUT (" + std::to_string(requestAge) +
+                   "ms), forcing grab despite pressed keys.");
+        }
+        grabDevices();
+        pendingGrab_ = false;
+      } else if (logAge > 500) {
+        extern void forceLog(const std::string &message);
+        std::string keys;
+        {
+          std::lock_guard<std::mutex> lock(pressedKeysMutex_);
+          for (uint16_t code : pressedKeys_) {
+            const char *name = libevdev_event_code_get_name(EV_KEY, code);
+            keys += (name ? name : std::to_string(code)) + " ";
+          }
+        }
+        forceLog("InputMapper: Waiting for release of: " + keys + "(" +
+                 std::to_string(requestAge) + "ms)");
+        lastPendingGrabLog_ = now;
+      }
     }
     int rc = poll(fds, nfds, 100); // 100ms timeout
     if (rc < 0)
@@ -476,6 +503,10 @@ void InputMapper::setPendingGrab(bool value) {
   extern void forceLog(const std::string &message);
   forceLog("InputMapper: setPendingGrab(" + std::to_string(value) + ")");
   pendingGrab_ = value;
+  if (value) {
+    lastPendingGrabRequest_ = std::chrono::steady_clock::now();
+    lastPendingGrabLog_ = lastPendingGrabRequest_;
+  }
 }
 
 void InputMapper::emitSequence(
@@ -548,6 +579,12 @@ void InputMapper::setContext(AppType appType, const std::string &url,
 void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
                                bool isMouse, const std::string &devicePath) {
   (void)isKeyboard;
+  // Stage 1: Context & Tracking (Log, NumLock, Ctrl, pressedKeys)
+  // We do this BEFORE monitoringMode_ check so state is tracked even if not
+  // grabbing.
+  if (stageContext(ev, devicePath) == PipelineResult::DROP)
+    return;
+
   // If we are in monitoring mode (devices open but not grabbed),
   // we do NOT emit events to uinput to avoid double-input.
   if (monitoringMode_) {
@@ -562,10 +599,6 @@ void InputMapper::processEvent(struct input_event &ev, bool isKeyboard,
   }
 
   // --- PIPELINE START ---
-
-  // Stage 1: Context & Tracking (Log, NumLock, Ctrl, pressedKeys)
-  if (stageContext(ev, devicePath) == PipelineResult::DROP)
-    return;
 
   // Stage 2: G-Key Interaction
   if (!isMouse && stageGKey(ev) == PipelineResult::CONSUMED)
@@ -914,10 +947,19 @@ void InputMapper::flushAndResetState() {
 void InputMapper::setNumLockState(bool active) {
   if (numLockActive_ != active) {
     numLockActive_ = active;
-    logToFile(std::string("NumLock changed: ") + (numLockActive_
-                                                      ? "ON (Macros Disabled)"
-                                                      : "OFF (Macros Enabled)"),
+    logToFile(std::string("NumLock changed: ") +
+                  (numLockActive_ ? "ON (UNGRAB - Macros Disabled)"
+                                  : "OFF (GRAB - Macros Enabled)"),
               LOG_CORE);
+
+    // Core improvement: ungrab devices when NumLock is ON
+    // and request a grab when NumLock is OFF.
+    if (numLockActive_) {
+      ungrabDevices();
+    } else {
+      setPendingGrab(true);
+    }
+
     // Release any stuck keys on toggle
     releaseAllPressedKeys();
   }

@@ -136,6 +136,8 @@ private:
   std::mutex pressedKeysMutex_;
   std::atomic<bool> pendingGrab_{
       false}; // True if grab is desired but waiting for keys to be released
+  std::chrono::steady_clock::time_point lastPendingGrabRequest_;
+  std::chrono::steady_clock::time_point lastPendingGrabLog_;
   std::atomic<bool> monitoringMode_{
       false};                  // True if devices are open but not grabbed
   bool ctrlDown_ = false;      // Track LeftCtrl state for macros

@@ -61,6 +61,29 @@ prepareBuild() {
     mkdir -p "$project_dir/include"
     mkdir -p "$project_dir/src"
     mkdir -p "$project_dir/build"
+    cat > "$project_dir/.gitignore" << EOF
+# Build directory
+build/
+
+# Executable
+$project_name
+
+# Compilation artifacts
+*.o
+*.a
+*.so
+*.out
+
+# CMake artifacts (if run outside of build/)
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+
+# OS generated files
+.DS_Store
+EOF
     local cmake_file="$project_dir/CMakeLists.txt"
     if [[ "$language" == "C" ]]; then
         cat > "$cmake_file" << 'EOF'

@@ -1,6 +1,7 @@
 [Desktop Entry]
 Type=Application
-Exec=google-chrome-stable --remote-debugging-port=9222 --user-data-dir=/home/yaniv/coding/automateLinux/chrome --profile-directory=Default
+#Exec=google-chrome-stable --remote-debugging-port=9222 --user-data-dir=/home/yaniv/coding/automateLinux/chrome --profile-directory=Default
+Exec=google-chrome-stable 
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true

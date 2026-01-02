@@ -55,6 +55,23 @@ void InputMapper::initializeAppMacros() {
        {KEY_LEFTCTRL, 0}},
       "Triggering G1 (press) SIGINT macro (Ctrl+Alt+C) for Gnome Terminal",
       nullptr});
+  terminalSpecificMacros.push_back(KeyAction{
+      KeyTrigger{
+          {{EV_KEY, G2_VIRTUAL, KEY_PRESS, WITHHOLD_NO, KEY_REPEAT_BREAKS_NO}}},
+      {{KEY_G, 1},
+       {KEY_G, 0},
+       {KEY_I, 1},
+       {KEY_I, 0},
+       {KEY_T, 1},
+       {KEY_T, 0},
+       {KEY_SPACE, 1},
+       {KEY_SPACE, 0},
+       {KEY_S, 1},
+       {KEY_S, 0},
+       {KEY_ENTER, 1},
+       {KEY_ENTER, 0}},
+      "Triggering G2 (press) GITS macro (G+I+T+S+Enter) for Gnome Terminal",
+      nullptr});
   // // Ctrl(press, suppress) + LeftClick(press, suppress)
   //   terminalSpecificMacros.push_back(
   //       KeyAction{KeyTrigger{{{KEY_LEFTCTRL, KEY_PRESS, WITHHOLD_NO,

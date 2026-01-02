@@ -43,15 +43,45 @@ export default class ClockExtension extends Extension {
         this._keyboardEnabled = true;
         this._toggleKeyboardMenuItem = null;
         this._focusSignalId = null;
+        this._dbusSignalId = 0;
         this.logger.log('ClockExtension constructor called');
         this._isUserService = false;
 
     }
 
-
     async enable() {
-        this.logger.log('ClockExtension.enable() called');
+        this.logger.log('ClockExtension.enable() called (with window tracking)');
         try {
+            // Priority 1: Window tracking setup
+            if (global.display) {
+                this.logger.log('Setting up focus-window tracking...');
+                this._focusSignalId = global.display.connect('notify::focus-window', () => this._onActiveWindowChanged());
+
+                try {
+                    this.logger.log('Subscribing to daemon DBus signals...');
+                    this._dbusSignalId = Gio.DBus.system.signal_subscribe(
+                        null, // sender
+                        'com.automatelinux.daemon', // interface
+                        'Ready', // member
+                        '/com/automatelinux/daemon', // object path
+                        null, // arg0
+                        Gio.DBusSignalFlags.NONE,
+                        () => {
+                            this.logger.log('Daemon ready signal received via System DBus, re-sending active window info');
+                            this._onActiveWindowChanged();
+                        }
+                    );
+                } catch (dbusError) {
+                    this.logger.log(`Failed to subscribe to DBus signals: ${dbusError.message}`);
+                }
+
+                // Trigger initial sync immediately
+                this.logger.log('Triggering initial window sync...');
+                this._onActiveWindowChanged();
+            } else {
+                this.logger.log('global.display not available for tracking');
+            }
+
             // Priority 2: UI Setup
             this._label = new St.Label({
                 text: '00:00',
@@ -447,6 +477,14 @@ export default class ClockExtension extends Extension {
 
     disable() {
         this.logger.log('ClockExtension.disable() called');
+        if (this._focusSignalId && global.display) {
+            global.display.disconnect(this._focusSignalId);
+            this._focusSignalId = null;
+        }
+        if (this._dbusSignalId) {
+            Gio.DBus.session.signal_unsubscribe(this._dbusSignalId);
+            this._dbusSignalId = 0;
+        }
         if (this._timeoutId) {
             GLib.source_remove(this._timeoutId);
             this._timeoutId = 0;

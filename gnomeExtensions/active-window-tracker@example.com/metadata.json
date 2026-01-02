@@ -1,7 +1,9 @@
 {
-    "name": "Active Window Tracker",
-    "description": "Tracks the currently active window and logs window changes",
     "uuid": "active-window-tracker@example.com",
-    "shell-version": ["45", "46", "47", "48", "49", "50"],
+    "name": "Active Window Tracker",
+    "description": "Tracks the active window and notifies the daemon.",
+    "shell-version": [
+        "46"
+    ],
     "version": 1
 }

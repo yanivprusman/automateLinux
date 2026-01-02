@@ -1,11 +1,14 @@
 #include "main.h"
+#include "AutomationManager.h"
 #include "ClientSender.h"
 #include "DaemonServer.h"
 #include "MySQLManager.h"
 #include "common.h"
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 using namespace std;
+using json = nlohmann::json;
 
 string socketPath;
 Directories actualDirectories;
@@ -67,6 +70,7 @@ int main(int argc, char *argv[]) {
         MySQLManager::stopMySQL();
         return 1;
       }
+
       daemon_loop();
       MySQLManager::stopMySQL();
       cerr << "Daemon shutting down." << endl;

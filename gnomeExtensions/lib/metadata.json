@@ -1,6 +1,0 @@
-{
-      "name": "My GNOME Extension lib",
-      "description": "A library for GNOME Extensions",
-      "shell-version": ["46"],
-      "uuid": "lib"
-}

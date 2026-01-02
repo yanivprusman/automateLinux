@@ -19,7 +19,8 @@ cmake .. > /dev/null && \
 make > /dev/null && \
 echo -e "${GREEN}Build complete!${NC}" && \
 cp daemon .. && \
-echo "Restarting daemon.service..." && \
+echo "Reloading systemd and restarting daemon.service..." && \
+sudo /usr/bin/systemctl daemon-reload && \
 sudo /usr/bin/systemctl restart daemon.service && \
 sleep 0.1 && \
 cd ..

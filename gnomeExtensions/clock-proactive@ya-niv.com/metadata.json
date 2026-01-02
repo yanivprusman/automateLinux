@@ -1,6 +1,6 @@
 {
-  "uuid": "clock@ya-niv.com",
-  "name": "Second Monitor Clock",
+  "uuid": "clock-proactive@ya-niv.com",
+  "name": "Second Monitor Clock Proactive",
   "description": "Shows the time on a chosen monitor.",
   "shell-version": [
     "46"

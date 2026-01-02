@@ -155,4 +155,9 @@
 #define KEY_REPEAT_BREAKS_NO false
 #define NOISE_BREAKS_YES true
 #define NOISE_BREAKS_NO false
+// DBus Signal for proactive tracking
+#define DBUS_SIGNAL_COMMAND                                                    \
+  "/usr/bin/gdbus emit --system --object-path /com/automatelinux/daemon "      \
+  "--signal "                                                                  \
+  "com.automatelinux.daemon.Ready"
 #endif // CONSTANTS_H

@@ -22,18 +22,48 @@ export class DaemonConnector {
         }
 
         const client = new Gio.SocketClient();
-        try {
-            conn = await new Promise((resolve, reject) => {
-                client.connect_async(
-                    new Gio.UnixSocketAddress({ path: this.#socketPath }),
-                    cancellable,
-                    (source, res) => {
-                        try { resolve(client.connect_finish(res)); }
-                        catch (e) { reject(e); }
-                    }
-                );
-            });
+        let retries = 0;
+        const maxRetries = 10;
 
+        while (retries < maxRetries) {
+            try {
+                // Wait for socket to exist
+                while (!this.#socketExists()) {
+                    this.#logger.log(`Socket not found at ${this.#socketPath}, retrying in 0.3s...`);
+                    await this.#sleep(300);
+                }
+
+                conn = await new Promise((resolve, reject) => {
+                    client.connect_async(
+                        new Gio.UnixSocketAddress({ path: this.#socketPath }),
+                        cancellable,
+                        (source, res) => {
+                            try { resolve(client.connect_finish(res)); }
+                            catch (e) { reject(e); }
+                        }
+                    );
+                });
+                // Connection successful, break retry loop
+                break;
+            } catch (e) {
+                if (e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CONNECTION_REFUSED) ||
+                    e.message.includes('Connection refused')) {
+                    retries++;
+                    this.#logger.log(`Connection refused, retrying in 0.5s... (Attempt ${retries}/${maxRetries})`);
+                    await this.#sleep(500);
+                } else {
+                    this.#logger.log(`Error connecting to daemon: ${e.message}`);
+                    return null;
+                }
+            }
+        }
+
+        if (!conn) {
+            this.#logger.log('Failed to connect after multiple retries.');
+            return null;
+        }
+
+        try {
             const outputStream = conn.get_output_stream();
             const dataOutputStream = new Gio.DataOutputStream({ base_stream: outputStream });
             const inputStream = conn.get_input_stream();

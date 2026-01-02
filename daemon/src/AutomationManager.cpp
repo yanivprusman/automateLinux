@@ -53,6 +53,10 @@ CmdResult AutomationManager::onActiveWindowChanged(const json &command) {
        lowerTitle.find("chatgpt") != std::string::npos)) {
     appType = AppType::CHROME;
   }
+  if (appType == AppType::OTHER &&
+      (lowerTitle.find("terminal") != std::string::npos)) {
+    appType = AppType::TERMINAL;
+  }
 
   // Set the mapping context directly in InputMapper, tracking title too
   KeyboardManager::setContext(appType, url, windowTitle);

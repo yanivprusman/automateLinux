@@ -35,6 +35,15 @@ struct ClientState {
 
 static std::map<int, ClientState> clients;
 
+void emitDaemonReadySignal() {
+  logToFile("Emitting daemon ready DBus signal", LOG_CORE);
+  int rc = system(DBUS_SIGNAL_COMMAND);
+  if (rc != 0) {
+    logToFile("ERROR: Failed to emit DBus signal, rc=" + std::to_string(rc),
+              LOG_CORE);
+  }
+}
+
 void initializeKeyboardPath() {
   string deviceName = executeCommand(KEYBOARD_DISCOVERY_CMD);
   if (!deviceName.empty()) {
@@ -238,6 +247,8 @@ int initialize_daemon() {
   if (KeyboardManager::setKeyboard(g_keyboardEnabled).status != 0) {
     logToFile("ERROR: Failed to initialize keyboard mapping", LOG_CORE);
   }
+
+  emitDaemonReadySignal();
 
   return 0;
 }

@@ -13,8 +13,7 @@ echo ""
 
 # Step 1: Reload Chrome extension
 echo "📦 Step 1/7: Reloading Chrome extension..."
-cd /home/yaniv/coding/automateLinux/chromeExtension
-./reload-extension.sh 2>&1 | grep -v "Traceback\|WebSocketBadStatusException" || true
+/home/yaniv/coding/automateLinux/reload-extension.sh 2>&1 | grep -v "Traceback\|WebSocketBadStatusException" || true
 echo "  ✓ Extension reloaded"
 echo ""
 

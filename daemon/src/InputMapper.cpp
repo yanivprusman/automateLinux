@@ -399,42 +399,6 @@ void InputMapper::loop() {
 
   logToFile("InputMapper loop starting...", LOG_CORE);
   while (running_) {
-    // Check for pending grab
-    if (pendingGrab_) {
-      bool allReleased = pressedKeys_.empty();
-      auto now = std::chrono::steady_clock::now();
-      auto requestAge = std::chrono::duration_cast<std::chrono::milliseconds>(
-                            now - lastPendingGrabRequest_)
-                            .count();
-      auto logAge = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        now - lastPendingGrabLog_)
-                        .count();
-
-      if (allReleased || requestAge > 2000) {
-        extern void forceLog(const std::string &message);
-        if (allReleased) {
-          forceLog("InputMapper: All keys released, performing deferred grab.");
-        } else {
-          forceLog("InputMapper: Grab TIMEOUT (" + std::to_string(requestAge) +
-                   "ms), forcing grab despite pressed keys.");
-        }
-        grabDevices();
-        pendingGrab_ = false;
-      } else if (logAge > 500) {
-        extern void forceLog(const std::string &message);
-        std::string keys;
-        {
-          std::lock_guard<std::mutex> lock(pressedKeysMutex_);
-          for (uint16_t code : pressedKeys_) {
-            const char *name = libevdev_event_code_get_name(EV_KEY, code);
-            keys += (name ? name : std::to_string(code)) + " ";
-          }
-        }
-        forceLog("InputMapper: Waiting for release of: " + keys + "(" +
-                 std::to_string(requestAge) + "ms)");
-        lastPendingGrabLog_ = now;
-      }
-    }
     int rc = poll(fds, nfds, 100); // 100ms timeout
     if (rc < 0)
       break;
@@ -499,15 +463,6 @@ void InputMapper::sync() {
   libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
 }
 
-void InputMapper::setPendingGrab(bool value) {
-  extern void forceLog(const std::string &message);
-  forceLog("InputMapper: setPendingGrab(" + std::to_string(value) + ")");
-  pendingGrab_ = value;
-  if (value) {
-    lastPendingGrabRequest_ = std::chrono::steady_clock::now();
-    lastPendingGrabLog_ = lastPendingGrabRequest_;
-  }
-}
 
 void InputMapper::emitSequence(
     const std::vector<std::pair<uint16_t, int32_t>> &sequence) {
@@ -522,6 +477,20 @@ void InputMapper::emitSequence(
 
 void InputMapper::grabDevices() {
   extern void forceLog(const std::string &message);
+
+  {
+    std::lock_guard<std::mutex> lock(pressedKeysMutex_);
+    if (!pressedKeys_.empty()) {
+      std::string keys;
+      for (uint16_t code : pressedKeys_) {
+        const char *name = libevdev_event_code_get_name(EV_KEY, code);
+        keys += (name ? name : std::to_string(code)) + " ";
+      }
+      forceLog("InputMapper: Not grabbing, keys are pressed: " + keys);
+      return;
+    }
+  }
+
   forceLog("InputMapper: Attempting GRAB...");
   if (keyboardDev_) {
     if (libevdev_grab(keyboardDev_, LIBEVDEV_GRAB) < 0) {
@@ -957,7 +926,7 @@ void InputMapper::setNumLockState(bool active) {
     if (numLockActive_) {
       ungrabDevices();
     } else {
-      setPendingGrab(true);
+      grabDevices();
     }
 
     // Release any stuck keys on toggle

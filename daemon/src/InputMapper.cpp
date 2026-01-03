@@ -10,9 +10,11 @@
 #include <fstream>
 #include <iostream>
 #include <linux/input-event-codes.h>
+#include <linux/input.h>
 #include <mutex>
 #include <poll.h>
 #include <regex> // For devicePathRegex matching
+#include <sys/ioctl.h>
 #include <thread>
 #include <unistd.h>
 #include <vector>
@@ -463,7 +465,6 @@ void InputMapper::sync() {
   libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
 }
 
-
 void InputMapper::emitSequence(
     const std::vector<std::pair<uint16_t, int32_t>> &sequence) {
   if (!uinputDev_)
@@ -478,17 +479,43 @@ void InputMapper::emitSequence(
 void InputMapper::grabDevices() {
   extern void forceLog(const std::string &message);
 
-  {
-    std::lock_guard<std::mutex> lock(pressedKeysMutex_);
-    if (!pressedKeys_.empty()) {
-      std::string keys;
-      for (uint16_t code : pressedKeys_) {
-        const char *name = libevdev_event_code_get_name(EV_KEY, code);
-        keys += (name ? name : std::to_string(code)) + " ";
+  // Wait for all keys/buttons to be released hardware-side before grabbing (up
+  // to 2 seconds)
+  auto startTime = std::chrono::steady_clock::now();
+  while (true) {
+    bool anyPressedHardware = false;
+
+    auto checkHardware = [&](int fd) {
+      if (fd < 0)
+        return false;
+      uint8_t key_bits[KEY_CNT / 8];
+      memset(key_bits, 0, sizeof(key_bits));
+      if (ioctl(fd, EVIOCGKEY(sizeof(key_bits)), key_bits) < 0)
+        return false;
+      for (size_t i = 0; i < sizeof(key_bits); ++i) {
+        if (key_bits[i] != 0)
+          return true;
       }
-      forceLog("InputMapper: Not grabbing, keys are pressed: " + keys);
+      return false;
+    };
+
+    if (checkHardware(keyboardFd_) || checkHardware(mouseFd_)) {
+      anyPressedHardware = true;
+    }
+
+    if (!anyPressedHardware) {
+      std::lock_guard<std::mutex> lock(pressedKeysMutex_);
+      if (pressedKeys_.empty())
+        break;
+    }
+
+    if (std::chrono::steady_clock::now() - startTime >
+        std::chrono::seconds(2)) {
+      forceLog("InputMapper: Timeout waiting for keys/buttons to be released. "
+               "Aborting grab.");
       return;
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 
   forceLog("InputMapper: Attempting GRAB...");

@@ -168,3 +168,9 @@ clc() {
 }
 export -f clc
 
+moveAllToSubdir(){
+    shopt -s extglob
+    local subdir=${1%/}  # Remove trailing slash if present
+    mv !("$subdir") "$subdir"/
+}
+export -f moveAllToSubdir

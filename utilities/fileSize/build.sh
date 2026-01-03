@@ -1,6 +1,13 @@
 #!/bin/bash
-mkdir -p build
+set -e
+if [[ " $@ " =~ " -rebuild " ]]; then
+    rm -rf build
+fi
+if [ ! -d "build" ]; then
+    mkdir -p build
+fi
 cd build
-cmake ..
-make
-cp fileSize ../../
+cmake .. > /dev/null && \
+make > /dev/null && \
+echo -e "${GREEN}Build complete!${NC}" 
+cd ..

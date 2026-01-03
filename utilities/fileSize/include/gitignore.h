@@ -10,6 +10,7 @@
 typedef struct {
   char path[MAX_PATH];
   long long size;
+  long long lines;
 } FileEntry;
 
 typedef struct {

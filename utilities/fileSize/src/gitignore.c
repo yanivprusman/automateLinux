@@ -194,6 +194,6 @@ void topSizes(int n) {
   qsort(files, fileCount, sizeof(FileEntry), cmpFiles);
   for (int i = 0; i < n && i < fileCount; ++i) {
     print_size(files[i].size);
-    printf("\t%s\n", files[i].path);
+    printf("\t%lld\t%s\n", files[i].lines, files[i].path);
   }
 }

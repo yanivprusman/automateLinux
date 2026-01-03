@@ -177,4 +177,4 @@ moveAllToSubdir(){
     local subdir=${1%/}  # Remove trailing slash if present
     mv !("$subdir") "$subdir"/
 }
-export -f moveAllToSubdir
+# export -f moveAllToSubdir

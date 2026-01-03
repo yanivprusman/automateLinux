@@ -1,1 +1,1 @@
-# daemon send updateDirHistory --tty $AUTOMATE_LINUX_TTY_NUMBER --pwd "${PWD}/" > /dev/null 
+daemon send updateDirHistory --tty $AUTOMATE_LINUX_TTY_NUMBER --pwd "${PWD}/" > /dev/null 

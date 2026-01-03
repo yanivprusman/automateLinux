@@ -169,6 +169,10 @@ clc() {
 export -f clc
 
 moveAllToSubdir(){
+    if [ -z "$1" ]; then
+        echo "Usage: moveAllToSubdir <subdirectory>"
+        return 1
+    fi
     shopt -s extglob
     local subdir=${1%/}  # Remove trailing slash if present
     mv !("$subdir") "$subdir"/

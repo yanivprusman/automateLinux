@@ -30,6 +30,10 @@ export AUTOMATE_LINUX_SOCKET_PATH="/run/automatelinux/automatelinux-daemon.sock"
 export AUTOMATE_LINUX_TTY_NUMBER=$( tty | sed 's/\/dev\/pts\///' )
 export AUTOMATE_LINUX_DAEMON_DIR="${AUTOMATE_LINUX_DIR}daemon/"
 export AUTOMATE_LINUX_DAEMON_PID=$(${AUTOMATE_LINUX_DAEMON_DIR}getDaemonPID.sh)
+export kamateraIp="10.0.0.1"
+export pcIp="10.0.0.2"
+export phoneIp="10.0.0.3"
+export laptopIp="10.0.0.4"
 if [ ! -d "$AUTOMATE_LINUX_DATA_DIR" ]; then
     mkdir -p "$AUTOMATE_LINUX_DATA_DIR"
 fi

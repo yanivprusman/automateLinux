@@ -14,3 +14,4 @@
 . $(theRealPath evsieve.sh)
 . $(theRealPath wireguard.sh)
 . $(theRealPath testDirHistory.sh)
+. $(theRealPath remote.sh)

@@ -18,7 +18,13 @@ shedSwitch(){
     fi
     cd "$repo_dir" || return 1
 
-    # Checkout the target
+    # Discard changes to the auto-generated bridge file if it exists/is tracked
+    # to prevent it from blocking the checkout of the target version.
+    if [ -f "web/next-env.d.ts" ]; then
+        git checkout web/next-env.d.ts 2>/dev/null || rm -f web/next-env.d.ts
+    fi
+
+    # Checkout the target safely
     if ! git checkout "$target"; then
         echo -e "${RED}Error: Git checkout failed.${NC}"
         cd "$original_dir"

@@ -15,3 +15,4 @@
 . $(theRealPath wireguard.sh)
 . $(theRealPath testDirHistory.sh)
 . $(theRealPath remote.sh)
+. $(theRealPath shed.sh)

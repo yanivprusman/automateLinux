@@ -36,6 +36,8 @@
 #define COMMAND_ARG_SIGNAL "signal"
 #define COMMAND_PING "ping"
 #define COMMAND_QUIT "quit"
+#define COMMAND_GET_PORT "getPort"
+#define COMMAND_SET_PORT "setPort"
 #define COMMAND_GET_KEYBOARD_PATH "getKeyboardPath"
 #define COMMAND_GET_MOUSE_PATH "getMousePath"
 #define COMMAND_GET_SOCKET_PATH "getSocketPath"

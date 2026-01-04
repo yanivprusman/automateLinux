@@ -4,6 +4,7 @@
 #include "DatabaseTableManagers.h"
 #include "Globals.h"
 #include "KeyboardManager.h"
+#include "MySQLManager.h"
 #include "Utils.h"
 #include "common.h"
 #include "main.h"
@@ -15,7 +16,6 @@
 #include <string>
 #include <thread>
 #include <tuple>
-#include "MySQLManager.h"
 
 using namespace std;
 
@@ -78,6 +78,8 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_LIST_LOG_FILTERS, {}),
     CommandSignature(COMMAND_CLEAR_LOG_FILTERS, {}),
     CommandSignature(COMMAND_EMPTY_DIR_HISTORY_TABLE, {}),
+    CommandSignature(COMMAND_GET_PORT, {COMMAND_ARG_KEY}),
+    CommandSignature(COMMAND_SET_PORT, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
 
 };
 
@@ -592,6 +594,28 @@ CmdResult handleEmptyDirHistoryTable(const json &) {
   return CmdResult(0, "terminal_history table emptied.\n");
 }
 
+CmdResult handleGetPort(const json &command) {
+  string key = command[COMMAND_ARG_KEY].get<string>();
+  string portKey = "port_" + key;
+  string value = SettingsTable::getSetting(portKey);
+  if (value.empty()) {
+    return CmdResult(1, "Port not set for " + key + "\n");
+  }
+  return CmdResult(0, value + "\n");
+}
+
+CmdResult handleSetPort(const json &command) {
+  string key = command[COMMAND_ARG_KEY].get<string>();
+  string value;
+  if (command[COMMAND_ARG_VALUE].is_number()) {
+    value = to_string(command[COMMAND_ARG_VALUE].get<long long>());
+  } else {
+    value = command[COMMAND_ARG_VALUE].get<string>();
+  }
+  string portKey = "port_" + key;
+  SettingsTable::setSetting(portKey, value);
+  return CmdResult(0, "Port set for " + key + " to " + value + "\n");
+}
 
 typedef CmdResult (*CommandHandler)(const json &);
 
@@ -651,6 +675,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_TEST_INTEGRITY, handleTestIntegrity},
     {COMMAND_SIMULATE_INPUT, handleSimulateInput},
     {COMMAND_EMPTY_DIR_HISTORY_TABLE, handleEmptyDirHistoryTable},
+    {COMMAND_GET_PORT, handleGetPort},
+    {COMMAND_SET_PORT, handleSetPort},
 
 };
 

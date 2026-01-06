@@ -99,9 +99,3 @@ whichReal(){
 }
 export -f whichReal
 
-redirectSession() {
-    local nameoffile="${AUTOMATE_LINUX_DATA_DIR}session${AUTOMATE_LINUX_TTY_NUMBER}.txt"
-    : > "$nameoffile"
-    exec > >(tee -a "$nameoffile") 2>&1
-}
-export -f redirectSession

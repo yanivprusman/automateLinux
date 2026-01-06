@@ -6,6 +6,7 @@ firstTime(){
     # export AUTOMATE_LINUX_DAEMON_FD_IN=${DAEMON_COPROC[1]}
     # export AUTOMATE_LINUX_DAEMON_FD_OUT=${DAEMON_COPROC[0]}
     cd $(daemon send openedTty --tty $AUTOMATE_LINUX_TTY_NUMBER )
+    redirectSession
 }
 firstTime
 unset firstTime

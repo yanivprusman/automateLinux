@@ -16,6 +16,7 @@ bind -x '"\C-n":"gnome-terminal --tab "'
 
 # control+down  forward a directory
 doCdForward() { 
+    restoreOutput
     local dirB4=$PWD
     local result=$(daemon send cdForward --tty "$AUTOMATE_LINUX_TTY_NUMBER")
     if echo "$result" | grep -q "^cd "; then
@@ -26,12 +27,14 @@ doCdForward() {
         $result
         echo -ne "\033[2A"
     fi
+    redirectSession
     history -d -1
 }
 bind -s '"\e[1;5B": "doCdForward\n"' >/dev/null
 
 # control+up    backward a directory
 doCdBack() {
+    restoreOutput
     local dirB4=$PWD
     local result=$(daemon send cdBackward --tty "$AUTOMATE_LINUX_TTY_NUMBER")
     if echo "$result" | grep -q "^cd "; then
@@ -42,6 +45,7 @@ doCdBack() {
         $result
         echo -ne "\033[2A"
     fi
+    redirectSession
     history -d -1
 }
 bind -s '"\e[1;5A": "doCdBack\n"' >/dev/null

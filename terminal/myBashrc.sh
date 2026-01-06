@@ -22,6 +22,7 @@ export AUTOMATE_LINUX_PS1='\[\e]0;\W '$AUTOMATE_LINUX_TTY_NUMBER'\a\]'"${_yellow
 PS1=$AUTOMATE_LINUX_PS1
 cp ~/coding/automateLinux/desktop/*.desktop ~/Desktop/
 # runSingleton "$AUTOMATE_LINUX_SYMLINK_DIR/restartCorsairKeyBoardLogiMouseService.sh"
+redirectSession
 PROMPT_COMMAND=". $AUTOMATE_LINUX_PROMPT_COMMAND_SCRIPT_FILE"
 . "${AUTOMATE_LINUX_TERMINAL_DIR}unset.sh"
 

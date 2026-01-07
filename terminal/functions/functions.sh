@@ -19,3 +19,4 @@
 . $(theRealPath prompt.sh)
 . $(theRealPath tree.sh)
 . $(theRealPath user.sh)
+. $(theRealPath loom.sh)

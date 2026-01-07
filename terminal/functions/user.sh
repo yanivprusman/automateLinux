@@ -24,4 +24,7 @@ _theUserGroups(){
     groups $1
 }
 
+_theUserSwitch(){
+    su - $1
+}
 

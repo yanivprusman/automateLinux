@@ -27,7 +27,7 @@ doCdForward() {
         $result
         echo -ne "\033[2A"
     fi
-    redirectSession
+    # redirectSession
     history -d -1
 }
 bind -s '"\e[1;5B": "doCdForward\n"' >/dev/null
@@ -45,7 +45,7 @@ doCdBack() {
         $result
         echo -ne "\033[2A"
     fi
-    redirectSession
+    # redirectSession
     history -d -1
 }
 bind -s '"\e[1;5A": "doCdBack\n"' >/dev/null

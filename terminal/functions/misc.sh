@@ -194,3 +194,7 @@ openFunction(){
     fi
     code "$func_file"
 }
+
+openSpecialChrome(){
+    exec -a "not-chrome" google-chrome
+}

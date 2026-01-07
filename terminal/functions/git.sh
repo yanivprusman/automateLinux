@@ -206,3 +206,25 @@ gits(){
 gitp(){
     git push
 }
+
+gitMakeMain() {
+  if [ -z "$1" ]; then
+    echo "Usage: gitMakeMain <commit-hash>"
+    return 1
+  fi
+  echo "This will run the following steps:"
+  echo "1) git switch main"
+  echo "2) git reset --hard $1"
+  echo "3) git push --force origin main"
+  echo
+  read -p "Proceed with step 1 (git switch main)? [y/N] " confirm
+  [[ "$confirm" =~ ^[Yy]$ ]] || return 1
+  git switch main || return 1
+  read -p "Proceed with step 2 (git reset --hard $1)? [y/N] " confirm
+  [[ "$confirm" =~ ^[Yy]$ ]] || return 1
+  git reset --hard "$1" || return 1
+  read -p "Proceed with step 3 (git push --force origin main)? [y/N] " confirm
+  [[ "$confirm" =~ ^[Yy]$ ]] || return 1
+  git push --force origin main
+}
+

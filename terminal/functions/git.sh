@@ -187,3 +187,18 @@ awk '
 /^ /{ sub(/^ /, ""); print }'
 }
 
+gitw(){
+    gitm "wip"
+}
+
+gitl(){
+    git l
+}
+
+gita(){
+    git a
+}
+
+gits(){
+    git s
+}

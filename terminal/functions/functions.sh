@@ -16,3 +16,5 @@
 . $(theRealPath testDirHistory.sh)
 . $(theRealPath remote.sh)
 . $(theRealPath shed.sh)
+. $(theRealPath prompt.sh)
+. $(theRealPath tree.sh)

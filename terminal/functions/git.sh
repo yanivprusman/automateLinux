@@ -202,3 +202,7 @@ gita(){
 gits(){
     git s
 }
+
+gitp(){
+    git push
+}

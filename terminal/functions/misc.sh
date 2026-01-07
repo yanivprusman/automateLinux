@@ -178,3 +178,19 @@ moveAllToSubdir(){
     mv !("$subdir") "$subdir"/
 }
 # export -f moveAllToSubdir
+
+openFunction(){
+    # code # use type $1 to see the function and find the script it is in and then open that script in code
+    local func_name=$1
+    if [ -z "$func_name" ]; then
+        echo "Usage: openFunction <function_name>"
+        return 1
+    fi
+    local func_file
+    func_file=$(grep -rlE "^${func_name}[[:space:]]*\(\)[[:space:]]*\{" "$AUTOMATE_LINUX_TERMINAL_DIR"/*.sh "$AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR"/*.sh 2>/dev/null | head -n 1)
+    if [ -z "$func_file" ]; then
+        echo "Function '$func_name' not found."
+        return 1
+    fi
+    code "$func_file"
+}

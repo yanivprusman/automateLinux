@@ -12,7 +12,7 @@ async function saveFileState(filePath: string, repoRoot: string): Promise<void> 
 	if (!fs.existsSync(stateDir)) {
 		fs.mkdirSync(stateDir, { recursive: true });
 	}
-	
+
 	try {
 		const fileContent = fs.readFileSync(filePath, 'utf-8');
 		const fileHash = path.basename(filePath).replace(/[^a-zA-Z0-9]/g, '_');
@@ -28,11 +28,11 @@ async function restoreFileState(filePath: string, repoRoot: string): Promise<boo
 	const stateDir = path.join(repoRoot, '.git-extension-state');
 	const fileHash = path.basename(filePath).replace(/[^a-zA-Z0-9]/g, '_');
 	const statePath = path.join(stateDir, `${fileHash}.state`);
-	
+
 	if (!fs.existsSync(statePath)) {
 		return false;
 	}
-	
+
 	try {
 		const savedContent = fs.readFileSync(statePath, 'utf-8');
 		fs.writeFileSync(filePath, savedContent, 'utf-8');
@@ -46,8 +46,8 @@ async function restoreFileState(filePath: string, repoRoot: string): Promise<boo
 // Helper function to annotate diff changes between two commits
 async function annotateDiffChanges(fromCommit: string, toCommit: string, filePath: string, repoRoot: string): Promise<string> {
 	return new Promise((resolve, reject) => {
-		exec(`git --no-pager diff -U999 "${fromCommit}" "${toCommit}" -- "${filePath}"`, 
-			{ cwd: repoRoot, maxBuffer: 10 * 1024 * 1024 }, 
+		exec(`git --no-pager diff -U999 "${fromCommit}" "${toCommit}" -- "${filePath}"`,
+			{ cwd: repoRoot, maxBuffer: 10 * 1024 * 1024 },
 			(error, stdout, stderr) => {
 				if (error) {
 					console.error(`Failed to get diff: ${error.message}`);
@@ -93,33 +93,39 @@ export function activate(context: vscode.ExtensionContext) {
 	const modeProvider = new ModeProvider();
 	const modeTreeView = vscode.window.createTreeView('Mode', { treeDataProvider: modeProvider });
 	context.subscriptions.push(
-        vscode.commands.registerCommand('git.toggleMode', (item: ModeItem) => {
-            // Mutually exclusive: uncheck all modes first
-            const modes = modeProvider.getChildren();
-            modes.forEach(mode => mode.checked = false);
-            
-            // Check only the selected one
-            item.checked = true;
-            modeProvider.refresh();
-            
-            // Set context for view visibility
-            const isDiffMode = item.label === 'diff';
-            vscode.commands.executeCommand('setContext', 'git-ext:diffMode', isDiffMode);
-            console.log(`[git-ext] Mode changed to: ${item.label}`);
-        })
-    );
+		vscode.commands.registerCommand('git.toggleMode', (item: ModeItem) => {
+			// Mutually exclusive: uncheck all modes first
+			const modes = modeProvider.getChildren();
+			modes.forEach(mode => mode.checked = false);
+
+			// Check only the selected one
+			item.checked = true;
+			modeProvider.refresh();
+
+			// Set context for view visibility
+			const isDiffMode = item.label === 'diff';
+			vscode.commands.executeCommand('setContext', 'git-ext:diffMode', isDiffMode);
+			console.log(`[git-ext] Mode changed to: ${item.label}`);
+		})
+	);
 	const commitProvider = new ActiveFileCommitProvider();
 	const fromCommitView = vscode.window.createTreeView('activeFileFromCommits', { treeDataProvider: commitProvider });
 	const toCommitView = vscode.window.createTreeView('activeFileToCommits', { treeDataProvider: commitProvider });
-	
-	let lastCheckedOut: Record<string, string> = {};
+
+	// Restore state from workspace storage
+	let lastCheckedOut: Record<string, string> = context.workspaceState.get('lastCheckedOut') || {};
+
+	const updateLastCheckedOut = (filePath: string, hash: string) => {
+		lastCheckedOut[filePath] = hash;
+		context.workspaceState.update('lastCheckedOut', lastCheckedOut);
+	};
 	// Track files that are currently being checked out to avoid race conditions
 	let checkoutInProgress: Set<string> = new Set();
-	
+
 	// Track selections for diff mode
 	let selectedFromCommit: { hash: string; filePath: string } | null = null;
 	let selectedToCommit: { hash: string; filePath: string } | null = null;
-	
+
 	context.subscriptions.push(vscode.commands.registerCommand('git.copyCommitHash', async (item: CommitItem) => {
 		if (!item || !item.commitHash) {
 			vscode.window.showErrorMessage('No commit hash to copy.');
@@ -159,11 +165,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 		try {
 			let annotatedContent: string;
-			
+
 			// Extract values after null check for type safety
 			const fromCommitHash = selectedFromCommit.hash;
 			const toCommitHash = selectedToCommit.hash;
-			
+
 			// Convert absolute path to relative path for git commands
 			const relativePath = path.relative(repoRoot, filePath);
 
@@ -171,7 +177,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (fromCommitHash === toCommitHash) {
 				console.log(`[git-ext] Same commit selected: ${fromCommitHash.substring(0, 7)}`);
 				annotatedContent = await new Promise((resolve, reject) => {
-					exec(`git show "${fromCommitHash}:${relativePath}"`, 
+					exec(`git show "${fromCommitHash}:${relativePath}"`,
 						{ cwd: repoRoot, maxBuffer: 10 * 1024 * 1024 },
 						(error, stdout, stderr) => {
 							if (error) {
@@ -219,7 +225,7 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.window.showErrorMessage(`Failed to apply diff: ${error}`);
 		}
 	}));
-	
+
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromCommit', async (commitHash: string, filePath: string) => {
 		const editor = vscode.window.activeTextEditor;
 		const currentFilePath = editor?.document.uri.fsPath;
@@ -254,13 +260,13 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		console.log(`[git-ext] Checking out ${filePath} from commit ${commitHash}`);
-		
+
 		// Mark checkout as in progress
 		checkoutInProgress.add(filePath);
-		
+
 		exec(`git checkout ${commitHash} -- "${filePath}"`, { cwd: repoRoot }, (error, stdout, stderr) => {
 			checkoutInProgress.delete(filePath);
-			
+
 			if (error) {
 				// File doesn't exist in this commit, treat as empty
 				if (error.message.includes('pathspec') && error.message.includes('did not match')) {
@@ -316,7 +322,7 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		lastCheckedOut[filePath] = nextCommit.commitHash;
+		updateLastCheckedOut(filePath, nextCommit.commitHash);
 		await vscode.commands.executeCommand('git.checkoutFileFromCommit', nextCommit.commitHash, filePath);
 	}));
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromNextCommit', async () => {
@@ -345,7 +351,7 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		lastCheckedOut[filePath] = previousCommit.commitHash;
+		updateLastCheckedOut(filePath, previousCommit.commitHash);
 		await vscode.commands.executeCommand('git.checkoutFileFromCommit', previousCommit.commitHash, filePath);
 	}));
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {
@@ -358,7 +364,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			if (currentMode === 'checkout') {
 				// Checkout mode: single selection triggers checkout
-				lastCheckedOut[item.filePath] = item.commitHash;
+				updateLastCheckedOut(item.filePath, item.commitHash);
 				vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
 			} else if (currentMode === 'diff') {
 				// Diff mode: track selection in left tree (from)
@@ -377,7 +383,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			if (currentMode === 'checkout') {
 				// Checkout mode: single selection triggers checkout
-				lastCheckedOut[item.filePath] = item.commitHash;
+				updateLastCheckedOut(item.filePath, item.commitHash);
 				vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
 			} else if (currentMode === 'diff') {
 				// Diff mode: track selection in right tree (to)
@@ -396,7 +402,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		const filePath = document.uri.fsPath;
-		
+
 		// Don't save state while a checkout is in progress
 		if (checkoutInProgress.has(filePath)) {
 			console.log(`[git-ext] Ignoring save during checkout for ${filePath}`);
@@ -404,7 +410,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		const repoRoot = await findGitRepoRoot(filePath);
-		
+
 		if (!repoRoot) {
 			return;
 		}
@@ -412,7 +418,7 @@ export function activate(context: vscode.ExtensionContext) {
 		// Check if this file was recently checked out from a commit
 		// Try exact match first, then try normalized path
 		let lastCheckout = lastCheckedOut[filePath];
-		
+
 		// If no exact match, try to find by comparing file names
 		if (!lastCheckout) {
 			for (const trackedPath in lastCheckedOut) {
@@ -434,4 +440,4 @@ export function activate(context: vscode.ExtensionContext) {
 	commitProvider.refresh();
 }
 
-export function deactivate() {}
+export function deactivate() { }

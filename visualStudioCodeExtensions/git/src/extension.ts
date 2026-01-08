@@ -116,9 +116,25 @@ export function activate(context: vscode.ExtensionContext) {
 	let lastCheckedOut: Record<string, string> = context.workspaceState.get('lastCheckedOut') || {};
 
 	const updateLastCheckedOut = (filePath: string, hash: string) => {
+		if (lastCheckedOut[filePath] === hash) return;
 		lastCheckedOut[filePath] = hash;
 		context.workspaceState.update('lastCheckedOut', lastCheckedOut);
 	};
+
+	const getLastCheckedOutHash = (filePath: string): string | undefined => {
+		let hash = lastCheckedOut[filePath];
+		if (!hash) {
+			// Try fuzzy match
+			const lowerPath = filePath.toLowerCase();
+			for (const key in lastCheckedOut) {
+				if (key.toLowerCase() === lowerPath) {
+					return lastCheckedOut[key];
+				}
+			}
+		}
+		return hash;
+	};
+
 	// Track files that are currently being checked out to avoid race conditions
 	let checkoutInProgress: Set<string> = new Set();
 
@@ -229,6 +245,13 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromCommit', async (commitHash: string, filePath: string) => {
 		const editor = vscode.window.activeTextEditor;
 		const currentFilePath = editor?.document.uri.fsPath;
+
+		// Optimization: skip if already checked out
+		if (getLastCheckedOutHash(filePath) === commitHash) {
+			console.log(`[git-ext] Skipping checkout: ${commitHash} already current for ${filePath}`);
+			return;
+		}
+
 		const repoRoot = await findGitRepoRoot(filePath);
 		if (!repoRoot) {
 			vscode.window.showErrorMessage('Not a Git repository.');
@@ -244,7 +267,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		// Save current state before checkout (unless we're restoring from saved state)
 		if (commitHash !== 'CURRENT') {
-			console.log(`[git-ext] Saving current state before checkout from ${commitHash}`);
+			console.log(`[git-ext] Saving current state before checkout to ${commitHash}`);
 			await saveFileState(filePath, repoRoot);
 		}
 
@@ -252,6 +275,7 @@ export function activate(context: vscode.ExtensionContext) {
 		if (commitHash === 'CURRENT') {
 			const restored = await restoreFileState(filePath, repoRoot);
 			if (restored) {
+				updateLastCheckedOut(filePath, 'CURRENT');
 				vscode.window.showInformationMessage(`Restored ${path.basename(filePath)} to current working state.`);
 			} else {
 				vscode.window.showInformationMessage(`Current working state not available. File may not have been modified since last checkout.`);
@@ -280,163 +304,121 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			} else {
 				if (stderr) {
-					vscode.window.showWarningMessage(`Git checkout warning: ${stderr}`);
+					console.warn(`Git checkout warning: ${stderr}`);
 				}
 				vscode.window.showInformationMessage(`Successfully checked out ${path.basename(filePath)} from commit ${commitHash}.`);
 			}
-			if (currentFilePath === filePath) {
-				// vscode.window.showTextDocument(vscode.Uri.file(filePath), { preview: false });
-			}
-		});
-		commitProvider.getChildren().then(children => {
-			const currentHash = lastCheckedOut[filePath];
-			const currentItem = children.find(c => c.commitHash === currentHash);
-			if (currentItem) {
-				toCommitView.reveal(currentItem, { select: true, focus: true });
-			}
+
+			// Update state AFTER successful checkout
+			updateLastCheckedOut(filePath, commitHash);
+
+			// Synchronize tree selection
+			commitProvider.getChildren().then(children => {
+				const currentItem = children.find(c => c.commitHash === commitHash);
+				if (currentItem) {
+					toCommitView.reveal(currentItem, { select: true });
+				}
+			});
 		});
 	}));
+
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromPreviousCommit', async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) return;
 
 		const filePath = editor.document.uri.fsPath;
-		const repoRoot = await findGitRepoRoot(filePath);
-		if (!repoRoot) {
-			vscode.window.showErrorMessage('Not a Git repository.');
-			return;
-		}
-
 		const commits = await commitProvider.getChildren();
-		if (commits.length === 0) {
-			vscode.window.showInformationMessage('No commits found for this file.');
-			return;
-		}
+		if (commits.length === 0) return;
 
-		let currentHash = lastCheckedOut[filePath] || commits[0]?.commitHash;
+		let currentHash = getLastCheckedOutHash(filePath) || commits[0]?.commitHash;
 		const currentIndex = commits.findIndex(c => c.commitHash === currentHash);
 		const nextCommit = commits[currentIndex + 1];
+
+		console.log(`[git-ext] Previous (Down): Current: ${currentHash} (Index: ${currentIndex}), NextIndex: ${currentIndex + 1}, Target: ${nextCommit?.commitHash}`);
 
 		if (!nextCommit) {
 			vscode.window.showInformationMessage('Already at the oldest commit.');
 			return;
 		}
 
-		updateLastCheckedOut(filePath, nextCommit.commitHash);
 		await vscode.commands.executeCommand('git.checkoutFileFromCommit', nextCommit.commitHash, filePath);
 	}));
+
 	context.subscriptions.push(vscode.commands.registerCommand('git.checkoutFileFromNextCommit', async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) return;
 
 		const filePath = editor.document.uri.fsPath;
-		const repoRoot = await findGitRepoRoot(filePath);
-		if (!repoRoot) {
-			vscode.window.showErrorMessage('Not a Git repository.');
-			return;
-		}
-
 		const commits = await commitProvider.getChildren();
-		if (commits.length === 0) {
-			vscode.window.showInformationMessage('No commits found for this file.');
-			return;
-		}
+		if (commits.length === 0) return;
 
-		let currentHash = lastCheckedOut[filePath] || commits[0]?.commitHash;
+		let currentHash = getLastCheckedOutHash(filePath) || commits[0]?.commitHash;
 		const currentIndex = commits.findIndex(c => c.commitHash === currentHash);
 		const previousCommit = commits[currentIndex - 1];
+
+		console.log(`[git-ext] Next (Up): Current: ${currentHash} (Index: ${currentIndex}), PrevIndex: ${currentIndex - 1}, Target: ${previousCommit?.commitHash}`);
 
 		if (!previousCommit) {
 			vscode.window.showInformationMessage('Already at the newest commit.');
 			return;
 		}
 
-		updateLastCheckedOut(filePath, previousCommit.commitHash);
 		await vscode.commands.executeCommand('git.checkoutFileFromCommit', previousCommit.commitHash, filePath);
 	}));
+
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => {
 		commitProvider.refresh();
 	}));
+
 	fromCommitView.onDidChangeSelection(e => {
 		if (e.selection.length > 0) {
 			const item = e.selection[0] as CommitItem;
 			const currentMode = modeProvider.getCheckedMode();
 
 			if (currentMode === 'checkout') {
-				// Checkout mode: single selection triggers checkout
-				updateLastCheckedOut(item.filePath, item.commitHash);
 				vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
 			} else if (currentMode === 'diff') {
-				// Diff mode: track selection in left tree (from)
 				selectedFromCommit = { hash: item.commitHash, filePath: item.filePath };
-				console.log(`[git-ext] Selected from commit (left): ${item.commitHash.substring(0, 7)}`);
 				if (selectedToCommit) {
 					vscode.commands.executeCommand('git.applyDiffAnnotation');
 				}
 			}
 		}
 	});
+
 	toCommitView.onDidChangeSelection(e => {
 		if (e.selection.length > 0) {
 			const item = e.selection[0] as CommitItem;
 			const currentMode = modeProvider.getCheckedMode();
 
 			if (currentMode === 'checkout') {
-				// Checkout mode: single selection triggers checkout
-				updateLastCheckedOut(item.filePath, item.commitHash);
 				vscode.commands.executeCommand('git.checkoutFileFromCommit', item.commitHash, item.filePath);
 			} else if (currentMode === 'diff') {
-				// Diff mode: track selection in right tree (to)
 				selectedToCommit = { hash: item.commitHash, filePath: item.filePath };
-				console.log(`[git-ext] Selected to commit (right): ${item.commitHash.substring(0, 7)}`);
 				if (selectedFromCommit) {
 					vscode.commands.executeCommand('git.applyDiffAnnotation');
 				}
 			}
 		}
 	});
-	// Listen for file saves and update the current state
+
 	context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(async (document) => {
-		if (document.uri.scheme !== 'file') {
-			return;
-		}
+		if (document.uri.scheme !== 'file') return;
 
 		const filePath = document.uri.fsPath;
-
-		// Don't save state while a checkout is in progress
-		if (checkoutInProgress.has(filePath)) {
-			console.log(`[git-ext] Ignoring save during checkout for ${filePath}`);
-			return;
-		}
+		if (checkoutInProgress.has(filePath)) return;
 
 		const repoRoot = await findGitRepoRoot(filePath);
+		if (!repoRoot) return;
 
-		if (!repoRoot) {
-			return;
-		}
+		let lastCheckout = getLastCheckedOutHash(filePath);
 
-		// Check if this file was recently checked out from a commit
-		// Try exact match first, then try normalized path
-		let lastCheckout = lastCheckedOut[filePath];
-
-		// If no exact match, try to find by comparing file names
-		if (!lastCheckout) {
-			for (const trackedPath in lastCheckedOut) {
-				if (trackedPath.toLowerCase() === filePath.toLowerCase()) {
-					lastCheckout = lastCheckedOut[trackedPath];
-					break;
-				}
-			}
-		}
-
-		// Only update the saved state if this file was checked out (not the initial 'CURRENT')
 		if (lastCheckout && lastCheckout !== 'CURRENT') {
-			// File was checked out from a commit and now has been saved
-			// Update the current state to this new content
-			console.log(`[git-ext] Saving state for ${filePath} after checkout from ${lastCheckout}`);
+			console.log(`[git-ext] Persistence: Saving state for ${filePath} after save of commit version ${lastCheckout}`);
 			await saveFileState(filePath, repoRoot);
 		}
 	}));
+
 	commitProvider.refresh();
 }
 

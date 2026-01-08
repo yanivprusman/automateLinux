@@ -11,12 +11,13 @@ _theUserAddToCoding(){
 }
 
 _theUserCreate(){
-    sudo adduser $1
-    _theUserSetToBash $1
-    _theUserAddToCoding $1
+    sudo adduser "$1"
+    _theUserSetToBash "$1"
+    _theUserAddToCoding "$1"
 }
 
 _theUserRemove(){
+    sudo pkill -9 -u $1 || true
     sudo deluser --remove-home $1
 }
 

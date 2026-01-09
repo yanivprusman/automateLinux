@@ -51,52 +51,31 @@ _setGidSameAsUid() {
     echo "Set primary GID of $user to $gid"
 }
 
-
-
 _tuc(){
     local NEW_USER="${1:-$(password)}"
     local SOURCE_USER="yaniv"
     local NEW_HOME="/home/$NEW_USER"
-
-    # Create user with primary group having the same GID as UID
-    sudo groupadd -f "$NEW_USER"        # ensure group exists
+    sudo groupadd -f "$NEW_USER"        
     sudo useradd -m -g "$NEW_USER" "$NEW_USER"
     echo "$NEW_USER:\\" | sudo chpasswd
-
-    # Give bash shell and add to coding group
     _theUserSetToBash "$NEW_USER"
     _theUserAddToCoding "$NEW_USER"
-
-    # Ensure home directory exists
     sudo mkdir -p "$NEW_HOME"
     sudo chown -R "$NEW_USER:$NEW_USER" "$NEW_HOME"
     sudo chmod 755 "$NEW_HOME"
-
-    # Prepare GNOME config
     sudo -u "$NEW_USER" mkdir -p "$NEW_HOME/.config"
     sudo -u "$NEW_USER" touch "$NEW_HOME/.config/gnome-initial-setup-done"
-
-    # Replicate GNOME settings
     __theUserReplicateGnome "$NEW_USER"
-
-    # Link Code, Chrome and VSCode config with proper ownership
     sudo rm -rf "$NEW_HOME/.config/Code"
     sudo ln -s /home/yaniv/.config/Code "$NEW_HOME/.config/Code"
-
     sudo rm -rf "$NEW_HOME/.config/google-chrome"
     sudo ln -s /home/yaniv/.config/google-chrome "$NEW_HOME/.config/google-chrome"
-
     sudo rm -rf "$NEW_HOME/.vscode"
     sudo ln -s /home/yaniv/.vscode "$NEW_HOME/.vscode"
-
-    # Symlink coding directory
     sudo rm -rf "$NEW_HOME/coding"
     sudo ln -s /home/yaniv/coding "$NEW_HOME/coding"
-
-    # Symlink .bashrc to AutomateLinux one
     sudo rm -f "$NEW_HOME/.bashrc"
     sudo ln -s /home/yaniv/coding/automateLinux/terminal/bashrc "$NEW_HOME/.bashrc"
-
     sudo chown -h "$NEW_USER:$NEW_USER" "$NEW_HOME/.config/Code" "$NEW_HOME/.config/google-chrome" "$NEW_HOME/.vscode" "$NEW_HOME/coding" "$NEW_HOME/.bashrc"
     sudo chown -R "$NEW_USER:$NEW_USER" "$NEW_HOME"
 }

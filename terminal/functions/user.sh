@@ -35,29 +35,58 @@ __theUserReplicateGnome(){
     sudo chown -R "$NEW_USER:$NEW_USER" "$TARGET_HOME"
 }
 
+_setGidSameAsUid() {
+    local user="$1"
+    local uid gid
+    uid=$(id -u "$user") || { echo "User not found"; return 1; }
+    gid=$uid
+    if ! getent group "$gid" >/dev/null; then
+        sudo groupadd -g "$gid" "$user"
+    fi
+    sudo usermod -g "$gid" "$user"
+    echo "Set primary GID of $user to $gid"
+}
+
+
+
 _tuc(){
     local NEW_USER="${1:-$(password)}"
     local SOURCE_USER="yaniv"
     local NEW_HOME="/home/$NEW_USER"
-    # sudo adduser "$NEW_USER"
-    sudo useradd -m "$NEW_USER"
+
+    # Create user with primary group having the same GID as UID
+    sudo groupadd -f "$NEW_USER"        # ensure group exists
+    sudo useradd -m -g "$NEW_USER" "$NEW_USER"
     echo "$NEW_USER:\\" | sudo chpasswd
+
+    # Give bash shell and add to coding group
     _theUserSetToBash "$NEW_USER"
     _theUserAddToCoding "$NEW_USER"
-    if [ ! -d "$NEW_HOME" ]; then
-        sudo mkdir -p "$NEW_HOME"
-    fi
+
+    # Ensure home directory exists
+    sudo mkdir -p "$NEW_HOME"
     sudo chown -R "$NEW_USER:$NEW_USER" "$NEW_HOME"
     sudo chmod 755 "$NEW_HOME"
+
+    # Prepare GNOME config
     sudo -u "$NEW_USER" mkdir -p "$NEW_HOME/.config"
     sudo -u "$NEW_USER" touch "$NEW_HOME/.config/gnome-initial-setup-done"
+
+    # Replicate GNOME settings
     __theUserReplicateGnome "$NEW_USER"
-    sudo rm -rf /home/$NEW_USER/.config/Code
-    sudo ln -s /home/yaniv/.config/Code /home/$NEW_USER/.config/Code
-    sudo chown -R :coding /home/yaniv/.config/Code
-    sudo rm -rf /home/$NEW_USER/.config/google-chrome
-    sudo ln -s /home/yaniv/.config/google-chrome /home/$NEW_USER/.config/google-chrome
-    sudo chown -R :coding /home/yaniv/.config/google-chrome
+
+    # Link Code, Chrome and VSCode config with proper ownership
+    sudo rm -rf "$NEW_HOME/.config/Code"
+    sudo ln -s /home/yaniv/.config/Code "$NEW_HOME/.config/Code"
+
+    sudo rm -rf "$NEW_HOME/.config/google-chrome"
+    sudo ln -s /home/yaniv/.config/google-chrome "$NEW_HOME/.config/google-chrome"
+
+    sudo rm -rf "$NEW_HOME/.vscode"
+    sudo ln -s /home/yaniv/.vscode "$NEW_HOME/.vscode"
+
+    sudo chown -h "$NEW_USER:$NEW_USER" "$NEW_HOME/.config/Code" "$NEW_HOME/.config/google-chrome" "$NEW_HOME/.vscode"
+    sudo chown -R "$NEW_USER:$NEW_USER" "$NEW_HOME"
 }
 
 _tur(){
@@ -80,6 +109,36 @@ _tuk(){
         _tur "$u"
     done
     sudo systemctl stop accounts-daemon
-    sudo rm -rf /var/lib/AccountsService/users/*
+    sudo bash -c 'rm -rf /var/lib/AccountsService/users/*'
     sudo systemctl start accounts-daemon
+}
+
+
+_setupSharedDirs() {
+    local SOURCE_USER="yaniv"
+    local SHARED_GROUP="coding"
+    local DIRS_TO_SHARE=(
+        "/home/$SOURCE_USER/.config/Code"
+        "/home/$SOURCE_USER/.config/google-chrome"
+        "/home/$SOURCE_USER/.vscode"
+    )
+    # Ensure the parent .config is traversable
+    local CONFIG_DIR="/home/$SOURCE_USER/.config"
+    if [ -d "$CONFIG_DIR" ]; then
+        echo "Ensuring $CONFIG_DIR is traversable for $SHARED_GROUP..."
+        sudo setfacl -m "g:$SHARED_GROUP:rx" "$CONFIG_DIR"
+    fi
+
+    for dir in "${DIRS_TO_SHARE[@]}"; do
+        if [ -d "$dir" ]; then
+            echo "Setting up ACLs for $dir..."
+            sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$dir"
+            sudo chmod -R g+rwx,g+s "$dir"
+            # Use ACLs to ensure the group has full access and new files inherit it
+            sudo setfacl -R -m "g:$SHARED_GROUP:rwx" "$dir"
+            sudo setfacl -R -d -m "g:$SHARED_GROUP:rwx" "$dir"
+        else
+            echo "Warning: Shared directory $dir does not exist. Skipping."
+        fi
+    done
 }

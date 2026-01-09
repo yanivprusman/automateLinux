@@ -198,3 +198,8 @@ openFunction(){
 openSpecialChrome(){
     exec -a "not-chrome" google-chrome
 }
+
+openGnomeSession(){
+    # dbus-run-session -- bash
+    dbus-run-session gnome-shell --display-server --wayland
+}

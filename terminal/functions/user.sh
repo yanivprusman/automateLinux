@@ -131,12 +131,15 @@ _setupSharedDirs() {
 
     for dir in "${DIRS_TO_SHARE[@]}"; do
         if [ -d "$dir" ]; then
-            echo "Setting up ACLs for $dir..."
+            echo "Reclaiming and setting up ACLs for $dir..."
+            # Force ownership back to yaniv
             sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$dir"
             sudo chmod -R g+rwx,g+s "$dir"
             # Use ACLs to ensure the group has full access and new files inherit it
-            sudo setfacl -R -m "g:$SHARED_GROUP:rwx" "$dir"
-            sudo setfacl -R -d -m "g:$SHARED_GROUP:rwx" "$dir"
+            # We use -b to remove existing problematic ACLs first, then re-apply
+            sudo setfacl -R -b "$dir"
+            sudo setfacl -R -m "u:$SOURCE_USER:rwx,g:$SHARED_GROUP:rwx,m:rwx" "$dir"
+            sudo setfacl -R -d -m "u:$SOURCE_USER:rwx,g:$SHARED_GROUP:rwx,m:rwx" "$dir"
         else
             echo "Warning: Shared directory $dir does not exist. Skipping."
         fi

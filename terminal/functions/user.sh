@@ -32,6 +32,10 @@ __theUserReplicateGnome(){
         sudo mkdir -p "$TARGET_HOME/.local/share/gnome-shell/extensions"
         sudo cp -r "$SOURCE_HOME/.local/share/gnome-shell/extensions/"* "$TARGET_HOME/.local/share/gnome-shell/extensions/" 2>/dev/null || true
     fi
+    # Replicate monitor settings
+    if [ -f "$SOURCE_HOME/.config/monitors.xml" ]; then
+        sudo cp "$SOURCE_HOME/.config/monitors.xml" "$TARGET_HOME/.config/monitors.xml"
+    fi
     sudo chown -R "$NEW_USER:$NEW_USER" "$TARGET_HOME"
 }
 
@@ -85,7 +89,15 @@ _tuc(){
     sudo rm -rf "$NEW_HOME/.vscode"
     sudo ln -s /home/yaniv/.vscode "$NEW_HOME/.vscode"
 
-    sudo chown -h "$NEW_USER:$NEW_USER" "$NEW_HOME/.config/Code" "$NEW_HOME/.config/google-chrome" "$NEW_HOME/.vscode"
+    # Symlink coding directory
+    sudo rm -rf "$NEW_HOME/coding"
+    sudo ln -s /home/yaniv/coding "$NEW_HOME/coding"
+
+    # Symlink .bashrc to AutomateLinux one
+    sudo rm -f "$NEW_HOME/.bashrc"
+    sudo ln -s /home/yaniv/coding/automateLinux/terminal/bashrc "$NEW_HOME/.bashrc"
+
+    sudo chown -h "$NEW_USER:$NEW_USER" "$NEW_HOME/.config/Code" "$NEW_HOME/.config/google-chrome" "$NEW_HOME/.vscode" "$NEW_HOME/coding" "$NEW_HOME/.bashrc"
     sudo chown -R "$NEW_USER:$NEW_USER" "$NEW_HOME"
 }
 
@@ -121,6 +133,7 @@ _setupSharedDirs() {
         "/home/$SOURCE_USER/.config/Code"
         "/home/$SOURCE_USER/.config/google-chrome"
         "/home/$SOURCE_USER/.vscode"
+        "/home/$SOURCE_USER/coding"
     )
     # Ensure the parent .config is traversable
     local CONFIG_DIR="/home/$SOURCE_USER/.config"
@@ -144,4 +157,13 @@ _setupSharedDirs() {
             echo "Warning: Shared directory $dir does not exist. Skipping."
         fi
     done
+
+    # Ensure daemon socket is accessible
+    local SOCKET="/run/automatelinux/automatelinux-daemon.sock"
+    if [ -S "$SOCKET" ]; then
+        echo "Setting up permissions for daemon socket..."
+        sudo chown "$SOURCE_USER:$SHARED_GROUP" "$SOCKET"
+        sudo chmod g+rw "$SOCKET"
+        sudo setfacl -m "g:$SHARED_GROUP:rw" "$SOCKET"
+    fi
 }

@@ -46,14 +46,3 @@ if [ ! -f "${AUTOMATE_LINUX_DATA_DIR}geminiSessions.sh" ]; then
 fi
 source "${AUTOMATE_LINUX_DATA_DIR}geminiSessions.sh"
 
-# TERMINAL CAPTURE
-# Capture terminal output using 'script' command.
-# Guard to prevent nested script sessions and only run in interactive shells.
-export AUTOMATE_LINUX_TERMINAL_LOG_FILE="/tmp/automate_linux_terminal_${AUTOMATE_LINUX_TTY_NUMBER}.log"
-if [[ -z "$AUTOMATE_LINUX_SCRIPT_SESSION" && $- == *i* ]]; then
-    export AUTOMATE_LINUX_SCRIPT_SESSION=1
-    # Clear log file on new session
-    > "$AUTOMATE_LINUX_TERMINAL_LOG_FILE"
-    exec script -f -q "$AUTOMATE_LINUX_TERMINAL_LOG_FILE"
-fi
-

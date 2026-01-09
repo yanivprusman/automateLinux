@@ -100,19 +100,40 @@ whichReal(){
 export -f whichReal
 
 terminalToClipboard() {
-    local log_file="$AUTOMATE_LINUX_TERMINAL_LOG_FILE"
-    if [ ! -f "$log_file" ]; then
-        local tty_num=$(tty | sed 's/\/dev\/pts\///')
-        log_file="/tmp/automate_linux_terminal_${tty_num}.log"
+    # 1. Clear clipboard to ensure we don't use old data if capture fails
+    if command -v wl-copy &> /dev/null; then
+        echo -n "" | wl-copy
+    elif command -v xclip &> /dev/null; then
+        echo -n "" | xclip -selection clipboard
     fi
 
-    if [ ! -f "$log_file" ]; then
+    # 2. Simulate Select All (Ctrl+Shift+A) + Copy (Ctrl+Shift+C)
+    # KEY_LEFTCTRL=29, KEY_LEFTSHIFT=42, KEY_A=30, KEY_C=46
+    daemon send simulateInput type=1 code=29 value=1 > /dev/null # Ctrl Down
+    daemon send simulateInput type=1 code=42 value=1 > /dev/null # Shift Down
+    daemon send simulateInput type=1 code=30 value=1 > /dev/null # A Down
+    daemon send simulateInput type=1 code=30 value=0 > /dev/null # A Up
+    daemon send simulateInput type=1 code=46 value=1 > /dev/null # C Down
+    daemon send simulateInput type=1 code=46 value=0 > /dev/null # C Up
+    daemon send simulateInput type=1 code=42 value=0 > /dev/null # Shift Up
+    daemon send simulateInput type=1 code=29 value=0 > /dev/null # Ctrl Up
+
+    # 3. Wait for clipboard and read buffer
+    sleep 0.2
+    local buffer
+    if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
+        buffer=$(wl-paste 2>/dev/null)
+    else
+        buffer=$(xclip -selection clipboard -o 2>/dev/null)
+    fi
+
+    if [[ -z "$buffer" ]]; then
         return 0
     fi
 
-    # Robust cleaning of ANSI and OSC sequences
+    # 4. Clean and parse buffer
     local clean_output
-    clean_output=$(cat "$log_file" | \
+    clean_output=$(echo "$buffer" | \
         sed -r "s/\x1B\[[0-9;?]*[A-Za-z]//g" | \
         sed -r "s/\x1B\].*(\x07|\x1B\\\\)//g" | \
         sed -r "s/\x1B\(B//g" | \
@@ -123,14 +144,10 @@ terminalToClipboard() {
     local total=${#lines[@]}
     
     # Find the current command line (the one running terminalToClipboard)
-    # It should be at or near the end. We skip empty lines at the end.
     local current_idx=$((total - 1))
     while [[ $current_idx -ge 0 && -z "${lines[$current_idx]}" ]]; do
         ((current_idx--))
     done
-
-    # If the last non-empty line contains terminalToClipboard, we are on the right track.
-    # Otherwise, we might be confused, but we'll try anyway.
 
     local start_idx=-1
     local end_idx=-1
@@ -140,10 +157,9 @@ terminalToClipboard() {
         start_idx=$((current_idx - 1))
         end_idx=$((current_idx - 1))
     elif [[ "$1" == "fromPrompt" ]]; then
-        # Search backwards for the previous prompt (not the current one)
+        # Search backwards for the previous prompt
         local i=$((current_idx - 1))
         while [[ $i -ge 0 ]]; do
-            # Detection of prompt: contains $ or # followed by space, or starts with user@
             if [[ "${lines[$i]}" =~ [\$\#]\  ]]; then
                 start_idx=$((i + 1))
                 end_idx=$((current_idx - 1))
@@ -151,7 +167,6 @@ terminalToClipboard() {
             fi
             ((i--))
         done
-        # If we didn't find a prompt, maybe the previous command was the start of session
         if [[ $start_idx -eq -1 ]]; then
             start_idx=0
             end_idx=$((current_idx - 1))
@@ -170,14 +185,12 @@ terminalToClipboard() {
         local to_copy=""
         for ((i=start_idx; i<=end_idx; i++)); do
             local line="${lines[$i]}"
-            # Strip prompt: match everything up to and including the first $ or # followed by space
-            # Then capture everything after that
             if [[ "$line" =~ ^[^\$\#]*[\$\#]\ (.*)$ ]]; then
                 line="${BASH_REMATCH[1]}"
             fi
             to_copy+="$line"$'\n'
         done
-        echo -n "$to_copy" | xclip -selection clipboard
+        echo -n "$to_copy" | (command -v wl-copy &>/dev/null && wl-copy || xclip -selection clipboard)
     fi
 }
 export -f terminalToClipboard

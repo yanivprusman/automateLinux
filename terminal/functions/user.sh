@@ -126,7 +126,7 @@ _tuk(){
 }
 
 
-_setupSharedDirs() {
+_tus() {
     local SOURCE_USER="yaniv"
     local SHARED_GROUP="coding"
     local DIRS_TO_SHARE=(
@@ -159,7 +159,12 @@ _setupSharedDirs() {
     done
 
     # Ensure daemon socket is accessible
-    local SOCKET="/run/automatelinux/automatelinux-daemon.sock"
+    local SOCKET_DIR="/run/automatelinux"
+    local SOCKET="$SOCKET_DIR/automatelinux-daemon.sock"
+    if [ -d "$SOCKET_DIR" ]; then
+        echo "Ensuring daemon socket directory is traversable..."
+        sudo setfacl -m "g:$SHARED_GROUP:rx" "$SOCKET_DIR"
+    fi
     if [ -S "$SOCKET" ]; then
         echo "Setting up permissions for daemon socket..."
         sudo chown "$SOURCE_USER:$SHARED_GROUP" "$SOCKET"

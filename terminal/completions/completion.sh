@@ -13,4 +13,5 @@
 . $(theRealPath evsieve.bash)
 . $(theRealPath tailCombinedLog.bash)
 . $(theRealPath remote.bash)
+. $(theRealPath user.bash)
 

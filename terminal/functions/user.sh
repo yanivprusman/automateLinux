@@ -108,13 +108,20 @@ _tuk(){
 _tus() {
     local SOURCE_USER="yaniv"
     local SHARED_GROUP="coding"
+    local RECURSIVE=false
+    
+    if [[ "$1" == "-a" || "$1" == "--all" ]]; then
+        RECURSIVE=true
+    fi
+
     local DIRS_TO_SHARE=(
         "/home/$SOURCE_USER/.config/Code"
         "/home/$SOURCE_USER/.config/google-chrome"
         "/home/$SOURCE_USER/.vscode"
         "/home/$SOURCE_USER/coding"
     )
-    # Ensure the parent .config is traversable
+
+    # Fast: Ensure the parent .config is traversable
     local CONFIG_DIR="/home/$SOURCE_USER/.config"
     if [ -d "$CONFIG_DIR" ]; then
         echo "Ensuring $CONFIG_DIR is traversable for $SHARED_GROUP..."
@@ -123,31 +130,63 @@ _tus() {
 
     for dir in "${DIRS_TO_SHARE[@]}"; do
         if [ -d "$dir" ]; then
-            echo "Reclaiming and setting up ACLs for $dir..."
-            # Force ownership back to yaniv
-            sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$dir"
-            sudo chmod -R g+rwx,g+s "$dir"
-            # Use ACLs to ensure the group has full access and new files inherit it
-            # We use -b to remove existing problematic ACLs first, then re-apply
-            sudo setfacl -R -b "$dir"
-            sudo setfacl -R -m "u:$SOURCE_USER:rwx,g:$SHARED_GROUP:rwx,m:rwx" "$dir"
-            sudo setfacl -R -d -m "u:$SOURCE_USER:rwx,g:$SHARED_GROUP:rwx,m:rwx" "$dir"
+            if [ "$RECURSIVE" = true ]; then
+                echo "Recursively reclaiming and setting up ACLs for $dir (this may take a while)..."
+                sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$dir"
+                sudo chmod -R g+rwx,g+s "$dir"
+                sudo setfacl -R -b "$dir"
+                sudo setfacl -R -m "u:$SOURCE_USER:rwx,g:$SHARED_GROUP:rwx,m:rwx" "$dir"
+                sudo setfacl -R -d -m "u:$SOURCE_USER:rwx,g:$SHARED_GROUP:rwx,m:rwx" "$dir"
+            else
+                echo "Fast setup for $dir (parent directory and non-recursive ACLs)..."
+                sudo chown "$SOURCE_USER:$SHARED_GROUP" "$dir"
+                sudo chmod g+rwx,g+s "$dir"
+                # Set mask and group permission on the directory itself (fast)
+                sudo setfacl -m "g:$SHARED_GROUP:rwx,m:rwx" "$dir"
+            fi
         else
             echo "Warning: Shared directory $dir does not exist. Skipping."
         fi
     done
 
-    # Ensure daemon socket is accessible
+    # Fast: Ensure daemon socket is accessible
     local SOCKET_DIR="/run/automatelinux"
     local SOCKET="$SOCKET_DIR/automatelinux-daemon.sock"
     if [ -d "$SOCKET_DIR" ]; then
         echo "Ensuring daemon socket directory is traversable..."
-        sudo setfacl -m "g:$SHARED_GROUP:rx" "$SOCKET_DIR"
+        sudo chown "$SOURCE_USER:$SHARED_GROUP" "$SOCKET_DIR"
+        sudo chmod g+rws "$SOCKET_DIR"
+        sudo setfacl -m "g:$SHARED_GROUP:rx,m:rwx" "$SOCKET_DIR"
     fi
     if [ -S "$SOCKET" ]; then
         echo "Setting up permissions for daemon socket..."
         sudo chown "$SOURCE_USER:$SHARED_GROUP" "$SOCKET"
         sudo chmod g+rw "$SOCKET"
-        sudo setfacl -m "g:$SHARED_GROUP:rw" "$SOCKET"
+        sudo setfacl -m "g:$SHARED_GROUP:rw,m:rw" "$SOCKET"
     fi
+
+    if [ "$RECURSIVE" = false ]; then
+        echo "💡 Tip: Run '_tus -a' if you need to fix permissions recursively (lengthy)."
+    fi
+}
+_backupChromeProfile() {
+    local BACKUP_DIR="/home/yaniv/.config/google-chrome-backup"
+    sudo mkdir -p "$BACKUP_DIR"
+    echo "Backing up Chrome profile to $BACKUP_DIR..."
+    sudo cp -r "/home/yaniv/.config/google-chrome/Default" "$BACKUP_DIR/"
+    sudo chown -R yaniv:coding "$BACKUP_DIR"
+    echo "Backup complete."
+}
+
+_restoreChromeProfile() {
+    local BACKUP_DIR="/home/yaniv/.config/google-chrome-backup/Default"
+    if [ ! -d "$BACKUP_DIR" ]; then
+        echo "Error: Backup not found at $BACKUP_DIR"
+        return 1
+    fi
+    echo "Restoring Chrome profile from $BACKUP_DIR..."
+    sudo rm -rf "/home/yaniv/.config/google-chrome/Default"
+    sudo cp -r "$BACKUP_DIR" "/home/yaniv/.config/google-chrome/"
+    _tus
+    echo "Restore complete. Please restart Chrome."
 }

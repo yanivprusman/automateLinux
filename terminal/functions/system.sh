@@ -43,3 +43,8 @@ toSymbolic() {
 }
 export -f toSymbolic
 
+logOut() {
+    echo "Logging out of current session..."
+    gnome-session-quit --logout --no-prompt || loginctl terminate-session ${XDG_SESSION_ID:-self}
+}
+export -f logOut

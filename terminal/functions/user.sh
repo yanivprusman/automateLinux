@@ -1,4 +1,4 @@
-_theUserList(){
+_tul(){
     awk -F: '$3 >= 1000 && $3 < 60000 {print $1}' /etc/passwd
 }
 
@@ -35,8 +35,8 @@ __theUserReplicateGnome(){
     sudo chown -R "$NEW_USER:$NEW_USER" "$TARGET_HOME"
 }
 
-_theUserCreate(){
-    local NEW_USER="$1"
+_tuc(){
+    local NEW_USER="${1:-$(password)}"
     local SOURCE_USER="yaniv"
     local NEW_HOME="/home/$NEW_USER"
     # sudo adduser "$NEW_USER"
@@ -52,15 +52,15 @@ _theUserCreate(){
     sudo -u "$NEW_USER" mkdir -p "$NEW_HOME/.config"
     sudo -u "$NEW_USER" touch "$NEW_HOME/.config/gnome-initial-setup-done"
     __theUserReplicateGnome "$NEW_USER"
-    sudo chown -R $NEW_USER:yaniv /home/yaniv/.config/Code
-    sudo chown -R $NEW_USER:yaniv /home/yaniv/.config/google-chrome
     sudo rm -rf /home/$NEW_USER/.config/Code
     sudo ln -s /home/yaniv/.config/Code /home/$NEW_USER/.config/Code
+    sudo chown -R :coding /home/yaniv/.config/Code
     sudo rm -rf /home/$NEW_USER/.config/google-chrome
     sudo ln -s /home/yaniv/.config/google-chrome /home/$NEW_USER/.config/google-chrome
+    sudo chown -R :coding /home/yaniv/.config/google-chrome
 }
 
-_theUserRemove(){
+_tur(){
     sudo pkill -9 -u $1 || true
     sudo deluser --remove-home $1
     sudo rm -rf "/home/$1"
@@ -74,3 +74,12 @@ _theUserSwitch(){
     su - $1
 }
 
+_tuk(){
+    # Keep only yaniv
+    _tul | grep -v '^yaniv$' | while read -r u; do
+        _tur "$u"
+    done
+    sudo systemctl stop accounts-daemon
+    sudo rm -rf /var/lib/AccountsService/users/*
+    sudo systemctl start accounts-daemon
+}

@@ -24,7 +24,7 @@ daemonAlternative() {
 done
 
     local COMMAND="${args[0]}" json reply key value
-    json="{\"command\":\"$COMMAND\",\"tty\":$AUTOMATE_LINUX_TTY_NUMBER"
+    json="{\"command\":\"$COMMAND\",\"tty\":\"$AUTOMATE_LINUX_TTY_NUMBER\""
     for ((i=1; i<${#args[@]}; i++)); do
         key="${args[$i]%%=*}"
         value="${args[$i]#*=}"

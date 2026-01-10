@@ -95,10 +95,23 @@ _theUserSwitch(){
 }
 
 _tuk(){
-    # Keep only yaniv
-    _tul | grep -v '^yaniv$' | while read -r u; do
+    # Hardcode users you never want to delete here:
+    local HARDCODED_USERS=(
+        "yaniv"
+        "test"
+        # "userB"
+    )
+    
+    local KEEP_USERS=("${HARDCODED_USERS[@]}" "$@")
+    local PATTERN
+    PATTERN="^($(IFS='|'; echo "${KEEP_USERS[*]}"))$"
+
+    echo "Keeping protected users: ${KEEP_USERS[*]}"
+    _tul | grep -vE "$PATTERN" | while read -r u; do
+        echo "Removing $u..."
         _tur "$u"
     done
+
     sudo systemctl stop accounts-daemon
     sudo bash -c 'rm -rf /var/lib/AccountsService/users/*'
     sudo systemctl start accounts-daemon
@@ -159,17 +172,37 @@ _tus() {
         sudo setfacl -m "g:$SHARED_GROUP:rx,m:rwx" "$SOCKET_DIR"
     fi
     if [ -S "$SOCKET" ]; then
-        echo "Setting up permissions for daemon socket..."
+        echo "Setting up permissions for daemon socket (making it globally accessible)..."
         sudo chown "$SOURCE_USER:$SHARED_GROUP" "$SOCKET"
-        sudo chmod g+rw "$SOCKET"
-        sudo setfacl -m "g:$SHARED_GROUP:rw,m:rw" "$SOCKET"
+        sudo chmod 0666 "$SOCKET"
+        sudo setfacl -m "g:$SHARED_GROUP:rw,m:rw,o:rw" "$SOCKET"
     fi
 
     if [ "$RECURSIVE" = false ]; then
         echo "💡 Tip: Run '_tus -a' if you need to fix permissions recursively (lengthy)."
     fi
 }
-_backupChromeProfile() {
+
+_tuFixChrome() {
+    local SOURCE_USER="yaniv"
+    local SHARED_GROUP="coding"
+    local DIR="/home/$SOURCE_USER/.config/google-chrome"
+    if [ -d "$DIR" ]; then
+        echo "Breaking the circle: Reclaiming Chrome profile in $DIR..."
+        # 1. Delete all lock files (stale or from other users)
+        sudo find "$DIR" -name "SingletonLock" -delete 2>/dev/null || true
+        sudo find "$DIR" -name "LOCK" -delete 2>/dev/null || true
+        # 2. Reclaim ownership to yaniv
+        sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$DIR"
+        # 3. Force explicit permissions (Directories: 2770, Files: 660)
+        sudo find "$DIR" -type d -exec chmod 2770 {} +
+        sudo find "$DIR" -type f -exec chmod 660 {} +
+        # 4. Force the ACL mask to rwx for group consistency
+        sudo setfacl -R -m "m:rwx" "$DIR"
+        echo "Done. Chrome should now open clearly for you."
+    fi
+}
+_tuBackupChromeProfile() {
     local BACKUP_DIR="/home/yaniv/.config/google-chrome-backup"
     sudo mkdir -p "$BACKUP_DIR"
     echo "Backing up Chrome profile to $BACKUP_DIR..."
@@ -178,7 +211,7 @@ _backupChromeProfile() {
     echo "Backup complete."
 }
 
-_restoreChromeProfile() {
+_tuRestoreChromeProfile() {
     local BACKUP_DIR="/home/yaniv/.config/google-chrome-backup/Default"
     if [ ! -d "$BACKUP_DIR" ]; then
         echo "Error: Backup not found at $BACKUP_DIR"

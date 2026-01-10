@@ -1,0 +1,6 @@
+# Sudoers rules for AutomateLinux coding group
+# Allow users to fix shared Chrome profile permissions without a password
+
+%coding ALL=(ALL) NOPASSWD: /usr/bin/chown -R yaniv:coding /home/yaniv/.config/google-chrome
+%coding ALL=(ALL) NOPASSWD: /usr/bin/chmod -R g+rw /home/yaniv/.config/google-chrome
+%coding ALL=(ALL) NOPASSWD: /usr/bin/setfacl -R -m m:rwx /home/yaniv/.config/google-chrome

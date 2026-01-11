@@ -1,6 +1,45 @@
 # Sudoers rules for AutomateLinux coding group
-# Allow users to fix shared Chrome profile permissions without a password
+# Allow users to manage shared config overlays and permissions without a password
 
-%coding ALL=(ALL) NOPASSWD: /usr/bin/chown -R yaniv:coding /home/yaniv/.config/google-chrome
-%coding ALL=(ALL) NOPASSWD: /usr/bin/chmod -R g+rw /home/yaniv/.config/google-chrome
-%coding ALL=(ALL) NOPASSWD: /usr/bin/setfacl -R -m m:rwx /home/yaniv/.config/google-chrome
+# 1. Config & Permission Management
+%coding ALL=(ALL) NOPASSWD: /usr/bin/chown -R * /home/yaniv/.config
+%coding ALL=(ALL) NOPASSWD: /usr/bin/chmod -R g+rw /home/yaniv/.config
+%coding ALL=(ALL) NOPASSWD: /usr/bin/setfacl -R -m m\:rwx /home/yaniv/.config
+%coding ALL=(ALL) NOPASSWD: /usr/bin/chown -R * /home/*/.overlay
+%coding ALL=(ALL) NOPASSWD: /usr/bin/chown -R * /home/*/.config
+%coding ALL=(ALL) NOPASSWD: /usr/bin/chown * /home/*/.bashrc
+%coding ALL=(ALL) NOPASSWD: /usr/bin/chown * /home/*/coding
+
+# Allow file-specific permission fixes
+%coding ALL=(ALL) NOPASSWD: /usr/bin/chmod g+rw /home/yaniv/.config/*
+%coding ALL=(ALL) NOPASSWD: /usr/bin/setfacl -m m\:rwx /home/yaniv/.config/*
+
+# 2. OverlayFS Management
+%coding ALL=(ALL) NOPASSWD: /usr/bin/mount -t overlay overlay -o *
+%coding ALL=(ALL) NOPASSWD: /usr/bin/umount /home/*/.config/google-chrome
+%coding ALL=(ALL) NOPASSWD: /usr/bin/umount /home/*/.config/Code
+%coding ALL=(ALL) NOPASSWD: /usr/bin/umount /home/*/.vscode
+%coding ALL=(ALL) NOPASSWD: /usr/bin/umount -l /home/*
+
+# 3. User & Session Management (Required for _tuc/_tur automation)
+%coding ALL=(ALL) NOPASSWD: /usr/sbin/groupadd
+%coding ALL=(ALL) NOPASSWD: /usr/sbin/useradd
+%coding ALL=(ALL) NOPASSWD: /usr/sbin/usermod
+%coding ALL=(ALL) NOPASSWD: /usr/sbin/deluser
+%coding ALL=(ALL) NOPASSWD: /usr/sbin/chpasswd
+%coding ALL=(ALL) NOPASSWD: /usr/bin/pkill -9 -u *
+%coding ALL=(ALL) NOPASSWD: /usr/bin/systemctl stop accounts-daemon
+%coding ALL=(ALL) NOPASSWD: /usr/bin/systemctl start accounts-daemon
+
+# 4. File System Operations for Setup
+%coding ALL=(ALL) NOPASSWD: /usr/bin/mkdir -p /home/*
+%coding ALL=(ALL) NOPASSWD: /usr/bin/rm -rf /home/*
+%coding ALL=(ALL) NOPASSWD: /usr/bin/rm -f /home/*
+%coding ALL=(ALL) NOPASSWD: /usr/bin/ln -s *
+%coding ALL=(ALL) NOPASSWD: /usr/bin/cp *
+%coding ALL=(ALL) NOPASSWD: /usr/bin/touch /home/*
+%coding ALL=(ALL) NOPASSWD: /usr/bin/tee /home/*
+
+# 5. GNOME Replication (Allow running commands as other users)
+%coding ALL=(ALL) NOPASSWD: /usr/bin/sudo -u *
+%coding ALL=(ALL) NOPASSWD: /usr/bin/sudo -i -u *

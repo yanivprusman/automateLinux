@@ -54,51 +54,147 @@ _setGidSameAsUid() {
 _tuc(){
     local NEW_USER="${1:-$(password)}"
     local SOURCE_USER="yaniv"
+    local SOURCE_HOME="/home/$SOURCE_USER"
     local NEW_HOME="/home/$NEW_USER"
-    sudo groupadd -f "$NEW_USER"        
-    sudo useradd -m -g "$NEW_USER" "$NEW_USER"
+    
+    # Find a free ID that is available as BOTH a UID and a GID
+    local ID=1001
+    while getent passwd $ID >/dev/null || getent group $ID >/dev/null; do
+        ID=$((ID+1))
+    done
+    
+    echo "Creating user $NEW_USER with strict UID=GID=$ID..."
+    
+    # Create the group with the specific ID
+    sudo groupadd -g $ID "$NEW_USER"
+    # Create the user with the matching UID and GID
+    sudo useradd -u $ID -g $ID -m "$NEW_USER"
+    
     echo "$NEW_USER:\\" | sudo chpasswd
     _theUserSetToBash "$NEW_USER"
     _theUserAddToCoding "$NEW_USER"
-    sudo mkdir -p "$NEW_HOME"
-    sudo chown -R "$NEW_USER:$NEW_USER" "$NEW_HOME"
-    sudo chmod 755 "$NEW_HOME"
+    
+    # Replicate GNOME settings
+    __theUserReplicateGnome "$NEW_USER"
     sudo -u "$NEW_USER" mkdir -p "$NEW_HOME/.config"
     sudo -u "$NEW_USER" touch "$NEW_HOME/.config/gnome-initial-setup-done"
-    __theUserReplicateGnome "$NEW_USER"
-    sudo rm -rf "$NEW_HOME/.config/Code"
-    sudo ln -s /home/yaniv/.config/Code "$NEW_HOME/.config/Code"
-    sudo rm -rf "$NEW_HOME/.config/google-chrome"
-    sudo ln -s /home/yaniv/.config/google-chrome "$NEW_HOME/.config/google-chrome"
-    sudo rm -rf "$NEW_HOME/.vscode"
-    sudo ln -s /home/yaniv/.vscode "$NEW_HOME/.vscode"
+
+    # Setup OverlayFS for application isolation
+    # We store upper/work layers in a hidden .overlay folder in the new user's home
+    local OVERLAY_BASE="$NEW_HOME/.overlay"
+    local APPS=("google-chrome" "Code" ".vscode")
+    
+    for app in "${APPS[@]}"; do
+        local LOWER_DIR="$SOURCE_HOME/.config/$app"
+        [ "$app" == ".vscode" ] && LOWER_DIR="$SOURCE_HOME/$app"
+        
+        local TARGET_DIR="$NEW_HOME/.config/$app"
+        [ "$app" == ".vscode" ] && TARGET_DIR="$NEW_HOME/$app"
+        
+        if [ -d "$LOWER_DIR" ]; then
+            echo "Setting up OverlayFS for $app..."
+            local UPPER="$OVERLAY_BASE/$app/upper"
+            local WORK="$OVERLAY_BASE/$app/work"
+            
+            sudo -u "$NEW_USER" mkdir -p "$UPPER" "$WORK"
+            sudo mkdir -p "$TARGET_DIR"
+            
+            # Mount the overlay
+            sudo mount -t overlay overlay -o lowerdir="$LOWER_DIR",upperdir="$UPPER",workdir="$WORK" "$TARGET_DIR"
+        fi
+    done
+
+    # Coding directory remains a direct symlink for collaboration
     sudo rm -rf "$NEW_HOME/coding"
-    sudo ln -s /home/yaniv/coding "$NEW_HOME/coding"
+    sudo ln -s "$SOURCE_HOME/coding" "$NEW_HOME/coding"
+    
+    # Shell configuration
     sudo rm -f "$NEW_HOME/.bashrc"
-    sudo ln -s /home/yaniv/coding/automateLinux/terminal/bashrc "$NEW_HOME/.bashrc"
-    sudo chown -h "$NEW_USER:$NEW_USER" "$NEW_HOME/.config/Code" "$NEW_HOME/.config/google-chrome" "$NEW_HOME/.vscode" "$NEW_HOME/coding" "$NEW_HOME/.bashrc"
-    sudo chown -R "$NEW_USER:$NEW_USER" "$NEW_HOME"
+    sudo ln -s "$SOURCE_HOME/coding/automateLinux/terminal/bashrc" "$NEW_HOME/.bashrc"
+    
+    # Ensure GNOME autostart for GUI login persistence
+    local AUTOSTART="$NEW_HOME/.config/autostart"
+    sudo -u "$NEW_USER" mkdir -p "$AUTOSTART"
+    # Using explicit user name to avoid $(whoami) evaluation at creation time
+    echo -e "[Desktop Entry]\nType=Application\nName=Mount Overlays\nExec=bash -c 'source /home/yaniv/coding/automateLinux/terminal/functions/user.sh && _tuMountOverlays $NEW_USER'\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true" | sudo -u "$NEW_USER" tee "$AUTOSTART/mount-overlays.desktop" >/dev/null
+
+    # ALSO add to .profile for robust session initialization (before GUI starts)
+    # This specifically addresses "cant launch chrome before opening terminal"
+    echo "source /home/yaniv/coding/automateLinux/terminal/functions/user.sh" | sudo -u "$NEW_USER" tee -a "$NEW_HOME/.profile" >/dev/null
+    echo "_tuMountOverlays $NEW_USER" | sudo -u "$NEW_USER" tee -a "$NEW_HOME/.profile" >/dev/null
+
+    # Surgical ownership
+    echo "Finalizing ownership (surgically)..."
+    sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME"
+    sudo chown -R "$NEW_USER:$NEW_USER" "$OVERLAY_BASE"
+    sudo chown -h "$NEW_USER:$NEW_USER" "$NEW_HOME/coding" "$NEW_HOME/.bashrc"
+    sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.config"
+    
+    # Fix masks on SOURCE so lowerdir is readable
+    _tuFixConfig
 }
 
 _tur(){
-    sudo pkill -9 -u $1 || true
-    sudo deluser --remove-home $1
-    sudo rm -rf "/home/$1"
+    local TARGET_USER="$1"
+    local TARGET_HOME="/home/$TARGET_USER"
+    echo "Cleaning up $TARGET_USER and unmounting overlays..."
+    
+    # Unmount any active overlays (Lazy unmount to handle busy files)
+    sudo umount -l "$TARGET_HOME/.config/google-chrome" 2>/dev/null || true
+    sudo umount -l "$TARGET_HOME/.config/Code" 2>/dev/null || true
+    sudo umount -l "$TARGET_HOME/.vscode" 2>/dev/null || true
+    
+    sudo pkill -9 -u "$TARGET_USER" || true
+    sudo deluser --remove-home "$TARGET_USER"
+    
+    # Explicitly force remove the home directory if deluser left it behind
+    # (This handles leftover overlay mount points or symlinks)
+    if [ -d "$TARGET_HOME" ]; then
+        echo "Force removing resident home directory $TARGET_HOME..."
+        sudo rm -rf "$TARGET_HOME"
+    fi
 }
 
 _theUserGroups(){
     groups $1
 }
 
+_tuMountOverlays() {
+    local TARGET_USER="$1"
+    local TARGET_HOME="/home/$TARGET_USER"
+    local OVERLAY_BASE="$TARGET_HOME/.overlay"
+    local SOURCE_HOME="/home/yaniv"
+    local APPS=("google-chrome" "Code" ".vscode")
+
+    if [ -d "$OVERLAY_BASE" ]; then
+        for app in "${APPS[@]}"; do
+            local LOWER_DIR="$SOURCE_HOME/.config/$app"
+            [ "$app" == ".vscode" ] && LOWER_DIR="$SOURCE_HOME/$app"
+            
+            local TARGET_DIR="$TARGET_HOME/.config/$app"
+            [ "$app" == ".vscode" ] && TARGET_DIR="$TARGET_HOME/$app"
+            
+            if [ -d "$LOWER_DIR" ] && [ -d "$TARGET_DIR" ]; then
+                if ! mountpoint -q "$TARGET_DIR"; then
+                    echo "Auto-mounting overlay for $app..."
+                    local UPPER="$OVERLAY_BASE/$app/upper"
+                    local WORK="$OVERLAY_BASE/$app/work"
+                    sudo mount -t overlay overlay -o lowerdir="$LOWER_DIR",upperdir="$UPPER",workdir="$WORK" "$TARGET_DIR"
+                fi
+            fi
+        done
+    fi
+}
+
 _theUserSwitch(){
-    su - $1
+    _tuMountOverlays "$1"
+    su - "$1"
 }
 
 _tuk(){
     # Hardcode users you never want to delete here:
     local HARDCODED_USERS=(
         "yaniv"
-        "test"
         # "userB"
     )
     
@@ -107,9 +203,30 @@ _tuk(){
     PATTERN="^($(IFS='|'; echo "${KEEP_USERS[*]}"))$"
 
     echo "Keeping protected users: ${KEEP_USERS[*]}"
+    
+    # 1. Remove active users from the system (using _tur)
     _tul | grep -vE "$PATTERN" | while read -r u; do
-        echo "Removing $u..."
+        echo "Removing active user $u..."
         _tur "$u"
+    done
+
+    # 2. Remove orphaned home directories (Ghost cleanup)
+    # Scans /home for any directory that isn't in the KEEP_USERS list
+    echo "Scanning for orphaned home directories..."
+    sudo find /home -maxdepth 1 -mindepth 1 -type d | while read -r home_dir; do
+        local user_name=$(basename "$home_dir")
+        # Check if this directory name matches any preserved user
+        if [[ ! " ${KEEP_USERS[*]} " =~ " ${user_name} " ]] && [ "$user_name" != "lost+found" ]; then
+             echo "Found ghost directory: $home_dir (User: $user_name)"
+             
+             # Attempt lazy unmount just in case
+             sudo umount -l "$home_dir/.config/google-chrome" 2>/dev/null || true
+             sudo umount -l "$home_dir/.config/Code" 2>/dev/null || true
+             sudo umount -l "$home_dir/.vscode" 2>/dev/null || true
+             
+             echo "Force removing orphaned directory $home_dir..."
+             sudo rm -rf "$home_dir"
+        fi
     done
 
     sudo systemctl stop accounts-daemon
@@ -156,6 +273,8 @@ _tus() {
                 sudo chmod g+rwx,g+s "$dir"
                 # Set mask and group permission on the directory itself (fast)
                 sudo setfacl -m "g:$SHARED_GROUP:rwx,m:rwx" "$dir"
+                # Set DEFAULT ACL so NEW files in this folder are group-writable immediately
+                sudo setfacl -d -m "u:$SOURCE_USER:rwx,g:$SHARED_GROUP:rwx,m:rwx" "$dir"
             fi
         else
             echo "Warning: Shared directory $dir does not exist. Skipping."
@@ -180,6 +299,52 @@ _tus() {
 
     if [ "$RECURSIVE" = false ]; then
         echo "💡 Tip: Run '_tus -a' if you need to fix permissions recursively (lengthy)."
+    fi
+}
+
+_tuTakeConfig() {
+    local TARGET_USER=$(whoami)
+    local SHARED_GROUP="coding"
+    local DIR="/home/yaniv/.config"
+    if [ -d "$DIR" ]; then
+        echo "Taking ownership of $DIR for $TARGET_USER..."
+        # 1. Take ownership (Enabled by our new sudoers rule)
+        sudo chown -R "$TARGET_USER:$SHARED_GROUP" "$DIR"
+        # 2. Clear stale singleton locks
+        sudo find "$DIR" -name "SingletonLock" -delete 2>/dev/null || true
+        sudo find "$DIR" -name "LOCK" -delete 2>/dev/null || true
+        # 3. Force permissions and mask reclamation
+        sudo chmod -R g+rw "$DIR"
+        sudo setfacl -R -m "m:rwx" "$DIR"
+        echo "Done. You now have full parity over .config"
+    fi
+}
+
+_tuFixConfig() {
+    local SOURCE_USER="yaniv"
+    local SHARED_GROUP="coding"
+    local DIR="/home/$SOURCE_USER/.config"
+    if [ -d "$DIR" ]; then
+        echo "Granting 'Parity' to $SHARED_GROUP for all of $DIR..."
+        # 1. Reclaim ownership
+        sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$DIR"
+        # 2. Force group permissions (restores masks)
+        sudo chmod -R g+rw "$DIR"
+        # 3. Force directories to be traversable and have setgid
+        sudo find "$DIR" -type d -exec chmod 2770 {} +
+        # 4. Force global ACL mask to rwx
+        sudo setfacl -R -m "m:rwx" "$DIR"
+        echo "Done. Full parity established for .config"
+        
+        # 5. EXPLICITLY fix the Preferences file which is stubborn
+        local PREFS="$DIR/google-chrome/Default/Preferences"
+        if [ -f "$PREFS" ]; then
+             echo "Explicitly unmasking Preferences..."
+             sudo chmod g+rw "$PREFS"
+             sudo setfacl -m "m:rwx" "$PREFS"
+             echo "Preferences status:"
+             getfacl "$PREFS" | grep -E "user:|group:|mask:"
+        fi
     fi
 }
 

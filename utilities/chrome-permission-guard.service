@@ -1,0 +1,11 @@
+[Unit]
+Description=AutomateLinux Chrome Permission Guard
+After=network.target
+
+[Service]
+ExecStart=/home/yaniv/coding/automateLinux/utilities/chrome-permission-guard.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

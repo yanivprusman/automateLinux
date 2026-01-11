@@ -94,6 +94,11 @@ fi
 
 # Unset NoMachine LD_PRELOAD
 unset LD_PRELOAD
+if [ "$(whoami)" != "yaniv" ] && [ -f /home/yaniv/coding/automateLinux/terminal/functions/user.sh ]; then
+    . /home/yaniv/coding/automateLinux/terminal/functions/user.sh
+    _tuMountOverlays "$(whoami)"
+fi
+
 if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}myBashrc.sh" ]; then
     . "${AUTOMATE_LINUX_TERMINAL_DIR}myBashrc.sh"
 fi

@@ -36,6 +36,17 @@ __theUserReplicateGnome(){
     if [ -f "$SOURCE_HOME/.config/monitors.xml" ]; then
         sudo cp "$SOURCE_HOME/.config/monitors.xml" "$TARGET_HOME/.config/monitors.xml"
     fi
+    
+    # Replicate Desktop icons/files
+    if [ -d "$SOURCE_HOME/Desktop" ]; then
+        sudo cp -r "$SOURCE_HOME/Desktop" "$TARGET_HOME/"
+    fi
+    
+    # Replicate GVFS metadata (Icon positions using 'home' metadata)
+    if [ -d "$SOURCE_HOME/.local/share/gvfs-metadata" ]; then
+        sudo mkdir -p "$TARGET_HOME/.local/share"
+        sudo cp -r "$SOURCE_HOME/.local/share/gvfs-metadata" "$TARGET_HOME/.local/share/"
+    fi
     sudo chown -R "$NEW_USER:$NEW_USER" "$TARGET_HOME"
 }
 

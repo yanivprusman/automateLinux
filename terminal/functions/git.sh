@@ -207,6 +207,10 @@ gitp(){
     git push
 }
 
+gitd(){
+    git diff
+}
+
 gitMakeMain() {
   if [ -z "$1" ]; then
     echo "Usage: gitMakeMain <commit-hash>"
@@ -227,4 +231,5 @@ gitMakeMain() {
   [[ "$confirm" =~ ^[Yy]$ ]] || return 1
   git push --force origin main
 }
+
 

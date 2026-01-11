@@ -44,7 +44,12 @@ toSymbolic() {
 export -f toSymbolic
 
 logOut() {
-    echo "Logging out of current session..."
-    gnome-session-quit --logout --no-prompt || loginctl terminate-session ${XDG_SESSION_ID:-self}
+    # echo "Logging out of current session..."
+    # gnome-session-quit --logout --no-prompt || loginctl terminate-session ${XDG_SESSION_ID:-self}
+    loginctl terminate-session 21
 }
 export -f logOut
+
+setDesktopBackground(){
+    gsettings set org.gnome.desktop.background picture-uri 'file:///usr/share/images/desktop-base/desktop-background.xml'
+}

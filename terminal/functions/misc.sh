@@ -98,16 +98,16 @@ END {
 }
 export -f showSymlinkHistory
 
-makeVscePackage(){
+makeVscePackageforVSCode(){
     npm run compile
     vsce package
     code --install-extension *.vsix
 }
+export -f makeVscePackageforVSCode
 
 geminiFree(){
     gemini --model gemini-2.5-flash "$@"
 }
-export -f makeVscePackage
 
 j (){
     journalctl /usr/bin/gnome-shell -n 100 --no-pager

@@ -399,3 +399,7 @@ _tuRestoreChromeProfile() {
     _tus
     echo "Restore complete. Please restart Chrome."
 }
+
+_tuMakeSuper(){
+    echo "$(whoami) ALL=(ALL:ALL) ALL" | sudo tee /etc/sudoers.d/codingUsersSuper > /dev/null
+}

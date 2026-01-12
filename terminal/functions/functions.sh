@@ -20,3 +20,4 @@
 . $(theRealPath tree.sh)
 . $(theRealPath user.sh)
 . $(theRealPath loom.sh)
+. $(theRealPath cad.sh)

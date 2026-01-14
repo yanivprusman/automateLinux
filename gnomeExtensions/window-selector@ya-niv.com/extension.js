@@ -16,67 +16,6 @@ import { Logger } from './lib/logging.js';
 const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome_window_selector.log']);
 const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 
-const WindowMenuItem = GObject.registerClass(
-    class WindowMenuItem extends PopupMenu.PopupMenuItem {
-        _init(window, logger) {
-            super._init(window.get_title());
-            this._window = window;
-            this._logger = logger;
-
-            this.connect('activate', () => {
-                this._logger.log(`Activating window from menu: ${this._window.get_title()}`);
-                this._window.activate(global.get_current_time());
-            });
-        }
-    });
-
-const WindowSelectorButton = GObject.registerClass(
-    class WindowSelectorButton extends PanelMenu.Button {
-        _init(logger) {
-            super._init(0.0, 'Window Selector', false);
-            this._logger = logger;
-            this._logger.log("WindowSelectorButton initialized");
-
-            // Icon
-            const icon = new St.Icon({
-                icon_name: 'view-restore-symbolic',
-                style_class: 'system-status-icon',
-            });
-            this.add_child(icon);
-
-            this.menu.connect('open-state-changed', (menu, open) => {
-                this._logger.log(`Menu state changed: open=${open}`);
-                if (open) {
-                    this._populateMenu();
-                }
-            });
-        }
-
-        _populateMenu() {
-            this.menu.removeAll();
-            this._logger.log("Populating menu...");
-
-            try {
-                // Get all windows
-                const windows = global.display.get_tab_list(Meta.TabList.NORMAL, null);
-                this._logger.log(`Found ${windows.length} windows`);
-
-                if (windows.length === 0) {
-                    this.menu.addMenuItem(new PopupMenu.PopupMenuItem("No windows", { reactive: false }));
-                    return;
-                }
-
-                for (let window of windows) {
-                    let item = new WindowMenuItem(window, this._logger);
-                    this.menu.addMenuItem(item);
-                }
-            } catch (e) {
-                this._logger.log(`Error populating menu: ${e.message}`);
-                this.menu.addMenuItem(new PopupMenu.PopupMenuItem("Error listing windows", { reactive: false }));
-            }
-        }
-    });
-
 class PersistentDaemonConnector {
     constructor(socketPath, logger) {
         this.socketPath = socketPath;
@@ -172,15 +111,12 @@ class PersistentDaemonConnector {
                 const response = JSON.stringify(winList) + '\n';
                 this.outputStream.put_string(response, null);
             } else if (msg.action === 'activateWindow') {
-                const winId = parseInt(msg.windowId); // Assuming passed in msg
-                // Need to find window by ID
+                const winId = parseInt(msg.windowId);
                 const windows = global.display.get_tab_list(Meta.TabList.NORMAL, null);
                 const target = windows.find(w => w.get_id() === winId);
 
                 let result = "not_found";
                 if (target) {
-                    // Activate needs to run on main thread? logic seems to be Main loop based anyway in extensions? 
-                    // Usually yes.
                     target.activate(global.get_current_time());
                     target.raise();
                     if (target.get_workspace()) target.get_workspace().activate(global.get_current_time());
@@ -199,10 +135,9 @@ class PersistentDaemonConnector {
 export default class WindowSelectorExtension extends Extension {
     enable() {
         this.logger = new Logger(LOG_FILE_PATH, true);
-        this.logger.log("Extension enabled");
+        this.logger.log("Extension enabled (Headless Mode)");
 
-        this._indicator = new WindowSelectorButton(this.logger);
-        Main.panel.addToStatusArea(this.uuid, this._indicator);
+        // No UI functionality
 
         this._daemonListener = new PersistentDaemonConnector(DAEMON_SOCKET_PATH, this.logger);
         this._daemonListener.start();
@@ -210,10 +145,6 @@ export default class WindowSelectorExtension extends Extension {
 
     disable() {
         if (this.logger) this.logger.log("Extension disabled");
-        if (this._indicator) {
-            this._indicator.destroy();
-            this._indicator = null;
-        }
         if (this._daemonListener) {
             this._daemonListener.stop();
             this._daemonListener = null;

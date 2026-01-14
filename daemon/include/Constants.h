@@ -91,6 +91,10 @@
 #define COMMAND_LIST_LOG_FILTERS "listLogFilters"
 #define COMMAND_CLEAR_LOG_FILTERS "clearLogFilters"
 #define COMMAND_EMPTY_DIR_HISTORY_TABLE "emptyDirHistoryTable"
+#define COMMAND_REGISTER_WINDOW_EXTENSION "registerWindowExtension"
+#define COMMAND_LIST_WINDOWS "listWindows"
+#define COMMAND_ACTIVATE_WINDOW "activateWindow"
+#define COMMAND_RESET_CLOCK "resetClock"
 
 #define COMMAND_ARG_DEVICE_PATH_REGEX "devicePathRegex"
 #define COMMAND_ARG_IS_KEYBOARD "isKeyboard"

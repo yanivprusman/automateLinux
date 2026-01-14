@@ -1,0 +1,1 @@
+/home/yaniv/coding/automateLinux/gnomeExtensions/window-selector@ya-niv.com

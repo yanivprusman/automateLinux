@@ -1,0 +1,13 @@
+{
+  "name": "Window Selector",
+  "description": "A simple extension to list and select open windows",
+  "uuid": "window-selector@ya-niv.com",
+  "shell-version": [
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47"
+  ]
+}

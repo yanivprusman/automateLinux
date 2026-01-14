@@ -79,7 +79,12 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_CLEAR_LOG_FILTERS, {}),
     CommandSignature(COMMAND_EMPTY_DIR_HISTORY_TABLE, {}),
     CommandSignature(COMMAND_GET_PORT, {COMMAND_ARG_KEY}),
+    CommandSignature(COMMAND_GET_PORT, {COMMAND_ARG_KEY}),
     CommandSignature(COMMAND_SET_PORT, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
+    CommandSignature(COMMAND_REGISTER_WINDOW_EXTENSION, {}),
+    CommandSignature(COMMAND_LIST_WINDOWS, {}),
+    CommandSignature(COMMAND_ACTIVATE_WINDOW, {COMMAND_ARG_WINDOW_ID}),
+    CommandSignature(COMMAND_RESET_CLOCK, {}),
 
 };
 
@@ -95,6 +100,89 @@ static std::mutex g_activeTabUrlMutex;
 static std::string g_activeTabUrl = "";
 static int g_nativeHostSocket = -1;
 static std::mutex g_nativeHostSocketMutex;
+
+static int g_windowExtensionSocket = -1;
+static std::mutex g_windowExtensionSocketMutex;
+
+CmdResult handleRegisterWindowExtension(const json &) {
+  {
+    std::lock_guard<std::mutex> lock(g_windowExtensionSocketMutex);
+    g_windowExtensionSocket = clientSocket;
+  }
+  logToFile("[Window Ext] Window Extension registered", LOG_WINDOW);
+  return CmdResult(0, std::string(R"({"status":"registered"})") +
+                          mustEndWithNewLine);
+}
+
+CmdResult handleListWindows(const json &) {
+  std::lock_guard<std::mutex> lock(g_windowExtensionSocketMutex);
+  if (g_windowExtensionSocket == -1) {
+    return CmdResult(1, "Window extension not registered");
+  }
+
+  std::string msg =
+      std::string(R"({"action":"listWindows"})") + mustEndWithNewLine;
+  if (write(g_windowExtensionSocket, msg.c_str(), msg.length()) < 0) {
+    g_windowExtensionSocket = -1;
+    return CmdResult(1, "Failed to write to extension");
+  }
+
+  // Determine response - wait for extension to reply?
+  // Protocol: Caller waits for reply.
+  // BUT: mainCommand design writes result to client_sock at end of function.
+  // We need to read from extension socket HERE and return that as result.
+
+  // Simple read blocking
+  char buffer[4096];
+  memset(buffer, 0, sizeof(buffer));
+  ssize_t n = read(g_windowExtensionSocket, buffer, sizeof(buffer) - 1);
+  if (n > 0) {
+    return CmdResult(0, std::string(buffer)); // Buffer should already include
+                                              // newline if extension sends it
+  }
+  return CmdResult(1, "No response from extension");
+}
+
+CmdResult handleActivateWindow(const json &command) {
+  std::lock_guard<std::mutex> lock(g_windowExtensionSocketMutex);
+  if (g_windowExtensionSocket == -1) {
+    return CmdResult(1, "Window extension not registered");
+  }
+
+  // Forward exact command JSON to extension? Or simplified?
+  // Extension expects {"action": "activateWindow", "windowId": ...}
+  // This function receives full command. Let's just forward generic action.
+
+  // Reuse the command object but change "command" key to "action"?
+  // Or just constructing new JSON.
+  // Command args: "windowId" (string or int)
+
+  // Extension expects: {action: 'activateWindow', windowId: ...}
+  // Command has: {command: 'activateWindow', windowId: ...}
+
+  json forward = command;
+  forward["action"] = "activateWindow";
+  std::string msg = forward.dump() + mustEndWithNewLine;
+
+  if (write(g_windowExtensionSocket, msg.c_str(), msg.length()) < 0) {
+    g_windowExtensionSocket = -1;
+    return CmdResult(1, "Failed to write to extension");
+  }
+
+  char buffer[1024];
+  memset(buffer, 0, sizeof(buffer));
+  ssize_t n = read(g_windowExtensionSocket, buffer, sizeof(buffer) - 1);
+  if (n > 0) {
+    return CmdResult(0, std::string(buffer));
+  }
+  return CmdResult(0, "Command sent (no reply)");
+}
+
+CmdResult handleResetClock(const json &) {
+  SettingsTable::deleteSetting("clockX");
+  SettingsTable::deleteSetting("clockY");
+  return CmdResult(0, "Clock position reset (entries deleted)\n");
+}
 
 static std::pair<unsigned int, std::string>
 getCommandLogContext(const std::string &commandName) {
@@ -677,6 +765,10 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_EMPTY_DIR_HISTORY_TABLE, handleEmptyDirHistoryTable},
     {COMMAND_GET_PORT, handleGetPort},
     {COMMAND_SET_PORT, handleSetPort},
+    {COMMAND_REGISTER_WINDOW_EXTENSION, handleRegisterWindowExtension},
+    {COMMAND_LIST_WINDOWS, handleListWindows},
+    {COMMAND_ACTIVATE_WINDOW, handleActivateWindow},
+    {COMMAND_RESET_CLOCK, handleResetClock},
 
 };
 
@@ -751,7 +843,8 @@ int mainCommand(const json &command, int client_sock) {
   }
 
   // Return 1 (close) for regular commands, 0 (keep) for log listeners.
-  if (commandName == COMMAND_REGISTER_LOG_LISTENER) {
+  if (commandName == COMMAND_REGISTER_LOG_LISTENER ||
+      commandName == COMMAND_REGISTER_WINDOW_EXTENSION) {
     return 0;
   }
   return 1;

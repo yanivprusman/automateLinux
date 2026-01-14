@@ -181,3 +181,57 @@ wireGuardRestart(){
     sudo wg-quick down wg0  # stop
     sudo wg-quick up wg0    # start
 }
+
+# Run on server to generate a client setup function for a new device
+generateClientFunction() {
+    read -p "Enter the name of the new device (e.g., rpi5): " CLIENT_NAME
+
+    # Auto-assign next free IP based on existing peers
+    BASE_IP="10.0.0."
+    USED_IPS=$(grep -oP 'AllowedIPs = \K10\.0\.0\.\d+' /etc/wireguard/wg0.conf)
+    NEXT_IP=2
+    while echo "$USED_IPS" | grep -q "${BASE_IP}${NEXT_IP}"; do
+        NEXT_IP=$((NEXT_IP+1))
+    done
+    CLIENT_IP="${BASE_IP}${NEXT_IP}"
+
+    # Generate keys for client
+    CLIENT_PRIV=$(wg genkey)
+    CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
+
+    # Add peer to server config immediately
+    echo -e "\n[Peer]\n# $CLIENT_NAME\nPublicKey = $CLIENT_PUB\nAllowedIPs = $CLIENT_IP/32" >> /etc/wireguard/wg0.conf
+    wg-quick down wg0 2>/dev/null
+    wg-quick up wg0
+
+    SERVER_PUBLIC_KEY=$(wg show wg0 public-key)
+    SERVER_PORT=$(grep '^ListenPort' /etc/wireguard/wg0.conf | awk '{print $3}')
+    SERVER_IP=$(hostname -I | awk '{print $1}')
+
+    # Echo the function to paste on the new device
+    echo
+    echo "Copy the following function to the new device and run it:"
+    echo "---------------------------------------------------------"
+    echo "setupWireGuardClient() {"
+    echo "    PRIVATE_KEY=\"$CLIENT_PRIV\""
+    echo "    CLIENT_IP=\"$CLIENT_IP/24\""
+    echo "    SERVER_PUBLIC_KEY=\"$SERVER_PUBLIC_KEY\""
+    echo "    SERVER_ENDPOINT=\"$SERVER_IP:$SERVER_PORT\""
+    echo ""
+    echo "    echo \"[Interface]\" > /etc/wireguard/wg0.conf"
+    echo "    echo \"PrivateKey = \$PRIVATE_KEY\" >> /etc/wireguard/wg0.conf"
+    echo "    echo \"Address = \$CLIENT_IP\" >> /etc/wireguard/wg0.conf"
+    echo "    echo \"DNS = 10.0.0.1\" >> /etc/wireguard/wg0.conf"
+    echo ""
+    echo "    echo \"[Peer]\" >> /etc/wireguard/wg0.conf"
+    echo "    echo \"PublicKey = \$SERVER_PUBLIC_KEY\" >> /etc/wireguard/wg0.conf"
+    echo "    echo \"Endpoint = \$SERVER_ENDPOINT\" >> /etc/wireguard/wg0.conf"
+    echo "    echo \"AllowedIPs = 0.0.0.0/0, ::/0\" >> /etc/wireguard/wg0.conf"
+    echo "    echo \"PersistentKeepalive = 25\" >> /etc/wireguard/wg0.conf"
+    echo ""
+    echo "    wg-quick down wg0 2>/dev/null || true"
+    echo "    wg-quick up wg0"
+    echo "    echo \"✅ WireGuard configured on this device ($CLIENT_NAME)\""
+    echo "}"
+    echo "---------------------------------------------------------"
+}

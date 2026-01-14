@@ -232,4 +232,13 @@ gitMakeMain() {
   git push --force origin main
 }
 
+gitHours() {
+    git log --since="$1 hours ago" --pretty=format:"%h %ad %s" --date=format:"%d/%m %H:%M"
+    echo
+}
+
+gitCount(){
+    git rev-list --count HEAD
+}
+
 

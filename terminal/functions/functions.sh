@@ -21,4 +21,4 @@
 . $(theRealPath user.sh)
 . $(theRealPath loom.sh)
 . $(theRealPath cad.sh)
-# . $(theRealPath find.sh)
+. $(theRealPath windowSwitcher.sh)

@@ -22,3 +22,7 @@
 . $(theRealPath loom.sh)
 . $(theRealPath cad.sh)
 . $(theRealPath windowSwitcher.sh)
+# extra
+if [ -f "$(theRealPath extra/extra.sh)" ]; then
+  . $(theRealPath extra/extra.sh)
+fi

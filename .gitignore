@@ -22,3 +22,4 @@ utilities/sendKeys/sendKeys
 __pycache__
 keyBindingInsparation
 utilities/fileSize/fileSize
+/terminal/functions/extra/

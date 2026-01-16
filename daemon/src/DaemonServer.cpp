@@ -255,15 +255,13 @@ int initialize_daemon() {
     logToFile("ERROR: Failed to initialize keyboard mapping", LOG_CORE);
   }
 
-  // Start Loom on daemon startup (using systemd-run to join user session scope)
+  // Start Loom on daemon startup
   string restartLoomScript =
       directories.base + "daemon/scripts/restart_loom.sh";
-  // Export DBUS_SESSION_BUS_ADDRESS so systemd-run can talk to the user bus.
-  // Then use systemd-run --user --scope to launch the script in the user's
-  // systemd instance.
-  string cmd = "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
-               "systemd-run --user --scope " +
-               restartLoomScript + " > /dev/null 2>&1 &";
+  // Export DBUS_SESSION_BUS_ADDRESS so it can talk to the user bus.
+  string cmd =
+      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; " +
+      restartLoomScript + " > /dev/null 2>&1 &";
   int loomRc = system(cmd.c_str());
   if (loomRc != 0) {
     logToFile("WARNING: Failed to start Loom, rc=" + std::to_string(loomRc),

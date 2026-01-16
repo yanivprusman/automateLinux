@@ -6,6 +6,7 @@ echo "Starting restart_loom.sh at $(date)"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/1000/bus"
 export XDG_RUNTIME_DIR="/run/user/1000"
 export WAYLAND_DISPLAY="wayland-0"
+export XDG_SESSION_TYPE="wayland"
 
 # Cleanup
 echo "Killing existing processes..."

@@ -34,8 +34,6 @@ export kamateraIp="10.0.0.1"
 export pcIp="10.0.0.2"
 export phoneIp="10.0.0.3"
 export laptopIp="10.0.0.4"
-export googleAiStudioApiKey="AIzaSyAbhUE2No3Wgyo36CzuE6XCn_V1dszTkiM"
-export GEMINI_API_KEY=$googleAiStudioApiKey 
 if [ ! -d "$AUTOMATE_LINUX_DATA_DIR" ]; then
     mkdir -p "$AUTOMATE_LINUX_DATA_DIR"
 fi

@@ -206,22 +206,49 @@ _tucno(){
     # Setup .profile for robust session initialization
     echo "source /home/yaniv/coding/automateLinux/terminal/functions/user.sh" | sudo -u "$NEW_USER" tee -a "$NEW_HOME/.profile" >/dev/null
 
-    # Surgical ownership
+    # Finalize ownership (surgically)
     echo "Finalizing ownership (surgically)..."
     sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME"
     sudo chown -h "$NEW_USER:$NEW_USER" "$NEW_HOME/coding" "$NEW_HOME/.bashrc"
     
     # Symlinks to .config/app should be owned by new user too
-    for app in "${APPS[@]}"; do
+    # We use a more robust way to ensure we match the right paths
+    for app in "google-chrome" "Code"; do
         local TARGET_DIR="$NEW_HOME/.config/$app"
-        [ "$app" == ".vscode" ] && TARGET_DIR="$NEW_HOME/$app"
-        [ -L "$TARGET_DIR" ] && sudo chown -h "$NEW_USER:$NEW_USER" "$TARGET_DIR"
+        if [ -L "$TARGET_DIR" ]; then 
+            sudo chown -h "$NEW_USER:$NEW_USER" "$TARGET_DIR"
+        fi
     done
+    if [ -L "$NEW_HOME/.vscode" ]; then
+        sudo chown -h "$NEW_USER:$NEW_USER" "$NEW_HOME/.vscode"
+    fi
 
     sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.config"
     
     # Ensure ACLs are correct on source for sharing
     _tus
+}
+
+_tuChromeAsYaniv() {
+    _tuCleanLocks
+    echo "Launching Chrome as 'yaniv' identity with VT-stability flags..."
+    # Spoof identity while keeping current HOME to use the symlinked setup
+    # Flags added to prevent tab discarding and GPU context loss reloads on VT switch
+    USER=yaniv LOGNAME=yaniv google-chrome \
+        --disable-backgrounding-occluded-windows \
+        --disable-background-timer-throttling \
+        --disable-renderer-backgrounding \
+        --disable-gpu-process-crash-limit \
+        "$@" &>/dev/null &
+}
+
+_tuCleanLocks() {
+    local TARGET_DIR="/home/yaniv/.config/google-chrome"
+    echo "Cleaning Chrome locks in $TARGET_DIR..."
+    sudo find "$TARGET_DIR" -name "SingletonLock" -delete 2>/dev/null || true
+    sudo find "$TARGET_DIR" -name "LOCK" -delete 2>/dev/null || true
+    sudo find "$TARGET_DIR" -name "SingletonSocket" -delete 2>/dev/null || true
+    sudo find "$TARGET_DIR" -name "SingletonCookie" -delete 2>/dev/null || true
 }
 
 _tur(){
@@ -337,6 +364,7 @@ _tus() {
     local DIRS_TO_SHARE=(
         "/home/$SOURCE_USER/.config/Code"
         "/home/$SOURCE_USER/.config/google-chrome"
+        "/home/$SOURCE_USER/.cache/google-chrome"
         "/home/$SOURCE_USER/.vscode"
         "/home/$SOURCE_USER/coding"
     )
@@ -351,15 +379,15 @@ _tus() {
     for dir in "${DIRS_TO_SHARE[@]}"; do
         if [ -d "$dir" ]; then
             if [ "$RECURSIVE" = true ]; then
-                echo "Recursively reclaiming and setting up ACLs for $dir (this may take a while)..."
-                sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$dir"
+                echo "Recursively setting up ACLs for $dir (this may take a while)..."
+                # sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$dir"
                 sudo chmod -R g+rwx,g+s "$dir"
                 sudo setfacl -R -b "$dir"
                 sudo setfacl -R -m "u:$SOURCE_USER:rwx,g:$SHARED_GROUP:rwx,m:rwx" "$dir"
                 sudo setfacl -R -d -m "u:$SOURCE_USER:rwx,g:$SHARED_GROUP:rwx,m:rwx" "$dir"
             else
                 echo "Fast setup for $dir (parent directory and non-recursive ACLs)..."
-                sudo chown "$SOURCE_USER:$SHARED_GROUP" "$dir"
+                # sudo chown "$SOURCE_USER:$SHARED_GROUP" "$dir"
                 sudo chmod g+rwx,g+s "$dir"
                 # Set mask and group permission on the directory itself (fast)
                 sudo setfacl -m "g:$SHARED_GROUP:rwx,m:rwx" "$dir"
@@ -376,13 +404,13 @@ _tus() {
     local SOCKET="$SOCKET_DIR/automatelinux-daemon.sock"
     if [ -d "$SOCKET_DIR" ]; then
         echo "Ensuring daemon socket directory is traversable..."
-        sudo chown "$SOURCE_USER:$SHARED_GROUP" "$SOCKET_DIR"
+        # sudo chown "$SOURCE_USER:$SHARED_GROUP" "$SOCKET_DIR"
         sudo chmod g+rws "$SOCKET_DIR"
         sudo setfacl -m "g:$SHARED_GROUP:rx,m:rwx" "$SOCKET_DIR"
     fi
     if [ -S "$SOCKET" ]; then
         echo "Setting up permissions for daemon socket (making it globally accessible)..."
-        sudo chown "$SOURCE_USER:$SHARED_GROUP" "$SOCKET"
+        # sudo chown "$SOURCE_USER:$SHARED_GROUP" "$SOCKET"
         sudo chmod 0666 "$SOCKET"
         sudo setfacl -m "g:$SHARED_GROUP:rw,m:rw,o:rw" "$SOCKET"
     fi
@@ -416,8 +444,8 @@ _tuFixConfig() {
     local DIR="/home/$SOURCE_USER/.config"
     if [ -d "$DIR" ]; then
         echo "Granting 'Parity' to $SHARED_GROUP for all of $DIR..."
-        # 1. Reclaim ownership
-        sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$DIR"
+        # 1. Reclaim ownership (DISABLED as per user request)
+        # sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$DIR"
         # 2. Force group permissions (restores masks)
         sudo chmod -R g+rw "$DIR"
         # 3. Force directories to be traversable and have setgid
@@ -443,12 +471,12 @@ _tuFixChrome() {
     local SHARED_GROUP="coding"
     local DIR="/home/$SOURCE_USER/.config/google-chrome"
     if [ -d "$DIR" ]; then
-        echo "Breaking the circle: Reclaiming Chrome profile in $DIR..."
+        echo "Breaking the circle: Fixing Chrome profile in $DIR..."
         # 1. Delete all lock files (stale or from other users)
         sudo find "$DIR" -name "SingletonLock" -delete 2>/dev/null || true
         sudo find "$DIR" -name "LOCK" -delete 2>/dev/null || true
-        # 2. Reclaim ownership to yaniv
-        sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$DIR"
+        # 2. Reclaim ownership (DISABLED as per user request)
+        # sudo chown -R "$SOURCE_USER:$SHARED_GROUP" "$DIR"
         # 3. Force explicit permissions (Directories: 2770, Files: 660)
         sudo find "$DIR" -type d -exec chmod 2770 {} +
         sudo find "$DIR" -type f -exec chmod 660 {} +

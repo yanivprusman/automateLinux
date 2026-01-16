@@ -195,11 +195,22 @@ CmdResult handleResetClock(const json &) {
 }
 
 CmdResult handleIsLoomActive(const json &) {
-  string output = executeCommand("pgrep -x loom-server");
-  if (output.empty()) {
+  string serverOutput = executeCommand("pgrep -x loom-server");
+  string clientOutput =
+      executeCommand("pgrep -f 'vite'"); // Loom client uses vite
+
+  if (serverOutput.empty() && clientOutput.empty()) {
     return CmdResult(0, "Loom is NOT active\n");
   }
-  return CmdResult(0, "Loom is active\n");
+
+  std::stringstream ss;
+  ss << "Loom Status:\n";
+  ss << "  Server: " << (serverOutput.empty() ? "NOT RUNNING" : "RUNNING")
+     << "\n";
+  ss << "  Client: " << (clientOutput.empty() ? "NOT RUNNING" : "RUNNING")
+     << "\n";
+
+  return CmdResult(0, ss.str());
 }
 
 CmdResult handleRestartLoom(const json &) {

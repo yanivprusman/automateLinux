@@ -154,6 +154,11 @@ _tuc(){
     sudo chown -h "$NEW_USER:$NEW_USER" "$NEW_HOME/coding" "$NEW_HOME/.bashrc"
     sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.config"
     
+    # Ensure .gitconfig has correct ownership
+    if [ -f "$NEW_HOME/.gitconfig" ]; then
+        sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.gitconfig"
+    fi
+    
     # Fix masks on SOURCE so lowerdir is readable
     _tuFixConfig
 }
@@ -231,6 +236,11 @@ _tucno(){
     fi
 
     sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.config"
+    
+    # Ensure .gitconfig has correct ownership
+    if [ -f "$NEW_HOME/.gitconfig" ]; then
+        sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.gitconfig"
+    fi
     
     # Ensure ACLs are correct on source for sharing
     _tus

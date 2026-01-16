@@ -45,7 +45,13 @@ __theUserReplicateGnome(){
     # Replicate GVFS metadata (Icon positions using 'home' metadata)
     if [ -d "$SOURCE_HOME/.local/share/gvfs-metadata" ]; then
         sudo mkdir -p "$TARGET_HOME/.local/share"
-        sudo cp -r "$SOURCE_HOME/.local/share/gvfs-metadata" "$TARGET_HOME/.local/share/"
+        sudo cp -r "$SOURCE_HOME/.local/share/gvfs-metadata" "$TARGET_HOME/.local/share/."
+    fi
+
+    # Replicate keyrings
+    if [ -d "$SOURCE_HOME/.local/share/keyrings" ]; then
+        sudo mkdir -p "$TARGET_HOME/.local/share"
+        sudo cp -r "$SOURCE_HOME/.local/share/keyrings" "$TARGET_HOME/.local/share/."
     fi
     sudo chown -R "$NEW_USER:$NEW_USER" "$TARGET_HOME"
 }

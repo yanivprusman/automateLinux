@@ -49,7 +49,7 @@ sshKamatera(){
 }
 
 sshPhone(){
-    ssh root@$phoneIp
+    ssh u0_a424@10.0.0.3 -p 8022
 }
 
 sshLaptop(){

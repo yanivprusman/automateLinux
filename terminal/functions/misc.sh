@@ -100,8 +100,8 @@ export -f showSymlinkHistory
 
 makeVscePackageforVSCode(){
     npm run compile
-    vsce package
-    code --install-extension *.vsix
+    vsce package --allow-missing-repository --skip-license
+    code --install-extension *.vsix --force
 }
 export -f makeVscePackageforVSCode
 

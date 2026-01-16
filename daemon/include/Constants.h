@@ -95,6 +95,12 @@
 #define COMMAND_LIST_WINDOWS "listWindows"
 #define COMMAND_ACTIVATE_WINDOW "activateWindow"
 #define COMMAND_RESET_CLOCK "resetClock"
+#define COMMAND_IS_LOOM_ACTIVE "isLoomActive"
+#define COMMAND_RESTART_LOOM "restartLoom"
+#define COMMAND_PUBLIC_TRANSPORTATION_START_PROXY                              \
+  "publicTransportationStartProxy"
+#define COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP "publicTransportationOpenApp"
+#define COMMAND_LIST_PORTS "listPorts"
 
 #define COMMAND_ARG_DEVICE_PATH_REGEX "devicePathRegex"
 #define COMMAND_ARG_IS_KEYBOARD "isKeyboard"

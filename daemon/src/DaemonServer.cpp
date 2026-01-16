@@ -79,7 +79,9 @@ void openKeyboardDevice() {
 }
 
 int setup_socket() {
-  socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  // Use SOCK_CLOEXEC to prevent child processes (like loom-server) from
+  // inheriting this FD
+  socket_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
   if (socket_fd < 0) {
     cerr << "ERROR: socket() failed: " << strerror(errno) << endl;
     return 1;
@@ -135,6 +137,11 @@ void accept_new_client() {
   int client_fd = accept(socket_fd, nullptr, nullptr);
   if (client_fd < 0)
     return;
+
+  // Set FD_CLOEXEC logic to prevent child processes from inheriting this FD.
+  // This is crucial for commands like restartLoom that spawn long-running
+  // children.
+  fcntl(client_fd, F_SETFD, FD_CLOEXEC);
 
   struct ucred cred;
   socklen_t credLen = sizeof(cred);

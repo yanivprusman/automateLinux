@@ -11,9 +11,13 @@
 #include "sendKeys.h"
 #include "using.h"
 #include <algorithm>
+#include <arpa/inet.h>
+#include <fstream>
 #include <iostream>
 #include <linux/input-event-codes.h>
+#include <netinet/in.h>
 #include <string>
+#include <sys/socket.h>
 #include <thread>
 #include <tuple>
 
@@ -85,6 +89,11 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_LIST_WINDOWS, {}),
     CommandSignature(COMMAND_ACTIVATE_WINDOW, {COMMAND_ARG_WINDOW_ID}),
     CommandSignature(COMMAND_RESET_CLOCK, {}),
+    CommandSignature(COMMAND_IS_LOOM_ACTIVE, {}),
+    CommandSignature(COMMAND_RESTART_LOOM, {}),
+    CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_START_PROXY, {}),
+    CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, {}),
+    CommandSignature(COMMAND_LIST_PORTS, {}),
 
 };
 
@@ -182,6 +191,121 @@ CmdResult handleResetClock(const json &) {
   SettingsTable::deleteSetting("clockX");
   SettingsTable::deleteSetting("clockY");
   return CmdResult(0, "Clock position reset (entries deleted)\n");
+}
+
+CmdResult handleIsLoomActive(const json &) {
+  string output = executeCommand("pgrep -x loom-server");
+  if (output.empty()) {
+    return CmdResult(0, "Loom is NOT active\n");
+  }
+  return CmdResult(0, "Loom is active\n");
+}
+
+CmdResult handleRestartLoom(const json &) {
+  // Use std::system to fire-and-forget.
+  // We use `nohup` and `&` to ensure it continues running in background.
+  // We redirect ALL output to /dev/null to ensure the shell returns
+  // immediately.
+  string cmd = "nohup bash "
+               "/home/yaniv/coding/automateLinux/daemon/scripts/"
+               "restart_loom.sh > /dev/null 2>&1 &";
+
+  int rc = std::system(cmd.c_str());
+  if (rc != 0) {
+    return CmdResult(1, "Failed to launch restart script\n");
+  }
+
+  return CmdResult(0, "Loom restart initiated in background.\n");
+}
+
+CmdResult handlePublicTransportationStartProxy(const json &) {
+  // 1. Find a free port by binding to port 0
+  int sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (sock < 0) {
+    return CmdResult(1, "Failed to create socket for port discovery\n");
+  }
+
+  struct sockaddr_in sin;
+  memset(&sin, 0, sizeof(sin));
+  sin.sin_family = AF_INET;
+  sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  sin.sin_port = 0; // Let OS choose
+
+  if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+    close(sock);
+    return CmdResult(1, "Failed to bind to find free port\n");
+  }
+
+  socklen_t len = sizeof(sin);
+  if (getsockname(sock, (struct sockaddr *)&sin, &len) < 0) {
+    close(sock);
+    return CmdResult(1, "Failed to get socket name\n");
+  }
+
+  int port = ntohs(sin.sin_port);
+  close(sock); // Close immediately so SSH can use it
+
+  // 2. Start SSH Tunnel
+  // ssh -f -N -L $PORT:moran.mot.gov.il:110 root@10.0.0.1
+  string cmd =
+      "ssh -f -N -L " + to_string(port) + ":moran.mot.gov.il:110 root@10.0.0.1";
+  int rc = std::system(cmd.c_str());
+
+  if (rc != 0) {
+    return CmdResult(1, "Failed to start SSH tunnel\n");
+  }
+
+  // 3. Write port to temp file
+  ofstream portFile("/tmp/pt_proxy_port");
+  if (portFile.is_open()) {
+    portFile << port;
+    portFile.close();
+    // Ensure readable by others (www-data)
+    chmod("/tmp/pt_proxy_port", 0644);
+  } else {
+    return CmdResult(1, "Failed to write port file\n");
+  }
+
+  return CmdResult(0, "Proxy started on port " + to_string(port) + "\n");
+}
+
+CmdResult handlePublicTransportationOpenApp(const json &) {
+  // Query the daemon's port registry for the PT app port
+  string portKey = "port_pt";
+  string port = SettingsTable::getSetting(portKey);
+
+  if (port.empty()) {
+    return CmdResult(
+        1, "PT app port not set. Use 'd setPort pt <PORT>' to configure.\n");
+  }
+
+  string url = "http://localhost:" + port;
+  string cmd = "google-chrome " + url + " > /dev/null 2>&1 &";
+  int rc = std::system(cmd.c_str());
+
+  if (rc != 0) {
+    return CmdResult(1, "Failed to open Chrome\n");
+  }
+
+  return CmdResult(0, "Opened " + url + " in Chrome\n");
+}
+
+CmdResult handleListPorts(const json &) {
+  auto allSettings = SettingsTable::getAllSettings();
+  std::stringstream ss;
+  ss << "--- Registered Port Mappings ---\n";
+  bool found = false;
+  for (const auto &p : allSettings) {
+    if (p.first.find("port_") == 0) {
+      string appName = p.first.substr(5);
+      ss << "  " << appName << ": " << p.second << "\n";
+      found = true;
+    }
+  }
+  if (!found) {
+    ss << "  (No ports registered)\n";
+  }
+  return CmdResult(0, ss.str());
 }
 
 static std::pair<unsigned int, std::string>
@@ -769,6 +893,12 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_LIST_WINDOWS, handleListWindows},
     {COMMAND_ACTIVATE_WINDOW, handleActivateWindow},
     {COMMAND_RESET_CLOCK, handleResetClock},
+    {COMMAND_IS_LOOM_ACTIVE, handleIsLoomActive},
+    {COMMAND_RESTART_LOOM, handleRestartLoom},
+    {COMMAND_PUBLIC_TRANSPORTATION_START_PROXY,
+     handlePublicTransportationStartProxy},
+    {COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, handlePublicTransportationOpenApp},
+    {COMMAND_LIST_PORTS, handleListPorts},
 
 };
 

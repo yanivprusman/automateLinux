@@ -21,6 +21,14 @@ void InputMapper::initializeAppMacros() {
       "Triggering G6 (press) Ctrl+C macro",
       nullptr});
 
+  // G3 (press) -> Public Transportation Open
+  defaultMacros.push_back(KeyAction{
+      KeyTrigger{
+          {{EV_KEY, G3_VIRTUAL, KEY_PRESS, WITHHOLD_NO, KEY_REPEAT_BREAKS_NO}}},
+      {}, // No sequence
+      "Triggering G3 (press) Public Transportation App macro",
+      [this]() { this->triggerPublicTransportationMacro(); }});
+
   // === APP-SPECIFIC MAPPINGS (override defaults) ===
 
   // Helper lambda to apply overrides

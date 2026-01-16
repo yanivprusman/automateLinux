@@ -329,3 +329,23 @@ int SettingsTable::deleteSetting(const std::string &key) {
     return 0;
   }
 }
+std::vector<std::pair<std::string, std::string>>
+SettingsTable::getAllSettings() {
+  std::vector<std::pair<std::string, std::string>> results;
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return results;
+  try {
+    std::unique_ptr<sql::Statement> stmt(con->createStatement());
+    std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
+        "SELECT setting_key, setting_value FROM system_settings"));
+    while (res->next()) {
+      results.push_back(
+          {res->getString("setting_key"), res->getString("setting_value")});
+    }
+  } catch (sql::SQLException &e) {
+    logToFile("SettingsTable: getAllSettings error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+  return results;
+}

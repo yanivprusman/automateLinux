@@ -38,6 +38,7 @@ public:
   static void setSetting(const std::string &key, const std::string &value);
   static std::string getSetting(const std::string &key);
   static int deleteSetting(const std::string &key);
+  static std::vector<std::pair<std::string, std::string>> getAllSettings();
 };
 
 #endif // DATABASE_TABLE_MANAGERS_H

@@ -121,6 +121,7 @@ private:
                           const std::string &devicePath) const;
   void initializeAppMacros();
   void triggerChromeChatGPTMacro();
+  void triggerPublicTransportationMacro();
 
   std::string keyboardPath_;
   std::string mousePath_;

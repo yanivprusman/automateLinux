@@ -917,6 +917,31 @@ void InputMapper::triggerChromeChatGPTMacro() {
     sync(); // Ensure sequence is flushed
   }).detach();
 }
+
+void InputMapper::triggerPublicTransportationMacro() {
+  logToFile("[InputMapper] Triggering Public Transportation macro",
+            LOG_AUTOMATION);
+  // Execute the daemon command to open the PT app.
+  // We can use the handlePublicTransportationOpenApp logic but since we are in
+  // InputMapper, we can just trigger it via the mainCommand handler logic or
+  // directly.
+  // Since mainCommand.cpp has handlePublicTransportationOpenApp, we can call
+  // it. However, handlePublicTransportationOpenApp is static or internal to
+  // mainCommand.cpp.
+  // Let's look at how handlePublicTransportationOpenApp is implemented.
+  // It uses SettingsTable::getSetting("port_pt") and runs "google-chrome".
+
+  // We can just call a bash command here for simplicity, similar to other
+  // macros.
+  string port = SettingsTable::getSetting("port_pt");
+  if (port.empty()) {
+    logToFile("[InputMapper] PT port not set, using default 3001", LOG_CHROME);
+    port = "3001";
+  }
+  string url = "http://localhost:" + port;
+  string cmd = "google-chrome " + url + " > /dev/null 2>&1 &";
+  std::system(cmd.c_str());
+}
 void InputMapper::flushAndResetState() {
   logToFile("[InputMapper] Emergency Flush & Reset (Sync Triggered)", LOG_CORE);
 

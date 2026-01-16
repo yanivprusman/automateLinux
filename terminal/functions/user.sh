@@ -151,6 +151,79 @@ _tuc(){
     _tuFixConfig
 }
 
+_tucno(){
+    local NEW_USER="${1:-$(password)}"
+    local SOURCE_USER="yaniv"
+    local SOURCE_HOME="/home/$SOURCE_USER"
+    local NEW_HOME="/home/$NEW_USER"
+    
+    # Find a free ID that is available as BOTH a UID and a GID
+    local ID=1001
+    while getent passwd $ID >/dev/null || getent group $ID >/dev/null; do
+        ID=$((ID+1))
+    done
+    
+    echo "Creating user $NEW_USER with strict UID=GID=$ID (Shared Mode)..."
+    
+    # Create the group with the specific ID
+    sudo groupadd -g $ID "$NEW_USER"
+    # Create the user with the matching UID and GID
+    sudo useradd -u $ID -g $ID -m "$NEW_USER"
+    
+    echo "$NEW_USER:\\" | sudo chpasswd
+    _theUserSetToBash "$NEW_USER"
+    _theUserAddToCoding "$NEW_USER"
+    
+    # Replicate GNOME settings
+    __theUserReplicateGnome "$NEW_USER"
+    sudo -u "$NEW_USER" mkdir -p "$NEW_HOME/.config"
+    sudo -u "$NEW_USER" touch "$NEW_HOME/.config/gnome-initial-setup-done"
+
+    # Symlink configs (Instead of OverlayFS)
+    local APPS=("google-chrome" "Code" ".vscode")
+    for app in "${APPS[@]}"; do
+        local LOWER_DIR="$SOURCE_HOME/.config/$app"
+        [ "$app" == ".vscode" ] && LOWER_DIR="$SOURCE_HOME/$app"
+        
+        local TARGET_DIR="$NEW_HOME/.config/$app"
+        [ "$app" == ".vscode" ] && TARGET_DIR="$NEW_HOME/$app"
+        
+        if [ -d "$LOWER_DIR" ]; then
+            echo "Symlinking $app for shared access..."
+            sudo rm -rf "$TARGET_DIR"
+            sudo ln -s "$LOWER_DIR" "$TARGET_DIR"
+        fi
+    done
+
+    # Coding directory remains a direct symlink for collaboration
+    sudo rm -rf "$NEW_HOME/coding"
+    sudo ln -s "$SOURCE_HOME/coding" "$NEW_HOME/coding"
+    
+    # Shell configuration
+    sudo rm -f "$NEW_HOME/.bashrc"
+    sudo ln -s "$SOURCE_HOME/coding/automateLinux/terminal/bashrc" "$NEW_HOME/.bashrc"
+    
+    # Setup .profile for robust session initialization
+    echo "source /home/yaniv/coding/automateLinux/terminal/functions/user.sh" | sudo -u "$NEW_USER" tee -a "$NEW_HOME/.profile" >/dev/null
+
+    # Surgical ownership
+    echo "Finalizing ownership (surgically)..."
+    sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME"
+    sudo chown -h "$NEW_USER:$NEW_USER" "$NEW_HOME/coding" "$NEW_HOME/.bashrc"
+    
+    # Symlinks to .config/app should be owned by new user too
+    for app in "${APPS[@]}"; do
+        local TARGET_DIR="$NEW_HOME/.config/$app"
+        [ "$app" == ".vscode" ] && TARGET_DIR="$NEW_HOME/$app"
+        [ -L "$TARGET_DIR" ] && sudo chown -h "$NEW_USER:$NEW_USER" "$TARGET_DIR"
+    done
+
+    sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.config"
+    
+    # Ensure ACLs are correct on source for sharing
+    _tus
+}
+
 _tur(){
     local TARGET_USER="$1"
     local TARGET_HOME="/home/$TARGET_USER"

@@ -12,3 +12,4 @@ instead of doing
 can i have a bash process in the background that runs evsieve and stops it and runs it again with the changed keyboard?
 will it be faster?
 
+i have added a symlink to an extraApp loom make sure it has a port fot dev and a port for prod. add 

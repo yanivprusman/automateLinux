@@ -17,14 +17,11 @@ To configure the daemon with this port, run the following command:
 daemon setPort pt 3001
 ```
 
-### Macro Trigger
-A global macro is mapped to the **G3** key (Virtual code 1003).
-When triggered, the daemon will attempt to open `http://localhost:<PORT>` in Google Chrome.
-
 ## Commands
 
-- `daemon publicTransportationOpenApp`: Manually trigger the app opening.
-- `daemon publicTransportationStartProxy`: (Optional) Start the SSH proxy required for the app's data source.
+- `d publicTransportationOpenApp`: Manually trigger the app opening.
+- `d publicTransportationStartProxy`: (Optional) Start the SSH proxy required for the app's data source.
+
 
 ## Troubleshooting
 

@@ -94,7 +94,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_START_PROXY, {}),
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, {}),
     CommandSignature(COMMAND_LIST_PORTS, {}),
-
+    CommandSignature(COMMAND_DELETE_PORT, {COMMAND_ARG_KEY}),
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -829,6 +829,16 @@ CmdResult handleSetPort(const json &command) {
   return CmdResult(0, "Port set for " + key + " to " + value + "\n");
 }
 
+CmdResult handleDeletePort(const json &command) {
+  string key = command[COMMAND_ARG_KEY].get<string>();
+  string portKey = "port_" + key;
+  int rc = SettingsTable::deleteSetting(portKey);
+  if (rc >= 1) {
+    return CmdResult(0, "Port entry deleted for " + key + "\n");
+  }
+  return CmdResult(1, "Port entry not found for " + key + "\n");
+}
+
 typedef CmdResult (*CommandHandler)(const json &);
 
 struct CommandDispatch {
@@ -899,7 +909,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
      handlePublicTransportationStartProxy},
     {COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, handlePublicTransportationOpenApp},
     {COMMAND_LIST_PORTS, handleListPorts},
-
+    {COMMAND_DELETE_PORT, handleDeletePort},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =

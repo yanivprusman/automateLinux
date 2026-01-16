@@ -12,7 +12,7 @@ The AutomateLinux daemon acts as a central registry for application ports, allow
 Use the high-level `d` command (which aliases `daemon send`) to manage ports.
 
 ### Setting a Port
-Registers a port for a specific shorthand key (e.g., `pt` for Public Transportation).
+Registers a port for a specific key (e.g., `pt` for Public Transportation).
 
 ```bash
 d setPort --key pt --value 3001
@@ -32,6 +32,13 @@ Displays a list of all registered applications and their assigned ports.
 d listPorts
 ```
 
+### Deleting a Port
+Removes the port mapping for a specific key.
+
+```bash
+d deletePort --key pt
+```
+
 ## How it Works
 
 ### Persistence
@@ -49,9 +56,6 @@ if (!port.empty()) {
 
 ## Common Ports
 | Key | Default Port | Description |
-| :--- | :--- | :--- |
-| `pt` | 3001 | Public Transportation Dashboard |
-| `dash` | 9223 | AutomateLinux Core Dashboard |
 
 > [!NOTE]
 > Port management is useful for macros that need to launch browsers or proxy services to specific local addresses without hardcoding them in the binary.

@@ -101,6 +101,7 @@
   "publicTransportationStartProxy"
 #define COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP "publicTransportationOpenApp"
 #define COMMAND_LIST_PORTS "listPorts"
+#define COMMAND_DELETE_PORT "deletePort"
 
 #define COMMAND_ARG_DEVICE_PATH_REGEX "devicePathRegex"
 #define COMMAND_ARG_IS_KEYBOARD "isKeyboard"

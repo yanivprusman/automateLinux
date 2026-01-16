@@ -33,7 +33,6 @@ If you need to be explicit, or if you are starting the daemon process itself:
 
 ```bash
 d send ping
-d daemon  # (Starts the daemon server mode)
 ```
 
 ## Internal Binary Mode

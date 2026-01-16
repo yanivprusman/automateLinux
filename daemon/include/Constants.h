@@ -103,6 +103,7 @@
 #define COMMAND_LIST_PORTS "listPorts"
 #define COMMAND_DELETE_PORT "deletePort"
 
+#define COMMAND_LIST_COMMANDS "listCommands"
 #define COMMAND_ARG_DEVICE_PATH_REGEX "devicePathRegex"
 #define COMMAND_ARG_IS_KEYBOARD "isKeyboard"
 #define COMMAND_ARG_ACTION "action"

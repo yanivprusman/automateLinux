@@ -53,6 +53,13 @@ __theUserReplicateGnome(){
         sudo mkdir -p "$TARGET_HOME/.local/share"
         sudo cp -r "$SOURCE_HOME/.local/share/keyrings" "$TARGET_HOME/.local/share/."
     fi
+
+    # Replicate Git settings
+    if [ -f "$SOURCE_HOME/.gitconfig" ]; then
+        sudo cp "$SOURCE_HOME/.gitconfig" "$TARGET_HOME/.gitconfig"
+        sudo chown "$NEW_USER:$NEW_USER" "$TARGET_HOME/.gitconfig"
+    fi
+
     sudo chown -R "$NEW_USER:$NEW_USER" "$TARGET_HOME"
 }
 

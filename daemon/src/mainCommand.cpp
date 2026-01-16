@@ -95,6 +95,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, {}),
     CommandSignature(COMMAND_LIST_PORTS, {}),
     CommandSignature(COMMAND_DELETE_PORT, {COMMAND_ARG_KEY}),
+    CommandSignature(COMMAND_LIST_COMMANDS, {}),
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -304,6 +305,16 @@ CmdResult handleListPorts(const json &) {
   }
   if (!found) {
     ss << "  (No ports registered)\n";
+  }
+  return CmdResult(0, ss.str());
+}
+
+CmdResult handleListCommands(const json &) {
+  std::stringstream ss;
+  for (size_t i = 0; i < COMMAND_REGISTRY_SIZE; ++i) {
+    if (!COMMAND_REGISTRY[i].name.empty()) {
+      ss << COMMAND_REGISTRY[i].name << "\n";
+    }
   }
   return CmdResult(0, ss.str());
 }
@@ -910,6 +921,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, handlePublicTransportationOpenApp},
     {COMMAND_LIST_PORTS, handleListPorts},
     {COMMAND_DELETE_PORT, handleDeletePort},
+    {COMMAND_LIST_COMMANDS, handleListCommands},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =

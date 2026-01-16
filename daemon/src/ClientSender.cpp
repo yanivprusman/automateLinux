@@ -30,16 +30,12 @@ int send_command_to_daemon(const ordered_json &jsonCmd) {
   write(client_fd, "\n", 1);
 
   char buffer[4096];
-  string response;
   while (true) {
     ssize_t n = read(client_fd, buffer, sizeof(buffer) - 1);
     if (n <= 0)
       break;
     buffer[n] = '\0';
-    response += buffer;
-  }
-  if (!response.empty()) {
-    cout << response;
+    cout << buffer << flush;
   }
 
   close(client_fd);

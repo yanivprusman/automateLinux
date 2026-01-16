@@ -8,7 +8,7 @@ _daemon_completion() {
     
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable isLoomActive restartLoom publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow resetClock listPorts deletePort getPort setPort listCommands"
     }
 
     # Find the real command word and previous word, accounting for 'send'
@@ -64,6 +64,17 @@ _daemon_completion() {
     command_args[listLogFilters]=""
     command_args[clearLogFilters]=""
     command_args[emptyDirHistoryTable]=""
+    command_args[isLoomActive]=""
+    command_args[restartLoom]=""
+    command_args[publicTransportationStartProxy]=""
+    command_args[publicTransportationOpenApp]=""
+    command_args[listWindows]=""
+    command_args[activateWindow]="--windowId"
+    command_args[resetClock]=""
+    command_args[listPorts]=""
+    command_args[deletePort]="--key"
+    command_args[getPort]="--key"
+    command_args[setPort]="--key --value"
 
     # Define possible values for specific arguments
     declare -A arg_values

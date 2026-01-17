@@ -158,6 +158,12 @@ _tuc(){
     if [ -f "$NEW_HOME/.gitconfig" ]; then
         sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.gitconfig"
     fi
+
+    # Replicate Git credentials
+    if [ -f "$SOURCE_HOME/.git-credentials" ]; then
+        sudo cp "$SOURCE_HOME/.git-credentials" "$NEW_HOME/.git-credentials"
+        sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.git-credentials"
+    fi
     
     # Fix masks on SOURCE so lowerdir is readable
     _tuFixConfig
@@ -240,6 +246,12 @@ _tucno(){
     # Ensure .gitconfig has correct ownership
     if [ -f "$NEW_HOME/.gitconfig" ]; then
         sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.gitconfig"
+    fi
+    
+    # Replicate Git credentials
+    if [ -f "$SOURCE_HOME/.git-credentials" ]; then
+        sudo cp "$SOURCE_HOME/.git-credentials" "$NEW_HOME/.git-credentials"
+        sudo chown "$NEW_USER:$NEW_USER" "$NEW_HOME/.git-credentials"
     fi
     
     # Ensure ACLs are correct on source for sharing

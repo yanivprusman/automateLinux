@@ -9,6 +9,9 @@ to() {
         automateLinux)
             cd "$base/"
             ;;
+        loom)
+            cd "$base/../loom"
+            ;;
         *)
             # echo "Target '$target' not configured."
             return 1

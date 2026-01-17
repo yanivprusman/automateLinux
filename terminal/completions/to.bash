@@ -6,7 +6,7 @@ _to_completion() {
 
     # Define words to complete
     # For now, only 'cad' is supported
-    local opts="cad automateLinux"
+    local opts="cad automateLinux loom"
 
     if [[ ${cur} == * ]] ; then
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )

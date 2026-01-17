@@ -227,29 +227,30 @@ CmdResult handleIsLoomActive(const json &) {
 }
 
 CmdResult handleStopLoom(const json &) {
-  // Use std::system to fire-and-forget.
-  string cmd = "export XDG_RUNTIME_DIR=/run/user/1000; "
-               "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
-               "systemctl --user stop loom-server loom-client-dev "
-               "loom-client-prod > /dev/null 2>&1 &";
+  // Use stop_loom.sh script to robustly stop all processes
+  string cmd = "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh > "
+               "/dev/null 2>&1";
 
   int rc = std::system(cmd.c_str());
   if (rc != 0) {
-    return CmdResult(1, "Failed to launch stop command\n");
+    return CmdResult(1, "Failed to execute stop script\n");
   }
 
-  return CmdResult(0, "");
+  return CmdResult(0, "Loom stopped.\n");
 }
 
 CmdResult handleRestartLoom(const json &) {
-  // Use std::system to fire-and-forget.
+  // 1. First run the stop script synchronously to ensure clean state
+  string stopCmd =
+      "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh > "
+      "/dev/null 2>&1";
+  std::system(stopCmd.c_str());
+
+  // 2. Now launch the restart script
   // We use `nohup` and `&` to ensure it continues running in background.
-  // We redirect ALL output to /dev/null to ensure the shell returns
-  // immediately.
-  string cmd = "export XDG_RUNTIME_DIR=/run/user/1000; "
-               "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
-               "systemctl --user restart loom-server loom-client-dev "
-               "loom-client-prod > /dev/null 2>&1 &";
+  string cmd =
+      "/home/yaniv/coding/automateLinux/daemon/scripts/restart_loom.sh "
+      "> /dev/null 2>&1 &";
 
   int rc = std::system(cmd.c_str());
   if (rc != 0) {

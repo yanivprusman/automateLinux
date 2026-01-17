@@ -6,10 +6,18 @@ import sys
 import os
 
 SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock"
-KEY_TAB = 15
-KEY_ENTER = 28
-KEY_RIGHT = 106
-KEY_SPACE = 57
+
+# Key mappings
+KEY_MAP = {
+    "TAB": 15,
+    "ENTER": 28,
+    "SPACE": 57,
+    "RIGHT": 106,
+    "LEFT": 105,
+    "UP": 103,
+    "DOWN": 108,
+    "ESC": 1,
+}
 
 def send_command(cmd_obj):
     try:
@@ -41,6 +49,20 @@ def simulate_key(code):
     send_command({"command": "simulateInput", "type": 1, "code": code, "value": 0})
 
 def main():
+    # Parse arguments for custom sequence
+    if len(sys.argv) > 1:
+        # Join all args to handle "TAB TAB" or TAB TAB
+        sequence_str = " ".join(sys.argv[1:])
+        # Split by keys
+        # Handle comma or space separation
+        sequence_list = sequence_str.replace(',', ' ').split()
+    else:
+        # Default sequence
+        # Updated based on user hypothesis: TAB TAB ENTER TAB TAB ENTER
+        sequence_list = ["TAB", "TAB", "ENTER", "TAB", "TAB", "ENTER"]
+
+    print(f"Using key sequence: {sequence_list}")
+
     print("Waiting for 'Share Screen' window...")
     found = False
     window_id = None
@@ -65,42 +87,34 @@ def main():
         
         if found:
             break
+        
+        # Debug: Print windows seen if not found (throttle to once per second?)
+        if int(time.time()) % 2 == 0:
+             print(f"Scanning... Windows found: {[w.get('title', 'Unknown') for w in windows]}")
+
         time.sleep(0.5)
 
     if not found:
-        print("Window not found. Timed out.")
-        return
+        print("Window not found in list. Assuming it is a focused system modal. Attempting blind selection.")
+        # Proceed without activating window (assume focused)
+        window_id = "BLIND"
 
-    print(f"Found window {window_id}. Activating...")
-    send_command({"command": "activateWindow", "windowId": str(window_id)})
-    
-    # Wait for window to be focused
-    time.sleep(0.5)
+    if found and window_id:
+        print(f"Found window {window_id}. Activating...")
+        send_command({"command": "activateWindow", "windowId": str(window_id)})
+        # Wait for window to be focused
+        time.sleep(0.5)
 
     print("Sending selection keys...")
-    # NOTE: This sequence logic depends on the exact behavior of xdg-desktop-portal-gnome.
-    # Typically:
-    # 1. Focus starts on the tab selector (Entire Screen / Window) or Cancel button.
-    # 2. Press Tab to move to Main Content (Screen list).
-    # 3. Press Space/Enter to select the first screen (if not selected).
-    # 4. Press Tab to move to Share button.
-    # 5. Press Enter to Share.
     
-    # Attempt 1:
-    # Tab -> Focus Screens
-    simulate_key(KEY_TAB)
-    time.sleep(0.2)
-    
-    # Select first screen (Space)
-    simulate_key(KEY_SPACE)
-    time.sleep(0.2)
-    
-    # Tab -> Focus "Share"
-    simulate_key(KEY_TAB)
-    time.sleep(0.2)
-    
-    # Enter -> Click "Share"
-    simulate_key(KEY_ENTER)
+    for key_name in sequence_list:
+        key_upper = key_name.upper()
+        if key_upper in KEY_MAP:
+            print(f"Processing {key_upper}")
+            simulate_key(KEY_MAP[key_upper])
+            time.sleep(0.2)
+        else:
+            print(f"WARNING: Unknown key '{key_name}', skipping.")
     
     print("Done.")
 

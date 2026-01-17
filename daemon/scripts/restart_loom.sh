@@ -7,28 +7,46 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/1000/bus"
 export XDG_RUNTIME_DIR="/run/user/1000"
 export WAYLAND_DISPLAY="wayland-0"
 export XDG_SESSION_TYPE="wayland"
+export XDG_CURRENT_DESKTOP="Unity"
+export XDG_SESSION_DESKTOP="ubuntu"
+export XDG_MENU_PREFIX="gnome-"
 
 # Cleanup
-echo "Killing existing processes..."
+echo "Stopping existing systemd units..."
+systemctl --user stop loom-server loom-client-dev loom-autoselect 2>/dev/null || true
+systemctl --user reset-failed loom-server loom-client-dev loom-autoselect 2>/dev/null || true
+
+# Kill any leftover processes not managed by systemd (legacy)
 killall loom-server 2>/dev/null || true
-fuser -k 4000/tcp 4001/tcp 4002/tcp 4003/tcp 4004/tcp 4005/tcp 4100/tcp 2>/dev/null || true
+fuser -k 3005/tcp 4000/tcp 4001/tcp 4002/tcp 4003/tcp 4004/tcp 4005/tcp 4100/tcp 2>/dev/null || true
+
+# Wait for ports to clear
+sleep 2
+
+# Reload daemon to pick up any service file changes
+systemctl --user daemon-reload
+
+# Force fresh session by deleting restore token
+# This ensures the "Share Screen" popup appears, which the automation script handles.
+rm -f /home/yaniv/.config/loom/restore_token
 
 # Start Server
-echo "Starting server..."
-cd /home/yaniv/coding/loom/server/build || { echo "Server dir not found"; exit 1; }
-nohup ./loom-server 4100 > /tmp/loom-server.log 2>&1 &
-SERVER_PID=$!
-echo "Server started with PID $SERVER_PID"
+echo "Starting server unit..."
+systemctl --user start loom-server
+echo "Server started."
 
-# Wait a bit
-sleep 1
+# Launch Automation Script (to handle screen share popup)
+# Must run in user session to interact with windows.
+echo "Launching automation script..."
+systemd-run --user --unit=loom-autoselect \
+    --setenv=DISPLAY=":0" \
+    --setenv=XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+    /usr/bin/python3 /home/yaniv/coding/automateLinux/utilities/autoSelectLoomScreen.py > /tmp/loom_autoselect.log 2>&1
 
 # Start Client
-echo "Starting client..."
-cd /home/yaniv/coding/loom/client || { echo "Client dir not found"; exit 1; }
-nohup npm run dev > /tmp/loom-client.log 2>&1 &
-CLIENT_PID=$!
-echo "Client started with PID $CLIENT_PID"
+echo "Starting client unit..."
+systemctl --user start loom-client-dev
+echo "Client started."
 
 echo "Done."
 exit 0

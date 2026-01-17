@@ -41,6 +41,13 @@ If you move an app to a different port, update the daemon so macros and proxies 
 d setPort --key pt --value 3005
 ```
 
+## Editing and Permissions
+
+> [!IMPORTANT]
+> The user has granted explicit permission to edit files within the `extraApps/` symlinked directories.
+
+You may modify, create, or delete files in `~/coding/cad`, `~/coding/loom`, and `~/coding/publicTransportation` without further permission, as they are considered integral parts of the AutomateLinux workspace.
+
 ## Related Commands
 - `d listPorts`: See all currently registered app ports.
 - `d publicTransportationOpenApp`: Opens the PT app in Chrome based on the registered port.

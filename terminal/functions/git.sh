@@ -241,4 +241,7 @@ gitCount(){
     git rev-list --count HEAD
 }
 
+addSafeGitDir() {
+    sudo git config --system --add safe.directory "$(pwd)"
+}
 

@@ -201,31 +201,38 @@ CmdResult handleIsLoomActive(const json &) {
       "export XDG_RUNTIME_DIR=/run/user/1000; "
       "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
       "systemctl --user is-active loom-server");
-  string clientActive = executeCommand(
+  string devActive = executeCommand(
       "export XDG_RUNTIME_DIR=/run/user/1000; "
       "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
-      "systemctl --user is-active loom-client");
+      "systemctl --user is-active loom-client-dev");
+  string prodActive = executeCommand(
+      "export XDG_RUNTIME_DIR=/run/user/1000; "
+      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
+      "systemctl --user is-active loom-client-prod");
 
-  // is-active returns "active\n" or "inactive\n" (etc)
   bool serverRunning = (serverActive.find("active") == 0 &&
                         serverActive.find("inactive") == string::npos);
-  bool clientRunning = (clientActive.find("active") == 0 &&
-                        clientActive.find("inactive") == string::npos);
+  bool devRunning = (devActive.find("active") == 0 &&
+                     devActive.find("inactive") == string::npos);
+  bool prodRunning = (prodActive.find("active") == 0 &&
+                      prodActive.find("inactive") == string::npos);
 
   std::stringstream ss;
   ss << "Loom Status:\n";
   ss << "  Server: " << (serverRunning ? "RUNNING" : "NOT RUNNING") << "\n";
-  ss << "  Client: " << (clientRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Client (Dev): " << (devRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Client (Prod): " << (prodRunning ? "RUNNING" : "NOT RUNNING")
+     << "\n";
 
   return CmdResult(0, ss.str());
 }
 
 CmdResult handleStopLoom(const json &) {
   // Use std::system to fire-and-forget.
-  string cmd =
-      "export XDG_RUNTIME_DIR=/run/user/1000; "
-      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
-      "systemctl --user stop loom-server loom-client > /dev/null 2>&1 &";
+  string cmd = "export XDG_RUNTIME_DIR=/run/user/1000; "
+               "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
+               "systemctl --user stop loom-server loom-client-dev "
+               "loom-client-prod > /dev/null 2>&1 &";
 
   int rc = std::system(cmd.c_str());
   if (rc != 0) {
@@ -240,10 +247,10 @@ CmdResult handleRestartLoom(const json &) {
   // We use `nohup` and `&` to ensure it continues running in background.
   // We redirect ALL output to /dev/null to ensure the shell returns
   // immediately.
-  string cmd =
-      "export XDG_RUNTIME_DIR=/run/user/1000; "
-      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
-      "systemctl --user restart loom-server loom-client > /dev/null 2>&1 &";
+  string cmd = "export XDG_RUNTIME_DIR=/run/user/1000; "
+               "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
+               "systemctl --user restart loom-server loom-client-dev "
+               "loom-client-prod > /dev/null 2>&1 &";
 
   int rc = std::system(cmd.c_str());
   if (rc != 0) {
@@ -327,19 +334,32 @@ CmdResult handlePublicTransportationOpenApp(const json &) {
 
 CmdResult handleListPorts(const json &) {
   auto allSettings = SettingsTable::getAllSettings();
-  std::stringstream ss;
-  ss << "--- Registered Port Mappings ---\n";
-  bool found = false;
+  std::vector<std::pair<std::string, int>> ports;
+
   for (const auto &p : allSettings) {
     if (p.first.find("port_") == 0) {
-      string appName = p.first.substr(5);
-      ss << "  " << appName << ": " << p.second << "\n";
-      found = true;
+      try {
+        ports.push_back({p.first.substr(5), std::stoi(p.second)});
+      } catch (...) {
+        // Skip invalid ports
+      }
     }
   }
-  if (!found) {
+
+  // Sort by port number (second element of pair)
+  std::sort(ports.begin(), ports.end(),
+            [](const auto &a, const auto &b) { return a.second < b.second; });
+
+  std::stringstream ss;
+  ss << "--- Registered Port Mappings ---\n";
+  if (ports.empty()) {
     ss << "  (No ports registered)\n";
+  } else {
+    for (const auto &p : ports) {
+      ss << "  " << p.first << ": " << p.second << "\n";
+    }
   }
+
   return CmdResult(0, ss.str());
 }
 

@@ -11,6 +11,8 @@ startLoomServerAndClient() {
     local server_pid=$!
 
     echo "Wait for the Screen Share popup on your PC and click 'Share'..."
+    # Launch auto-selector in background
+    (python3 ~/coding/automateLinux/utilities/autoSelectLoomScreen.py &) > /dev/null 2>&1
     sleep 3
 
     # 3. Handle cleanup on exit

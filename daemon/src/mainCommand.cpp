@@ -256,6 +256,12 @@ CmdResult handleRestartLoom(const json &) {
     return CmdResult(1, "Failed to launch restart script\n");
   }
 
+  // Launch the auto-select script to handle the screen share popup
+  string autoCmd = "python3 "
+                   "/home/yaniv/coding/automateLinux/utilities/"
+                   "autoSelectLoomScreen.py > /dev/null 2>&1 &";
+  std::system(autoCmd.c_str());
+
   return CmdResult(0, "");
 }
 

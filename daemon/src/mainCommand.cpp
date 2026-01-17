@@ -75,8 +75,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_SET_EVENT_FILTERS, {COMMAND_ARG_VALUE}),
     CommandSignature(COMMAND_REGISTER_LOG_LISTENER, {}),
     CommandSignature(COMMAND_TEST_INTEGRITY, {}),
-    CommandSignature(COMMAND_SIMULATE_INPUT,
-                     {COMMAND_ARG_TYPE, COMMAND_ARG_CODE, COMMAND_ARG_VALUE}),
+    CommandSignature(COMMAND_SIMULATE_INPUT, {}),
     CommandSignature(COMMAND_ADD_LOG_FILTER, {COMMAND_ARG_ACTION}),
     CommandSignature(COMMAND_REMOVE_LOG_FILTER, {}),
     CommandSignature(COMMAND_LIST_LOG_FILTERS, {}),
@@ -857,13 +856,405 @@ CmdResult handleTestIntegrity(const json &) {
   return CmdResult(0, output + mustEndWithNewLine);
 }
 
+void typeChar(char c) {
+  uint16_t code = 0;
+  bool shift = false;
+
+  switch (c) {
+  case 'a':
+    code = KEY_A;
+    break;
+  case 'b':
+    code = KEY_B;
+    break;
+  case 'c':
+    code = KEY_C;
+    break;
+  case 'd':
+    code = KEY_D;
+    break;
+  case 'e':
+    code = KEY_E;
+    break;
+  case 'f':
+    code = KEY_F;
+    break;
+  case 'g':
+    code = KEY_G;
+    break;
+  case 'h':
+    code = KEY_H;
+    break;
+  case 'i':
+    code = KEY_I;
+    break;
+  case 'j':
+    code = KEY_J;
+    break;
+  case 'k':
+    code = KEY_K;
+    break;
+  case 'l':
+    code = KEY_L;
+    break;
+  case 'm':
+    code = KEY_M;
+    break;
+  case 'n':
+    code = KEY_N;
+    break;
+  case 'o':
+    code = KEY_O;
+    break;
+  case 'p':
+    code = KEY_P;
+    break;
+  case 'q':
+    code = KEY_Q;
+    break;
+  case 'r':
+    code = KEY_R;
+    break;
+  case 's':
+    code = KEY_S;
+    break;
+  case 't':
+    code = KEY_T;
+    break;
+  case 'u':
+    code = KEY_U;
+    break;
+  case 'v':
+    code = KEY_V;
+    break;
+  case 'w':
+    code = KEY_W;
+    break;
+  case 'x':
+    code = KEY_X;
+    break;
+  case 'y':
+    code = KEY_Y;
+    break;
+  case 'z':
+    code = KEY_Z;
+    break;
+
+  case 'A':
+    code = KEY_A;
+    shift = true;
+    break;
+  case 'B':
+    code = KEY_B;
+    shift = true;
+    break;
+  case 'C':
+    code = KEY_C;
+    shift = true;
+    break;
+  case 'D':
+    code = KEY_D;
+    shift = true;
+    break;
+  case 'E':
+    code = KEY_E;
+    shift = true;
+    break;
+  case 'F':
+    code = KEY_F;
+    shift = true;
+    break;
+  case 'G':
+    code = KEY_G;
+    shift = true;
+    break;
+  case 'H':
+    code = KEY_H;
+    shift = true;
+    break;
+  case 'I':
+    code = KEY_I;
+    shift = true;
+    break;
+  case 'J':
+    code = KEY_J;
+    shift = true;
+    break;
+  case 'K':
+    code = KEY_K;
+    shift = true;
+    break;
+  case 'L':
+    code = KEY_L;
+    shift = true;
+    break;
+  case 'M':
+    code = KEY_M;
+    shift = true;
+    break;
+  case 'N':
+    code = KEY_N;
+    shift = true;
+    break;
+  case 'O':
+    code = KEY_O;
+    shift = true;
+    break;
+  case 'P':
+    code = KEY_P;
+    shift = true;
+    break;
+  case 'Q':
+    code = KEY_Q;
+    shift = true;
+    break;
+  case 'R':
+    code = KEY_R;
+    shift = true;
+    break;
+  case 'S':
+    code = KEY_S;
+    shift = true;
+    break;
+  case 'T':
+    code = KEY_T;
+    shift = true;
+    break;
+  case 'U':
+    code = KEY_U;
+    shift = true;
+    break;
+  case 'V':
+    code = KEY_V;
+    shift = true;
+    break;
+  case 'W':
+    code = KEY_W;
+    shift = true;
+    break;
+  case 'X':
+    code = KEY_X;
+    shift = true;
+    break;
+  case 'Y':
+    code = KEY_Y;
+    shift = true;
+    break;
+  case 'Z':
+    code = KEY_Z;
+    shift = true;
+    break;
+
+  case '1':
+    code = KEY_1;
+    break;
+  case '2':
+    code = KEY_2;
+    break;
+  case '3':
+    code = KEY_3;
+    break;
+  case '4':
+    code = KEY_4;
+    break;
+  case '5':
+    code = KEY_5;
+    break;
+  case '6':
+    code = KEY_6;
+    break;
+  case '7':
+    code = KEY_7;
+    break;
+  case '8':
+    code = KEY_8;
+    break;
+  case '9':
+    code = KEY_9;
+    break;
+  case '0':
+    code = KEY_0;
+    break;
+
+  case '!':
+    code = KEY_1;
+    shift = true;
+    break;
+  case '@':
+    code = KEY_2;
+    shift = true;
+    break;
+  case '#':
+    code = KEY_3;
+    shift = true;
+    break;
+  case '$':
+    code = KEY_4;
+    shift = true;
+    break;
+  case '%':
+    code = KEY_5;
+    shift = true;
+    break;
+  case '^':
+    code = KEY_6;
+    shift = true;
+    break;
+  case '&':
+    code = KEY_7;
+    shift = true;
+    break;
+  case '*':
+    code = KEY_8;
+    shift = true;
+    break;
+  case '(':
+    code = KEY_9;
+    shift = true;
+    break;
+  case ')':
+    code = KEY_0;
+    shift = true;
+    break;
+
+  case '-':
+    code = KEY_MINUS;
+    break;
+  case '_':
+    code = KEY_MINUS;
+    shift = true;
+    break;
+  case '=':
+    code = KEY_EQUAL;
+    break;
+  case '+':
+    code = KEY_EQUAL;
+    shift = true;
+    break;
+
+  case '[':
+    code = KEY_LEFTBRACE;
+    break;
+  case '{':
+    code = KEY_LEFTBRACE;
+    shift = true;
+    break;
+  case ']':
+    code = KEY_RIGHTBRACE;
+    break;
+  case '}':
+    code = KEY_RIGHTBRACE;
+    shift = true;
+    break;
+
+  case '\\':
+    code = KEY_BACKSLASH;
+    break;
+  case '|':
+    code = KEY_BACKSLASH;
+    shift = true;
+    break;
+
+  case ';':
+    code = KEY_SEMICOLON;
+    break;
+  case ':':
+    code = KEY_SEMICOLON;
+    shift = true;
+    break;
+  case '\'':
+    code = KEY_APOSTROPHE;
+    break;
+  case '"':
+    code = KEY_APOSTROPHE;
+    shift = true;
+    break;
+
+  case ',':
+    code = KEY_COMMA;
+    break;
+  case '<':
+    code = KEY_COMMA;
+    shift = true;
+    break;
+  case '.':
+    code = KEY_DOT;
+    break;
+  case '>':
+    code = KEY_DOT;
+    shift = true;
+    break;
+  case '/':
+    code = KEY_SLASH;
+    break;
+  case '?':
+    code = KEY_SLASH;
+    shift = true;
+    break;
+
+  case '`':
+    code = KEY_GRAVE;
+    break;
+  case '~':
+    code = KEY_GRAVE;
+    shift = true;
+    break;
+
+  case ' ':
+    code = KEY_SPACE;
+    break;
+  case '\n':
+    code = KEY_ENTER;
+    break;
+  case '\t':
+    code = KEY_TAB;
+    break;
+
+  default:
+    // Ignore unknown characters
+    return;
+  }
+
+  if (code == 0)
+    return;
+
+  if (shift) {
+    KeyboardManager::mapper.emit(EV_KEY, KEY_LEFTSHIFT, 1);
+    KeyboardManager::mapper.sync();
+  }
+
+  KeyboardManager::mapper.emit(EV_KEY, code, 1);
+  KeyboardManager::mapper.sync();
+  KeyboardManager::mapper.emit(EV_KEY, code, 0);
+  KeyboardManager::mapper.sync();
+
+  if (shift) {
+    KeyboardManager::mapper.emit(EV_KEY, KEY_LEFTSHIFT, 0);
+    KeyboardManager::mapper.sync();
+  }
+}
+
 CmdResult handleSimulateInput(const json &command) {
+  if (command.contains(COMMAND_ARG_STRING)) {
+    string str = command[COMMAND_ARG_STRING].get<string>();
+    for (char c : str) {
+      typeChar(c);
+    }
+    return CmdResult(0, "");
+  }
+
+  if (!command.contains(COMMAND_ARG_TYPE) ||
+      !command.contains(COMMAND_ARG_CODE) ||
+      !command.contains(COMMAND_ARG_VALUE)) {
+    return CmdResult(1, "Missing arguments: type, code, value (or string)\n");
+  }
+
   uint16_t type = command[COMMAND_ARG_TYPE].get<uint16_t>();
   uint16_t code = command[COMMAND_ARG_CODE].get<uint16_t>();
   int32_t value = command[COMMAND_ARG_VALUE].get<int32_t>();
   KeyboardManager::mapper.emit(type, code, value);
   KeyboardManager::mapper.sync();
-  return CmdResult(0, std::string(R"({"status":"ok"})") + mustEndWithNewLine);
+  return CmdResult(0, "");
 }
 
 CmdResult handleEmptyDirHistoryTable(const json &) {

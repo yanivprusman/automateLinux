@@ -218,9 +218,10 @@ CmdResult handleRestartLoom(const json &) {
   // We use `nohup` and `&` to ensure it continues running in background.
   // We redirect ALL output to /dev/null to ensure the shell returns
   // immediately.
-  string cmd = "nohup bash "
-               "/home/yaniv/coding/automateLinux/daemon/scripts/"
-               "restart_loom.sh > /dev/null 2>&1 &";
+  string cmd =
+      "export XDG_RUNTIME_DIR=/run/user/1000; "
+      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
+      "systemctl --user restart loom-server loom-client > /dev/null 2>&1 &";
 
   int rc = std::system(cmd.c_str());
   if (rc != 0) {

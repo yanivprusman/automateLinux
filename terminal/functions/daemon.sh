@@ -1,8 +1,13 @@
-d(){
-    if [[ "$1" == "send" || "$1" == "daemon" ]]; then
-        daemon "$@"
+daemon() {
+    if [[ "$1" == "send" || "$1" == "daemon" || "$1" == "--help" ]]; then
+        command daemon "$@"
     else
-        daemon send "$@"
+        command daemon send "$@"
     fi
+}
+export -f daemon
+
+d() {
+    daemon "$@"
 }
 export -f d

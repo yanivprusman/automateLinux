@@ -91,6 +91,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_RESET_CLOCK, {}),
     CommandSignature(COMMAND_IS_LOOM_ACTIVE, {}),
     CommandSignature(COMMAND_RESTART_LOOM, {}),
+    CommandSignature(COMMAND_STOP_LOOM, {}),
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_START_PROXY, {}),
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, {}),
     CommandSignature(COMMAND_LIST_PORTS, {}),
@@ -195,22 +196,43 @@ CmdResult handleResetClock(const json &) {
 }
 
 CmdResult handleIsLoomActive(const json &) {
-  string serverOutput = executeCommand("pgrep -x loom-server");
-  string clientOutput =
-      executeCommand("pgrep -f 'vite'"); // Loom client uses vite
+  // Use systemctl is-active for more reliable status reporting
+  string serverActive = executeCommand(
+      "export XDG_RUNTIME_DIR=/run/user/1000; "
+      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
+      "systemctl --user is-active loom-server");
+  string clientActive = executeCommand(
+      "export XDG_RUNTIME_DIR=/run/user/1000; "
+      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
+      "systemctl --user is-active loom-client");
 
-  if (serverOutput.empty() && clientOutput.empty()) {
-    return CmdResult(0, "Loom is NOT active\n");
-  }
+  // is-active returns "active\n" or "inactive\n" (etc)
+  bool serverRunning = (serverActive.find("active") == 0 &&
+                        serverActive.find("inactive") == string::npos);
+  bool clientRunning = (clientActive.find("active") == 0 &&
+                        clientActive.find("inactive") == string::npos);
 
   std::stringstream ss;
   ss << "Loom Status:\n";
-  ss << "  Server: " << (serverOutput.empty() ? "NOT RUNNING" : "RUNNING")
-     << "\n";
-  ss << "  Client: " << (clientOutput.empty() ? "NOT RUNNING" : "RUNNING")
-     << "\n";
+  ss << "  Server: " << (serverRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Client: " << (clientRunning ? "RUNNING" : "NOT RUNNING") << "\n";
 
   return CmdResult(0, ss.str());
+}
+
+CmdResult handleStopLoom(const json &) {
+  // Use std::system to fire-and-forget.
+  string cmd =
+      "export XDG_RUNTIME_DIR=/run/user/1000; "
+      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
+      "systemctl --user stop loom-server loom-client > /dev/null 2>&1 &";
+
+  int rc = std::system(cmd.c_str());
+  if (rc != 0) {
+    return CmdResult(1, "Failed to launch stop command\n");
+  }
+
+  return CmdResult(0, "");
 }
 
 CmdResult handleRestartLoom(const json &) {
@@ -228,7 +250,7 @@ CmdResult handleRestartLoom(const json &) {
     return CmdResult(1, "Failed to launch restart script\n");
   }
 
-  return CmdResult(0, "Loom restart initiated in background.\n");
+  return CmdResult(0, "");
 }
 
 CmdResult handlePublicTransportationStartProxy(const json &) {
@@ -928,6 +950,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_RESET_CLOCK, handleResetClock},
     {COMMAND_IS_LOOM_ACTIVE, handleIsLoomActive},
     {COMMAND_RESTART_LOOM, handleRestartLoom},
+    {COMMAND_STOP_LOOM, handleStopLoom},
     {COMMAND_PUBLIC_TRANSPORTATION_START_PROXY,
      handlePublicTransportationStartProxy},
     {COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, handlePublicTransportationOpenApp},

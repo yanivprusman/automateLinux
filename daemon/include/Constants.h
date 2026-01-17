@@ -97,6 +97,7 @@
 #define COMMAND_RESET_CLOCK "resetClock"
 #define COMMAND_IS_LOOM_ACTIVE "isLoomActive"
 #define COMMAND_RESTART_LOOM "restartLoom"
+#define COMMAND_STOP_LOOM "stopLoom"
 #define COMMAND_PUBLIC_TRANSPORTATION_START_PROXY                              \
   "publicTransportationStartProxy"
 #define COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP "publicTransportationOpenApp"

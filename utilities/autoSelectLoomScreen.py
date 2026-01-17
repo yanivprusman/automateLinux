@@ -17,6 +17,7 @@ KEY_MAP = {
     "UP": 103,
     "DOWN": 108,
     "ESC": 1,
+    "LEFTSHIFT": 42,
 }
 
 def send_command(cmd_obj):
@@ -99,6 +100,11 @@ def main():
         return
 
     if found and window_id:
+        print("Sending shift-nudge to wake up desktop focus...")
+        # Shift Nudge
+        simulate_key(KEY_MAP["LEFTSHIFT"])
+        time.sleep(0.5)
+
         print(f"Found window {window_id}. Double checking...")
         # Re-verify window still exists and matches
         resp = send_command({"command": "listWindows"})
@@ -117,24 +123,51 @@ def main():
             print("Window disappeared before activation. Aborting.")
             return
 
-        print(f"Activating window {window_id}...")
+        print(f"Activating window {window_id} (Portal)...")
         send_command({"command": "activateWindow", "windowId": str(window_id)})
-        # Wait for window to be focused
-        time.sleep(0.5)
+        # Wait significantly longer for GNOME to transition focus
+        time.sleep(1.5)
 
     print("Sending selection keys...")
     
-    for key_name in sequence_list:
-        # Final check: is the window still there/focused? 
-        # (Actually, activateWindow might have failed, but we'll try to send anyway if we think it's the right one)
-        key_upper = key_name.upper()
-        if key_upper in KEY_MAP:
-            print(f"Processing {key_upper}")
-            simulate_key(KEY_MAP[key_upper])
-            time.sleep(0.01) # Increased from 0.001 to 0.01 for safety
-        else:
-            print(f"WARNING: Unknown key '{key_name}', skipping.")
+    # We'll split the sequence: TAB TAB ENTER (Select source) then TAB TAB ENTER (Confirm)
+    # We'll re-verify focus between them.
     
+    def process_sequence(keys, label):
+        print(f"--- Sequence: {label} ---")
+        for key_name in keys:
+            # Check if window is still top/valid
+            curr = send_command({"command": "listWindows"})
+            valid = False
+            if curr:
+                try:
+                    win_list = json.loads(curr)
+                    # Is portal still in the list?
+                    if any(str(w.get('id')) == str(window_id) for w in win_list):
+                        valid = True
+                except: pass
+            
+            if not valid:
+                print(f"ABORT: Window {window_id} no longer found. Stopping keys to save terminal.")
+                sys.exit(1)
+
+            key_upper = key_name.upper()
+            if key_upper in KEY_MAP:
+                print(f"Processing {key_upper}")
+                simulate_key(KEY_MAP[key_upper])
+                time.sleep(0.1) # Much slower (100ms) for portal responsiveness
+            else:
+                print(f"WARNING: Unknown key '{key_name}', skipping.")
+
+    # Part 1: Select source
+    process_sequence(sequence_list[:3], "Source Selection")
+    
+    # Gap for UI transition
+    time.sleep(0.5)
+    
+    # Part 2: Confirm
+    process_sequence(sequence_list[3:], "Confirmation")
+
     print("Done.")
 
 if __name__ == "__main__":

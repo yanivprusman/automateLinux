@@ -17,11 +17,17 @@ systemctl --user stop loom-server loom-client-dev loom-autoselect 2>/dev/null ||
 systemctl --user reset-failed loom-server loom-client-dev loom-autoselect 2>/dev/null || true
 
 # Kill any leftover processes not managed by systemd (legacy)
-killall loom-server 2>/dev/null || true
-fuser -k 3005/tcp 4000/tcp 4001/tcp 4002/tcp 4003/tcp 4004/tcp 4005/tcp 4100/tcp 2>/dev/null || true
+echo "Killing leftovers..."
+killall -9 loom-server 2>/dev/null || true
+fuser -k -9 4100/tcp 2>/dev/null || true
 
 # Wait for ports to clear
-sleep 2
+echo "Waiting for ports to clear..."
+sleep 3
+
+echo "Debug: Checking for processes holding port 4100:"
+ss -tulpn | grep :4100 || echo "Port 4100 is free."
+ps aux | grep loom-server | grep -v grep || echo "No loom-server process found."
 
 # Reload daemon to pick up any service file changes
 systemctl --user daemon-reload

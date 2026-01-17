@@ -1,6 +1,6 @@
 to() {
     local target="$1"
-    local base=$(d getDir base)
+    local base=$(d getDir --dirName base)
 
     case "$target" in
         cad)

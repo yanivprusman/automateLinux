@@ -95,9 +95,8 @@ def main():
         time.sleep(0.5)
 
     if not found:
-        print("Window not found in list. Assuming it is a focused system modal. Attempting blind selection.")
-        # Proceed without activating window (assume focused)
-        window_id = "BLIND"
+        print("Window 'Share Screen' not found within timeout. Aborting.")
+        return
 
     if found and window_id:
         print(f"Found window {window_id}. Activating...")
@@ -112,7 +111,7 @@ def main():
         if key_upper in KEY_MAP:
             print(f"Processing {key_upper}")
             simulate_key(KEY_MAP[key_upper])
-            time.sleep(0.2)
+            time.sleep(0.001)
         else:
             print(f"WARNING: Unknown key '{key_name}', skipping.")
     

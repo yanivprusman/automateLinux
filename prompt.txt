@@ -74,3 +74,19 @@ Enter number (or q to quit):
 
 2. choose the [1] Share Screen (xdg-desktop-portal-gnome) [WS: 0] by simulating keypresses (via daemon)
 3. slelect the screen and press share by simulating keys
+
+
+Locating Loom Command and Updating Skills
+The user wants to find the exact command triggering the Loom screen share popup to test it manually. They also pointed out that I should use extraApps symlinks and update SKILL.md. I will investigate extraApps, verify the command in 
+restart_loom.sh
+, and update the documentation.
+
+Progress Updates
+1
+Checking extraApps for symlinks
+
+Analyzed
+sppAartxe
+Allow directory access to /home/yaniv/coding/automateLinux/extraApps?
+
+you can use the symlinks in extraApps to access these. add this knolage to the SKILL.md

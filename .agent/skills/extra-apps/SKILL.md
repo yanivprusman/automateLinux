@@ -18,6 +18,7 @@ ls -l ~/coding/automateLinux/extraApps
 
 This directory contains symlinks to the actual source locations:
 - **`cad`**: Points to `~/coding/cad/`
+- **`loom`**: Points to `~/coding/loom/`
 - **`publicTransportation`**: Points to `~/coding/publicTransportation/`
 
 ### Direct Paths
@@ -44,9 +45,12 @@ d setPort --key pt --value 3005
 ## Editing and Permissions
 
 > [!IMPORTANT]
-> The user has granted explicit permission to edit files within the `extraApps/` symlinked directories.
-
-You may modify, create, or delete files in `~/coding/cad`, `~/coding/loom`, and `~/coding/publicTransportation` without further permission, as they are considered integral parts of the AutomateLinux workspace.
+> **Use Symlinks for Access**: When accessing or editing files for these external applications, **ALWAYS** use the symlinks located in `~/coding/automateLinux/extraApps/`.
+>
+> **Correct**: `~/coding/automateLinux/extraApps/cad/src/file.ts`
+> **Incorrect**: `~/coding/cad/src/file.ts`
+>
+> Using the `extraApps` path prevents redundant permission requests and maintains workspace context. The user has granted permission for the `automateLinux` workspace, so staying within its directory structure (via symlinks) is preferred.
 
 ## Related Commands
 - `d listPorts`: See all currently registered app ports.

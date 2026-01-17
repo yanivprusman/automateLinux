@@ -99,7 +99,25 @@ def main():
         return
 
     if found and window_id:
-        print(f"Found window {window_id}. Activating...")
+        print(f"Found window {window_id}. Double checking...")
+        # Re-verify window still exists and matches
+        resp = send_command({"command": "listWindows"})
+        still_there = False
+        if resp:
+            try:
+                windows = json.loads(resp)
+                for w in windows:
+                    if str(w.get('id')) == str(window_id):
+                        still_there = True
+                        break
+            except:
+                pass
+        
+        if not still_there:
+            print("Window disappeared before activation. Aborting.")
+            return
+
+        print(f"Activating window {window_id}...")
         send_command({"command": "activateWindow", "windowId": str(window_id)})
         # Wait for window to be focused
         time.sleep(0.5)
@@ -107,11 +125,13 @@ def main():
     print("Sending selection keys...")
     
     for key_name in sequence_list:
+        # Final check: is the window still there/focused? 
+        # (Actually, activateWindow might have failed, but we'll try to send anyway if we think it's the right one)
         key_upper = key_name.upper()
         if key_upper in KEY_MAP:
             print(f"Processing {key_upper}")
             simulate_key(KEY_MAP[key_upper])
-            time.sleep(0.001)
+            time.sleep(0.01) # Increased from 0.001 to 0.01 for safety
         else:
             print(f"WARNING: Unknown key '{key_name}', skipping.")
     

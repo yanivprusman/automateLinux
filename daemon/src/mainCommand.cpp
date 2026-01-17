@@ -3,6 +3,7 @@
 #include "DaemonServer.h"
 #include "DatabaseTableManagers.h"
 #include "Globals.h"
+#include "KeyNames.h"
 #include "KeyboardManager.h"
 #include "MySQLManager.h"
 #include "Utils.h"
@@ -256,12 +257,6 @@ CmdResult handleRestartLoom(const json &) {
   if (rc != 0) {
     return CmdResult(1, "Failed to launch restart script\n");
   }
-
-  // Launch the auto-select script to handle the screen share popup
-  string autoCmd = "python3 "
-                   "/home/yaniv/coding/automateLinux/utilities/"
-                   "autoSelectLoomScreen.py > /dev/null 2>&1 &";
-  std::system(autoCmd.c_str());
 
   return CmdResult(0, "");
 }
@@ -1250,10 +1245,93 @@ CmdResult handleSimulateInput(const json &command) {
     return CmdResult(0, "");
   }
 
+  if (command.contains(COMMAND_ARG_KEY)) {
+    string keyName = command[COMMAND_ARG_KEY].get<string>();
+    int keyCode = -1;
+    int value = -1; // -1 means press + release
+
+    // Check for suffixes
+    string baseName = keyName;
+    if (keyName.size() > 4 && keyName.substr(keyName.size() - 4) == "Down") {
+      baseName = keyName.substr(0, keyName.size() - 4);
+      value = 1;
+    } else if (keyName.size() > 2 &&
+               keyName.substr(keyName.size() - 2) == "Up") {
+      baseName = keyName.substr(0, keyName.size() - 2);
+      value = 0;
+    }
+
+    if (keyName == "syn") {
+      KeyboardManager::mapper.sync();
+      return CmdResult(0, "");
+    }
+
+    if (keyName == "numlock") {
+      KeyboardManager::mapper.emit(EV_MSC, MSC_SCAN, 0x45);
+      KeyboardManager::mapper.emit(EV_KEY, KEY_NUMLOCK, 1);
+      KeyboardManager::mapper.sync();
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      KeyboardManager::mapper.emit(EV_MSC, MSC_SCAN, 0x45);
+      KeyboardManager::mapper.emit(EV_KEY, KEY_NUMLOCK, 0);
+      KeyboardManager::mapper.sync();
+      return CmdResult(0, "");
+    }
+
+    if (keyName == "numlockDown") {
+      KeyboardManager::mapper.emit(EV_MSC, MSC_SCAN, 0x45);
+      KeyboardManager::mapper.emit(EV_KEY, KEY_NUMLOCK, 1);
+      KeyboardManager::mapper.sync();
+      return CmdResult(0, "");
+    }
+
+    if (keyName == "numlockUp") {
+      KeyboardManager::mapper.emit(EV_MSC, MSC_SCAN, 0x45);
+      KeyboardManager::mapper.emit(EV_KEY, KEY_NUMLOCK, 0);
+      KeyboardManager::mapper.sync();
+      return CmdResult(0, "");
+    }
+
+    auto itApp = APP_NAME_TO_CODE.find(keyName);
+    if (itApp != APP_NAME_TO_CODE.end()) {
+      int appCode = itApp->second;
+      for (int i = 0; i < 3; i++) {
+        KeyboardManager::mapper.emit(EV_MSC, MSC_SCAN, KEY_CODE_FOR_APP_SWITCH);
+        KeyboardManager::mapper.emit(EV_MSC, MSC_SCAN,
+                                     KEY_CODE_FOR_APP_SWITCH + 100 + i);
+        KeyboardManager::mapper.sync();
+      }
+      KeyboardManager::mapper.emit(EV_MSC, MSC_SCAN, appCode);
+      KeyboardManager::mapper.sync();
+      return CmdResult(0, "");
+    }
+
+    auto it = KEY_NAME_TO_CODE.find(baseName);
+    if (it != KEY_NAME_TO_CODE.end()) {
+      keyCode = it->second;
+    } else {
+      // Fallback: try case-insensitive or common variants if needed?
+      // For now, let's just use the map.
+      return CmdResult(1, "Unknown key name: " + keyName + "\n");
+    }
+
+    if (value == -1) {
+      // Full click
+      KeyboardManager::mapper.emit(EV_KEY, (uint16_t)keyCode, 1);
+      KeyboardManager::mapper.sync();
+      KeyboardManager::mapper.emit(EV_KEY, (uint16_t)keyCode, 0);
+      KeyboardManager::mapper.sync();
+    } else {
+      KeyboardManager::mapper.emit(EV_KEY, (uint16_t)keyCode, (int32_t)value);
+      KeyboardManager::mapper.sync();
+    }
+    return CmdResult(0, "");
+  }
+
   if (!command.contains(COMMAND_ARG_TYPE) ||
       !command.contains(COMMAND_ARG_CODE) ||
       !command.contains(COMMAND_ARG_VALUE)) {
-    return CmdResult(1, "Missing arguments: type, code, value (or string)\n");
+    return CmdResult(1,
+                     "Missing arguments: type, code, value, string, or key\n");
   }
 
   uint16_t type = command[COMMAND_ARG_TYPE].get<uint16_t>();

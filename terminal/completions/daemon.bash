@@ -62,7 +62,7 @@ _daemon_completion() {
     command_args[getDir]="--dirName"
     command_args[getDir]="--dirName"
     command_args[getFile]="--fileName"
-    command_args[simulateInput]="--string --type --code --value"
+    command_args[simulateInput]="--string --type --code --value --key"
     command_args[getKeyboard]=""
     command_args[getKeyboardEnabled]=""
     command_args[getSocketPath]=""
@@ -94,7 +94,7 @@ _daemon_completion() {
     # Placeholder for --tty and --pwd, could be dynamic later
     arg_values[--tty]="" 
     arg_values[--pwd]=""
-    arg_values[--key]="" # Can be dynamically fetched from daemon
+    arg_values[--key]="keyA keyB keyC keyD keyE keyF keyG keyH keyI keyJ keyK keyL keyM keyN keyO keyP keyQ keyR keyS keyT keyU keyV keyW keyX keyY keyZ keyADown keyBDown keyCDown keyDDown keyEDown keyFDown keyGDown keyHDown keyIDown keyJDown keyKDown keyLDown keyMDown keyNDown keyODown keyPDown keyQDown keyRDown keySDown keyTDown keyUDown keyVDown keyWDown keyXDown keyYDown keyZDown keyAUp keyBUp keyCUp keyDUp keyEUp keyFUp keyGUp keyHUp keyIUp keyJUp keyKUp keyLUp keyMUp keyNUp keyOUp keyPUp keyQUp keyRUp keySUp keyTUp keyUUp keyVUp keyWUp keyXUp keyYUp keyZUp period dot periodDown dotDown periodUp dotUp slash slashDown slashUp minus dash minusDown dashDown minusUp dashUp space spaceDown spaceUp comma commaDown commaUp equals equal equalsDown equalDown equalsUp equalUp backspace backspaceDown backspaceUp semicolon semicolonDown semicolonUp apostrophe quote apostropheDown quoteDown apostropheUp quoteUp backslash backslashDown backslashUp bracket_left leftbracket bracket_leftDown leftbracketDown bracket_leftUp leftbracketUp bracket_right rightbracket bracket_rightDown rightbracketDown bracket_rightUp rightbracketUp backtick grave backtickDown graveDown backtickUp graveUp numlock numlockDown numlockUp enter enterDown enterUp syn"
     arg_values[--value]=""
     arg_values[--prefix]=""
     arg_values[--action]="show hide"

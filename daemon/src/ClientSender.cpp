@@ -93,10 +93,14 @@ ordered_json parse_client_args(int argc, char *argv[], int start_index) {
         return j;
       }
     } else {
-      cerr << "Error: Unexpected argument format '" << arg_key_str << "'."
-           << endl;
-      j["error"] = "Invalid argument format.";
-      return j;
+      if (commandName == COMMAND_SIMULATE_INPUT) {
+        j[COMMAND_ARG_KEY] = arg_key_str;
+      } else {
+        cerr << "Error: Unexpected argument format '" << arg_key_str << "'."
+             << endl;
+        j["error"] = "Invalid argument format.";
+        return j;
+      }
     }
   }
 

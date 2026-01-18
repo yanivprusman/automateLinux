@@ -14,19 +14,19 @@ function App() {
 
   useEffect(() => {
     // Fetch macros
-    fetch('http://localhost:9224/api/macros')
+    fetch('http://localhost:3501/api/macros')
       .then(res => res.json())
       .then(data => setMacros(data))
       .catch(console.error);
 
     // Fetch filters
-    fetch('http://localhost:9224/api/filters')
+    fetch('http://localhost:3501/api/filters')
       .then(res => res.json())
       .then(data => setFilters(data))
       .catch(console.error);
 
     // WebSocket for logs
-    const ws = new WebSocket('ws://localhost:9224');
+    const ws = new WebSocket('ws://localhost:3501');
     ws.onopen = () => console.log('WebSocket Connected');
     ws.onmessage = (event) => {
       setLogs(prev => {
@@ -41,7 +41,7 @@ function App() {
   }, []);
 
   const saveMacros = (newMacros: any) => {
-    fetch('http://localhost:9224/api/macros', {
+    fetch('http://localhost:3501/api/macros', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newMacros)
@@ -55,7 +55,7 @@ function App() {
 
   const setEventFilters = (newFilters: string[]) => {
     setFilters(newFilters);
-    fetch('http://localhost:9224/api/filters', {
+    fetch('http://localhost:3501/api/filters', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newFilters)

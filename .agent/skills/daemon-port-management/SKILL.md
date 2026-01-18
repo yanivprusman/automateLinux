@@ -54,8 +54,25 @@ if (!port.empty()) {
 }
 ```
 
-## Common Ports
-| Key | Default Port | Description |
+## Port Allocation Scheme
+
+- **3000-3499**: App prod/dev ports (2 per app, sequential)
+- **3500+**: Special operational ports (WebSocket servers, bridges, etc.)
+
+## Current Port Registry
+
+| Key | Port | Description |
+| :--- | :--- | :--- |
+| cad-prod | 3000 | CAD app production |
+| cad-dev | 3001 | CAD app development |
+| pt-prod | 3002 | Public Transportation production |
+| pt-dev | 3003 | Public Transportation development |
+| loom-prod | 3004 | Loom client production |
+| loom-dev | 3005 | Loom client development |
+| dashboard-prod | 3006 | Dashboard frontend production |
+| dashboard-dev | 3007 | Dashboard frontend development |
+| loom-server | 3500 | Loom WebSocket stream server |
+| dashboard-bridge | 3501 | Dashboard daemon bridge |
 
 > [!NOTE]
 > Port management is useful for macros that need to launch browsers or proxy services to specific local addresses without hardcoding them in the binary.

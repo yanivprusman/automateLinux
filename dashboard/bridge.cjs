@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 9224;
+const PORT = 3501;
 const UDS_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 
 const server = http.createServer(app);

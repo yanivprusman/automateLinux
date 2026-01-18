@@ -17,7 +17,7 @@ const ContextMonitor = () => {
 
     useEffect(() => {
         const fetchContext = () => {
-            fetch('http://localhost:9224/api/activeContext')
+            fetch('http://localhost:3501/api/activeContext')
                 .then(res => res.json())
                 .then(data => setContext(data))
                 .catch(err => console.error("Context fetch failed", err));

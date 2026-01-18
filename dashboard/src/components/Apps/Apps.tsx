@@ -34,6 +34,10 @@ const Apps = () => {
             icon: '🚌',
             command: 'publicTransportationOpenApp',
             description: 'Open Public Transportation App',
+            options: [
+                { label: 'Prod', command: 'publicTransportationOpenApp', args: { variant: 'prod' } },
+                { label: 'Dev', command: 'publicTransportationOpenApp', args: { variant: 'dev' } },
+            ]
         },
         {
             id: 'cad',
@@ -66,7 +70,6 @@ const Apps = () => {
                     ...args
                 })
             });
-            alert(`Command sent: ${command}`);
         } catch (err) {
             console.error(err);
             alert('Failed to launch app');

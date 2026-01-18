@@ -262,34 +262,51 @@ CmdResult handleRestartLoom(const json &) {
 }
 
 CmdResult handlePublicTransportationStartProxy(const json &) {
-  // 1. Find a free port by binding to port 0
-  int sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (sock < 0) {
-    return CmdResult(1, "Failed to create socket for port discovery\n");
+  // 1. Get port from registry
+  string portStr = SettingsTable::getSetting("port_pt-proxy");
+  int port = 0;
+
+  if (!portStr.empty()) {
+    try {
+      port = std::stoi(portStr);
+    } catch (...) {
+      return CmdResult(1, "Invalid port for pt-proxy in registry: " + portStr +
+                              "\n");
+    }
   }
 
-  struct sockaddr_in sin;
-  memset(&sin, 0, sizeof(sin));
-  sin.sin_family = AF_INET;
-  sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  sin.sin_port = 0; // Let OS choose
+  // 2. If not found in registry, find a free port and save it
+  if (port == 0) {
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+      return CmdResult(1, "Failed to create socket for port discovery\n");
+    }
 
-  if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+    struct sockaddr_in sin;
+    memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    sin.sin_port = 0; // Let OS choose
+
+    if (bind(sock, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
+      close(sock);
+      return CmdResult(1, "Failed to bind to find free port\n");
+    }
+
+    socklen_t len = sizeof(sin);
+    if (getsockname(sock, (struct sockaddr *)&sin, &len) < 0) {
+      close(sock);
+      return CmdResult(1, "Failed to get socket name\n");
+    }
+
+    port = ntohs(sin.sin_port);
     close(sock);
-    return CmdResult(1, "Failed to bind to find free port\n");
+
+    // Save to registry (automatically prepends 'port_')
+    SettingsTable::setSetting("port_pt-proxy", to_string(port));
   }
 
-  socklen_t len = sizeof(sin);
-  if (getsockname(sock, (struct sockaddr *)&sin, &len) < 0) {
-    close(sock);
-    return CmdResult(1, "Failed to get socket name\n");
-  }
-
-  int port = ntohs(sin.sin_port);
-  close(sock); // Close immediately so SSH can use it
-
-  // 2. Start SSH Tunnel
-  // ssh -f -N -L $PORT:moran.mot.gov.il:110 root@10.0.0.1
+  // 3. Start SSH Tunnel
   string cmd =
       "ssh -f -N -L " + to_string(port) + ":moran.mot.gov.il:110 root@10.0.0.1";
   int rc = std::system(cmd.c_str());
@@ -298,12 +315,11 @@ CmdResult handlePublicTransportationStartProxy(const json &) {
     return CmdResult(1, "Failed to start SSH tunnel\n");
   }
 
-  // 3. Write port to temp file
+  // 4. Write port to temp file (for legacy compatibility with PHP apps)
   ofstream portFile("/tmp/pt_proxy_port");
   if (portFile.is_open()) {
     portFile << port;
     portFile.close();
-    // Ensure readable by others (www-data)
     chmod("/tmp/pt_proxy_port", 0644);
   } else {
     return CmdResult(1, "Failed to write port file\n");
@@ -312,10 +328,30 @@ CmdResult handlePublicTransportationStartProxy(const json &) {
   return CmdResult(0, "Proxy started on port " + to_string(port) + "\n");
 }
 
-CmdResult handlePublicTransportationOpenApp(const json &) {
+CmdResult handlePublicTransportationOpenApp(const json &command) {
   // Query the daemon's port registry for the PT app port
   string portKey = "port_pt";
-  string port = SettingsTable::getSetting(portKey);
+  string port = "";
+
+  // 1. Try to use explicit variant if provided
+  if (command.contains("variant")) {
+    string variant = command["variant"].get<string>();
+    portKey = "port_pt-" + variant;
+    port = SettingsTable::getSetting(portKey);
+    if (port.empty()) {
+      return CmdResult(1, "PT app port for variant '" + variant +
+                              "' not found.\n");
+    }
+  } else {
+    // 2. Fallback sequence: pt -> pt-prod -> pt-dev
+    port = SettingsTable::getSetting("port_pt");
+    if (port.empty()) {
+      port = SettingsTable::getSetting("port_pt-prod");
+      if (port.empty()) {
+        port = SettingsTable::getSetting("port_pt-dev");
+      }
+    }
+  }
 
   if (port.empty()) {
     return CmdResult(

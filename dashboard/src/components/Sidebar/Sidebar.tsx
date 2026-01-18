@@ -7,9 +7,9 @@ interface SidebarProps {
 
 const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
     const menuItems = [
+        { id: 'apps', label: 'Apps', icon: '🚀' },
         { id: 'logs', label: 'Monitor', icon: '💎' },
         { id: 'configs', label: 'Macros', icon: '⚡' },
-        { id: 'apps', label: 'Apps', icon: '🚀' },
     ];
 
     return (

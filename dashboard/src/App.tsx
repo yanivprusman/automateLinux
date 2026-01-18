@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 import Sidebar from './components/Sidebar/Sidebar';
 import ContextMonitor from './components/ContextMonitor';
@@ -8,10 +8,16 @@ import Apps from './components/Apps/Apps';
 import type { ViewType } from './types';
 
 function App() {
-  const [currentView, setCurrentView] = useState<ViewType>('logs');
+  const [currentView, setCurrentView] = useState<ViewType>('apps');
   const [logs, setLogs] = useState<string[]>([]);
   const [macros, setMacros] = useState<any>({});
   const [filters, setFilters] = useState<string[]>([]);
+  const [isLoggingEnabled, setIsLoggingEnabled] = useState(false);
+  const isLoggingEnabledRef = useRef(false);
+
+  useEffect(() => {
+    isLoggingEnabledRef.current = isLoggingEnabled;
+  }, [isLoggingEnabled]);
 
   useEffect(() => {
     // Fetch macros
@@ -30,6 +36,8 @@ function App() {
     const ws = new WebSocket('ws://localhost:3501');
     ws.onopen = () => console.log('WebSocket Connected');
     ws.onmessage = (event) => {
+      if (!isLoggingEnabledRef.current) return;
+
       setLogs(prev => {
         const newLogs = [...prev, event.data];
         if (newLogs.length > 500) return newLogs.slice(-500); // Keep last 500
@@ -80,6 +88,8 @@ function App() {
             filters={filters}
             onSetFilters={setEventFilters}
             onClearLogs={clearLogs}
+            isLoggingEnabled={isLoggingEnabled}
+            onToggleLogging={setIsLoggingEnabled}
           />
         )}
 

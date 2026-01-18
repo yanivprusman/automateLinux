@@ -2,15 +2,18 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import Button from '../UI/Button';
 import Input from '../UI/Input';
 import Badge from '../UI/Badge';
+import Toggle from '../UI/Toggle';
 
 interface LiveLogsProps {
     logs: string[];
     filters: string[];
     onSetFilters: (filters: string[]) => void;
     onClearLogs: () => void;
+    isLoggingEnabled: boolean;
+    onToggleLogging: (enabled: boolean) => void;
 }
 
-const LiveLogs = ({ logs, filters, onSetFilters, onClearLogs }: LiveLogsProps) => {
+const LiveLogs = ({ logs, filters, onSetFilters, onClearLogs, isLoggingEnabled, onToggleLogging }: LiveLogsProps) => {
     const logEndRef = useRef<HTMLDivElement>(null);
     const [autoScroll, setAutoScroll] = useState(true);
     const [newPattern, setNewPattern] = useState('');
@@ -62,18 +65,27 @@ const LiveLogs = ({ logs, filters, onSetFilters, onClearLogs }: LiveLogsProps) =
                         Real-time input events and macro execution traces.
                     </p>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <Button
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                    <Toggle
+                        label="Live Logging"
+                        checked={isLoggingEnabled}
+                        onChange={onToggleLogging}
                         size="small"
-                        variant={autoScroll ? 'primary' : 'default'}
-                        onClick={() => setAutoScroll(!autoScroll)}
-                        style={{ fontSize: '0.75rem' }}
-                    >
-                        {autoScroll ? 'AUTO-SCROLL ON' : 'AUTO-SCROLL OFF'}
-                    </Button>
-                    <Button size="small" onClick={onClearLogs} style={{ fontSize: '0.75rem' }}>
-                        Clear Logs
-                    </Button>
+                    />
+                    <div style={{ width: '1px', height: '24px', background: 'var(--glass-border)' }} />
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <Button
+                            size="small"
+                            variant={autoScroll ? 'primary' : 'default'}
+                            onClick={() => setAutoScroll(!autoScroll)}
+                            style={{ fontSize: '0.75rem' }}
+                        >
+                            {autoScroll ? 'AUTO-SCROLL ON' : 'AUTO-SCROLL OFF'}
+                        </Button>
+                        <Button size="small" onClick={onClearLogs} style={{ fontSize: '0.75rem' }}>
+                            Clear Logs
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -88,8 +100,10 @@ const LiveLogs = ({ logs, filters, onSetFilters, onClearLogs }: LiveLogsProps) =
                 ))}
                 <div ref={logEndRef} />
                 {logs.length === 0 && (
-                    <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontStyle: 'italic' }}>
-                        Waiting for events...
+                    <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)', fontStyle: 'italic', textAlign: 'center', padding: '0 20px' }}>
+                        {isLoggingEnabled
+                            ? 'Waiting for events...'
+                            : 'Logging is disabled. Enable "Live Logging" above to see real-time events.'}
                     </div>
                 )}
             </div>

@@ -1527,7 +1527,8 @@ int mainCommand(const json &command, int client_sock) {
 
   // Return 1 (close) for regular commands, 0 (keep) for log listeners.
   if (commandName == COMMAND_REGISTER_LOG_LISTENER ||
-      commandName == COMMAND_REGISTER_WINDOW_EXTENSION) {
+      commandName == COMMAND_REGISTER_WINDOW_EXTENSION ||
+      commandName == COMMAND_REGISTER_NATIVE_HOST) {
     return 0;
   }
   return 1;

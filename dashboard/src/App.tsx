@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar/Sidebar';
 import ContextMonitor from './components/ContextMonitor';
 import LiveLogs from './components/LiveLogs/LiveLogs';
 import Configs from './components/Configs/Configs';
+import Apps from './components/Apps/Apps';
 import type { ViewType } from './types';
 
 function App() {
@@ -87,6 +88,10 @@ function App() {
             macros={macros}
             onSave={saveMacros}
           />
+        )}
+
+        {currentView === 'apps' && (
+          <Apps />
         )}
       </main>
     </div>

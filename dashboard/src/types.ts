@@ -7,7 +7,7 @@ export interface Macro {
     hasHandler: boolean;
 }
 
-export type ViewType = 'logs' | 'configs' | 'macros';
+export type ViewType = 'logs' | 'configs' | 'macros' | 'apps';
 
 export interface KeyTrigger {
     keys: Array<{

@@ -270,6 +270,19 @@ int initialize_daemon() {
     logToFile("Loom startup script executed as user yaniv", LOG_CORE);
   }
 
+  // Start Dashboard
+  string startDashboardScript =
+      directories.base + "daemon/scripts/start_dashboard.sh";
+  string dashboardCmd = startDashboardScript + " > /dev/null 2>&1 &";
+  int dashboardRc = system(dashboardCmd.c_str());
+  if (dashboardRc != 0) {
+    logToFile("WARNING: Failed to start Dashboard, rc=" +
+                  std::to_string(dashboardRc),
+              LOG_CORE);
+  } else {
+    logToFile("Dashboard startup script executed", LOG_CORE);
+  }
+
   emitDaemonReadySignal();
 
   return 0;

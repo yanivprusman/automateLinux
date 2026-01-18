@@ -121,6 +121,15 @@ wss.on('connection', (ws) => {
     });
 });
 
+app.post('/api/command', async (req, res) => {
+    try {
+        const result = await sendToDaemon(req.body);
+        res.send(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 server.listen(PORT, () => {
     console.log(`Bridge listening on http://localhost:${PORT}`);
 });

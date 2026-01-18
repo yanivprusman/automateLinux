@@ -123,9 +123,12 @@ wss.on('connection', (ws) => {
 
 app.post('/api/command', async (req, res) => {
     try {
+        console.log('Received command:', req.body);
         const result = await sendToDaemon(req.body);
+        console.log('Command result:', result);
         res.send(result);
     } catch (err) {
+        console.error('Error handling command:', err);
         res.status(500).json({ error: err.message });
     }
 });

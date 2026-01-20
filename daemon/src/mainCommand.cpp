@@ -196,62 +196,57 @@ CmdResult handleResetClock(const json &) {
 }
 
 CmdResult handleIsLoomActive(const json &) {
-  // Use systemctl is-active for more reliable status reporting
-  string serverActive = executeCommand(
-      "export XDG_RUNTIME_DIR=/run/user/1000; "
-      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
-      "systemctl --user is-active loom-server");
-  string devActive = executeCommand(
-      "export XDG_RUNTIME_DIR=/run/user/1000; "
-      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
-      "systemctl --user is-active loom-client-dev");
-  string prodActive = executeCommand(
-      "export XDG_RUNTIME_DIR=/run/user/1000; "
-      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; "
-      "systemctl --user is-active loom-client-prod");
-
-  bool serverRunning = (serverActive.find("active") == 0 &&
-                        serverActive.find("inactive") == string::npos);
-  bool devRunning = (devActive.find("active") == 0 &&
-                     devActive.find("inactive") == string::npos);
-  bool prodRunning = (prodActive.find("active") == 0 &&
-                      prodActive.find("inactive") == string::npos);
+  bool serverProdRunning = !executeCommand("pgrep -f 'loom-server 3500'").empty();
+  bool serverDevRunning = !executeCommand("pgrep -f 'loom-server 3501'").empty();
+  bool clientProdRunning = !executeCommand("pgrep -f 'vite --port 3004'").empty();
+  bool clientDevRunning = !executeCommand("pgrep -f 'vite --port 3005'").empty();
 
   std::stringstream ss;
   ss << "Loom Status:\n";
-  ss << "  Server: " << (serverRunning ? "RUNNING" : "NOT RUNNING") << "\n";
-  ss << "  Client (Dev): " << (devRunning ? "RUNNING" : "NOT RUNNING") << "\n";
-  ss << "  Client (Prod): " << (prodRunning ? "RUNNING" : "NOT RUNNING")
-     << "\n";
+  ss << "  Server (Prod:3500): " << (serverProdRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Server (Dev:3501): " << (serverDevRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Client (Prod:3004): " << (clientProdRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Client (Dev:3005): " << (clientDevRunning ? "RUNNING" : "NOT RUNNING") << "\n";
 
   return CmdResult(0, ss.str());
 }
 
-CmdResult handleStopLoom(const json &) {
-  // Use stop_loom.sh script to robustly stop all processes
-  string cmd = "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh > "
-               "/dev/null 2>&1";
+CmdResult handleStopLoom(const json &command) {
+  // Check for --mode argument (prod, dev, or all)
+  string mode = "all";
+  if (command.contains("mode")) {
+    mode = command["mode"].get<string>();
+  }
+
+  string cmd = "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh --" +
+               mode + " > /dev/null 2>&1";
 
   int rc = std::system(cmd.c_str());
   if (rc != 0) {
     return CmdResult(1, "Failed to execute stop script\n");
   }
 
-  return CmdResult(0, "Loom stopped.\n");
+  return CmdResult(0, "Loom stopped (" + mode + ").\n");
 }
 
-CmdResult handleRestartLoom(const json &) {
+CmdResult handleRestartLoom(const json &command) {
+  // Check for --mode argument (prod or dev, default: prod)
+  string mode = "prod";
+  if (command.contains("mode")) {
+    mode = command["mode"].get<string>();
+  }
+
   // 1. First run the stop script synchronously to ensure clean state
   string stopCmd =
-      "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh > "
-      "/dev/null 2>&1";
+      "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh --" +
+      mode + " > /dev/null 2>&1";
   std::system(stopCmd.c_str());
 
   // 2. Now launch the restart script
   // We use `nohup` and `&` to ensure it continues running in background.
   string cmd =
-      "/home/yaniv/coding/automateLinux/daemon/scripts/restart_loom.sh "
-      "> /dev/null 2>&1 &";
+      "/home/yaniv/coding/automateLinux/daemon/scripts/restart_loom.sh --" +
+      mode + " > /dev/null 2>&1 &";
 
   int rc = std::system(cmd.c_str());
   if (rc != 0) {
@@ -1373,8 +1368,36 @@ CmdResult handleSimulateInput(const json &command) {
   uint16_t type = command[COMMAND_ARG_TYPE].get<uint16_t>();
   uint16_t code = command[COMMAND_ARG_CODE].get<uint16_t>();
   int32_t value = command[COMMAND_ARG_VALUE].get<int32_t>();
-  KeyboardManager::mapper.emit(type, code, value);
-  KeyboardManager::mapper.sync();
+
+  // Rate limiting for input events to prevent flooding
+  static std::chrono::steady_clock::time_point lastEventTime;
+  static int eventCount = 0;
+  auto now = std::chrono::steady_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastEventTime).count();
+
+  if (elapsed < 10) {  // Within 10ms window
+    eventCount++;
+    if (eventCount > 50) {  // More than 50 events in 10ms = too fast
+      // Skip non-essential events (mouse move), but always allow key events
+      if (type == EV_ABS || type == EV_REL) {
+        return CmdResult(0, "");  // Rate limited
+      }
+    }
+  } else {
+    eventCount = 1;
+    lastEventTime = now;
+  }
+
+  if (type == EV_SYN) {
+    // Just sync, don't emit the SYN event itself
+    KeyboardManager::mapper.sync();
+  } else if (type == EV_ABS) {
+    // For absolute positioning, don't auto-sync (caller sends SYN_REPORT)
+    KeyboardManager::mapper.emitNoSync(type, code, value);
+  } else {
+    // Standard behavior for keys, buttons, etc.
+    KeyboardManager::mapper.emit(type, code, value);
+  }
   return CmdResult(0, "");
 }
 

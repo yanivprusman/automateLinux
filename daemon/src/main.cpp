@@ -2,6 +2,7 @@
 #include "AutomationManager.h"
 #include "ClientSender.h"
 #include "DaemonServer.h"
+#include "KeyboardManager.h" // Added include
 #include "MySQLManager.h"
 #include "common.h"
 #include <iostream>
@@ -38,8 +39,7 @@ int main(int argc, char *argv[]) {
       return send_command_to_daemon(cmdJson);
       // ... in main ...
     } else if (mode == "daemon") {
-      signal(SIGINT, signalHandler);
-      signal(SIGTERM, signalHandler);
+      // Signals handled in initialize_daemon()
 
       MySQLManager::initializeAndStartMySQL();
 
@@ -72,6 +72,8 @@ int main(int argc, char *argv[]) {
       }
 
       daemon_loop();
+      KeyboardManager::mapper
+          .stop(); // Explicitly stop mapper to ungrab devices
       MySQLManager::stopMySQL();
       cerr << "Daemon shutting down." << endl;
     } else {

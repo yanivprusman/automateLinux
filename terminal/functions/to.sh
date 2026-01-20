@@ -4,13 +4,13 @@ to() {
 
     case "$target" in
         cad)
-            cd "$base/../cad"
+            cd "${base}extraApps/cad"
             ;;
         automateLinux)
             cd "$base/"
             ;;
         loom)
-            cd "$base/../loom"
+            cd "${base}extraApps/loom"
             ;;
         *)
             # echo "Target '$target' not configured."

@@ -14,7 +14,7 @@ import time
 from datetime import datetime
 
 SOCKET_PATH = "/run/automatelinux/automatelinux-daemon.sock"
-LOG_FILE = "/home/yaniv/coding/automateLinux/data/combined.log"
+LOG_FILE = "/tmp/com.automatelinux.native-host.log"
 
 def get_timestamp():
     """Get ISO format timestamp matching extension logs."""
@@ -26,9 +26,9 @@ def log(message):
         with open(LOG_FILE, 'a') as f:
             f.write(f"[{get_timestamp()}] [NativeHost] {message}\n")
             f.flush()
-    except Exception as e:
-        # Fallback to stderr if log file fails
-        print(f"Log error: {e}", file=sys.stderr)
+    except Exception:
+        # Avoid printing to stdout as it breaks the native messaging protocol
+        pass
 
 def send_to_chrome(message):
     """Send a message to Chrome extension through stdout."""
@@ -147,40 +147,47 @@ class DaemonLink:
 
 def main():
     log("Native host main starting")
-    link = DaemonLink()
-    link.connect()
-
-    # Start listener thread for daemon -> chrome
-    listener = threading.Thread(target=link.listen_loop, daemon=True)
-    listener.start()
-
-    # Main loop for chrome -> daemon
-    while True:
-        message = read_from_chrome()
-        if message is None:
-            log("Chrome disconnected, exiting")
-            link.running = False
-            break
+    try:
+        link = DaemonLink()
+        log("DaemonLink initialized")
         
-        log(f"From Chrome: {message}")
-        if isinstance(message, dict):
-            # If the message already has a 'command', use it. 
-            # Otherwise, check for 'url' (legacy/specific case)
-            if 'command' in message:
-                link.send(message)
-            elif 'url' in message:
-                link.send({"command": "setActiveTabUrl", "url": message['url']})
-            elif 'action' in message:
-                # Handle focusAck and other 'action' style messages from extension
-                if message['action'] == 'focusAck':
-                    link.send({"command": "focusAck"})
-                else:
-                    # Forward any other action as is? Maybe wrap it?
-                    # For now, if it's an action we don't recognize as a daemon command,
-                    # we might need to map it.
-                    log(f"Unknown action from chrome: {message['action']}")
-        else:
-            log(f"Unsupported message type from Chrome: {type(message)}")
+        # Start listener thread for daemon -> chrome
+        listener = threading.Thread(target=link.listen_loop, daemon=True)
+        listener.start()
+        log("Daemon listener thread started")
+
+        # Main loop for chrome -> daemon
+        log("Entering main message loop")
+        while True:
+            message = read_from_chrome()
+            if message is None:
+                log("Chrome disconnected (read None), exiting")
+                link.running = False
+                break
+        
+            # log(f"From Chrome: {message}")
+            if isinstance(message, dict):
+                # If the message already has a 'command', use it. 
+                # Otherwise, check for 'url' (legacy/specific case)
+                if 'command' in message:
+                    link.send(message)
+                elif 'url' in message:
+                    link.send({"command": "setActiveTabUrl", "url": message['url']})
+                elif 'action' in message:
+                    # Handle focusAck and other 'action' style messages from extension
+                    if message['action'] == 'focusAck':
+                        link.send({"command": "focusAck"})
+                    else:
+                        # Forward any other action as is? Maybe wrap it?
+                        # For now, if it's an action we don't recognize as a daemon command,
+                        # we might need to map it.
+                        log(f"Unknown action from chrome: {message['action']}")
+            else:
+                log(f"Unsupported message type from Chrome: {type(message)}")
+
+    except Exception as e:
+        log(f"CRITICAL: exception in main loop: {e}")
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()

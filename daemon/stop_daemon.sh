@@ -10,7 +10,7 @@ if [ -z "$PIDS" ]; then
 else
     echo "Stopping daemon (PIDs: $PIDS)..."
     kill $PIDS
-    sleep 1
+    sleep 2 # Waited 1s before, now 2s to allow graceful ungrab/shutdown
     # Check if still running and force kill if necessary
     PIDS=$(pgrep -f "^$DAEMON_BIN")
     if [ -n "$PIDS" ]; then

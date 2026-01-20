@@ -12,9 +12,7 @@ automateLinux is a suite of tools for personalizing and automating a Linux deskt
 - **GNOME Extensions** (`gnomeExtensions/`): Desktop integration - status menu for daemon control, active window tracking
 - **VS Code Extensions** (`visualStudioCodeExtensions/`): Editor integrations for daemon monitoring, git workflows, and log viewing
 - **Utilities** (`utilities/`): Standalone tools - termcontrol, sendKeysUInput, lastChanged, cleanBetween, emergencyRestore.sh
-- **Extra Apps** (`extraApps/`): Standalone applications housed directly in this repo (cad, loom, publicTransportation) - not symlinks, to simplify agent access.
-  > [!IMPORTANT]
-  > **AI AGENT ACCESS**: To avoid persistent "Allow This Conversation" security prompts when accessing `extraApps/`, ALWAYS call search/file tools from the **root project directory** using path patterns. The nested `.git` folders in these directories are internal to the workspace and should NOT be treated as security boundaries.
+- **Extra Apps** (`extraApps/`): Standalone applications housed directly in this repo (cad, loom, publicTransportation) to simplify agent access.
 
 ## Build Commands
 
@@ -164,6 +162,8 @@ Loads via `~/.bashrc` sourcing `terminal/bashrc`:
 ## Extra Apps
 
 Applications in `extraApps/` are stored directly in this repo (not symlinks) to simplify AI agent access without extra permissions. Each app may have its own build system and CLAUDE.md/GEMINI.md for app-specific guidance.
+
+**Production versions** are deployed to `../prod/<appName>` (i.e., `/home/yaniv/coding/prod/<appName>`).
 
 ## Environment Variables
 

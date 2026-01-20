@@ -97,6 +97,7 @@ public:
   void setMacrosFromJson(const json &j);
   void setEventFilters(const json &j);
   void emit(uint16_t type, uint16_t code, int32_t value);
+  void emitNoSync(uint16_t type, uint16_t code, int32_t value);
   void sync();
 
 private:
@@ -189,6 +190,10 @@ private:
   // Sequence: Ctrl(down) -> Shift(down) -> Ctrl(down) -> Shift(down) ->
   // Key(number)
   int gToggleState_ = 1; // 1-5
+
+  // Emergency ungrab: ScrollLock triple-press within 1 second
+  int emergencyScrollCount_ = 0;
+  std::chrono::steady_clock::time_point emergencyFirstPress_;
 
   // Window/App detection context
   AppType activeApp_ = AppType::OTHER;

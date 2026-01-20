@@ -195,15 +195,11 @@ int handle_client_data(int client_fd) {
   return 0;
 }
 
+// Async-signal-safe handler: just set the flag
+// Async-signal-safe handler: just set the flag
 void signal_handler(int sig) {
   if (sig == SIGTERM || sig == SIGINT) {
     running = 0;
-    if (socket_fd >= 0)
-      shutdown(socket_fd, SHUT_RDWR);
-    if (g_keyboard_fd >= 0)
-      close(g_keyboard_fd);
-    if (g_logFile.is_open())
-      g_logFile.close();
   }
 }
 
@@ -300,7 +296,8 @@ void daemon_loop() {
         max_fd = pair.first;
     }
 
-    struct timeval timeout{1, 0};
+    struct timeval timeout{
+        0, 200000}; // 200ms timeout for faster shutdown response
     int activity = select(max_fd + 1, &read_fds, nullptr, nullptr, &timeout);
     if (activity <= 0)
       continue;
@@ -319,4 +316,12 @@ void daemon_loop() {
     close(pair.first);
   close(socket_fd);
   unlink(socketPath.c_str());
+
+  if (g_keyboard_fd >= 0) {
+    close(g_keyboard_fd);
+    g_keyboard_fd = -1;
+  }
+  if (g_logFile.is_open()) {
+    g_logFile.close();
+  }
 }

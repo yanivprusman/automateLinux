@@ -215,6 +215,17 @@ bool InputMapper::setupUinput() {
   libevdev_enable_event_type(uinput_template, EV_KEY);
   libevdev_enable_event_type(uinput_template, EV_SYN);
 
+  // Enable absolute positioning for remote control (Loom)
+  libevdev_enable_event_type(uinput_template, EV_ABS);
+  struct input_absinfo abs_info = {0};
+  abs_info.minimum = 0;
+  abs_info.maximum = 32767;
+  abs_info.fuzz = 0;
+  abs_info.flat = 0;
+  abs_info.resolution = 0;
+  libevdev_enable_event_code(uinput_template, EV_ABS, ABS_X, &abs_info);
+  libevdev_enable_event_code(uinput_template, EV_ABS, ABS_Y, &abs_info);
+
   int rc = libevdev_uinput_create_from_device(
       uinput_template, LIBEVDEV_UINPUT_OPEN_MANAGED, &uinputDev_);
   libevdev_free(uinput_template);
@@ -458,6 +469,13 @@ void InputMapper::emit(uint16_t type, uint16_t code, int32_t value) {
   libevdev_uinput_write_event(uinputDev_, EV_SYN, SYN_REPORT, 0);
 }
 
+void InputMapper::emitNoSync(uint16_t type, uint16_t code, int32_t value) {
+  if (!uinputDev_)
+    return;
+  std::lock_guard<std::mutex> lock(uinputMutex_);
+  libevdev_uinput_write_event(uinputDev_, type, code, value);
+}
+
 void InputMapper::sync() {
   if (!uinputDev_)
     return;
@@ -617,6 +635,34 @@ PipelineResult InputMapper::stageContext(struct input_event &ev,
       logToFile(formattedEvent, LOG_INPUT);
   }
 
+  // Emergency ungrab: Pause/Break key (single press) - instant escape
+  if (ev.type == EV_KEY && ev.code == KEY_PAUSE && ev.value == 1) {
+    extern void forceLog(const std::string &message);
+    forceLog("EMERGENCY UNGRAB triggered by Pause/Break key!");
+    ungrabDevices();
+    // Let the key pass through
+  }
+
+  // Emergency ungrab: ScrollLock triple-press within 1 second
+  if (ev.type == EV_KEY && ev.code == KEY_SCROLLLOCK && ev.value == 1) {
+    auto now = std::chrono::steady_clock::now();
+    if (emergencyScrollCount_ == 0 ||
+        (now - emergencyFirstPress_) > std::chrono::seconds(1)) {
+      // Reset counter - first press or timeout
+      emergencyScrollCount_ = 1;
+      emergencyFirstPress_ = now;
+    } else {
+      emergencyScrollCount_++;
+      if (emergencyScrollCount_ >= 3) {
+        extern void forceLog(const std::string &message);
+        forceLog("EMERGENCY UNGRAB triggered by ScrollLock triple-press!");
+        emergencyScrollCount_ = 0;
+        ungrabDevices();
+        // Don't return DROP - let the ScrollLock event pass through
+      }
+    }
+  }
+
   // Debug: Log all Ctrl+V combinations to see current context
   if (ev.type == EV_KEY && ev.code == KEY_V && ctrlDown_ && ev.value == 1) {
     AppType tmpApp;
@@ -697,6 +743,7 @@ PipelineResult InputMapper::stageMacros(struct input_event &ev,
 
   bool eventMatchedAnySuppressedStep = false;
   auto &comboMap = comboProgress_[currentApp];
+  auto now = std::chrono::steady_clock::now();
 
   for (size_t comboIdx = 0; comboIdx < appIt->second.size(); ++comboIdx) {
     const KeyAction &action = appIt->second[comboIdx];
@@ -704,6 +751,22 @@ PipelineResult InputMapper::stageMacros(struct input_event &ev,
       continue;
 
     ComboState &state = comboMap[comboIdx];
+
+    // --- TIMEOUT CHECK ---
+    // If combo is in progress but hasn't moved for 2 seconds, reset it
+    if (state.nextKeyIndex > 0 &&
+        (now - state.lastMatchTime) > std::chrono::seconds(2)) {
+      logToFile("Combo " + std::to_string(comboIdx) + " timed out. Resetting.",
+                LOG_MACROS);
+      auto claimed = suppressionRegistry_.claim(comboIdx);
+      for (const auto &wk : claimed) {
+        if (!suppressionRegistry_.isBlocked(wk.code))
+          emit(wk.type, wk.code, wk.value);
+      }
+      sync();
+      state.suppressedEvents.clear();
+      state.nextKeyIndex = 0;
+    }
 
     if (numLockActive_ && !isKeyboardOnlyMacro(action)) {
       // If NumLock is active and this macro is not keyboard-only, skip it.

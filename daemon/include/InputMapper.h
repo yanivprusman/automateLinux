@@ -82,7 +82,8 @@ public:
 
   void loadPersistence();
 
-  bool start(const std::string &keyboardPath, const std::string &mousePath);
+  bool start(const std::string &keyboardPath, const std::string &mousePath,
+             bool grabImmediately = false);
   void stop();
   void setContext(AppType appType, const std::string &url = "",
                   const std::string &title = "");
@@ -103,9 +104,11 @@ public:
 private:
   void setMacrosFromJsonInternal(const json &j);
   void setEventFiltersInternal(const json &j);
+
 public:
   void grabDevices();   // New: performs the libevdev_grab
   void ungrabDevices(); // New: performs the libevdev_ungrab
+  void ungrabDevicesSignalSafe(); // Async-signal-safe version for signal handlers
 
 private:
   void loop();

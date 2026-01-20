@@ -58,7 +58,7 @@ void InputMapper::loadPersistence() {
 }
 
 bool InputMapper::start(const std::string &keyboardPath,
-                        const std::string &mousePath) {
+                        const std::string &mousePath, bool grabImmediately) {
   keyboardPath_ = keyboardPath;
   mousePath_ = mousePath;
 
@@ -69,6 +69,10 @@ bool InputMapper::start(const std::string &keyboardPath,
   if (!setupUinput()) {
     stop();
     return false;
+  }
+
+  if (grabImmediately) {
+    grabDevices();
   }
 
   running_ = true;
@@ -567,6 +571,17 @@ void InputMapper::ungrabDevices() {
   }
   monitoringMode_ =
       true; // We are back to monitoring (if devices are still open)
+}
+
+// Async-signal-safe version - NO logging, NO memory allocation
+// Only call libevdev_grab which is just an ioctl
+void InputMapper::ungrabDevicesSignalSafe() {
+  if (keyboardDev_) {
+    libevdev_grab(keyboardDev_, LIBEVDEV_UNGRAB);
+  }
+  if (mouseDev_) {
+    libevdev_grab(mouseDev_, LIBEVDEV_UNGRAB);
+  }
 }
 
 void InputMapper::setContext(AppType appType, const std::string &url,

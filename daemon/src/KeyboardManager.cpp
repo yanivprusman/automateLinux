@@ -50,8 +50,10 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
     logToFile("Enabling keyboard: " + keyboardPath, LOG_CORE);
 
     // Start mapper in monitoring mode, then attempt to grab
-    if (mapper.start(keyboardPath, mousePath)) {
-      mapper.grabDevices();
+    // Pass true to grab immediately BEFORE thread starts (avoids race
+    // condition)
+    if (mapper.start(keyboardPath, mousePath, true)) {
+      // mapper.grabDevices(); // Handled in start() now
       return CmdResult(0, "Keyboard enabled and grab attempted.\n");
     } else {
       logToFile("ERROR: Failed to start InputMapper for monitoring", LOG_CORE);

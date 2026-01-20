@@ -30,7 +30,7 @@ SERVER_PORT=$(daemon send getPort --key "$PORT_KEY_SERVER" | tr -d '\n\r ')
 
 # Fallbacks if daemon query fails
 if [ -z "$CLIENT_PORT" ]; then CLIENT_PORT=$([ "$MODE" = "prod" ] && echo 3004 || echo 3005); fi
-if [ -z "$SERVER_PORT" ]; then SERVER_PORT=$([ "$MODE" = "prod" ] && echo 3500 || echo 3501); fi
+if [ -z "$SERVER_PORT" ]; then SERVER_PORT=$([ "$MODE" = "prod" ] && echo 3500 || echo 3505); fi
 
 echo "Using Client Port: $CLIENT_PORT, Server Port: $SERVER_PORT"
 
@@ -65,12 +65,8 @@ pkill -9 -f "vite --port $CLIENT_PORT" || true
 # Wait for ports to clear
 sleep 1
 
-# Create .env files
+# Create client .env (server reads LOOM_MODE from $ROOT_DIR/.env which is set manually)
 echo "VITE_SERVER_PORT=$SERVER_PORT" > "$ROOT_DIR/client/.env"
-echo "PORT=$SERVER_PORT" > "$ROOT_DIR/server/.env"
-
-# Force fresh session by deleting restore token
-# rm -f /home/yaniv/.config/loom/restore_token
 
 # Start Server via systemd
 echo "Starting Loom Server ($SERVER_UNIT)..."

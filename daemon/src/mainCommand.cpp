@@ -198,11 +198,17 @@ CmdResult handleResetClock(const json &) {
   return CmdResult(0, "Clock position reset (entries deleted)\n");
 }
 
+// Helper to check if a port is listening using ss (works without sudo, unlike lsof)
+static bool isPortListening(int port) {
+  string cmd = "/usr/bin/ss -tlnH sport = :" + std::to_string(port);
+  return !executeCommand(cmd.c_str()).empty();
+}
+
 CmdResult handleIsLoomActive(const json &) {
-  bool serverProdRunning = !executeCommand("/usr/bin/lsof -i :3500").empty();
-  bool serverDevRunning = !executeCommand("/usr/bin/lsof -i :3501").empty();
-  bool clientProdRunning = !executeCommand("/usr/bin/lsof -i :3004").empty();
-  bool clientDevRunning = !executeCommand("/usr/bin/lsof -i :3005").empty();
+  bool serverProdRunning = isPortListening(3500);
+  bool serverDevRunning = isPortListening(3501);
+  bool clientProdRunning = isPortListening(3004);
+  bool clientDevRunning = isPortListening(3005);
 
   std::stringstream ss;
   ss << "Loom Status:\n";

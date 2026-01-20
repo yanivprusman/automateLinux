@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=LM Studio
+Exec=/home/yaniv/lmStudio/LM-Studio-0.3.39-2-x64.AppImage --no-sandbox
+Type=Application
+Categories=Development;

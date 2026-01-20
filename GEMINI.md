@@ -58,6 +58,7 @@ The daemon is the central authority for port assignments.
 | dashboard-prod | 3006 | Dashboard frontend production |
 | dashboard-dev | 3007 | Dashboard frontend development |
 | loom-server | 3500 | Loom WebSocket stream server |
+| loom-server-dev | 3505 | Loom WebSocket stream server (Dev) |
 | dashboard-bridge | 3501 | Dashboard daemon bridge |
 
 ## Daemon Communication

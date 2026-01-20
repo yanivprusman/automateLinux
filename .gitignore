@@ -7,7 +7,7 @@ terminal/tests/output.txt
 terminal/output.txt
 terminal/tests/terminaloutput*
 *.hereDoc
-data/**
+
 build/
 tmp/
 utilities/lastChanged/lastChanged
@@ -24,3 +24,4 @@ keyBindingInsparation
 utilities/fileSize/fileSize
 /terminal/functions/extra/
 /extraApps/
+data/**

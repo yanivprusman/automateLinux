@@ -96,6 +96,9 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, {}),
     CommandSignature(COMMAND_LIST_PORTS, {}),
     CommandSignature(COMMAND_DELETE_PORT, {COMMAND_ARG_KEY}),
+    CommandSignature(COMMAND_TEST_LSOF, {COMMAND_ARG_PORT}),
+    CommandSignature(COMMAND_TEST_ECHO, {COMMAND_ARG_MESSAGE}),
+    CommandSignature(COMMAND_TEST_LSOF_SCRIPT, {COMMAND_ARG_PORT}),
     CommandSignature(COMMAND_LIST_COMMANDS, {}),
 };
 
@@ -196,10 +199,10 @@ CmdResult handleResetClock(const json &) {
 }
 
 CmdResult handleIsLoomActive(const json &) {
-  bool serverProdRunning = !executeCommand("pgrep -f 'loom-server 3500'").empty();
-  bool serverDevRunning = !executeCommand("pgrep -f 'loom-server 3501'").empty();
-  bool clientProdRunning = !executeCommand("pgrep -f 'vite --port 3004'").empty();
-  bool clientDevRunning = !executeCommand("pgrep -f 'vite --port 3005'").empty();
+  bool serverProdRunning = !executeCommand("/usr/bin/lsof -i :3500").empty();
+  bool serverDevRunning = !executeCommand("/usr/bin/lsof -i :3501").empty();
+  bool clientProdRunning = !executeCommand("/usr/bin/lsof -i :3004").empty();
+  bool clientDevRunning = !executeCommand("/usr/bin/lsof -i :3005").empty();
 
   std::stringstream ss;
   ss << "Loom Status:\n";
@@ -246,7 +249,7 @@ CmdResult handleRestartLoom(const json &command) {
   // We use `nohup` and `&` to ensure it continues running in background.
   string cmd =
       "/home/yaniv/coding/automateLinux/daemon/scripts/restart_loom.sh --" +
-      mode + " > /dev/null 2>&1 &";
+      mode + " &";
 
   int rc = std::system(cmd.c_str());
   if (rc != 0) {
@@ -393,6 +396,27 @@ CmdResult handleListPorts(const json &) {
   }
 
   return CmdResult(0, ss.str());
+}
+
+CmdResult handleTestLsof(const json &command) {
+  int port = command[COMMAND_ARG_PORT].get<int>();
+  string lsofCmd = "/usr/bin/lsof -i :" + to_string(port) + " 2>&1";
+  string output = executeCommand(lsofCmd.c_str());
+  return CmdResult(0, output + "\n");
+}
+
+CmdResult handleTestEcho(const json &command) {
+  string message = command[COMMAND_ARG_MESSAGE].get<string>();
+  string echoCmd = "echo " + message;
+  string output = executeCommand(echoCmd.c_str());
+  return CmdResult(0, output + "\n");
+}
+
+CmdResult handleTestLsofScript(const json &command) {
+  string port = command[COMMAND_ARG_PORT].get<string>();
+  string scriptPath = "/home/yaniv/coding/automateLinux/daemon/scripts/test_lsof.sh " + port;
+  string output = executeCommand(scriptPath.c_str());
+  return CmdResult(0, output + "\n");
 }
 
 CmdResult handleListCommands(const json &) {
@@ -791,13 +815,13 @@ CmdResult handleShellSignal(const json &command) {
 }
 
 CmdResult handleDisableKeyboard(const json &) {
-  g_keyboardEnabled = false;
-  return KeyboardManager::setKeyboard(false);
+  // DISABLED: Keyboard grab feature removed - using separate keybinding project
+  return CmdResult(0, "Keyboard grab feature disabled\n");
 }
 
 CmdResult handleEnableKeyboard(const json &) {
-  g_keyboardEnabled = true;
-  return KeyboardManager::setKeyboard(true);
+  // DISABLED: Keyboard grab feature removed - using separate keybinding project
+  return CmdResult(0, "Keyboard grab feature disabled\n");
 }
 
 CmdResult handleGetMacros(const json &) {
@@ -1511,6 +1535,9 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, handlePublicTransportationOpenApp},
     {COMMAND_LIST_PORTS, handleListPorts},
     {COMMAND_DELETE_PORT, handleDeletePort},
+    {COMMAND_TEST_LSOF, handleTestLsof},
+    {COMMAND_TEST_ECHO, handleTestEcho},
+    {COMMAND_TEST_LSOF_SCRIPT, handleTestLsofScript},
     {COMMAND_LIST_COMMANDS, handleListCommands},
 };
 

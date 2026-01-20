@@ -103,12 +103,18 @@
 #define COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP "publicTransportationOpenApp"
 #define COMMAND_LIST_PORTS "listPorts"
 #define COMMAND_DELETE_PORT "deletePort"
+#define COMMAND_TEST_LSOF "testLsof"
+#define COMMAND_TEST_ECHO "testEcho"
+#define COMMAND_WRITE_TEST_LOG "writeTestLog"
+#define COMMAND_TEST_LSOF_SCRIPT "testLsofScript"
 
 #define COMMAND_LIST_COMMANDS "listCommands"
 #define COMMAND_ARG_DEVICE_PATH_REGEX "devicePathRegex"
 #define COMMAND_ARG_IS_KEYBOARD "isKeyboard"
 #define COMMAND_ARG_ACTION "action"
 #define COMMAND_ARG_STRING "string"
+#define COMMAND_ARG_PORT "port"
+#define COMMAND_ARG_MESSAGE "message"
 
 #define COMMAND_ARG_TYPE "type"
 #define COMMAND_ARG_CODE "code"

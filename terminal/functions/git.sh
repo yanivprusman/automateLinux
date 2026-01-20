@@ -245,3 +245,39 @@ addSafeGitDir() {
     sudo git config --system --add safe.directory "$(pwd)"
 }
 
+gitsAll() {
+    local start_dir="${1:-.}"
+    local found_any=false
+
+    # Find all .git directories and process their parent folders
+    while IFS= read -r gitdir; do
+        local repo_dir="${gitdir%/.git}"
+        local repo_name="${repo_dir#$start_dir/}"
+        [ "$repo_dir" = "$start_dir" ] && repo_name="$(basename "$repo_dir")"
+
+        # Get status
+        local status_output
+        status_output=$(git -C "$repo_dir" status -sb 2>/dev/null)
+
+        # Check if there are changes (more than just the branch line)
+        local line_count=$(echo "$status_output" | wc -l)
+        local has_changes=false
+        [ "$line_count" -gt 1 ] && has_changes=true
+
+        # Print header with color based on status
+        if $has_changes; then
+            echo -e "${YELLOW}━━━ $repo_name ━━━${NC}"
+        else
+            echo -e "${GREEN}━━━ $repo_name ━━━${NC}"
+        fi
+        echo "$status_output"
+        echo
+        found_any=true
+    done < <(find "$start_dir" -name ".git" -type d 2>/dev/null | sort)
+
+    if ! $found_any; then
+        echo "No git repositories found under $(realpath "$start_dir")"
+    fi
+}
+export -f gitsAll
+

@@ -1,5 +1,5 @@
 #!/bin/bash
-exec 1>/tmp/restart_loom_debug.log 2>&1
+exec 1>/home/yaniv/coding/automateLinux/daemon/scripts/restart_loom_debug.log 2>&1
 echo "Starting restart_loom.sh at $(date)"
 
 # Parse arguments: --prod (default) or --dev

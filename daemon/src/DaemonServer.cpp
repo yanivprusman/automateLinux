@@ -195,29 +195,9 @@ int handle_client_data(int client_fd) {
   return 0;
 }
 
-// Signal handler: ungrab devices immediately, then set flag for clean shutdown
-// CRITICAL: Only use async-signal-safe functions here!
+// Signal handler for clean shutdown
 void signal_handler(int sig) {
   if (sig == SIGTERM || sig == SIGINT) {
-    // Debug: write marker file (write() is async-signal-safe)
-    int fd = open("/tmp/daemon_signal_received", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (fd >= 0) {
-      write(fd, "SIGTERM\n", 8);
-      close(fd);
-    }
-
-    // Ungrab devices immediately to release keyboard/mouse control
-    // This is critical - if we don't ungrab, user loses input!
-    // Use signal-safe version (no logging, no memory allocation)
-    KeyboardManager::mapper.ungrabDevicesSignalSafe();
-
-    // Debug: write another marker after ungrab
-    fd = open("/tmp/daemon_ungrab_done", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (fd >= 0) {
-      write(fd, "UNGRAB\n", 7);
-      close(fd);
-    }
-
     running = 0;
   }
 }
@@ -265,10 +245,10 @@ int initialize_daemon() {
     return rc;
   }
 
-  // Initialize keyboard to default enabled state on daemon startup
-  if (KeyboardManager::setKeyboard(g_keyboardEnabled).status != 0) {
-    logToFile("ERROR: Failed to initialize keyboard mapping", LOG_CORE);
-  }
+  // DISABLED: Keyboard grab feature removed - using separate keybinding project
+  // if (KeyboardManager::setKeyboard(g_keyboardEnabled).status != 0) {
+  //   logToFile("ERROR: Failed to initialize keyboard mapping", LOG_CORE);
+  // }
 
   // Start Loom on daemon startup
   string restartLoomScript =

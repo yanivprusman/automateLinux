@@ -202,17 +202,24 @@ std::string httpGet(const std::string &url) {
 }
 
 std::string executeCommand(const char *cmd) {
+  logToFile("[executeCommand] Executing: " + std::string(cmd), LOG_CORE);
   std::array<char, 256> buffer;
   std::string result;
   FILE *pipe = popen(cmd, "r");
-  if (!pipe)
+  if (!pipe) {
+    logToFile("[executeCommand] ERROR: popen failed for command: " + std::string(cmd), LOG_CORE);
     return "";
+  }
   while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
     result += buffer.data();
   }
-  pclose(pipe);
+  int pclose_status = pclose(pipe);
+  if (pclose_status != 0) {
+      logToFile("[executeCommand] WARNING: Command '" + std::string(cmd) + "' exited with status " + std::to_string(pclose_status), LOG_CORE);
+  }
   if (!result.empty() && result.back() == '\n')
     result.pop_back();
+  logToFile("[executeCommand] Output for '" + std::string(cmd) + "': '" + result + "'", LOG_CORE);
   return result;
 }
 

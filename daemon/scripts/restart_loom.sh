@@ -63,7 +63,31 @@ pkill -9 -f "loom-server $SERVER_PORT" || true
 pkill -9 -f "vite --port $CLIENT_PORT" || true
 
 # Wait for ports to clear
-sleep 1
+wait_for_port_release() {
+    local port=$1
+    local max_retries=20
+    local retry=0
+    
+    echo "Waiting for port $port to clear..."
+    while /usr/bin/lsof -i :$port >/dev/null 2>&1; do
+        if [ $retry -ge $max_retries ]; then
+            echo "ERROR: Port $port is still stuck after 10 seconds. Giving up."
+            break
+        fi
+        
+        # Aggressively kill after 2.5 seconds (5 retries)
+        if [ $retry -ge 5 ]; then
+             echo "Port $port still busy, attempting force kill..."
+             fuser -k -9 $port/tcp 2>/dev/null || true
+        fi
+        
+        sleep 0.5
+        retry=$((retry+1))
+    done
+}
+
+wait_for_port_release "$SERVER_PORT"
+wait_for_port_release "$CLIENT_PORT"
 
 # Create client .env (server reads LOOM_MODE from $ROOT_DIR/.env which is set manually)
 echo "VITE_SERVER_PORT=$SERVER_PORT" > "$ROOT_DIR/client/.env"

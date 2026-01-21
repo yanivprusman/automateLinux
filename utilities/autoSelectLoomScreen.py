@@ -71,9 +71,9 @@ def main():
     found = False
     window_id = None
     
-    # Retry loop: wait up to 15 seconds
+    # Retry loop: wait up to 45 seconds
     start_time = time.time()
-    while time.time() - start_time < 15:
+    while time.time() - start_time < 45:
         resp = send_command({"command": "listWindows"})
         print(f"Raw daemon response: {resp}")
         if resp:
@@ -188,10 +188,30 @@ def main():
          time.sleep(0.5)
 
     # 2. Try simple trigger (Space + Enter)
-    print("  Attempting simple trigger...")
+    # 2. Try robust trigger (Select -> Tab -> Tab -> Enter)
+    print("  Attempting robust trigger...")
+    # Select screen
     simulate_key_slow(KEY_MAP["SPACE"])
     time.sleep(0.5)
-    simulate_key_slow(KEY_MAP["ENTER"])
+    
+    # Tab to 'Share' (Usually 1 or 2 tabs from grid)
+    # Try 1 tab then Enter
+    # simulate_key_slow(KEY_MAP["TAB"])
+    # time.sleep(0.5)
+    # simulate_key_slow(KEY_MAP["ENTER"])
+    
+    # Actually, let's just spam TAB ENTER a few times
+    # Strategy: Select, Tab, Enter, Tab, Enter...
+    
+    print("  Typing sequence: SPACE, TAB, TAB, ENTER...")
+    simulate_key_slow(KEY_MAP["SPACE"]) # Ensure selected
+    time.sleep(0.2)
+    simulate_key_slow(KEY_MAP["TAB"])   # Move focus
+    time.sleep(0.2)
+    simulate_key_slow(KEY_MAP["TAB"])   # Move focus (likely to Share)
+    time.sleep(0.2)
+    simulate_key_slow(KEY_MAP["ENTER"]) # Click
+
     
     # 3. Wait for user interaction
     print("  Waiting for window to close (Manual or Auto)...")

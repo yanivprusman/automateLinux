@@ -19,10 +19,12 @@ export XDG_RUNTIME_DIR="/run/user/1000"
 # Stop systemd services based on mode
 echo "Stopping systemd services..."
 if [ "$MODE" = "prod" ] || [ "$MODE" = "all" ]; then
-    systemctl --user stop loom-server-prod loom-client-prod 2>/dev/null || true
+    systemctl --user stop loom-server-prod loom-client-prod loom-autoselect-prod 2>/dev/null || true
+    systemctl --user reset-failed loom-server-prod loom-client-prod loom-autoselect-prod 2>/dev/null || true
 fi
 if [ "$MODE" = "dev" ] || [ "$MODE" = "all" ]; then
-    systemctl --user stop loom-server-dev loom-client-dev 2>/dev/null || true
+    systemctl --user stop loom-server-dev loom-client-dev loom-autoselect-dev 2>/dev/null || true
+    systemctl --user reset-failed loom-server-dev loom-client-dev loom-autoselect-dev 2>/dev/null || true
 fi
 
 # Kill by process name (in case manual start)

@@ -7,6 +7,7 @@ firstTime(){
     # export AUTOMATE_LINUX_DAEMON_FD_OUT=${DAEMON_COPROC[0]}
     cd $(daemon send openedTty --tty $AUTOMATE_LINUX_TTY_NUMBER )
     mesg y
+    complete -F _to_completions to
 }
 firstTime
 unset firstTime

@@ -273,26 +273,25 @@ bool PortalManager::setupPortal() {
     return false;
   m_session_handle = g_session_handle;
 
-  // 2. SelectSources (Skip if restored)
-  if (!used_restore) {
-    g_portal_step = 2;
-    char token2[32];
-    snprintf(token2, sizeof(token2), "ph_s%d", rand() % 1000);
-    GVariantBuilder b2;
-    g_variant_builder_init(&b2, G_VARIANT_TYPE("a{sv}"));
-    g_variant_builder_add(&b2, "{sv}", "handle_token",
-                          g_variant_new_string(token2));
-    g_variant_builder_add(&b2, "{sv}", "types",
-                          g_variant_new_uint32(1)); // 1 = Screen?
-    g_variant_builder_add(&b2, "{sv}", "persist_mode",
-                          g_variant_new_uint32(2)); // Persist
+  // 2. SelectSources
+  // ALWAYS required, even for restored sessions (restored token acts as hint)
+  g_portal_step = 2;
+  char token2[32];
+  snprintf(token2, sizeof(token2), "ph_s%d", rand() % 1000);
+  GVariantBuilder b2;
+  g_variant_builder_init(&b2, G_VARIANT_TYPE("a{sv}"));
+  g_variant_builder_add(&b2, "{sv}", "handle_token",
+                        g_variant_new_string(token2));
+  g_variant_builder_add(&b2, "{sv}", "types",
+                        g_variant_new_uint32(1)); // 1 = Screen?
+  g_variant_builder_add(&b2, "{sv}", "persist_mode",
+                        g_variant_new_uint32(2)); // Persist
 
-    if (!call_portal_step("SelectSources",
-                          g_variant_new("(o@a{sv})", g_session_handle.c_str(),
-                                        g_variant_builder_end(&b2)),
-                          token2)) {
-      return false;
-    }
+  if (!call_portal_step("SelectSources",
+                        g_variant_new("(o@a{sv})", g_session_handle.c_str(),
+                                      g_variant_builder_end(&b2)),
+                        token2)) {
+    return false;
   }
 
   // 3. Start

@@ -444,12 +444,12 @@ CmdResult handleListPorts(const json &) {
       } else if (key == "cad-dev") {
         repoPath = "/home/yaniv/coding/automateLinux/extraApps/cad";
       } else if (key == "cad-prod") {
-        repoPath = "/home/yaniv/coding/prod/cad-prod";
+        repoPath = "/home/yaniv/coding/prod/cad";
       } else if (key == "pt-dev") {
         repoPath =
             "/home/yaniv/coding/automateLinux/extraApps/publicTransportation";
       } else if (key == "pt-prod") {
-        repoPath = "/home/yaniv/coding/prod/publicTransportation-prod";
+        repoPath = "/home/yaniv/coding/prod/publicTransportation";
       }
 
       std::string versionInfo = "";

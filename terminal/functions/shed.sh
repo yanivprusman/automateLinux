@@ -47,9 +47,4 @@ shedSwitch(){
 }
 export -f shedSwitch
 
-shedProdSwitch(){
-    cd ~/coding/cad-prod
-    git pull origin main  
-    ./build.sh            
-    cd web && npm run build && pm2 restart shed-prod
-}
+

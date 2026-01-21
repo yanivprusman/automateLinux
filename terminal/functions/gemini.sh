@@ -24,3 +24,14 @@ geminiUpsertSession() {
     export "$KEY=$VALUE"
 }
 export -f geminiUpsertSession
+
+geminiCleanBrain() {
+    local target_dir="${HOME}/.gemini/antigravity/brain"
+    if [ -d "$target_dir" ]; then
+        rm -rf "${target_dir:?}"/*
+        echo "Cleaned ${target_dir}"
+    else
+        echo "Directory ${target_dir} does not exist."
+    fi
+}
+export -f geminiCleanBrain

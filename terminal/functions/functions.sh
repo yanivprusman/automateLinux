@@ -23,6 +23,7 @@
 . $(theRealPath cad.sh)
 . $(theRealPath windowSwitcher.sh)
 . $(theRealPath to.sh)
+. $(theRealPath deploy.sh)
 . $(theRealPath claude.sh)
 # extra
 if [ -f "$(theRealPath extra/extra.sh)" ]; then

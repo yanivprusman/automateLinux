@@ -41,15 +41,18 @@ to() {
 
 _to_completions() {
     local cur="${COMP_WORDS[COMP_CWORD]}"
-    local extra_apps_dir="${AUTOMATE_LINUX_DIR}/extraApps"
+    local extra_apps_dir="${AUTOMATE_LINUX_DIR}extraApps"
 
     # Build list of completions
     local completions="-prod automateLinux"
     if [[ -d "$extra_apps_dir" ]]; then
-        completions="$completions $(ls -1 "$extra_apps_dir" 2>/dev/null | tr '\n' ' ')"
+        for app in "${extra_apps_dir}"/*/; do
+            if [[ -d "$app" ]]; then
+                app_name=$(basename "$app")
+                completions="$completions $app_name"
+            fi
+        done
     fi
 
     COMPREPLY=($(compgen -W "$completions" -- "$cur"))
 }
-
-complete -F _to_completions to

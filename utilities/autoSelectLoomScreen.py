@@ -18,6 +18,8 @@ KEY_MAP = {
     "DOWN": 108,
     "ESC": 1,
     "LEFTSHIFT": 42,
+    "LEFTALT": 56,
+    "S": 31,
 }
 
 def send_command(cmd_obj):
@@ -118,31 +120,89 @@ def main():
         # Initial sleep for GNOME animations
         time.sleep(1.0)
 
-    print("Sending selection keys...")
+    print("Starting robust key sequence...")
     
-    # We'll split the sequence: TAB TAB ENTER (Select source) then TAB TAB ENTER (Confirm)
+    # robust_sequence = [
+    #     ("TAB", 0.2), # Focus into the area
+    #     ("UP", 0.1),  ("UP", 0.1),  ("UP", 0.1), # Reset to top
+    #     ("LEFT", 0.1), ("LEFT", 0.1), ("LEFT", 0.1), # Reset to left
+    #     ("SPACE", 0.2), # Select first item
+    #     ("ENTER", 0.2), # Confirm selection (sometimes needed)
+    #     ("TAB", 0.2), # Move to Cancel
+    #     ("TAB", 0.2), # Move to Share
+    #     ("ENTER", 0.2) # Click Share
+    # ]
     
-    def process_sequence(keys, label):
-        print(f"--- Sequence: {label} ---")
-        for key_name in keys:
-            key_upper = key_name.upper()
-            if key_upper in KEY_MAP:
-                print(f"Processing {key_upper}")
-                simulate_key(KEY_MAP[key_upper])
-                time.sleep(0.12) # Increased from 0.08 for reliability
-            else:
-                print(f"WARNING: Unknown key '{key_name}', skipping.")
+    # Step 1: Ensure focus is on the content area
+    print("Step 1: Focus content area (TAB)")
+    simulate_key(KEY_MAP["TAB"])
+    time.sleep(0.3)
 
-    # Part 1: Select source (usually 3 tabs to get to the list, or 2)
-    # The default sequence is: TAB, TAB, ENTER, TAB, TAB, ENTER
-    process_sequence(sequence_list[:3], "Source Selection")
+    # Step 2: Reset selection to top-left (Screen 1)
+    # Sending multiple UP/LEFTs safely moves to the first item even if already there
+    print("Step 2: Reset selection to top-left")
+    for _ in range(3):
+        simulate_key(KEY_MAP["UP"])
+        time.sleep(0.1)
+    for _ in range(3):
+        simulate_key(KEY_MAP["LEFT"])
+        time.sleep(0.1)
     
-    # Gap for UI transition
-    time.sleep(0.5) # Increased from 0.3 for reliability
+    # Step 3: Select the item
+    print("Step 3: Select item (SPACE + ENTER)")
+    simulate_key(KEY_MAP["SPACE"])
+    time.sleep(0.3)
+    # Some versions might default to 'Share' button disabled until selection is confirmed?
+    # Or SPACE just selects it. Let's add ENTER to be safe, though it might trigger 'Share' if already focused?
+    # Usually SPACE toggles selection. 
     
-    # Part 2: Confirm
-    process_sequence(sequence_list[3:], "Confirmation")
+    # Step 4: Kitchen Sink Strategy
+    # We will try multiple triggers in sequence until one works.
+    print("Step 4: triggering Share (Kitchen Sink)")
+    
+    # Configure slower key press
+    def simulate_key_slow(code):
+         send_command({"command": "simulateInput", "type": 1, "code": code, "value": 1})
+         time.sleep(0.15) # Hold for 150ms
+         send_command({"command": "simulateInput", "type": 1, "code": code, "value": 0})
+         time.sleep(0.15)
 
+    def check_closed():
+        resp = send_command({"command": "listWindows"})
+        if resp:
+            try:
+                wins = json.loads(resp)
+                for w in wins:
+                    if w['id'] == window_id:
+                        return False
+            except: 
+                pass
+        return True
+
+    # Step 4: Polite Helper (Try once, then wait for user)
+    print("Step 4: Polite Helper")
+    
+    # 1. Reset focus
+    if window_id:
+         send_command({"command": "activateWindow", "windowId": str(window_id)})
+         time.sleep(0.5)
+
+    # 2. Try simple trigger (Space + Enter)
+    print("  Attempting simple trigger...")
+    simulate_key_slow(KEY_MAP["SPACE"])
+    time.sleep(0.5)
+    simulate_key_slow(KEY_MAP["ENTER"])
+    
+    # 3. Wait for user interaction
+    print("  Waiting for window to close (Manual or Auto)...")
+    for i in range(10):
+        time.sleep(1.0)
+        if check_closed():
+            print("  Window closed! Success.")
+            return
+        print("  Window still open...")
+
+    print("WARNING: Window remained open.")
     print("Done.")
 
 if __name__ == "__main__":

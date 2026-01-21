@@ -107,7 +107,8 @@ const size_t COMMAND_REGISTRY_SIZE =
 
 static int clientSocket = -1;
 unsigned int shouldLog = LOG_ALL; // Global state for logging
-bool g_keyboardEnabled = false;   // Global state for keyboard enable/disable (disabled by default for safety)
+bool g_keyboardEnabled = false;   // Global state for keyboard enable/disable
+                                  // (disabled by default for safety)
 
 // Global state for active tab URL (set by Chrome extension)
 static std::mutex g_activeTabUrlMutex;
@@ -198,7 +199,8 @@ CmdResult handleResetClock(const json &) {
   return CmdResult(0, "Clock position reset (entries deleted)\n");
 }
 
-// Helper to check if a port is listening using ss (works without sudo, unlike lsof)
+// Helper to check if a port is listening using ss (works without sudo, unlike
+// lsof)
 static bool isPortListening(int port) {
   string cmd = "/usr/bin/ss -tlnH sport = :" + std::to_string(port);
   return !executeCommand(cmd.c_str()).empty();
@@ -212,10 +214,14 @@ CmdResult handleIsLoomActive(const json &) {
 
   std::stringstream ss;
   ss << "Loom Status:\n";
-  ss << "  Server (Prod:3500): " << (serverProdRunning ? "RUNNING" : "NOT RUNNING") << "\n";
-  ss << "  Server (Dev:3501): " << (serverDevRunning ? "RUNNING" : "NOT RUNNING") << "\n";
-  ss << "  Client (Prod:3004): " << (clientProdRunning ? "RUNNING" : "NOT RUNNING") << "\n";
-  ss << "  Client (Dev:3005): " << (clientDevRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Server (Prod:3500): "
+     << (serverProdRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Server (Dev:3501): "
+     << (serverDevRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Client (Prod:3004): "
+     << (clientProdRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Client (Dev:3005): "
+     << (clientDevRunning ? "RUNNING" : "NOT RUNNING") << "\n";
 
   return CmdResult(0, ss.str());
 }
@@ -227,8 +233,9 @@ CmdResult handleStopLoom(const json &command) {
     mode = command["mode"].get<string>();
   }
 
-  string cmd = "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh --" +
-               mode + " > /dev/null 2>&1";
+  string cmd =
+      "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh --" + mode +
+      " > /dev/null 2>&1";
 
   int rc = std::system(cmd.c_str());
   if (rc != 0) {
@@ -247,8 +254,8 @@ CmdResult handleRestartLoom(const json &command) {
 
   // 1. First run the stop script synchronously to ensure clean state
   string stopCmd =
-      "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh --" +
-      mode + " > /dev/null 2>&1";
+      "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh --" + mode +
+      " > /dev/null 2>&1";
   std::system(stopCmd.c_str());
 
   // 2. Now launch the restart script
@@ -373,6 +380,26 @@ CmdResult handlePublicTransportationOpenApp(const json &command) {
   return CmdResult(0, "Opened " + url + " in Chrome\n");
 }
 
+std::string getGitVersion(const std::string &path) {
+  std::string cmdHash = "git -C " + path + " rev-parse --short HEAD";
+  std::string hash = executeCommand(cmdHash.c_str());
+
+  if (hash.empty()) {
+    return "N/A";
+  }
+
+  // Clean up newlines
+  if (!hash.empty() && hash.back() == '\n')
+    hash.pop_back();
+
+  std::string cmdMsg = "git -C " + path + " log -1 --format=\"%s\"";
+  std::string msg = executeCommand(cmdMsg.c_str());
+  if (!msg.empty() && msg.back() == '\n')
+    msg.pop_back();
+
+  return hash + " - " + msg;
+}
+
 CmdResult handleListPorts(const json &) {
   auto allSettings = SettingsTable::getAllSettings();
   std::vector<std::pair<std::string, int>> ports;
@@ -393,11 +420,45 @@ CmdResult handleListPorts(const json &) {
 
   std::stringstream ss;
   ss << "--- Registered Port Mappings ---\n";
+  ss << std::left << std::setw(20) << "Key" << std::setw(8) << "Port"
+     << "Version" << "\n";
+  ss << std::string(80, '-') << "\n";
+
   if (ports.empty()) {
     ss << "  (No ports registered)\n";
   } else {
     for (const auto &p : ports) {
-      ss << "  " << p.first << ": " << p.second << "\n";
+      std::string key = p.first;
+      int port = p.second;
+      std::string repoPath = "";
+
+      // Determine repository path based on key
+      if (key == "dashboard-dev" || key == "dashboard-prod" ||
+          key == "dashboard-bridge") {
+        repoPath = "/home/yaniv/coding/automateLinux";
+      } else if (key == "loom-dev" || key == "loom-server-dev" ||
+                 key == "loom-client-dev") {
+        repoPath = "/home/yaniv/coding/automateLinux/extraApps/loom";
+      } else if (key == "loom-prod" || key == "loom-server") {
+        repoPath = "/home/yaniv/coding/prod/loom";
+      } else if (key == "cad-dev") {
+        repoPath = "/home/yaniv/coding/automateLinux/extraApps/cad";
+      } else if (key == "cad-prod") {
+        repoPath = "/home/yaniv/coding/prod/cad-prod";
+      } else if (key == "pt-dev") {
+        repoPath =
+            "/home/yaniv/coding/automateLinux/extraApps/publicTransportation";
+      } else if (key == "pt-prod") {
+        repoPath = "/home/yaniv/coding/prod/publicTransportation-prod";
+      }
+
+      std::string versionInfo = "";
+      if (!repoPath.empty()) {
+        versionInfo = getGitVersion(repoPath);
+      }
+
+      ss << std::left << std::setw(20) << key << std::setw(8) << port
+         << versionInfo << "\n";
     }
   }
 
@@ -420,7 +481,8 @@ CmdResult handleTestEcho(const json &command) {
 
 CmdResult handleTestLsofScript(const json &command) {
   string port = command[COMMAND_ARG_PORT].get<string>();
-  string scriptPath = "/home/yaniv/coding/automateLinux/daemon/scripts/test_lsof.sh " + port;
+  string scriptPath =
+      "/home/yaniv/coding/automateLinux/daemon/scripts/test_lsof.sh " + port;
   string output = executeCommand(scriptPath.c_str());
   return CmdResult(0, output + "\n");
 }
@@ -1403,14 +1465,16 @@ CmdResult handleSimulateInput(const json &command) {
   static std::chrono::steady_clock::time_point lastEventTime;
   static int eventCount = 0;
   auto now = std::chrono::steady_clock::now();
-  auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastEventTime).count();
+  auto elapsed =
+      std::chrono::duration_cast<std::chrono::milliseconds>(now - lastEventTime)
+          .count();
 
-  if (elapsed < 10) {  // Within 10ms window
+  if (elapsed < 10) { // Within 10ms window
     eventCount++;
-    if (eventCount > 50) {  // More than 50 events in 10ms = too fast
+    if (eventCount > 50) { // More than 50 events in 10ms = too fast
       // Skip non-essential events (mouse move), but always allow key events
       if (type == EV_ABS || type == EV_REL) {
-        return CmdResult(0, "");  // Rate limited
+        return CmdResult(0, ""); // Rate limited
       }
     }
   } else {

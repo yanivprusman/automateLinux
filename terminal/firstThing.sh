@@ -1,5 +1,20 @@
-. theRealPath
-export AUTOMATE_LINUX_DIR="$(theRealPath ../)"
+if [ -z "$AUTOMATE_LINUX_DIR" ]; then
+    # Calculate root dir relative to this script (terminal/firstThing.sh)
+    # This script is at $ROOT/terminal/firstThing.sh, so we go up one level.
+    if [ -n "${BASH_SOURCE[0]}" ]; then
+        AUTOMATE_LINUX_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" && pwd)/"
+    else
+        # Fallback if BASH_SOURCE is not available (rare)
+        AUTOMATE_LINUX_DIR="$HOME/coding/automateLinux/"
+    fi
+fi
+
+# Try to source theRealPath if available, but don't fail if not found immediately
+if command -v theRealPath >/dev/null 2>&1; then
+    . theRealPath
+elif [ -f "${AUTOMATE_LINUX_DIR}terminal/theRealPath.sh" ]; then
+    . "${AUTOMATE_LINUX_DIR}terminal/theRealPath.sh"
+fi
 # export AUTOMATE_LINUX_DIR=/home/yaniv/coding/automateLinux/
 export AUTOMATE_LINUX_TERMINAL_DIR="${AUTOMATE_LINUX_DIR}terminal/"
 export AUTOMATE_LINUX_ENV_FILE="${AUTOMATE_LINUX_TERMINAL_DIR}env.sh"

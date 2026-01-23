@@ -1,8 +1,27 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
-if [ -f /home/yaniv/coding/automateLinux/terminal/firstThing.sh ]; then
-    . /home/yaniv/coding/automateLinux/terminal/firstThing.sh
-    else
-    echo "No firstThing.sh file found at /home/yaniv/coding/automateLinux/terminal/firstThing.sh"
+# Attempt to find installation directory
+AUTOMATE_LINUX_BASE_DIR=""
+
+# Method 1: Ask the daemon (if installed in PATH)
+if command -v daemon >/dev/null 2>&1; then
+    AUTOMATE_LINUX_BASE_DIR=$(daemon send getDir --dirName base 2>/dev/null | tr -d '\n\r')
+fi
+
+# Method 2: Resolve based on this file's location (if symlinked)
+if [ -z "$AUTOMATE_LINUX_BASE_DIR" ] && [ -n "${BASH_SOURCE[0]}" ]; then
+    if command -v realpath >/dev/null 2>&1; then
+        # This file is usually terminal/bashrc, so go up 2 levels
+        AUTOMATE_LINUX_BASE_DIR=$(dirname $(dirname "$(realpath "${BASH_SOURCE[0]}")"))
+    fi
+fi
+
+
+
+if [ -f "$AUTOMATE_LINUX_BASE_DIR/terminal/firstThing.sh" ]; then
+    export AUTOMATE_LINUX_DIR="$AUTOMATE_LINUX_BASE_DIR/"
+    . "$AUTOMATE_LINUX_BASE_DIR/terminal/firstThing.sh"
+else
+    echo "No firstThing.sh file found at $AUTOMATE_LINUX_BASE_DIR/terminal/firstThing.sh"
 fi
 
 # If not running interactively, don't do anything
@@ -94,8 +113,8 @@ fi
 
 # Unset NoMachine LD_PRELOAD
 unset LD_PRELOAD
-if [ "$(whoami)" != "yaniv" ] && [ -f /home/yaniv/coding/automateLinux/terminal/functions/user.sh ]; then
-    . /home/yaniv/coding/automateLinux/terminal/functions/user.sh
+if [ -f "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}user.sh" ]; then
+    . "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}user.sh"
     _tuMountOverlays "$(whoami)"
 fi
 

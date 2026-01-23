@@ -1,5 +1,33 @@
 #!/bin/bash
 LOG_DIR="${AUTOMATE_LINUX_DATA_DIR:-/home/yaniv/coding/automateLinux/data}"
+# Check for Primary User Configuration if running as root
+PRIMARY_USER_FILE="${AUTOMATE_LINUX_DIR:-/opt/automateLinux}/config/primary_user.env"
+if [ "$(id -u)" -eq 0 ] && [ -f "$PRIMARY_USER_FILE" ]; then
+    # We are root, so we need to switch to the primary user for session operations
+    TARGET_USER=$(cat "$PRIMARY_USER_FILE")
+    TARGET_UID=$(id -u "$TARGET_USER")
+    
+    # Export critical session variables for the user
+    # We try to find the user's running session bus
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$TARGET_UID/bus"
+    export XDG_RUNTIME_DIR="/run/user/$TARGET_UID"
+    
+    echo "Running as root. Switching context to user: $TARGET_USER (UID: $TARGET_UID)"
+    
+    # Define a helper function to run commands as the target user
+    run_as_user() {
+        runuser -u "$TARGET_USER" -- "$@"
+    }
+else
+    # We are already the user or no config found
+    TARGET_USER=$(whoami)
+    echo "Running as user: $TARGET_USER"
+    
+    run_as_user() {
+        "$@"
+    }
+fi
+
 mkdir -p "$LOG_DIR"
 exec 1>"$LOG_DIR/restart_loom_debug.log" 2>&1
 echo "Starting restart_loom.sh at $(date)"

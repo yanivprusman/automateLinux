@@ -127,7 +127,7 @@ int setup_socket() {
     return 1;
   }
 
-  chmod(socketPath.c_str(), 0660);
+  chmod(socketPath.c_str(), 0666);
   chown(socketPath.c_str(), getuid(), getgid());
   cerr << "Socket listening on: " << socketPath << endl;
   return 0;
@@ -257,18 +257,21 @@ int initialize_daemon() {
   string cmdBase =
       "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; " +
       restartLoomScript;
-  
+
   string cmdProd = cmdBase + " --prod > /dev/null 2>&1 &";
   string cmdDev = cmdBase + " --dev > /dev/null 2>&1 &";
-  
+
   int prodRc = system(cmdProd.c_str());
   int devRc = system(cmdDev.c_str());
-  
+
   if (prodRc != 0 || devRc != 0) {
-    logToFile("WARNING: Failed to start Loom (Prod RC=" + std::to_string(prodRc) + 
-              ", Dev RC=" + std::to_string(devRc) + ")", LOG_CORE);
+    logToFile(
+        "WARNING: Failed to start Loom (Prod RC=" + std::to_string(prodRc) +
+            ", Dev RC=" + std::to_string(devRc) + ")",
+        LOG_CORE);
   } else {
-    logToFile("Loom startup scripts (prod & dev) executed as user yaniv", LOG_CORE);
+    logToFile("Loom startup scripts (prod & dev) executed as user yaniv",
+              LOG_CORE);
   }
 
   // Start Dashboard

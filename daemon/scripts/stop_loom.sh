@@ -13,18 +13,30 @@ for arg in "$@"; do
 done
 echo "Mode: $MODE"
 
-export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/1000/bus"
-export XDG_RUNTIME_DIR="/run/user/1000"
+# Check for Primary User Configuration if running as root
+PRIMARY_USER_FILE="${AUTOMATE_LINUX_DIR:-/opt/automateLinux}/config/primary_user.env"
+if [ "$(id -u)" -eq 0 ] && [ -f "$PRIMARY_USER_FILE" ]; then
+    TARGET_USER=$(cat "$PRIMARY_USER_FILE")
+    TARGET_UID=$(id -u "$TARGET_USER")
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$TARGET_UID/bus"
+    export XDG_RUNTIME_DIR="/run/user/$TARGET_UID"
+    echo "Running as root. Switching context to user: $TARGET_USER"
+    run_as_user() { runuser -u "$TARGET_USER" -- "$@"; }
+else
+    TARGET_USER=$(whoami)
+    echo "Running as user: $TARGET_USER"
+    run_as_user() { "$@"; }
+fi
 
 # Stop systemd services based on mode
 echo "Stopping systemd services..."
 if [ "$MODE" = "prod" ] || [ "$MODE" = "all" ]; then
-    systemctl --user stop loom-server-prod loom-client-prod loom-autoselect-prod 2>/dev/null || true
-    systemctl --user reset-failed loom-server-prod loom-client-prod loom-autoselect-prod 2>/dev/null || true
+    run_as_user systemctl --user stop loom-server-prod loom-client-prod loom-autoselect-prod 2>/dev/null || true
+    run_as_user systemctl --user reset-failed loom-server-prod loom-client-prod loom-autoselect-prod 2>/dev/null || true
 fi
 if [ "$MODE" = "dev" ] || [ "$MODE" = "all" ]; then
-    systemctl --user stop loom-server-dev loom-client-dev loom-autoselect-dev 2>/dev/null || true
-    systemctl --user reset-failed loom-server-dev loom-client-dev loom-autoselect-dev 2>/dev/null || true
+    run_as_user systemctl --user stop loom-server-dev loom-client-dev loom-autoselect-dev 2>/dev/null || true
+    run_as_user systemctl --user reset-failed loom-server-dev loom-client-dev loom-autoselect-dev 2>/dev/null || true
 fi
 
 # Kill by process name (in case manual start)

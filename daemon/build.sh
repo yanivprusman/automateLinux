@@ -2,9 +2,10 @@
 echo "Stopping services..."
 
 # Stop via systemd (proper way - ensures clean ungrab)
+# Stop via systemd (proper way - ensures clean ungrab)
 sudo /usr/bin/systemctl stop daemon.service 2>/dev/null || true
 # Also kill any orphan processes not managed by systemd
-/home/yaniv/coding/automateLinux/daemon/stop_daemon.sh 2>/dev/null || true
+./stop_daemon.sh 2>/dev/null || true
 # Give time for ungrab to complete
 sleep 0.5
 
@@ -13,7 +14,12 @@ if [ ! -d "/run/automatelinux" ]; then
     echo "Creating /run/automatelinux..."
     sudo /bin/mkdir -p /run/automatelinux
 fi
-sudo /usr/bin/chown $USER:$USER /run/automatelinux
+# If running as root (e.g. during install), set to root:root. Otherwise use sudo user or current user.
+if [ "$(id -u)" -eq 0 ]; then
+    chown root:root /run/automatelinux
+else
+    sudo /usr/bin/chown $USER:$USER /run/automatelinux
+fi
 
 if [ ! -d "build" ]; then
     mkdir -p build

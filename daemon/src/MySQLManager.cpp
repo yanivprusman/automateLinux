@@ -66,9 +66,17 @@ void MySQLManager::generateMySQLConfigFile(int port, const std::string &dataDir,
 void MySQLManager::initializeMySQLDataDir(const std::string &mysqldPath,
                                           const std::string &dataDir,
                                           const std::string &configFile) {
-  std::string initCmd =
-      mysqldPath + " --defaults-file=" + configFile +
-      " --initialize-insecure --user=" + std::string(getenv("USER"));
+  std::string user = "root";
+  const char *envUser = getenv("USER");
+  if (envUser)
+    user = envUser;
+  // If running as root (uid 0), we must explicity pass --user=root to mysqld if
+  // we want it to run as root
+  if (geteuid() == 0)
+    user = "root";
+
+  std::string initCmd = mysqldPath + " --defaults-file=" + configFile +
+                        " --initialize-insecure --user=" + user;
   logToFile("MySQLManager: Initializing data dir: " + initCmd);
 
   // Create necessary directories
@@ -87,9 +95,15 @@ void MySQLManager::startMySQLServer(const std::string &mysqldPath,
     // Child process
     // Redirect stdout/stderr to log file to avoid cluttering daemon output if
     // needed For now, we rely on MySQL's internal logging configured in my.cnf
-    std::string defaultsArg = "--defaults-file=" + configFile;
+    std::string user = "root";
+    const char *envUser = getenv("USER");
+    if (envUser)
+      user = envUser;
+    if (geteuid() == 0)
+      user = "root";
+
     execl(mysqldPath.c_str(), "mysqld", defaultsArg.c_str(), "--user",
-          getenv("USER"), (char *)NULL);
+          user.c_str(), (char *)NULL);
     exit(1);
   } else if (pid > 0) {
     mysqlPid = pid;

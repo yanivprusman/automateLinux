@@ -95,6 +95,8 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_START_PROXY, {}),
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, {}),
     CommandSignature(COMMAND_LIST_PORTS, {}),
+    CommandSignature(COMMAND_GENERATE_LOOM_TOKEN, {}),
+    CommandSignature(COMMAND_REVOKE_LOOM_TOKENS, {}),
     CommandSignature(COMMAND_DELETE_PORT, {COMMAND_ARG_KEY}),
     CommandSignature(COMMAND_TEST_LSOF, {COMMAND_ARG_PORT}),
     CommandSignature(COMMAND_TEST_ECHO, {COMMAND_ARG_MESSAGE}),
@@ -208,7 +210,7 @@ static bool isPortListening(int port) {
 
 CmdResult handleIsLoomActive(const json &) {
   bool serverProdRunning = isPortListening(3500);
-  bool serverDevRunning = isPortListening(3501);
+  bool serverDevRunning = isPortListening(3505);
   bool clientProdRunning = isPortListening(3004);
   bool clientDevRunning = isPortListening(3005);
 
@@ -216,7 +218,7 @@ CmdResult handleIsLoomActive(const json &) {
   ss << "Loom Status:\n";
   ss << "  Server (Prod:3500): "
      << (serverProdRunning ? "RUNNING" : "NOT RUNNING") << "\n";
-  ss << "  Server (Dev:3501): "
+  ss << "  Server (Dev:3505): "
      << (serverDevRunning ? "RUNNING" : "NOT RUNNING") << "\n";
   ss << "  Client (Prod:3004): "
      << (clientProdRunning ? "RUNNING" : "NOT RUNNING") << "\n";
@@ -1533,6 +1535,50 @@ CmdResult handleDeletePort(const json &command) {
   return CmdResult(1, "Port entry not found for " + key + "\n");
 }
 
+CmdResult handleGenerateLoomToken(const json &) {
+  // Use port from registry if possible
+  string portStr = SettingsTable::getSetting("port_loom-server");
+  if (portStr.empty())
+    portStr = "3500";
+
+  string cmd =
+      "curl -s --max-time 2 http://localhost:" + portStr + "/api/generateToken";
+  string output = executeCommand(cmd.c_str());
+
+  if (output.empty()) {
+    return CmdResult(
+        1, "Error: Loom server not responding or not running on port " +
+               portStr + "\n");
+  }
+
+  try {
+    auto j = json::parse(output);
+    if (j.contains("token")) {
+      string token = j["token"].get<string>();
+      // Construct link - assume client is on 3004
+      return CmdResult(0, "Token: " + token +
+                              "\nLink: http://localhost:3004/?token=" + token +
+                              "\n");
+    }
+  } catch (...) {
+  }
+
+  return CmdResult(1, "Error: Unexpected response from Loom server: " + output +
+                          "\n");
+}
+
+CmdResult handleRevokeLoomTokens(const json &) {
+  string portStr = SettingsTable::getSetting("port_loom-server");
+  if (portStr.empty())
+    portStr = "3500";
+
+  string cmd =
+      "curl -s --max-time 2 http://localhost:" + portStr + "/api/revokeAll";
+  executeCommand(cmd.c_str());
+
+  return CmdResult(0, "Loom tokens revoked.\n");
+}
+
 typedef CmdResult (*CommandHandler)(const json &);
 
 struct CommandDispatch {
@@ -1608,6 +1654,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_TEST_LSOF, handleTestLsof},
     {COMMAND_TEST_ECHO, handleTestEcho},
     {COMMAND_TEST_LSOF_SCRIPT, handleTestLsofScript},
+    {COMMAND_GENERATE_LOOM_TOKEN, handleGenerateLoomToken},
+    {COMMAND_REVOKE_LOOM_TOKENS, handleRevokeLoomTokens},
     {COMMAND_LIST_COMMANDS, handleListCommands},
 };
 

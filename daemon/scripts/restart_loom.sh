@@ -46,12 +46,14 @@ export XDG_MENU_PREFIX="gnome-"
 # Set service names
 SERVER_UNIT="loom-server-$MODE"
 CLIENT_UNIT="loom-client-$MODE"
-AUTO_UNIT="loom-autoselect-$MODE"
+# Set service names
+SERVER_UNIT="loom-server-$MODE"
+CLIENT_UNIT="loom-client-$MODE"
 
 # Cleanup
 echo "Stopping existing systemd units for $MODE..."
-systemctl --user stop $SERVER_UNIT $CLIENT_UNIT $AUTO_UNIT 2>/dev/null || true
-systemctl --user reset-failed $SERVER_UNIT $CLIENT_UNIT $AUTO_UNIT 2>/dev/null || true
+systemctl --user stop $SERVER_UNIT $CLIENT_UNIT 2>/dev/null || true
+systemctl --user reset-failed $SERVER_UNIT $CLIENT_UNIT 2>/dev/null || true
 
 # Kill any leftover processes by port
 echo "Killing leftovers on port $SERVER_PORT and $CLIENT_PORT..."
@@ -96,20 +98,14 @@ echo "VITE_SERVER_PORT=$SERVER_PORT" > "$ROOT_DIR/client/.env"
 echo "Starting Loom Server ($SERVER_UNIT)..."
 systemctl --user restart "$SERVER_UNIT"
 
-# Launch Automation Script (to handle screen share popup)
-echo "Launching automation script ($AUTO_UNIT)..."
-systemd-run --user --unit="$AUTO_UNIT" \
-    --setenv=DISPLAY=":0" \
-    --setenv=WAYLAND_DISPLAY="$WAYLAND_DISPLAY" \
-    --setenv=XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
-    --setenv=DBUS_SESSION_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS" \
-    --setenv=XDG_SESSION_TYPE="$XDG_SESSION_TYPE" \
-    --setenv=XDG_CURRENT_DESKTOP="$XDG_CURRENT_DESKTOP" \
-    /usr/bin/python3 /home/yaniv/coding/automateLinux/utilities/autoSelectLoomScreen.py
-
 # Start Client via systemd
 echo "Starting Loom Client ($CLIENT_UNIT)..."
 systemctl --user restart "$CLIENT_UNIT"
+
+echo "Sending wake-up nudge..."
+/home/yaniv/coding/automateLinux/symlinks/daemon send simulateInput --type 1 --code 42 --value 1
+sleep 0.1
+/home/yaniv/coding/automateLinux/symlinks/daemon send simulateInput --type 1 --code 42 --value 0
 
 echo "Done. Mode: $MODE, Server: $SERVER_PORT, Client: $CLIENT_PORT"
 exit 0

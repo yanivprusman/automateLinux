@@ -281,3 +281,20 @@ gitsAll() {
 }
 export -f gitsAll
 
+gitCommitsToDirs() {
+    local start_dir="$(pwd)"
+    local url="$1"
+    local branch="${2:-main}"
+    [ -z "$url" ] && return 1
+    local repo
+    repo="$(basename "$url" .git)"
+    git clone --no-checkout --branch "$branch" "$url" "$repo" || return 1
+    cd "$repo" || return 1
+    mapfile -t commits < <(git rev-list --reverse "$branch")
+    local i=1
+    for c in "${commits[@]}"; do
+        git worktree add "../${repo}_${i}" "$c"
+        i=$((i+1))
+    done
+    cd "$start_dir" 
+}

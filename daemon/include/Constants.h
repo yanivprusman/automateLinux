@@ -102,6 +102,8 @@
   "publicTransportationStartProxy"
 #define COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP "publicTransportationOpenApp"
 #define COMMAND_LIST_PORTS "listPorts"
+#define COMMAND_GENERATE_LOOM_TOKEN "generateLoomToken"
+#define COMMAND_REVOKE_LOOM_TOKENS "revokeLoomTokens"
 #define COMMAND_DELETE_PORT "deletePort"
 #define COMMAND_TEST_LSOF "testLsof"
 #define COMMAND_TEST_ECHO "testEcho"

@@ -27,11 +27,28 @@ export -f geminiUpsertSession
 
 geminiCleanBrain() {
     local target_dir="${HOME}/.gemini/antigravity/brain"
+    local conversations_dir="${HOME}/.gemini/antigravity/conversations"
+
     if [ -d "$target_dir" ]; then
-        rm -rf "${target_dir:?}"/*
-        echo "Cleaned ${target_dir}"
+        if [ "$(ls -A "$target_dir")" ]; then
+            rm -rf "${target_dir:?}"/*
+            echo "Cleaned ${target_dir}"
+        else
+            echo "${target_dir} is already empty."
+        fi
     else
         echo "Directory ${target_dir} does not exist."
+    fi
+
+    if [ -d "$conversations_dir" ]; then
+        if [ "$(ls -A "$conversations_dir")" ]; then
+            rm -rf "${conversations_dir:?}"/*
+            echo "Cleaned ${conversations_dir}"
+        else
+            echo "${conversations_dir} is already empty."
+        fi
+    else
+        echo "Directory ${conversations_dir} does not exist."
     fi
 }
 export -f geminiCleanBrain

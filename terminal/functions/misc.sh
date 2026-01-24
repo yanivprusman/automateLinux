@@ -208,3 +208,20 @@ setDarkMode(){
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 }
 
+setPasswordForRoot(){
+    sudo passwd root
+}
+
+enableGraphocalSessionForRoot() {
+    sudo cp /etc/gdm3/custom.conf /etc/gdm3/custom.conf.bak
+    sudo cp /etc/pam.d/gdm-password /etc/pam.d/gdm-password.bak
+    if ! grep -q '^AllowRoot=true' /etc/gdm3/custom.conf; then
+        sudo sed -i '/^\[security\]/a AllowRoot=true' /etc/gdm3/custom.conf
+    fi
+    sudo sed -i '/^\s*auth\s\+required\s\+pam_succeed_if\.so\s\+user\s!=\s*root\s\+quiet_success/ s/^/#/' /etc/pam.d/gdm-password
+}
+
+
+
+
+

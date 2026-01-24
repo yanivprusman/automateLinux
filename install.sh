@@ -50,12 +50,23 @@ echo "Running in-place at $INSTALL_DIR."
 # 4. Create data directories and set permissions
 echo "Configuring permissions..."
 mkdir -p "$INSTALL_DIR/data"
+mkdir -p "$INSTALL_DIR/config"
 mkdir -p "$INSTALL_DIR/symlinks"
 
-# Set ownership:
-# Everything -> root:root
-chown -R root:root "$INSTALL_DIR"
-chmod -R 755 "$INSTALL_DIR"
+# Set ownership: root for system service, coding group for developer access
+if getent group coding >/dev/null 2>&1; then
+    chown -R root:coding "$INSTALL_DIR"
+    chmod -R g+w "$INSTALL_DIR"
+    echo "  Applied root:coding ownership with group write access."
+else
+    chown -R root:root "$INSTALL_DIR"
+    chmod -R 755 "$INSTALL_DIR"
+    echo "  Warning: 'coding' group not found. Applied root:root ownership."
+fi
+
+# Ensure data and config are group-writable for the daemon/scripts
+chmod -R 775 "$INSTALL_DIR/data"
+chmod -R 775 "$INSTALL_DIR/config"
 
 # 5. Build Daemon
 echo "Building Daemon at $INSTALL_DIR/daemon..."

@@ -47,3 +47,9 @@ d ping          # Should return "pong"
 *   **Daemon-Client Architecture**: A clear client-server model for system services, leveraging UNIX sockets for efficient and secure inter-process communication.
 *   **Systemd Integration**: The C++ daemon is managed as a `systemd` service, ensuring it starts automatically and is properly managed by the operating system.
 *   **External Dependencies**: The C++ daemon relies on `SQLite3` for data storage and `systemd` for service management. 
+
+
+installation instructions:
+sudo git clone https://github.com/yanivprusman/automateLinux.git /opt/automateLinux
+cd /opt/automateLinux
+sudo ./install.sh

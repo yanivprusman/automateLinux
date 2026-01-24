@@ -1,15 +1,19 @@
-# linked to automateLinux
-ln -s /home/yaniv/coding/automateLinux/autostart/ ~/.config/autostart 
-ln -s /home/yaniv/coding/automateLinux/bashrc/bashrc ~/.bashrc
-ln -s /home/yaniv/.local/share/applications /home/yaniv/coding/automateLinux/applications
-ln -sf /home/yaniv/coding/automateLinux/daemon/daemon.service /etc/systemd/system
-ln -s /home/yaniv/coding/automateLinux/gnomeExtensions/clock@ya-niv.com ~/.local/share/gnome-shell/extensions/clock@ya-niv.com
-ln -s /home/yaniv/coding/automateLinux/gnomeExtensions/active-window-tracker@example.com ~/.local/share/gnome-shell/extensions/active-window-tracker@example.com
-ln -s /home/yaniv/coding/automateLinux/terminal/tmux.conf ~/.tmux.conf
-ln -s /home/yaniv/coding/automateLinux/gnomeExtensions/window-selector@ya-niv.com ~/.local/share/gnome-shell/extensions/window-selector@ya-niv.com
-# must ont use links not working: 
-# ln -s /home/yaniv/coding/automateLinux/desktop/ /home/yaniv/Desktop
-# ln -snfr /home/yaniv/coding/automateLinux/desktop/shutDown.desktop shutDown.desktop
+# AutomateLinux Symlinks Reference
+# These links are automatically managed by /opt/automateLinux/user_install.sh
 
-# monitored files:
-/usr/bin/gnome-session echo "Starting gnome-session wrapper script" >/tmp/out3.txt
+# User Configuration
+[BASHRC]      ~/.bashrc -> /opt/automateLinux/terminal/bashrc
+[TMUX]        ~/.tmux.conf -> /opt/automateLinux/terminal/tmux.conf
+[AUTOSTART]   ~/.config/autostart -> /opt/automateLinux/autostart
+
+# GNOME Extensions (~/.local/share/gnome-shell/extensions/)
+[EXT_CLOCK]   clock@ya-niv.com -> /opt/automateLinux/gnomeExtensions/clock@ya-niv.com
+[EXT_TRACKER] active-window-tracker@example.com -> /opt/automateLinux/gnomeExtensions/active-window-tracker@example.com
+[EXT_WINDOW]  window-selector@ya-niv.com -> /opt/automateLinux/gnomeExtensions/window-selector@ya-niv.com
+
+# System Configuration (Managed by install.sh)
+[SERVICE]     /etc/systemd/system/daemon.service -> /opt/automateLinux/daemon/daemon.service (installed via systemd)
+[PATH]        /etc/profile.d/automatelinux.sh -> Adds /opt/automateLinux/symlinks to PATH
+
+# Known Issues / Legacy
+# [DESKTOP]   Do NOT link /opt/automateLinux/desktop/ to ~/Desktop (causes instability)

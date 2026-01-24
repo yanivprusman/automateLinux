@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ne
+set -e
 
 INSTALL_DIR="/opt/automateLinux"
 echo "Starting AutomateLinux System-Wide Installation..."
@@ -11,6 +11,22 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 echo "  Installation Directory: $INSTALL_DIR"
+
+# 2. Error Handler
+error_handler() {
+    echo ""
+    echo "--------------------------------------------------------"
+    echo "Error: Installation failed at line $1"
+    echo "The system may be in a partial state."
+    echo "To revert changes, you can try stopping the service and removing $INSTALL_DIR:"
+    echo "  sudo systemctl stop daemon.service"
+    echo "  sudo rm /etc/systemd/system/daemon.service"
+    echo "  sudo rm /usr/local/bin/daemon"
+    echo "  sudo rm /etc/profile.d/automatelinux.sh"
+    echo "--------------------------------------------------------"
+    exit 1
+}
+trap 'error_handler $LINENO' ERR
 
 # 1.5. Check and Install Dependencies
 verify_dependencies() {

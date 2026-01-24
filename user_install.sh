@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ne
+set -e
 
 INSTALL_DIR="/opt/automateLinux"
 echo "Starting AutomateLinux User Configuration..."

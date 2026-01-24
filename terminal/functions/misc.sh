@@ -203,3 +203,7 @@ openGnomeSession(){
     # dbus-run-session -- bash
     dbus-run-session gnome-shell --display-server --wayland
 }
+
+setDarkMode(){
+    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+}

@@ -35,17 +35,17 @@ verify_dependencies() {
 }
 verify_dependencies
 
-# 2. Prepare Installation Directory
-if [ -d "$INSTALL_DIR" ]; then
-    echo "Cleaning up existing installation at $INSTALL_DIR..."
-    rm -rf "$INSTALL_DIR"
-fi
-mkdir -p "$INSTALL_DIR"
-
-# 3. Copy Files (Assuming script runs from repo root)
+# 3. Enforce Installation Location
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-echo "Copying files from $REPO_ROOT to $INSTALL_DIR..."
-cp -r "$REPO_ROOT"/. "$INSTALL_DIR"/
+if [ "$REPO_ROOT" != "$INSTALL_DIR" ]; then
+    echo "Error: AutomateLinux must be cloned directly to $INSTALL_DIR"
+    echo "Please run:"
+    echo "  sudo git clone https://github.com/yanivprusman/automateLinux.git $INSTALL_DIR"
+    echo "  cd $INSTALL_DIR"
+    echo "  sudo ./install.sh"
+    exit 1
+fi
+echo "Running in-place at $INSTALL_DIR."
 
 # 4. Create data directories and set permissions
 echo "Configuring permissions..."
@@ -102,6 +102,12 @@ echo "$SERVICE_FILE_CONTENT" > /etc/systemd/system/daemon.service
 systemctl daemon-reload
 systemctl enable daemon.service
 systemctl restart daemon.service
+
+# 8. Configure System-Wide PATH
+echo "Configuring system-wide PATH..."
+PROFILE_SCRIPT="/etc/profile.d/automatelinux.sh"
+echo 'export PATH=$PATH:/opt/automateLinux/symlinks' > "$PROFILE_SCRIPT"
+chmod 644 "$PROFILE_SCRIPT"
 
 echo "--------------------------------------------------------"
 echo "System-Wide Installation Complete!"

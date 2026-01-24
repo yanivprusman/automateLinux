@@ -111,11 +111,9 @@ if command -v ng &> /dev/null; then
     source <(ng completion script)
 fi
 
-# Unset NoMachine LD_PRELOAD
-unset LD_PRELOAD
 if [ -f "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}user.sh" ]; then
     . "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}user.sh"
-    _tuMountOverlays "$(whoami)"
+    # _tuMountOverlays "$(whoami)"
 fi
 
 if [ -f "${AUTOMATE_LINUX_TERMINAL_DIR}myBashrc.sh" ]; then

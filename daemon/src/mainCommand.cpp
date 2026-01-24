@@ -816,8 +816,6 @@ CmdResult handleGetDir(const json &command) {
     result = directories.base;
   } else if (dirName == "data") {
     result = directories.data;
-  } else if (dirName == "mappings") {
-    result = directories.mappings;
   } else {
     return CmdResult(1, "Unknown directory name: " + dirName + "\n");
   }

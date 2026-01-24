@@ -24,13 +24,12 @@ echo "  Source Installation: $INSTALL_DIR"
 
 if [ ! -d "$INSTALL_DIR" ]; then
     echo "Error: AutomateLinux is not installed at $INSTALL_DIR."
-    echo "Please ask your administrator to run 'sudo $INSTALL_DIR/install.sh' first."
     exit 1
 fi
 
 # 2. Configure ~/.bashrc
 BASHRC_LOC="$USER_HOME/.bashrc"
-BACKUP_BASHRC="$USER_HOME/.bashrc.bak.$(date +%F_%H-%M-%S)"
+BACKUP_BASHRC="$USER_HOME/.bashrc.bakup"
 
 echo "Configuring $BASHRC_LOC..."
 

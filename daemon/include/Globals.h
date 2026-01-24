@@ -15,7 +15,6 @@ using std::filesystem::canonical;
 struct Directories {
   string base;
   string data;
-  string mappings;
   string symlinks;
   string terminal;
   Directories() {
@@ -47,7 +46,6 @@ struct Directories {
       base = p.string() + "/";
     }
     data = base + "data/";
-    mappings = base + "evsieve/mappings/"; // Historical path, keep as is
     symlinks = base + "symlinks/";
     terminal = base + "terminal/";
   }
@@ -62,19 +60,9 @@ struct Files {
   vector<File> files;
   void initialize(const Directories &dirs) {
     files = {
-        {"chrome.log", dirs.data},
-        {"combined.log", dirs.data},
-        {"daemon.db", dirs.data},
-        {"evsieveErr.log", dirs.data},
-        {"evsieveOutput.log", dirs.data},
-        {"trapErrLogBackground.txt", dirs.data},
-        {"trapErrLog.txt", dirs.data},
-        {"corsairKeyBoardLogiMouseCode.sh", dirs.mappings},
-        {"corsairKeyBoardLogiMouseDefaultKeyboard.sh", dirs.mappings},
-        {"corsairKeyBoardLogiMousegnome-terminal-server.sh", dirs.mappings},
-        {"corsairKeyBoardLogiMouseAll.sh", dirs.mappings},
-        {"corsairKeyBoardLogiMousegoogle-chrome.sh", dirs.mappings},
-        {"theRealPath.sh", dirs.terminal},
+        {"chrome.log", dirs.data},     {"combined.log", dirs.data},
+        {"daemon.db", dirs.data},      {"trapErrLogBackground.txt", dirs.data},
+        {"trapErrLog.txt", dirs.data}, {"theRealPath.sh", dirs.terminal},
     };
   }
 };

@@ -27,6 +27,6 @@
 . $(theRealPath claude.sh)
 . $(theRealPath vscode.sh)
 # extra
-if [ -f "$(theRealPath extra/extra.sh)" ]; then
-  . $(theRealPath extra/extra.sh)
+if [ -f "$(theRealPath extra/extra.sh 2>/dev/null)" ]; then
+  . "$(theRealPath extra/extra.sh 2>/dev/null)"
 fi

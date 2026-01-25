@@ -31,7 +31,7 @@ trap 'error_handler $LINENO' ERR
 # 1.5. Check and Install Dependencies
 verify_dependencies() {
     echo "Checking build dependencies..."
-    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git"
+    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git util-linux"
     MISSING_PACKAGES=""
 
     for pkg in $REQUIRED_PACKAGES; do

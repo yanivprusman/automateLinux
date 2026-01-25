@@ -20,7 +20,9 @@ fi
 AUTOMATE_LINUX_SUBSEQUENT_SOURCE=true
 export AUTOMATE_LINUX_PS1='\[\e]0;\W '$AUTOMATE_LINUX_TTY_NUMBER'\a\]'"${_yellow}\w${_nc}\$ "
 PS1=$AUTOMATE_LINUX_PS1
-cp ~/coding/automateLinux/desktop/*.desktop ~/Desktop/
+if [ -d "${AUTOMATE_LINUX_DIR}desktop" ]; then
+    cp "${AUTOMATE_LINUX_DIR}desktop/"*.desktop ~/Desktop/ 2>/dev/null || true
+fi
 PROMPT_COMMAND=". $AUTOMATE_LINUX_PROMPT_COMMAND_SCRIPT_FILE"
 . "${AUTOMATE_LINUX_TERMINAL_DIR}unset.sh"
 

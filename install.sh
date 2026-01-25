@@ -97,6 +97,8 @@ echo "Building Daemon at $INSTALL_DIR/daemon..."
 if [ -f "$INSTALL_DIR/daemon/build.sh" ]; then
     pushd "$INSTALL_DIR/daemon" > /dev/null
     # We are root, so build.sh runs as root.
+    # Prevent build.sh from trying to restart the service (it doesn't exist yet)
+    export SKIP_SERVICE_RESTART=true
     source ./build.sh
     popd > /dev/null
 else

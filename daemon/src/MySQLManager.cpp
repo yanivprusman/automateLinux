@@ -102,6 +102,8 @@ void MySQLManager::startMySQLServer(const std::string &mysqldPath,
     if (geteuid() == 0)
       user = "root";
 
+    std::string defaultsArg = "--defaults-file=" + configFile;
+
     execl(mysqldPath.c_str(), "mysqld", defaultsArg.c_str(), "--user",
           user.c_str(), (char *)NULL);
     exit(1);

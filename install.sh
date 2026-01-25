@@ -31,7 +31,7 @@ trap 'error_handler $LINENO' ERR
 # 1.5. Check and Install Dependencies
 verify_dependencies() {
     echo "Checking build dependencies..."
-    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git"
+    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git"
     MISSING_PACKAGES=""
 
     for pkg in $REQUIRED_PACKAGES; do
@@ -70,14 +70,22 @@ mkdir -p "$INSTALL_DIR/config"
 mkdir -p "$INSTALL_DIR/symlinks"
 
 # Set ownership: root for system service, coding group for developer access
-if getent group coding >/dev/null 2>&1; then
-    chown -R root:coding "$INSTALL_DIR"
-    chmod -R g+w "$INSTALL_DIR"
-    echo "  Applied root:coding ownership with group write access."
-else
-    chown -R root:root "$INSTALL_DIR"
-    chmod -R 755 "$INSTALL_DIR"
-    echo "  Warning: 'coding' group not found. Applied root:root ownership."
+if ! getent group coding >/dev/null 2>&1; then
+    echo "  'coding' group not found. Creating it..."
+    groupadd coding
+fi
+
+echo "  Applied root:coding ownership with group write access."
+chown -R root:coding "$INSTALL_DIR"
+chmod -R g+w "$INSTALL_DIR"
+
+# Add current sudo user to coding group if applicable
+if [ -n "$SUDO_USER" ]; then
+    if ! id -nG "$SUDO_USER" | grep -qw "coding"; then
+        echo "  Adding user $SUDO_USER to 'coding' group..."
+        usermod -aG coding "$SUDO_USER"
+        echo "  Note: You may need to log out and back in for group changes to take full effect."
+    fi
 fi
 
 # Ensure data and config are group-writable for the daemon/scripts

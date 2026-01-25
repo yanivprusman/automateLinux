@@ -49,16 +49,21 @@ CmdResult KeyboardManager::setKeyboard(bool enableKeyboard) {
     }
     logToFile("Enabling keyboard: " + keyboardPath, LOG_CORE);
 
-    // Start mapper in monitoring mode, then attempt to grab
-    // Pass true to grab immediately BEFORE thread starts (avoids race
-    // condition)
-    if (mapper.start(keyboardPath, mousePath, true)) {
+    // Start mapper in monitoring mode only. DO NOT grab immediately to prevent
+    // boot lockouts. USER REQUEST: COMPLETELY DISABLE ALL INPUT STUFF
+    logToFile("INPUT SUBSYSTEM DISABLED BY CONFIG. Skipping mapper start.",
+              LOG_CORE);
+    return CmdResult(0, "Input subsystem is currently disabled in code.\n");
+
+    /*
+    if (mapper.start(keyboardPath, mousePath, false)) {
       // mapper.grabDevices(); // Handled in start() now
       return CmdResult(0, "Keyboard enabled and grab attempted.\n");
     } else {
       logToFile("ERROR: Failed to start InputMapper for monitoring", LOG_CORE);
       return CmdResult(1, "Failed to enable keyboard\n");
     }
+    */
   } else {
     logToFile("Disabling keyboard", LOG_CORE);
     mapper.stop(); // stop() now handles ungrabbing and freeing devices

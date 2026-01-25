@@ -26,6 +26,7 @@
 . $(theRealPath deploy.sh)
 . $(theRealPath claude.sh)
 . $(theRealPath vscode.sh)
+. $(theRealPath chrome.sh)
 # extra
 if [ -f "$(theRealPath extra/extra.sh 2>/dev/null)" ]; then
   . "$(theRealPath extra/extra.sh 2>/dev/null)"

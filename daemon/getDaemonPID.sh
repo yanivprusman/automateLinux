@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 1. Try to get PID from systemd service if active
-if systemctl is-active --quiet automateLinux.service; then
-    pid=$(systemctl show --property MainPID --value automateLinux.service)
+if systemctl is-active --quiet daemon.service; then
+    pid=$(systemctl show --property MainPID --value daemon.service)
     if [ "$pid" != "0" ] && [ -n "$pid" ]; then
         echo "$pid"
         exit 0
@@ -10,7 +10,9 @@ if systemctl is-active --quiet automateLinux.service; then
 fi
 
 # 2. Fallback to pgrep (return only the most recent)
-pid=$(pgrep -f "/home/yaniv/coding/automateLinux/daemon/daemon" | tail -n 1)
+# Use AUTOMATE_LINUX_DIR environment variable if set, otherwise try /opt/
+SEARCH_PATH="${AUTOMATE_LINUX_DIR:-/opt/automateLinux}/daemon/daemon"
+pid=$(pgrep -f "$SEARCH_PATH" | tail -n 1)
 
 if [ -z "$pid" ]; then
     # Do not echo text if we want to avoid "unable to parse" errors in VS Code

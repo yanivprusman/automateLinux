@@ -25,6 +25,7 @@
 . $(theRealPath to.sh)
 . $(theRealPath deploy.sh)
 . $(theRealPath claude.sh)
+. $(theRealPath vscode.sh)
 # extra
 if [ -f "$(theRealPath extra/extra.sh)" ]; then
   . $(theRealPath extra/extra.sh)

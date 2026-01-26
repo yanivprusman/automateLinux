@@ -32,7 +32,7 @@ trap 'error_handler $LINENO' ERR
 verify_dependencies() {
     # Add npm to required system packages
     echo "Checking build dependencies..."
-    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git util-linux npm wireguard resolvconf openssh-server"
+    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git util-linux npm wireguard resolvconf openssh-server openssh-client"
     MISSING_PACKAGES=""
 
     for pkg in $REQUIRED_PACKAGES; do
@@ -48,6 +48,16 @@ verify_dependencies() {
         apt-get install -y $MISSING_PACKAGES
     else
         echo "All dependencies determined to be installed."
+    fi
+    
+    # Ensure SSH service is active
+    if systemctl list-unit-files | grep -q "^ssh.service"; then
+        echo "Ensuring SSH service is active..."
+        systemctl enable --now ssh
+    fi
+    if systemctl list-unit-files | grep -q "^sshd.service"; then
+         echo "Ensuring SSHD service is active..."
+         systemctl enable --now sshd
     fi
 }
 verify_dependencies

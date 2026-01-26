@@ -6,7 +6,8 @@ WG_SERVER_USER="root"
 setupWireGuardProxyFromScratch() {
     local SERVER_USER="$WG_SERVER_USER"
     local SERVER_IP="$WG_SERVER_IP"
-    
+    local SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=5"
+
     echo "=========================================="
     echo "  COMPLETE WIREGUARD PROXY SETUP"
     echo "=========================================="
@@ -15,13 +16,13 @@ setupWireGuardProxyFromScratch() {
     # STEP 1: Fix WireGuard keys to match reality
     echo "🔑 Step 1: Syncing WireGuard keys..."
     
-    local SERVER_ACTUAL_KEY=$(ssh "$SERVER_USER@$SERVER_IP" "wg show wg0 public-key 2>/dev/null")
-    
+    local SERVER_ACTUAL_KEY=$(ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" "wg show wg0 public-key 2>/dev/null")
+
     if [ -z "$SERVER_ACTUAL_KEY" ]; then
         echo "   Starting WireGuard on server first..."
-        ssh "$SERVER_USER@$SERVER_IP" "wg-quick up wg0 2>/dev/null"
+        ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" "wg-quick up wg0 2>/dev/null"
         sleep 2
-        SERVER_ACTUAL_KEY=$(ssh "$SERVER_USER@$SERVER_IP" "wg show wg0 public-key")
+        SERVER_ACTUAL_KEY=$(ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" "wg show wg0 public-key")
     fi
     
     echo "   Server's public key: $SERVER_ACTUAL_KEY"
@@ -103,8 +104,8 @@ NGINX
     
     # STEP 3: Setup reverse proxy on server
     echo "🌐 Step 3: Setting up reverse proxy on server..."
-    
-    ssh "$SERVER_USER@$SERVER_IP" bash << 'EOF'
+
+    ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" bash << 'EOF'
 cat > /etc/nginx/sites-available/pc-proxy << 'PROXY'
 server {
     listen 8080;
@@ -152,16 +153,18 @@ EOF
 
 # Quick test function
 testWireGuardProxy() {
+    local SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=5"
+
     echo "Testing WireGuard connection..."
     echo
-    
+
     if ping -c 2 -W 2 10.0.0.1 &>/dev/null; then
         echo "✓ PC can reach server (10.0.0.1)"
     else
         echo "✗ PC cannot reach server"
     fi
-    
-    if ssh $WG_SERVER_USER@$WG_SERVER_IP "ping -c 2 -W 2 10.0.0.2" &>/dev/null; then
+
+    if ssh $SSH_OPTS $WG_SERVER_USER@$WG_SERVER_IP "ping -c 2 -W 2 10.0.0.2" &>/dev/null; then
         echo "✓ Server can reach PC (10.0.0.2)"
     else
         echo "✗ Server cannot reach PC"
@@ -192,6 +195,7 @@ setupWireGuardPeer() {
     local SERVER_USER="$WG_SERVER_USER"
     local SERVER_IP="$WG_SERVER_IP"
     local IS_DUAL_BOOT=false
+    local SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=5"
 
     echo "=========================================="
     echo "  WIREGUARD PEER SETUP (run from peer)"
@@ -200,7 +204,7 @@ setupWireGuardPeer() {
 
     # Check SSH connectivity first
     echo "Checking SSH connectivity to server..."
-    if ! ssh -o ConnectTimeout=5 "$SERVER_USER@$SERVER_IP" "echo ok" &>/dev/null; then
+    if ! ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" "echo ok" &>/dev/null; then
         echo "ERROR: Cannot SSH to $SERVER_USER@$SERVER_IP"
         echo "Make sure you have SSH access to the server first."
         return 1
@@ -282,7 +286,7 @@ setupWireGuardPeer() {
 
         echo
         echo "Querying server for next available IP..."
-        CLIENT_IP=$(ssh "$SERVER_USER@$SERVER_IP" bash <<'REMOTE_SCRIPT'
+        CLIENT_IP=$(ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" bash <<'REMOTE_SCRIPT'
 BASE_IP="10.0.0."
 USED_IPS=$(grep -oP 'AllowedIPs = \K10\.0\.0\.\d+' /etc/wireguard/wg0.conf 2>/dev/null)
 NEXT_IP=2
@@ -298,7 +302,7 @@ REMOTE_SCRIPT
     # Fetch server info (always needed)
     echo
     echo "Fetching server configuration..."
-    SERVER_INFO=$(ssh "$SERVER_USER@$SERVER_IP" bash <<'REMOTE_SCRIPT'
+    SERVER_INFO=$(ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" bash <<'REMOTE_SCRIPT'
 SERVER_PUBLIC_KEY=$(wg show wg0 public-key 2>/dev/null)
 if [ -z "$SERVER_PUBLIC_KEY" ]; then
     wg-quick up wg0 2>/dev/null
@@ -319,7 +323,7 @@ REMOTE_SCRIPT
     if [ "$IS_DUAL_BOOT" = false ]; then
         echo
         echo "Registering peer on server..."
-        ssh "$SERVER_USER@$SERVER_IP" bash <<REMOTE_SCRIPT
+        ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" bash <<REMOTE_SCRIPT
 # Add peer to server config
 echo -e "\n[Peer]\n# $CLIENT_NAME\nPublicKey = $CLIENT_PUB\nAllowedIPs = $CLIENT_IP/32" >> /etc/wireguard/wg0.conf
 

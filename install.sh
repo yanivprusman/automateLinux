@@ -30,8 +30,9 @@ trap 'error_handler $LINENO' ERR
 
 # 1.5. Check and Install Dependencies
 verify_dependencies() {
+    # Add npm to required system packages
     echo "Checking build dependencies..."
-    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git util-linux"
+    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git util-linux npm"
     MISSING_PACKAGES=""
 
     for pkg in $REQUIRED_PACKAGES; do
@@ -50,6 +51,20 @@ verify_dependencies() {
     fi
 }
 verify_dependencies
+
+# 2.5. Install Extra Software
+install_software() {
+    echo "Checking for extra software..."
+    
+    # Check for @google/gemini-cli
+    if ! command -v gemini >/dev/null 2>&1; then
+        echo "  Installing @google/gemini-cli..."
+        npm install -g @google/gemini-cli
+    else
+        echo "  @google/gemini-cli is already installed."
+    fi
+}
+install_software
 
 # 3. Enforce Installation Location
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

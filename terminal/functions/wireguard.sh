@@ -186,10 +186,12 @@ wireGuardRestart(){
     sudo wg-quick up wg0    # start
 }
 
-# Run on the PEER machine to set up WireGuard client and register with server
+# Run on the PEER machine to set up WireGuard client
+# Handles both new devices and dual-boot scenarios
 setupWireGuardPeer() {
     local SERVER_USER="$WG_SERVER_USER"
     local SERVER_IP="$WG_SERVER_IP"
+    local IS_DUAL_BOOT=false
 
     echo "=========================================="
     echo "  WIREGUARD PEER SETUP (run from peer)"
@@ -206,23 +208,81 @@ setupWireGuardPeer() {
     echo "   SSH connection OK"
     echo
 
-    read -p "Enter a name for this device (e.g., rpi5, laptop): " CLIENT_NAME
-    if [ -z "$CLIENT_NAME" ]; then
-        echo "ERROR: Device name required"
-        return 1
+    # Ask if this is a new device or dual-boot
+    echo "Is this a new device or dual-boot (reusing existing peer)?"
+    echo "  1) New device (generate new keys, auto-assign IP)"
+    echo "  2) Dual-boot / existing peer (reuse keys and IP)"
+    read -p "Choice [1/2]: " SETUP_CHOICE
+
+    if [ "$SETUP_CHOICE" = "2" ]; then
+        IS_DUAL_BOOT=true
     fi
 
-    # Generate keys locally (private key never leaves this machine)
-    echo
-    echo "Generating WireGuard keys locally..."
-    CLIENT_PRIV=$(wg genkey)
-    CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
-    echo "   Public key: $CLIENT_PUB"
+    if [ "$IS_DUAL_BOOT" = true ]; then
+        # Dual-boot: get existing private key and IP
+        echo
+        echo "Enter the Private Key from your existing config (e.g., Windows side):"
+        read -s CLIENT_PRIV
+        echo
+        if [ -z "$CLIENT_PRIV" ]; then
+            echo "ERROR: Private key is required for dual-boot setup"
+            return 1
+        fi
+        CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
+        echo "   Public key: $CLIENT_PUB"
 
-    # Get next available IP from server
-    echo
-    echo "Querying server for next available IP..."
-    CLIENT_IP=$(ssh "$SERVER_USER@$SERVER_IP" bash <<'REMOTE_SCRIPT'
+        echo
+        read -p "Enter the IP address to use (e.g., 10.0.0.4): " CLIENT_IP
+        if [ -z "$CLIENT_IP" ]; then
+            echo "ERROR: IP address is required"
+            return 1
+        fi
+    else
+        # New device: prompt for name
+        read -p "Enter a name for this device (e.g., rpi5, laptop): " CLIENT_NAME
+        if [ -z "$CLIENT_NAME" ]; then
+            echo "ERROR: Device name required"
+            return 1
+        fi
+
+        # Check if config already exists and offer to reuse keys
+        if [ -f /etc/wireguard/wg0.conf ]; then
+            EXISTING_KEY=$(sudo grep -oP '^PrivateKey = \K.*' /etc/wireguard/wg0.conf 2>/dev/null)
+            if [ -n "$EXISTING_KEY" ]; then
+                EXISTING_PUB=$(echo "$EXISTING_KEY" | wg pubkey)
+                echo
+                echo "Found existing config with public key: $EXISTING_PUB"
+                read -p "Reuse existing key? [Y/n]: " REUSE_KEY
+                if [ "$REUSE_KEY" != "n" ] && [ "$REUSE_KEY" != "N" ]; then
+                    CLIENT_PRIV="$EXISTING_KEY"
+                    CLIENT_PUB="$EXISTING_PUB"
+                    echo "   Reusing existing key"
+                else
+                    echo
+                    echo "Generating NEW WireGuard keys..."
+                    CLIENT_PRIV=$(wg genkey)
+                    CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
+                    echo "   Public key: $CLIENT_PUB"
+                fi
+            else
+                echo
+                echo "Generating WireGuard keys locally..."
+                CLIENT_PRIV=$(wg genkey)
+                CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
+                echo "   Public key: $CLIENT_PUB"
+            fi
+        else
+            echo
+            echo "Generating WireGuard keys locally..."
+            CLIENT_PRIV=$(wg genkey)
+            CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
+            echo "   Public key: $CLIENT_PUB"
+        fi
+        echo "   Public key: $CLIENT_PUB"
+
+        echo
+        echo "Querying server for next available IP..."
+        CLIENT_IP=$(ssh "$SERVER_USER@$SERVER_IP" bash <<'REMOTE_SCRIPT'
 BASE_IP="10.0.0."
 USED_IPS=$(grep -oP 'AllowedIPs = \K10\.0\.0\.\d+' /etc/wireguard/wg0.conf 2>/dev/null)
 NEXT_IP=2
@@ -232,9 +292,10 @@ done
 echo "${BASE_IP}${NEXT_IP}"
 REMOTE_SCRIPT
 )
-    echo "   Assigned IP: $CLIENT_IP"
+        echo "   Assigned IP: $CLIENT_IP"
+    fi
 
-    # Get server info
+    # Fetch server info (always needed)
     echo
     echo "Fetching server configuration..."
     SERVER_INFO=$(ssh "$SERVER_USER@$SERVER_IP" bash <<'REMOTE_SCRIPT'
@@ -254,10 +315,11 @@ REMOTE_SCRIPT
     echo "   Server public key: $SERVER_PUBLIC_KEY"
     echo "   Server port: $SERVER_PORT"
 
-    # Register this peer on the server
-    echo
-    echo "Registering peer on server..."
-    ssh "$SERVER_USER@$SERVER_IP" bash <<REMOTE_SCRIPT
+    # Register peer on server (only for new devices)
+    if [ "$IS_DUAL_BOOT" = false ]; then
+        echo
+        echo "Registering peer on server..."
+        ssh "$SERVER_USER@$SERVER_IP" bash <<REMOTE_SCRIPT
 # Add peer to server config
 echo -e "\n[Peer]\n# $CLIENT_NAME\nPublicKey = $CLIENT_PUB\nAllowedIPs = $CLIENT_IP/32" >> /etc/wireguard/wg0.conf
 
@@ -265,7 +327,8 @@ echo -e "\n[Peer]\n# $CLIENT_NAME\nPublicKey = $CLIENT_PUB\nAllowedIPs = $CLIENT
 wg-quick down wg0 2>/dev/null
 wg-quick up wg0
 REMOTE_SCRIPT
-    echo "   Peer registered on server"
+        echo "   Peer registered on server"
+    fi
 
     # Create local config
     echo
@@ -300,7 +363,6 @@ EOF
         echo "   SUCCESS! WireGuard is connected"
         echo "=========================================="
         echo
-        echo "   Device name: $CLIENT_NAME"
         echo "   Your VPN IP: $CLIENT_IP"
         echo "   Server VPN IP: 10.0.0.1"
         echo
@@ -311,76 +373,5 @@ EOF
         echo "   Connection test failed."
         echo "   Check: sudo wg show"
         echo "   Check server: ssh $SERVER_USER@$SERVER_IP 'wg show'"
-    fi
-}
-
-# Interactive setup for devices where you already have keys (e.g. Dual Boot)
-setupWireGuardManual() {
-    echo "=========================================="
-    echo "  MANUAL WIREGUARD CLIENT SETUP"
-    echo "=========================================="
-    echo
-    
-    # Defaults
-    DEFAULT_IP="10.0.0.4"
-    DEFAULT_DNS="10.0.0.1"
-    SERVER_IP="$WG_SERVER_IP"
-    
-    read -p "Client IP (default: $DEFAULT_IP): " CLIENT_IP
-    CLIENT_IP=${CLIENT_IP:-$DEFAULT_IP}
-    
-    echo
-    echo "Enter Private Key (copy from your existing configuration):"
-    read -s PRIVATE_KEY
-    echo
-    
-    if [ -z "$PRIVATE_KEY" ]; then
-        echo "No key provided. Generating new key..."
-        PRIVATE_KEY=$(wg genkey)
-        PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
-        echo "New Public Key: $PUBLIC_KEY"
-        echo "⚠️  NOTE: You must add this public key to the server config manually!"
-    else 
-        PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
-        echo "Public Key derived: $PUBLIC_KEY"
-    fi
-
-    echo
-    read -p "Server Public Key (leave empty to skip/edit later): " SERVER_PUB_KEY
-    read -p "Server Port (default: 51820): " SERVER_PORT
-    SERVER_PORT=${SERVER_PORT:-51820}
-    
-    SERVER_ENDPOINT="$SERVER_IP:$SERVER_PORT"
-    
-    echo
-    echo "Writing config to /etc/wireguard/wg0.conf..."
-    
-    # Create config
-    sudo bash -c "cat > /etc/wireguard/wg0.conf" <<EOF
-[Interface]
-PrivateKey = $PRIVATE_KEY
-Address = $CLIENT_IP/32
-DNS = $DEFAULT_DNS
-
-[Peer]
-PublicKey = $SERVER_PUB_KEY
-Endpoint = $SERVER_ENDPOINT
-AllowedIPs = 0.0.0.0/0, ::/0
-PersistentKeepalive = 25
-EOF
-
-    echo "   ✓ Config created"
-    
-    if [ ! -z "$SERVER_PUB_KEY" ]; then
-        echo "Starting WireGuard..."
-        sudo wg-quick down wg0 2>/dev/null || true
-        sudo wg-quick up wg0
-        
-        echo
-        echo "Testing connection..."
-        ping -c 2 10.0.0.1
-    else
-        echo "⚠️  Skipping start because Server Public Key is missing."
-        echo "Edit with: sudo nano /etc/wireguard/wg0.conf"
     fi
 }

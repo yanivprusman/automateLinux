@@ -63,6 +63,15 @@ install_software() {
     else
         echo "  @google/gemini-cli is already installed."
     fi
+
+    # Check for Claude CLI
+    if ! command -v claude >/dev/null 2>&1; then
+        echo "  Installing Claude CLI..."
+        # Note: running as root will likely install to /root/.local or /usr/local
+        curl -fsSL https://claude.ai/install.sh | bash
+    else
+        echo "  Claude CLI is already installed."
+    fi
 }
 install_software
 

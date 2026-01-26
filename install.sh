@@ -66,6 +66,20 @@ install_software() {
 }
 install_software
 
+# 2.6. Configure Git Aliases
+configure_git() {
+    echo "Configuring system-wide git aliases..."
+    git config --system alias.l "log --oneline -20"
+    git config --system alias.r "reset --hard HEAD"
+    git config --system alias.stat "status"
+    git config --system alias.a "! git add -A && git status"
+    git config --system alias.m "commit -m"
+    git config --system alias.s "status"
+    git config --system alias.alias "!git config --get-regexp alias"
+}
+configure_git
+
+
 # 3. Enforce Installation Location
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ "$REPO_ROOT" != "$INSTALL_DIR" ]; then

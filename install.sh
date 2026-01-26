@@ -32,7 +32,7 @@ trap 'error_handler $LINENO' ERR
 verify_dependencies() {
     # Add npm to required system packages
     echo "Checking build dependencies..."
-    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git util-linux npm wireguard resolvconf openssh-server openssh-client"
+    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git util-linux npm wireguard resolvconf openssh-server openssh-client tree"
     MISSING_PACKAGES=""
 
     for pkg in $REQUIRED_PACKAGES; do

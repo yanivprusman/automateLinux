@@ -136,6 +136,11 @@ listMyFunctions() {
 }
 export -f listMyFunctions
 
+listMyFunctionsg() {
+    listMyFunctions | grep -i "$@"
+}
+export -f listMyFunctionsg
+
 emergencyRestore() {
     $AUTOMATE_LINUX_DIR/utilities/emergencyRestore.sh
 }

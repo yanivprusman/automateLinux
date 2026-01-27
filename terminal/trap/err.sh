@@ -5,7 +5,7 @@ cmd="${BASH_COMMAND}"
 line_no=${BASH_LINENO[0]}
 func="${FUNCNAME[1]}"
 date_time=$(date '+%Y-%m-%d %H:%M:%S')
-error_msg=$(2>&1 eval "$cmd" >/dev/null || true)
+error_msg=$(2>&1 timeout 1 bash -c "$cmd" </dev/null >/dev/null || true)
 {
     echo "$date_time Exit code: $exit_code Command: $cmd Line: $line_no Function: ${func:-main} PWD: $PWD"
     if [ -n "$error_msg" ]; then

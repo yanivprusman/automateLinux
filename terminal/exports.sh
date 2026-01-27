@@ -1,4 +1,4 @@
 export FREECAD_MACROS_DIR="/home/yaniv/coding/freeCad/Macros/"
 # EVSIEVE_LOG_FILE=$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
 # EVSIEVE_LOG_FILE=$(theRealPathrealpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/../evsieve/log/log.txt")
-export KEYBOARD_BY_ID=$(command ls /dev/input/by-id/ | grep 'Corsair.*-event-kbd')
+export KEYBOARD_BY_ID=$(command ls /dev/input/by-id/ 2>/dev/null | grep 'Corsair.*-event-kbd' || true)

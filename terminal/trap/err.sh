@@ -1,6 +1,5 @@
 
 exit_code=$?
-touch "$AUTOMATE_LINUX_TRAP_ERR_LOG_FILE"
 cmd="${BASH_COMMAND}"
 line_no=${BASH_LINENO[0]}
 func="${FUNCNAME[1]}"

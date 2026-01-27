@@ -159,10 +159,11 @@ fi
 
 echo "--------------------------------------------------------"
 echo "User Configuration Complete!"
-if [ "$NEED_RELOGIN" = true ]; then
-    echo "IMPORTANT: Log out and back in for group membership to take effect."
-else
-    echo "Please restart your terminal or run 'source ~/.bashrc' to apply changes."
-fi
 echo "Verify connectivity with: d ping"
 echo "--------------------------------------------------------"
+
+if [ "$NEED_RELOGIN" = true ]; then
+    echo ""
+    echo "Activating coding group membership..."
+    exec newgrp coding
+fi

@@ -143,6 +143,10 @@ fi
 chmod -R 2775 "$INSTALL_DIR/data"
 chmod -R 2775 "$INSTALL_DIR/config"
 
+# Make trap error log files world-writable (touch requires owner or world-write)
+touch "$INSTALL_DIR/data/trapErrLog.txt" "$INSTALL_DIR/data/trapErrLogBackground.txt"
+chmod 666 "$INSTALL_DIR/data/trapErrLog.txt" "$INSTALL_DIR/data/trapErrLogBackground.txt"
+
 # 5. Build Daemon
 echo "Building Daemon at $INSTALL_DIR/daemon..."
 if [ -f "$INSTALL_DIR/daemon/build.sh" ]; then

@@ -263,6 +263,19 @@ gitCount(){
     git rev-list --count HEAD
 }
 
+gitAheadBehind(){
+    local counts
+    counts=$(git rev-list --left-right --count origin/main...HEAD 2>/dev/null)
+    if [ -z "$counts" ]; then
+        echo "Error: Could not get commit counts (not a git repo or no origin/main?)"
+        return 1
+    fi
+    local behind ahead
+    behind=$(echo "$counts" | cut -f1)
+    ahead=$(echo "$counts" | cut -f2)
+    echo "Behind: $behind  Ahead: $ahead"
+}
+
 addSafeGitDir() {
     sudo git config --system --add safe.directory "$(pwd)"
 }

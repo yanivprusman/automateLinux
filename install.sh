@@ -126,6 +126,8 @@ fi
 echo "  Applied root:coding ownership with group write access."
 chown -R root:coding "$INSTALL_DIR"
 chmod -R g+w "$INSTALL_DIR"
+# setgid on directories so new files inherit the coding group
+find "$INSTALL_DIR" -type d -exec chmod g+s {} \;
 
 # Add current sudo user to coding group if applicable
 if [ -n "$SUDO_USER" ]; then
@@ -137,8 +139,9 @@ if [ -n "$SUDO_USER" ]; then
 fi
 
 # Ensure data and config are group-writable for the daemon/scripts
-chmod -R 775 "$INSTALL_DIR/data"
-chmod -R 775 "$INSTALL_DIR/config"
+# setgid ensures new files inherit the coding group
+chmod -R 2775 "$INSTALL_DIR/data"
+chmod -R 2775 "$INSTALL_DIR/config"
 
 # 5. Build Daemon
 echo "Building Daemon at $INSTALL_DIR/daemon..."
@@ -177,7 +180,7 @@ Environment=AUTOMATE_LINUX_DIR=$INSTALL_DIR
 StandardOutput=journal
 StandardError=journal
 RuntimeDirectory=automatelinux
-RuntimeDirectoryMode=0750
+RuntimeDirectoryMode=0755
 
 [Install]
 WantedBy=multi-user.target
@@ -199,5 +202,8 @@ echo "System-Wide Installation Complete!"
 echo "Installed to: $INSTALL_DIR"
 echo "Daemon running as: root"
 echo ""
-echo "To configure for a user, run: sh $INSTALL_DIR/user_install.sh"
+echo "Next steps for each user:"
+echo "  1. Add user to coding group: sudo usermod -aG coding USERNAME"
+echo "  2. Log out and back in (required for group membership)"
+echo "  3. Run: $INSTALL_DIR/user_install.sh"
 echo "--------------------------------------------------------"

@@ -272,6 +272,7 @@ gitCount(){
 }
 
 gitAheadBehind(){
+    git fetch origin main &>/dev/null
     local counts
     counts=$(git rev-list --left-right --count origin/main...HEAD 2>/dev/null)
     if [ -z "$counts" ]; then

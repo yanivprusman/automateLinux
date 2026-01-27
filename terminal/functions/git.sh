@@ -233,6 +233,14 @@ gitd(){
     git diff
 }
 
+gitSync(){
+    if [[ -n $(git status --porcelain) ]]; then
+        git stash && git pull && git stash pop
+    else
+        git pull
+    fi
+}
+
 gitMakeMain() {
   if [ -z "$1" ]; then
     echo "Usage: gitMakeMain <commit-hash>"

@@ -7,12 +7,12 @@ Type=simple
 ExecStart=/opt/automateLinux/daemon/daemon daemon 2>&1 | tee -a /opt/automateLinux/data/combined.log
 Restart=on-failure
 RestartSec=2
-User=yaniv
-Group=coding
+User=root
+Group=root
 StandardOutput=journal
 StandardError=journal
 RuntimeDirectory=automatelinux
-RuntimeDirectoryMode=0750
+RuntimeDirectoryMode=0755
 
 [Install]
 WantedBy=multi-user.target

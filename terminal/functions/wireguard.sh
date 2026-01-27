@@ -356,6 +356,7 @@ EOF
     echo "Starting WireGuard..."
     sudo wg-quick down wg0 2>/dev/null || true
     sudo wg-quick up wg0
+    sudo systemctl enable wg-quick@wg0
 
     # Test connection
     echo

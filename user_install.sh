@@ -35,6 +35,9 @@ if ! id -nG "$TARGET_USER" | grep -qw "coding"; then
     NEED_RELOGIN=true
 fi
 
+# 1.6. Ensure trap log files are world-writable
+sudo chmod 666 "$INSTALL_DIR/data/trapErrLog.txt" "$INSTALL_DIR/data/trapErrLogBackground.txt" 2>/dev/null || true
+
 # 2. Configure ~/.bashrc
 BASHRC_LOC="$USER_HOME/.bashrc"
 BACKUP_BASHRC="$USER_HOME/.bashrc.bakup"

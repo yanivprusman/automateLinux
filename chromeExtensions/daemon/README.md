@@ -7,7 +7,7 @@ This Chrome extension tracks the currently active tab and sends its URL to the A
 1. Open Chrome and go to `chrome://extensions/`
 2. Enable "Developer mode" (toggle in top right)
 3. Click "Load unpacked"
-4. Select this directory (`/home/yaniv/coding/automateLinux/chromeExtension`)
+4. Select this directory (`/opt/automateLinux/chromeExtension`)
 
 ## How It Works
 

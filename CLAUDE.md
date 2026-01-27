@@ -163,7 +163,7 @@ Loads via `~/.bashrc` sourcing `terminal/bashrc`:
 
 Applications in `extraApps/` are stored directly in this repo (not symlinks) to simplify AI agent access without extra permissions. Each app may have its own build system and CLAUDE.md/GEMINI.md for app-specific guidance.
 
-**Production versions** are deployed to `../prod/<appName>` (i.e., `/home/yaniv/coding/prod/<appName>`).
+**Production versions** are git worktrees at `/opt/prod/<appName>`, checked out at specific commits (detached HEAD). To update prod, use `git worktree` commands to move to a new commit.
 
 ## Environment Variables
 

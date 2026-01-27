@@ -36,7 +36,7 @@ def verify():
     time.sleep(1)
     
     # Check log file
-    log_file = "/home/yaniv/coding/automateLinux/data/combined.log"
+    log_file = "/opt/automateLinux/data/combined.log"
     size_after_disabled = os.path.getsize(log_file)
     
     # 3. Enable Logging

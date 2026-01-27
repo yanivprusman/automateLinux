@@ -4,7 +4,7 @@
 
 set -e
 
-LOG_FILE="/home/yaniv/coding/automateLinux/data/combined.log"
+LOG_FILE="/opt/automateLinux/data/combined.log"
 SOCKET_PATH="/run/automatelinux/automatelinux-daemon.sock"
 TEST_MARKER="E2E_TEST_$(date +%s)"
 
@@ -14,9 +14,9 @@ echo ""
 
 # Step 1: Deploy native host if needed
 echo "📦 Step 1: Checking native host deployment..."
-if ! diff -q /usr/local/bin/automate-linux-native-host.py /home/yaniv/coding/automateLinux/chromeExtension/native-host.py >/dev/null 2>&1; then
+if ! diff -q /usr/local/bin/automate-linux-native-host.py /opt/automateLinux/chromeExtension/native-host.py >/dev/null 2>&1; then
     echo "  ⚠  Native host needs update"
-    echo "  Run: sudo cp /home/yaniv/coding/automateLinux/chromeExtension/native-host.py /usr/local/bin/automate-linux-native-host.py"
+    echo "  Run: sudo cp /opt/automateLinux/chromeExtension/native-host.py /usr/local/bin/automate-linux-native-host.py"
     echo "  Then: pkill -f automate-linux-native-host.py"
     echo ""
     read -p "Press Enter after updating native host..."

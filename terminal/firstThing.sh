@@ -15,7 +15,7 @@ if command -v theRealPath >/dev/null 2>&1; then
 elif [ -f "${AUTOMATE_LINUX_DIR}terminal/theRealPath.sh" ]; then
     . "${AUTOMATE_LINUX_DIR}terminal/theRealPath.sh"
 fi
-# export AUTOMATE_LINUX_DIR=/home/yaniv/coding/automateLinux/
+# export AUTOMATE_LINUX_DIR=/opt/automateLinux/
 export AUTOMATE_LINUX_TERMINAL_DIR="${AUTOMATE_LINUX_DIR}terminal/"
 export AUTOMATE_LINUX_ENV_FILE="${AUTOMATE_LINUX_TERMINAL_DIR}env.sh"
 export AUTOMATE_LINUX_SYMLINK_DIR="${AUTOMATE_LINUX_DIR}symlinks"

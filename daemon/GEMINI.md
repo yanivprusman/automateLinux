@@ -11,9 +11,9 @@ The core C++ service of the AutomateLinux project. It handles input event mappin
 
 ## Key Directories
 
-- **[src](file:///home/yaniv/coding/automateLinux/daemon/src)**: Implementation files (.cpp).
-- **[include](file:///home/yaniv/coding/automateLinux/daemon/include)**: Header files (.h).
-- **[tests](file:///home/yaniv/coding/automateLinux/daemon/tests)**: Unit tests for core components.
+- **[src](file:///opt/automateLinux/daemon/src)**: Implementation files (.cpp).
+- **[include](file:///opt/automateLinux/daemon/include)**: Header files (.h).
+- **[tests](file:///opt/automateLinux/daemon/tests)**: Unit tests for core components.
 
 ## Utility Scripts
 

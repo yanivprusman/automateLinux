@@ -2,7 +2,7 @@
 Type=Application
 Name=Loom
 Comment=Loom Remote Desktop Server
-Exec=/home/yaniv/coding/automateLinux/extraApps/loom/server/build/loom-server
+Exec=/opt/automateLinux/extraApps/loom/server/build/loom-server
 Icon=utilities-terminal
 Terminal=false
 Categories=Utility;

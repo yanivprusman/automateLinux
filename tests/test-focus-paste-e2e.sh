@@ -4,7 +4,7 @@
 
 set -e
 
-LOG_FILE="/home/yaniv/coding/automateLinux/data/combined.log"
+LOG_FILE="/opt/automateLinux/data/combined.log"
 TEST_MARKER="E2E_FOCUS_PASTE_$(date +%s)"
 
 echo "🎯 Automated Focus+Paste E2E Test"
@@ -13,7 +13,7 @@ echo ""
 
 # Step 1: Reload Chrome extension
 echo "📦 Step 1/7: Reloading Chrome extension..."
-/home/yaniv/coding/automateLinux/reload-extension.sh 2>&1 | grep -v "Traceback\|WebSocketBadStatusException" || true
+/opt/automateLinux/reload-extension.sh 2>&1 | grep -v "Traceback\|WebSocketBadStatusException" || true
 echo "  ✓ Extension reloaded"
 echo ""
 

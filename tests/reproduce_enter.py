@@ -33,7 +33,7 @@ def monitor_device(device):
 
 def get_keyboard_path():
     try:
-        with open("/home/yaniv/coding/automateLinux/data/keyboardPath.txt", "r") as f:
+        with open("/opt/automateLinux/data/keyboardPath.txt", "r") as f:
             return f.read().strip()
     except FileNotFoundError:
         print("Error: keyboardPath.txt not found")

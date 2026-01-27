@@ -8,7 +8,7 @@
 #
 Defaults	env_reset
 Defaults	mail_badpass
-Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/home/yaniv/coding/automateLinux/symlinks"
+Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/opt/automateLinux/symlinks"
 
 # This fixes CVE-2005-4890 and possibly breaks some versions of kdesu
 # (#1011624, https://bugs.kde.org/show_bug.cgi?id=452532)
@@ -71,16 +71,16 @@ Cmnd_Alias AUTOMATE = \
  /usr/bin/systemctl reset-failed keyBoardTest.service *, \
  /usr/bin/systemctl stop corsairKeyBoardLogiMouse *, \
  /usr/bin/systemctl reset-failed corsairKeyBoardLogiMouse *, \
- /home/yaniv/coding/automateLinux/evsieve/pkill.sh, \
- /home/yaniv/coding/automateLinux/evsieve/services/run.sh, \
- /home/yaniv/coding/automateLinux/evsieve/services/stop.sh, \
- /home/yaniv/coding/automateLinux/evsieve/services/restart.sh, \
- /home/yaniv/coding/automateLinux/evsieve/test/test.sh, \
- /home/yaniv/coding/automateLinux/evsieve/test/runTest.sh, \
- /home/yaniv/coding/automateLinux/evsieve/test/stopTest.sh, \
- /home/yaniv/coding/automateLinux/evsieve/services/_sudoStop.sh, \
- /home/yaniv/coding/automateLinux/evsieve/toggle/sendKeys, \
- /home/yaniv/coding/automateLinux/daemon/restart.sh, \
+ /opt/automateLinux/evsieve/pkill.sh, \
+ /opt/automateLinux/evsieve/services/run.sh, \
+ /opt/automateLinux/evsieve/services/stop.sh, \
+ /opt/automateLinux/evsieve/services/restart.sh, \
+ /opt/automateLinux/evsieve/test/test.sh, \
+ /opt/automateLinux/evsieve/test/runTest.sh, \
+ /opt/automateLinux/evsieve/test/stopTest.sh, \
+ /opt/automateLinux/evsieve/services/_sudoStop.sh, \
+ /opt/automateLinux/evsieve/toggle/sendKeys, \
+ /opt/automateLinux/daemon/restart.sh, \
  /usr/bin/systemctl restart daemon.service *, \
  /sbin/shutdown
 

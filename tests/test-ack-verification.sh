@@ -2,7 +2,7 @@
 # Automated test to verify focus ACK fix
 
 SOCKET_PATH="/run/automatelinux/automatelinux-daemon.sock"
-LOG_FILE="/home/yaniv/coding/automateLinux/data/combined.log"
+LOG_FILE="/opt/automateLinux/data/combined.log"
 
 echo "=== Starting Focus ACK Verification Test ==="
 echo ""

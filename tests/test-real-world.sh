@@ -2,7 +2,7 @@
 # Real-world test: Verify focus+paste works via actual Ctrl+V keyboard trigger
 # This simulates exactly how the user would use it
 
-LOG_FILE="/home/yaniv/coding/automateLinux/data/combined.log"
+LOG_FILE="/opt/automateLinux/data/combined.log"
 TEST_MARKER="REAL_WORLD_TEST_$(date +%s)"
 
 echo "🎯 Real-World Focus+Paste Test"
@@ -37,7 +37,7 @@ if grep -q "\[NativeHost\]" /usr/local/bin/automate-linux-native-host.py 2>/dev/
     echo "✓ Enhanced native host deployed"
 else
     echo "⚠ Old native host - run:"
-    echo "  sudo cp /home/yaniv/coding/automateLinux/chromeExtension/native-host.py \\"
+    echo "  sudo cp /opt/automateLinux/chromeExtension/native-host.py \\"
     echo "          /usr/local/bin/automate-linux-native-host.py"
     echo "  pkill -f automate-linux-native-host.py"
     echo ""

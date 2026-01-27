@@ -1,8 +1,8 @@
 const { exec } = require('child_process');
 const path = require('path');
 
-const filePath = '/home/yaniv/coding/automateLinux/terminal/bindings.sh';
-const repoRoot = '/home/yaniv/coding/automateLinux';
+const filePath = '/opt/automateLinux/terminal/bindings.sh';
+const repoRoot = '/opt/automateLinux';
 
 function run() {
     exec(`git --no-pager log --pretty=format:'%h %ad %s' --date=short -- "${filePath}"`, { cwd: repoRoot }, (error, stdout, stderr) => {

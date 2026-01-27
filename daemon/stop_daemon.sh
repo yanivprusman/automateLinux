@@ -2,7 +2,7 @@
 # Safely stop the automateLinux daemon
 # Finds the PID of the specific daemon binary and kills it
 
-DAEMON_BIN="/home/yaniv/coding/automateLinux/daemon/daemon"
+DAEMON_BIN="${AUTOMATE_LINUX_DIR:-/opt/automateLinux}/daemon/daemon"
 PIDS=$(pgrep -f "^$DAEMON_BIN")
 
 if [ -z "$PIDS" ]; then

@@ -55,5 +55,5 @@ sb  # Shorthand for sourcing ~/.bashrc
 
 ## Existing Examples
 For more complex logic (like handling sub-commands or dynamic arguments), refer to:
-- [daemon.bash](file:///home/yaniv/coding/automateLinux/terminal/completions/daemon.bash): Handles `d` and `daemon` commands.
-- [cd.bash](file:///home/yaniv/coding/automateLinux/terminal/completions/cd.bash): Handles directory history navigation.
+- [daemon.bash](file:///opt/automateLinux/terminal/completions/daemon.bash): Handles `d` and `daemon` commands.
+- [cd.bash](file:///opt/automateLinux/terminal/completions/cd.bash): Handles directory history navigation.

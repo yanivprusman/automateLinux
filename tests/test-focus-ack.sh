@@ -2,7 +2,7 @@
 # Test script to trigger focus command multiple times and analyze ACK timing
 
 SOCKET_PATH="/run/automatelinux/automatelinux-daemon.sock"
-LOG_FILE="/home/yaniv/coding/automateLinux/data/combined.log"
+LOG_FILE="/opt/automateLinux/data/combined.log"
 
 echo "Starting focus ACK timing test..."
 echo "Clearing log excerpt..."

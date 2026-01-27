@@ -4,11 +4,11 @@ A collection of standalone tools and helper scripts that support the AutomateLin
 
 ## Key Utilities
 
-- **[termcontrol](file:///home/yaniv/coding/automateLinux/utilities/termcontrol)**: A C++ utility for controlling terminal window properties and querying state.
-- **[sendKeysUInput](file:///home/yaniv/coding/automateLinux/utilities/sendKeysUInput)**: Simulates keyboard input by writing directly to `/dev/uinput`. Used for triggering macros from scripts.
-- **[lastChanged](file:///home/yaniv/coding/automateLinux/utilities/lastChanged)**: Efficiently monitors file changes across the filesystem.
-- **[tailWindow](file:///home/yaniv/coding/automateLinux/utilities/tailWindow)**: Monitors active window transitions and logs them to the console.
-- **[cleanBetween](file:///home/yaniv/coding/automateLinux/utilities/cleanBetween)**: Text processing utility to extract or remove content between specific patterns.
+- **[termcontrol](file:///opt/automateLinux/utilities/termcontrol)**: A C++ utility for controlling terminal window properties and querying state.
+- **[sendKeysUInput](file:///opt/automateLinux/utilities/sendKeysUInput)**: Simulates keyboard input by writing directly to `/dev/uinput`. Used for triggering macros from scripts.
+- **[lastChanged](file:///opt/automateLinux/utilities/lastChanged)**: Efficiently monitors file changes across the filesystem.
+- **[tailWindow](file:///opt/automateLinux/utilities/tailWindow)**: Monitors active window transitions and logs them to the console.
+- **[cleanBetween](file:///opt/automateLinux/utilities/cleanBetween)**: Text processing utility to extract or remove content between specific patterns.
 
 ## Other Scripts
 

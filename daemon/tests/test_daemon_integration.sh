@@ -27,7 +27,7 @@ echo '{"command":"activeWindowChanged","windowTitle":"test","wmClass":"Code","wm
 echo ""
 echo "4. Checking daemon logs..."
 sleep 1
-tail -20 /home/yaniv/coding/automateLinux/data/daemon.log | grep -A 2 "ACTIVE_WINDOW_CHANGED\|keyShift"
+tail -20 /opt/automateLinux/data/daemon.log | grep -A 2 "ACTIVE_WINDOW_CHANGED\|keyShift"
 
 echo ""
 echo "=== Test Complete ==="

@@ -105,8 +105,8 @@ graph TD
 ## App-Specific Documentation
 
 Some applications within the `extraApps/` directory have their own dedicated documentation:
-- **CAD**: [GEMINI.md](file:///home/yaniv/coding/automateLinux/extraApps/cad/GEMINI.md)
-- **Loom**: [GEMINI.md](file:///home/yaniv/coding/automateLinux/extraApps/loom/GEMINI.md)
+- **CAD**: [GEMINI.md](file:///opt/automateLinux/extraApps/cad/GEMINI.md)
+- **Loom**: [GEMINI.md](file:///opt/automateLinux/extraApps/loom/GEMINI.md)
 
 ## Environment Variables
 

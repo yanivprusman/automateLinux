@@ -2,8 +2,8 @@
 # Comprehensive automated test for Chrome Native Messaging system
 # Tests all requirements defined in requirements.md
 
-LOG_FILE="/home/yaniv/coding/automateLinux/data/combined.log"
-SENDKEYS="/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys"
+LOG_FILE="/opt/automateLinux/data/combined.log"
+SENDKEYS="/opt/automateLinux/utilities/sendKeys/sendKeys"
 RESULTS_FILE="/tmp/native-messaging-test-results.txt"
 
 echo "=== Chrome Native Messaging System Test ===" | tee "$RESULTS_FILE"

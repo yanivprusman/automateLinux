@@ -1,7 +1,7 @@
 # Gemini related utilities
 
 geminiUpsertSession() {
-    local FILE="/home/yaniv/coding/automateLinux/data/geminiSessions.sh"
+    local FILE="${AUTOMATE_LINUX_DIR:-/opt/automateLinux}/data/geminiSessions.sh"
     local KEY="$1"
     local VALUE="$2"
 

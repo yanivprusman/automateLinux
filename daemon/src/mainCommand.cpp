@@ -236,7 +236,7 @@ CmdResult handleStopLoom(const json &command) {
   }
 
   string cmd =
-      "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh --" + mode +
+      directories.base + "daemon/scripts/stop_loom.sh --" + mode +
       " > /dev/null 2>&1";
 
   int rc = std::system(cmd.c_str());
@@ -256,14 +256,14 @@ CmdResult handleRestartLoom(const json &command) {
 
   // 1. First run the stop script synchronously to ensure clean state
   string stopCmd =
-      "/home/yaniv/coding/automateLinux/daemon/scripts/stop_loom.sh --" + mode +
+      directories.base + "daemon/scripts/stop_loom.sh --" + mode +
       " > /dev/null 2>&1";
   std::system(stopCmd.c_str());
 
   // 2. Now launch the restart script
   // We use `nohup` and `&` to ensure it continues running in background.
   string cmd =
-      "/home/yaniv/coding/automateLinux/daemon/scripts/restart_loom.sh --" +
+      directories.base + "daemon/scripts/restart_loom.sh --" +
       mode + " &";
 
   int rc = std::system(cmd.c_str());
@@ -437,21 +437,20 @@ CmdResult handleListPorts(const json &) {
       // Determine repository path based on key
       if (key == "dashboard-dev" || key == "dashboard-prod" ||
           key == "dashboard-bridge") {
-        repoPath = "/home/yaniv/coding/automateLinux";
+        repoPath = directories.base;
       } else if (key == "loom-dev" || key == "loom-server-dev" ||
                  key == "loom-client-dev") {
-        repoPath = "/home/yaniv/coding/automateLinux/extraApps/loom";
+        repoPath = directories.base + "extraApps/loom";
       } else if (key == "loom-prod" || key == "loom-server") {
-        repoPath = "/home/yaniv/coding/prod/loom";
+        repoPath = "/opt/prod/loom";
       } else if (key == "cad-dev") {
-        repoPath = "/home/yaniv/coding/automateLinux/extraApps/cad";
+        repoPath = directories.base + "extraApps/cad";
       } else if (key == "cad-prod") {
-        repoPath = "/home/yaniv/coding/prod/cad";
+        repoPath = "/opt/prod/cad";
       } else if (key == "pt-dev") {
-        repoPath =
-            "/home/yaniv/coding/automateLinux/extraApps/publicTransportation";
+        repoPath = directories.base + "extraApps/publicTransportation";
       } else if (key == "pt-prod") {
-        repoPath = "/home/yaniv/coding/prod/publicTransportation";
+        repoPath = "/opt/prod/publicTransportation";
       }
 
       std::string versionInfo = "";
@@ -484,7 +483,7 @@ CmdResult handleTestEcho(const json &command) {
 CmdResult handleTestLsofScript(const json &command) {
   string port = command[COMMAND_ARG_PORT].get<string>();
   string scriptPath =
-      "/home/yaniv/coding/automateLinux/daemon/scripts/test_lsof.sh " + port;
+      directories.base + "daemon/scripts/test_lsof.sh " + port;
   string output = executeCommand(scriptPath.c_str());
   return CmdResult(0, output + "\n");
 }
@@ -938,7 +937,7 @@ CmdResult handleGetKeyboard(const json &) {
 CmdResult handleTestIntegrity(const json &) {
   // Execute the loopback test script interactively
   FILE *pipe = popen(
-      "python3 /home/yaniv/coding/automateLinux/test-input-loopback.py", "r");
+      ("python3 " + directories.base + "test-input-loopback.py").c_str(), "r");
   if (!pipe) {
     return CmdResult(1, "Failed to run diagnostic script");
   }

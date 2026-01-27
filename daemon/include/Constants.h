@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#define OUTPUT_FILE "/home/yaniv/coding/automateLinux/daemon/output.txt"
+#define OUTPUT_FILE "/opt/automateLinux/daemon/output.txt"
 #define SOCKET_PATH "/run/automatelinux/automatelinux-daemon.sock"
 #define DIR_HISTORY_POINTER_PREFIX "pointerDevPts"
 #define INDEX_OF_LAST_TOUCHED_DIR_KEY "indexOfLastTouchedDir"

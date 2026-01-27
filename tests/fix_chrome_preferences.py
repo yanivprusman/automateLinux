@@ -2,7 +2,7 @@ import json
 import os
 import shutil
 
-prefs_path = "/home/yaniv/coding/automateLinux/chrome/Default/Preferences"
+prefs_path = "/opt/automateLinux/chrome/Default/Preferences"
 backup_path = prefs_path + ".bak"
 
 # 1. Backup
@@ -16,7 +16,7 @@ with open(prefs_path, "r") as f:
 # 3. Modify
 extensions = data.get("extensions", {}).get("settings", {})
 ids_to_remove = ["jffpflfepnpobcokpeodbmjlfjnbciif", "oidmgaidfdknnjomccocciajgbfhdjdj", "oabljmmfgfgbpblfgllkjoaejpmfmhff"]
-path_to_clean = "/home/yaniv/coding/automateLinux/chromeExtension"
+path_to_clean = "/opt/automateLinux/chromeExtension"
 
 removed_ids = []
 for ext_id in list(extensions.keys()):

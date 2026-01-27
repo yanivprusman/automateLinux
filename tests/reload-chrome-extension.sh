@@ -1,7 +1,7 @@
 #!/bin/bash
 # Automate Chrome extension reload using simulated keypresses
 
-SENDKEYS="/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys"
+SENDKEYS="/opt/automateLinux/utilities/sendKeys/sendKeys"
 
 echo "Reloading Chrome extension..."
 

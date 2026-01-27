@@ -1,5 +1,5 @@
 #!/bin/bash
-source /home/yaniv/coding/automateLinux/terminal/functions/misc.sh
+source /opt/automateLinux/terminal/functions/misc.sh
 
 # Mock d function
 d() {

@@ -72,9 +72,9 @@ Every test must validate the complete flow without manual intervention:
 
 ### Test Scripts
 
-- `/home/yaniv/coding/automateLinux/test-focus-paste-e2e.sh` - Semi-automated with manual verification
-- `/home/yaniv/coding/automateLinux/test-fully-automated.py` - Fully automated using evemu
-- `/home/yaniv/coding/automateLinux/test-real-world.sh` - Real-world manual trigger test
+- `/opt/automateLinux/test-focus-paste-e2e.sh` - Semi-automated with manual verification
+- `/opt/automateLinux/test-fully-automated.py` - Fully automated using evemu
+- `/opt/automateLinux/test-real-world.sh` - Real-world manual trigger test
 
 ### Current Status
 

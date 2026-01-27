@@ -1,7 +1,7 @@
 {
     "name": "com.automatelinux.tabtracker",
     "description": "AutomateLinux Active Tab Tracker",
-    "path": "/home/yaniv/coding/automateLinux/chromeExtensions/daemon/native-host-wrapper.sh",
+    "path": "/opt/automateLinux/chromeExtensions/daemon/native-host-wrapper.sh",
     "type": "stdio",
     "allowed_origins": [
         "chrome-extension://oidmgaidfdknnjomccocciajgbfhdjdj/",

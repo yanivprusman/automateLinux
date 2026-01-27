@@ -1,8 +1,8 @@
 #!/bin/bash
 # Precise timing measurement for Ctrl+V paste operation
 
-SENDKEYS="/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys"
-LOG_FILE="/home/yaniv/coding/automateLinux/data/combined.log"
+SENDKEYS="/opt/automateLinux/utilities/sendKeys/sendKeys"
+LOG_FILE="/opt/automateLinux/data/combined.log"
 
 echo "=== CTRL+V TIMING TEST ==="
 echo ""

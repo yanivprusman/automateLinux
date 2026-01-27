@@ -1,5 +1,5 @@
 #!/bin/bash
-LOG_DIR="${AUTOMATE_LINUX_DATA_DIR:-/home/yaniv/coding/automateLinux/data}"
+LOG_DIR="${AUTOMATE_LINUX_DATA_DIR:-/opt/automateLinux/data}"
 # Check for Primary User Configuration if running as root
 PRIMARY_USER_FILE="${AUTOMATE_LINUX_DIR:-/opt/automateLinux}/config/primary_user.env"
 if [ "$(id -u)" -eq 0 ] && [ -f "$PRIMARY_USER_FILE" ]; then
@@ -44,11 +44,11 @@ echo "Mode: $MODE"
 
 # Define Root Directory based on mode
 if [ "$MODE" = "prod" ]; then
-    ROOT_DIR="/home/yaniv/coding/prod/loom"
+    ROOT_DIR="/opt/prod/loom"
     PORT_KEY_CLIENT="loom-prod"
     PORT_KEY_SERVER="loom-server"
 else
-    ROOT_DIR="/home/yaniv/coding/automateLinux/extraApps/loom"
+    ROOT_DIR="${AUTOMATE_LINUX_DIR:-/opt/automateLinux}/extraApps/loom"
     PORT_KEY_CLIENT="loom-dev"
     PORT_KEY_SERVER="loom-server-dev"
 fi
@@ -133,9 +133,9 @@ echo "Starting Loom Client ($CLIENT_UNIT)..."
 systemctl --user restart "$CLIENT_UNIT"
 
 echo "Sending wake-up nudge..."
-/home/yaniv/coding/automateLinux/symlinks/daemon send simulateInput --type 1 --code 42 --value 1
+"${AUTOMATE_LINUX_DIR:-/opt/automateLinux}/symlinks/daemon" send simulateInput --type 1 --code 42 --value 1
 sleep 0.1
-/home/yaniv/coding/automateLinux/symlinks/daemon send simulateInput --type 1 --code 42 --value 0
+"${AUTOMATE_LINUX_DIR:-/opt/automateLinux}/symlinks/daemon" send simulateInput --type 1 --code 42 --value 0
 
 echo "Done. Mode: $MODE, Server: $SERVER_PORT, Client: $CLIENT_PORT"
 exit 0

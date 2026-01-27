@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 // export function activate(context: vscode.ExtensionContext) {
 //     console.log('Your extension "log" is now active!');
-//     const logFilePath = '/home/yaniv/coding/automateLinux/data/combined.log';
+//     const logFilePath = '/opt/automateLinux/data/combined.log';
 //     vscode.workspace.openTextDocument(logFilePath).then(doc => {
 //         vscode.window.showTextDocument(doc, { preview: false });
 // 		const watcher = fs.watch(logFilePath, (eventType) => {
@@ -29,7 +29,7 @@ import * as path from 'path';
 // }
 
 // export function activate(context: vscode.ExtensionContext) {
-//     const logFilePath = '/home/yaniv/coding/automateLinux/data/combined.log';
+//     const logFilePath = '/opt/automateLinux/data/combined.log';
 //     vscode.workspace.openTextDocument(logFilePath).then(doc => {
 //         vscode.window.showTextDocument(doc, { preview: false });
 //     });
@@ -38,7 +38,7 @@ import * as path from 'path';
 // }
 
 export function activate(context: vscode.ExtensionContext) {
-    const logFilePath = '/home/yaniv/coding/automateLinux/data/combined.log';
+    const logFilePath = '/opt/automateLinux/data/combined.log';
 
     const disposable = vscode.commands.registerCommand('log.open', async () => {
         const doc = await vscode.workspace.openTextDocument(logFilePath);

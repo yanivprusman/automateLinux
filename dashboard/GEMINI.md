@@ -18,6 +18,6 @@ A modern web application built with React and Vite that provides a user-friendly
 
 ## Key Files
 
-- **[src/components](file:///home/yaniv/coding/automateLinux/dashboard/src/components)**: Contains all the UI components, categorized by feature area.
+- **[src/components](file:///opt/automateLinux/dashboard/src/components)**: Contains all the UI components, categorized by feature area.
 - **bridge.cjs**: A helper script (likely for development or IPC bridge).
 - **vite.config.ts**: Configuration for the Vite build system.

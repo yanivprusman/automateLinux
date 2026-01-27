@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-DEV_EXTENSION_DIR="/home/yaniv/coding/automateLinux/visualStudioCodeExtensions/git"
+DEV_EXTENSION_DIR="/opt/automateLinux/visualStudioCodeExtensions/git"
 VSCODE_EXTENSIONS_DIR="/home/yaniv/.vscode/extensions"
 EXTENSION_ID="undefined_publisher.git-0.0.1"
 TARGET_DIR="${VSCODE_EXTENSIONS_DIR}/${EXTENSION_ID}"

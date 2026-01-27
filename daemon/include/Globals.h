@@ -21,9 +21,7 @@ struct Directories {
     std::error_code ec;
     std::filesystem::path p = std::filesystem::canonical("/proc/self/exe", ec);
     if (ec) {
-      p = "/home/yaniv/coding/automateLinux/daemon/daemon"; // Fallback to a
-                                                            // guess if
-                                                            // canonical fails
+      p = "/opt/automateLinux/daemon/daemon"; // Fallback if canonical fails
     }
     p = p.parent_path();
 
@@ -40,8 +38,8 @@ struct Directories {
     }
 
     if (!found) {
-      // Final absolute fallback for this specific environment
-      base = "/home/yaniv/coding/automateLinux/";
+      // Final absolute fallback
+      base = "/opt/automateLinux/";
     } else {
       base = p.string() + "/";
     }

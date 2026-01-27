@@ -2,7 +2,7 @@
 # Comprehensive test suite for Chrome-Daemon communication
 
 SOCKET_PATH="/run/automatelinux/automatelinux-daemon.sock"
-LOG_FILE="/home/yaniv/coding/automateLinux/data/combined.log"
+LOG_FILE="/opt/automateLinux/data/combined.log"
 TEST_MARKER="=== COMPREHENSIVE COMM TEST $(date +%s) ==="
 
 echo "$TEST_MARKER" >> "$LOG_FILE"

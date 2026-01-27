@@ -17,7 +17,7 @@ chrome/
 utilities/sendKeys/autoSend.sh
 images/grub.png
 utilities/sendKeys/sendKeys
-/home/yaniv/coding/automateLinux/visualStudioCodeExtensions/vscode-extension-samples/
+/opt/automateLinux/visualStudioCodeExtensions/vscode-extension-samples/
 .git-extension-state
 __pycache__
 keyBindingInsparation

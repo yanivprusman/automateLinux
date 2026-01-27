@@ -9,7 +9,7 @@ import time
 import sys
 import os
 
-LOG_FILE = "/home/yaniv/coding/automateLinux/data/combined.log"
+LOG_FILE = "/opt/automateLinux/data/combined.log"
 
 def log(msg):
     timestamp = time.strftime("%H:%M:%S")
@@ -20,7 +20,7 @@ def simulate_ctrl_v():
     try:
         # Find keyboard device
         result = subprocess.run(
-            ["cat", "/home/yaniv/coding/automateLinux/data/keyboardPath.txt"],
+            ["cat", "/opt/automateLinux/data/keyboardPath.txt"],
             capture_output=True,
             text=True
         )

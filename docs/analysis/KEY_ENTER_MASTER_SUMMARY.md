@@ -184,7 +184,7 @@ To confirm this analysis is correct:
 
 ## Files Modified
 
-All analysis documents created in `/home/yaniv/coding/automateLinux/`:
+All analysis documents created in `/opt/automateLinux/`:
 
 ```
 KEY_ENTER_FINDINGS_REPORT.md

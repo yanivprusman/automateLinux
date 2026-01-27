@@ -140,11 +140,11 @@ _tuc(){
     local AUTOSTART="$NEW_HOME/.config/autostart"
     sudo -u "$NEW_USER" mkdir -p "$AUTOSTART"
     # Using explicit user name to avoid $(whoami) evaluation at creation time
-    echo -e "[Desktop Entry]\nType=Application\nName=Mount Overlays\nExec=bash -c 'source /home/yaniv/coding/automateLinux/terminal/functions/user.sh && _tuMountOverlays $NEW_USER'\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true" | sudo -u "$NEW_USER" tee "$AUTOSTART/mount-overlays.desktop" >/dev/null
+    echo -e "[Desktop Entry]\nType=Application\nName=Mount Overlays\nExec=bash -c 'source /opt/automateLinux/terminal/functions/user.sh && _tuMountOverlays $NEW_USER'\nHidden=false\nNoDisplay=false\nX-GNOME-Autostart-enabled=true" | sudo -u "$NEW_USER" tee "$AUTOSTART/mount-overlays.desktop" >/dev/null
 
     # ALSO add to .profile for robust session initialization (before GUI starts)
     # This specifically addresses "cant launch chrome before opening terminal"
-    echo "source /home/yaniv/coding/automateLinux/terminal/functions/user.sh" | sudo -u "$NEW_USER" tee -a "$NEW_HOME/.profile" >/dev/null
+    echo "source /opt/automateLinux/terminal/functions/user.sh" | sudo -u "$NEW_USER" tee -a "$NEW_HOME/.profile" >/dev/null
     echo "_tuMountOverlays $NEW_USER" | sudo -u "$NEW_USER" tee -a "$NEW_HOME/.profile" >/dev/null
 
     # Surgical ownership
@@ -222,7 +222,7 @@ _tucno(){
     sudo ln -s "$SOURCE_HOME/coding/automateLinux/terminal/bashrc" "$NEW_HOME/.bashrc"
     
     # Setup .profile for robust session initialization
-    echo "source /home/yaniv/coding/automateLinux/terminal/functions/user.sh" | sudo -u "$NEW_USER" tee -a "$NEW_HOME/.profile" >/dev/null
+    echo "source /opt/automateLinux/terminal/functions/user.sh" | sudo -u "$NEW_USER" tee -a "$NEW_HOME/.profile" >/dev/null
 
     # Finalize ownership (surgically)
     echo "Finalizing ownership (surgically)..."

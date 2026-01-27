@@ -4,11 +4,11 @@ A collection of custom VS Code extensions designed to streamline the AutomateLin
 
 ## Key Extensions
 
-- **[git](file:///home/yaniv/coding/automateLinux/visualStudioCodeExtensions/git)**: Provides specialized git workflows, potentially including automated branch management or integration with the project's documentation system.
-- **[daemon](file:///home/yaniv/coding/automateLinux/visualStudioCodeExtensions/daemon)**: Integration for monitoring and controlling the AutomateLinux daemon directly from the VS Code status bar or commands.
-- **[log](file:///home/yaniv/coding/automateLinux/visualStudioCodeExtensions/log)**: A custom log viewer optimized for the AutomateLinux daemon's output format, including filtering and event highlighting.
-- **[edit](file:///home/yaniv/coding/automateLinux/visualStudioCodeExtensions/edit)**: Focused editing enhancements, possibly including macro support or custom context-aware snippets.
+- **[git](file:///opt/automateLinux/visualStudioCodeExtensions/git)**: Provides specialized git workflows, potentially including automated branch management or integration with the project's documentation system.
+- **[daemon](file:///opt/automateLinux/visualStudioCodeExtensions/daemon)**: Integration for monitoring and controlling the AutomateLinux daemon directly from the VS Code status bar or commands.
+- **[log](file:///opt/automateLinux/visualStudioCodeExtensions/log)**: A custom log viewer optimized for the AutomateLinux daemon's output format, including filtering and event highlighting.
+- **[edit](file:///opt/automateLinux/visualStudioCodeExtensions/edit)**: Focused editing enhancements, possibly including macro support or custom context-aware snippets.
 
 ## Shared Resources
 
-- **[common](file:///home/yaniv/coding/automateLinux/visualStudioCodeExtensions/common)**: Shared libraries, types, and utility functions used across all project-specific VS Code extensions.
+- **[common](file:///opt/automateLinux/visualStudioCodeExtensions/common)**: Shared libraries, types, and utility functions used across all project-specific VS Code extensions.

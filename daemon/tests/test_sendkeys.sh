@@ -2,7 +2,7 @@
 # Test script for sendKeys functionality
 # This will test various key commands using the standalone sendKeys utility
 
-SENDKEYS="/home/yaniv/coding/automateLinux/utilities/sendKeys/sendKeys"
+SENDKEYS="/opt/automateLinux/utilities/sendKeys/sendKeys"
 KEYBOARD_PATH="/dev/input/by-id/usb-Corsair_CORSAIR_K100_RGB_Optical-Mechanical_Gaming_Keyboard_502A81D24AAA7CC6-event-kbd"
 
 echo "=== SendKeys Test Suite ==="

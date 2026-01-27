@@ -53,11 +53,11 @@ verify_dependencies() {
     # Ensure SSH service is active
     if systemctl list-unit-files | grep -q "^ssh.service"; then
         echo "Ensuring SSH service is active..."
-        systemctl enable --now ssh
+        systemctl enable --now ssh || true
     fi
     if systemctl list-unit-files | grep -q "^sshd.service"; then
          echo "Ensuring SSHD service is active..."
-         systemctl enable --now sshd
+         systemctl enable --now sshd || true
     fi
 }
 verify_dependencies

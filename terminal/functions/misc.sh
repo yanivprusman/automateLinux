@@ -39,13 +39,22 @@ copyToClipboard(){
 }
 export -f copyToClipboard
 
+cdc() {
+    local dir
+    dir=$(d getEntry --key cdc 2>/dev/null)
+    if [ -n "$dir" ] && [ -d "$dir" ]; then
+        cd "$dir"
+    else
+        echo "cdc directory not set or invalid. Use setCdc to set it."
+        return 1
+    fi
+}
+export -f cdc
+
 setCdc() {
     local newDir="${1:-$PWD}"
-    aliasFile="${AUTOMATE_LINUX_TERMINAL_DIR}aliases.sh"
-    if grep -q '^alias cdc=' "$aliasFile"; then
-        sed -i "s|^alias cdc=.*|alias cdc='cd \"$newDir\"'|" "$aliasFile"
-    fi
-    alias cdc="cd \"$newDir\""
+    d upsertEntry --key cdc --value "$newDir" 1>/dev/null
+    # echo "cdc set to: $newDir"
 }
 export -f setCdc
 

@@ -2,9 +2,9 @@
 # Attempt to find installation directory
 AUTOMATE_LINUX_BASE_DIR=""
 
-# Method 1: Ask the daemon (if installed in PATH) - with timeout to prevent hang
+# Method 1: Ask the daemon (if installed in PATH)
 if command -v daemon >/dev/null 2>&1; then
-    AUTOMATE_LINUX_BASE_DIR=$(timeout 2 daemon send getDir --dirName base 2>/dev/null | tr -d '\n\r')
+    AUTOMATE_LINUX_BASE_DIR=$(daemon send getDir --dirName base 2>/dev/null | tr -d '\n\r')
 fi
 
 # Method 2: Resolve based on this file's location (if symlinked)

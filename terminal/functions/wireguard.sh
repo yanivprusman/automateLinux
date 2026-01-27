@@ -341,12 +341,11 @@ REMOTE_SCRIPT
 [Interface]
 PrivateKey = $CLIENT_PRIV
 Address = $CLIENT_IP/24
-DNS = 10.0.0.1
 
 [Peer]
 PublicKey = $SERVER_PUBLIC_KEY
 Endpoint = $SERVER_IP:$SERVER_PORT
-AllowedIPs = 0.0.0.0/0, ::/0
+AllowedIPs = 10.0.0.0/24
 PersistentKeepalive = 25
 EOF
     echo "   Config written to /etc/wireguard/wg0.conf"

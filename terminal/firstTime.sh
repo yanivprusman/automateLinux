@@ -2,11 +2,7 @@ firstTime(){
     trap ". $AUTOMATE_LINUX_TRAP_ERR_FILE" ERR
     trap ". $AUTOMATE_LINUX_TRAP_EXIT_FILE" EXIT
     trap ". $AUTOMATE_LINUX_TRAP_HUP_FILE" HUP
-    # Get last directory from daemon with timeout, fallback to home
-    local _ft_dir=$(timeout 2 daemon send openedTty --tty $AUTOMATE_LINUX_TTY_NUMBER 2>/dev/null)
-    if [ -n "$_ft_dir" ] && [ -d "$_ft_dir" ]; then
-        cd "$_ft_dir"
-    fi
+    cd $(daemon send openedTty --tty $AUTOMATE_LINUX_TTY_NUMBER )
     if command -v mesg >/dev/null; then
         mesg y
     fi

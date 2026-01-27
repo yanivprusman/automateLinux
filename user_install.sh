@@ -27,6 +27,14 @@ if [ ! -d "$INSTALL_DIR" ]; then
     exit 1
 fi
 
+# 1.5. Add user to coding group if needed
+NEED_RELOGIN=false
+if ! id -nG "$TARGET_USER" | grep -qw "coding"; then
+    echo "Adding $TARGET_USER to 'coding' group..."
+    sudo usermod -aG coding "$TARGET_USER"
+    NEED_RELOGIN=true
+fi
+
 # 2. Configure ~/.bashrc
 BASHRC_LOC="$USER_HOME/.bashrc"
 BACKUP_BASHRC="$USER_HOME/.bashrc.bakup"
@@ -151,6 +159,10 @@ fi
 
 echo "--------------------------------------------------------"
 echo "User Configuration Complete!"
-echo "Please restart your terminal or run 'source ~/.bashrc' to apply changes."
+if [ "$NEED_RELOGIN" = true ]; then
+    echo "IMPORTANT: Log out and back in for group membership to take effect."
+else
+    echo "Please restart your terminal or run 'source ~/.bashrc' to apply changes."
+fi
 echo "Verify connectivity with: d ping"
 echo "--------------------------------------------------------"

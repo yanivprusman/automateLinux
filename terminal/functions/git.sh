@@ -196,6 +196,28 @@ gitl(){
 }
 
 gita(){
+    # Fetch latest from remote silently
+    git fetch origin main &>/dev/null
+
+    # Get commit counts: left=behind (remote), right=ahead (local)
+    local counts
+    counts=$(git rev-list --left-right --count origin/main...HEAD 2>/dev/null)
+
+    if [ -n "$counts" ]; then
+        local behind ahead
+        behind=$(echo "$counts" | cut -f1)
+        ahead=$(echo "$counts" | cut -f2)
+
+        if [ "$behind" -gt 0 ]; then
+            echo -e "${YELLOW}Warning: origin/main has $behind commit(s) not pulled yet.${NC}"
+            read -p "Continue anyway? [y/N] " confirm
+            if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+                echo "Aborted."
+                return 1
+            fi
+        fi
+    fi
+
     git a
 }
 

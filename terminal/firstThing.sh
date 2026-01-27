@@ -5,14 +5,12 @@ if [ -z "$AUTOMATE_LINUX_DIR" ]; then
         AUTOMATE_LINUX_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../" && pwd)/"
     else
         # Fallback if BASH_SOURCE is not available (rare)
-        AUTOMATE_LINUX_DIR="$HOME/coding/automateLinux/"
+        AUTOMATE_LINUX_DIR="/opt/automateLinux/"
     fi
 fi
 
-# Try to source theRealPath if available, but don't fail if not found immediately
-if command -v theRealPath >/dev/null 2>&1; then
-    . theRealPath
-elif [ -f "${AUTOMATE_LINUX_DIR}terminal/theRealPath.sh" ]; then
+# Source theRealPath if available
+if [ -f "${AUTOMATE_LINUX_DIR}terminal/theRealPath.sh" ]; then
     . "${AUTOMATE_LINUX_DIR}terminal/theRealPath.sh"
 fi
 # export AUTOMATE_LINUX_DIR=/opt/automateLinux/

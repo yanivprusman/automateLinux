@@ -34,14 +34,14 @@ BACKUP_BASHRC="$USER_HOME/.bashrc.bakup"
 echo "Configuring $BASHRC_LOC..."
 
 if [ -L "$BASHRC_LOC" ]; then
-    CURRENT_TARGET=$(readlink -f "$BASHRC_LOC")
+    CURRENT_TARGET=$(readlink -f "$BASHRC_LOC" 2>/dev/null || echo "")
     if [ "$CURRENT_TARGET" == "$INSTALL_DIR/terminal/bashrc" ]; then
         echo "  ~/.bashrc is already correctly linked."
     else
-        echo "  Updating ~/.bashrc symlink..."
-        mv "$BASHRC_LOC" "$BACKUP_BASHRC"
+        echo "  Updating ~/.bashrc symlink (was: $(readlink "$BASHRC_LOC"))..."
+        rm "$BASHRC_LOC"
         ln -s "$INSTALL_DIR/terminal/bashrc" "$BASHRC_LOC"
-        echo "  Backed up old bashrc to $BACKUP_BASHRC"
+        echo "  Done."
     fi
 elif [ -f "$BASHRC_LOC" ]; then
     echo "  Backing up existing ~/.bashrc..."
@@ -52,24 +52,49 @@ else
     ln -s "$INSTALL_DIR/terminal/bashrc" "$BASHRC_LOC"
 fi
 
-# 3. Configure Tmux
+# 3. Configure .profile
+echo "Configuring ~/.profile..."
+PROFILE_LOC="$USER_HOME/.profile"
+PROFILE_TARGET="$INSTALL_DIR/profile/.profile"
+if [ -f "$PROFILE_TARGET" ]; then
+    if [ -L "$PROFILE_LOC" ]; then
+        CURRENT_TARGET=$(readlink -f "$PROFILE_LOC" 2>/dev/null || echo "")
+        if [ "$CURRENT_TARGET" == "$PROFILE_TARGET" ]; then
+            echo "  ~/.profile is already correctly linked."
+        else
+            echo "  Updating ~/.profile symlink..."
+            rm "$PROFILE_LOC"
+            ln -s "$PROFILE_TARGET" "$PROFILE_LOC"
+            echo "  Done."
+        fi
+    elif [ -f "$PROFILE_LOC" ]; then
+        echo "  Backing up existing ~/.profile..."
+        mv "$PROFILE_LOC" "${PROFILE_LOC}.bakup"
+        ln -s "$PROFILE_TARGET" "$PROFILE_LOC"
+    else
+        echo "  Creating ~/.profile symlink..."
+        ln -s "$PROFILE_TARGET" "$PROFILE_LOC"
+    fi
+fi
+
+# 4. Configure Tmux
 echo "Configuring Tmux..."
 TMUX_CONF="$USER_HOME/.tmux.conf"
 TMUX_TARGET="$INSTALL_DIR/terminal/tmux.conf"
 if [ -f "$TMUX_TARGET" ]; then
-    if [ -L "$TMUX_CONF" ] && [ "$(readlink -f "$TMUX_CONF")" == "$TMUX_TARGET" ]; then
+    CURRENT_TARGET=$(readlink -f "$TMUX_CONF" 2>/dev/null || echo "")
+    if [ "$CURRENT_TARGET" == "$TMUX_TARGET" ]; then
         echo "  ~/.tmux.conf is already linked."
     else
         if [ -f "$TMUX_CONF" ] || [ -L "$TMUX_CONF" ]; then
-            mv "$TMUX_CONF" "${TMUX_CONF}.bakup"
-            echo "  Backed up old tmux.conf"
+            rm "$TMUX_CONF"
         fi
         ln -s "$TMUX_TARGET" "$TMUX_CONF"
         echo "  Linked ~/.tmux.conf"
     fi
 fi
 
-# 4. Configure GNOME Extensions
+# 5. Configure GNOME Extensions
 echo "Configuring GNOME Extensions..."
 EXT_DIR="$USER_HOME/.local/share/gnome-shell/extensions"
 mkdir -p "$EXT_DIR"
@@ -79,12 +104,17 @@ EXTENSIONS=("clock@ya-niv.com" "active-window-tracker@example.com" "window-selec
 for EXT in "${EXTENSIONS[@]}"; do
     SRC="$INSTALL_DIR/gnomeExtensions/$EXT"
     DEST="$EXT_DIR/$EXT"
-    
+
     if [ -d "$SRC" ]; then
-        if [ -L "$DEST" ] && [ "$(readlink -f "$DEST")" == "$SRC" ]; then
+        CURRENT_TARGET=$(readlink -f "$DEST" 2>/dev/null || echo "")
+        if [ "$CURRENT_TARGET" == "$SRC" ]; then
             echo "  Extension $EXT already linked."
+        elif [ -L "$DEST" ]; then
+            echo "  Updating extension $EXT symlink..."
+            rm "$DEST"
+            ln -s "$SRC" "$DEST"
         elif [ -e "$DEST" ]; then
-            echo "  Warning: $DEST already exists and is not the correct link. Skipping to avoid data loss."
+            echo "  Warning: $DEST already exists and is not a symlink. Skipping."
         else
             ln -s "$SRC" "$DEST"
             echo "  Linked extension $EXT"
@@ -94,21 +124,28 @@ for EXT in "${EXTENSIONS[@]}"; do
     fi
 done
 
-# 5. Configure Autostart
+# 6. Configure Autostart
 echo "Configuring Autostart..."
 AUTOSTART_DIR="$USER_HOME/.config/autostart"
 AUTOSTART_TARGET="$INSTALL_DIR/autostart"
 
 if [ -d "$AUTOSTART_TARGET" ]; then
-    if [ -L "$AUTOSTART_DIR" ] && [ "$(readlink -f "$AUTOSTART_DIR")" == "$AUTOSTART_TARGET" ]; then
+    CURRENT_TARGET=$(readlink -f "$AUTOSTART_DIR" 2>/dev/null || echo "")
+    if [ "$CURRENT_TARGET" == "$AUTOSTART_TARGET" ]; then
         echo "  ~/.config/autostart is already correctly linked."
-    else
-        if [ -e "$AUTOSTART_DIR" ]; then
-            echo "  Backing up existing autostart directory..."
-            mv "$AUTOSTART_DIR" "${AUTOSTART_DIR}.bakup"
-        fi
+    elif [ -L "$AUTOSTART_DIR" ]; then
+        echo "  Updating autostart symlink..."
+        rm "$AUTOSTART_DIR"
         ln -s "$AUTOSTART_TARGET" "$AUTOSTART_DIR"
-        echo "  Linked ~/.config/autostart to $AUTOSTART_TARGET"
+        echo "  Done."
+    elif [ -e "$AUTOSTART_DIR" ]; then
+        echo "  Backing up existing autostart directory..."
+        mv "$AUTOSTART_DIR" "${AUTOSTART_DIR}.bakup"
+        ln -s "$AUTOSTART_TARGET" "$AUTOSTART_DIR"
+        echo "  Done."
+    else
+        ln -s "$AUTOSTART_TARGET" "$AUTOSTART_DIR"
+        echo "  Linked ~/.config/autostart"
     fi
 fi
 

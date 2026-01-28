@@ -15,7 +15,10 @@ for arg in "$@"; do
             echo "Usage: ./install.sh [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --minimal, -m    Skip optional software (gemini-cli, claude-cli)"
+            echo "  --minimal, -m    Minimal install for headless/VPS systems:"
+            echo "                   - Core build deps only (no npm, wireguard, resolvconf)"
+            echo "                   - Skip optional software (gemini-cli, claude-cli)"
+            echo "                   - Skip git alias configuration"
             echo "  --help, -h       Show this help message"
             exit 0
             ;;
@@ -54,11 +57,21 @@ trap 'error_handler $LINENO' ERR
 
 # 1.5. Check and Install Dependencies
 verify_dependencies() {
-    # Add npm to required system packages
     echo "Checking build dependencies..."
-    REQUIRED_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git util-linux npm wireguard resolvconf openssh-server openssh-client tree curl"
-    MISSING_PACKAGES=""
 
+    # Core packages needed to build and run the daemon
+    CORE_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git curl"
+
+    # Extra packages for full desktop installation
+    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux"
+
+    if [ "$MINIMAL_INSTALL" = true ]; then
+        REQUIRED_PACKAGES="$CORE_PACKAGES"
+    else
+        REQUIRED_PACKAGES="$CORE_PACKAGES $EXTRA_PACKAGES"
+    fi
+
+    MISSING_PACKAGES=""
     for pkg in $REQUIRED_PACKAGES; do
         if ! dpkg -s $pkg >/dev/null 2>&1; then
             MISSING_PACKAGES="$MISSING_PACKAGES $pkg"
@@ -66,22 +79,24 @@ verify_dependencies() {
     done
 
     if [ -n "$MISSING_PACKAGES" ]; then
-        echo "Missing packages: $MISSING_PACKAGES"
+        echo "Missing packages:$MISSING_PACKAGES"
         echo "Installing missing dependencies..."
         apt-get update
         apt-get install -y $MISSING_PACKAGES
     else
         echo "All dependencies determined to be installed."
     fi
-    
-    # Ensure SSH service is active
-    if systemctl list-unit-files | grep -q "^ssh.service"; then
-        echo "Ensuring SSH service is active..."
-        systemctl enable --now ssh || true
-    fi
-    if systemctl list-unit-files | grep -q "^sshd.service"; then
-         echo "Ensuring SSHD service is active..."
-         systemctl enable --now sshd || true
+
+    # Ensure SSH service is active (skip in minimal mode - VPS already has SSH)
+    if [ "$MINIMAL_INSTALL" = false ]; then
+        if systemctl list-unit-files | grep -q "^ssh.service"; then
+            echo "Ensuring SSH service is active..."
+            systemctl enable --now ssh || true
+        fi
+        if systemctl list-unit-files | grep -q "^sshd.service"; then
+             echo "Ensuring SSHD service is active..."
+             systemctl enable --now sshd || true
+        fi
     fi
 }
 verify_dependencies
@@ -124,7 +139,11 @@ configure_git() {
     git config --system alias.s "status"
     git config --system alias.alias "!git config --get-regexp alias"
 }
-configure_git
+if [ "$MINIMAL_INSTALL" = false ]; then
+    configure_git
+else
+    echo "Skipping git alias configuration (minimal install)..."
+fi
 
 
 # 3. Enforce Installation Location

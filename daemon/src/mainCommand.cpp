@@ -22,6 +22,7 @@
 #include <sys/socket.h>
 #include <thread>
 #include <tuple>
+#include <unistd.h>
 
 using namespace std;
 
@@ -1617,6 +1618,17 @@ CmdResult handleSetPeerConfig(const json &command) {
     pm.setLeaderAddress(command[COMMAND_ARG_LEADER].get<string>());
   }
 
+  // If configured as leader, register self in database
+  if (pm.isLeader() && !pm.getPeerId().empty()) {
+    string my_ip = getWgInterfaceIP();
+    char hostname[256];
+    string my_hostname = "";
+    if (gethostname(hostname, sizeof(hostname)) == 0) {
+      my_hostname = string(hostname);
+    }
+    PeerTable::upsertPeer(pm.getPeerId(), my_ip, "", my_hostname, true);
+  }
+
   // If configured as worker and leader address is set, try to connect
   if (pm.getRole() == PEER_ROLE_WORKER && !pm.getLeaderAddress().empty()) {
     if (pm.connectToLeader()) {
@@ -1678,6 +1690,29 @@ CmdResult handleRegisterPeer(const json &command) {
 }
 
 CmdResult handleListPeers(const json &) {
+  PeerManager &pm = PeerManager::getInstance();
+
+  // If we're a worker connected to leader, forward the request
+  if (!pm.isLeader() && pm.isConnectedToLeader()) {
+    json fwdCmd;
+    fwdCmd["command"] = COMMAND_LIST_PEERS;
+
+    int leaderFd = pm.getLeaderSocket();
+    string msg = fwdCmd.dump() + "\n";
+    if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
+      return CmdResult(1, "Failed to forward listPeers to leader\n");
+    }
+
+    // Read response from leader
+    char buffer[8192];
+    memset(buffer, 0, sizeof(buffer));
+    ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
+    if (n > 0) {
+      return CmdResult(0, string(buffer));
+    }
+    return CmdResult(1, "No response from leader\n");
+  }
+
   auto peers = PeerTable::getAllPeers();
   ordered_json result = ordered_json::array();
 

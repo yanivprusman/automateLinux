@@ -2,14 +2,20 @@
 #include "AutomationManager.h"
 #include "ClientSender.h"
 #include "DaemonServer.h"
+#include "DatabaseTableManagers.h"
 #include "KeyboardManager.h" // Added include
 #include "MySQLManager.h"
+#include "PeerManager.h"
 #include "common.h"
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <unistd.h>
 
 using namespace std;
 using json = nlohmann::json;
+
+// Forward declaration - implemented in DaemonServer.cpp
+extern string getWgInterfaceIP();
 
 string socketPath;
 Directories actualDirectories;
@@ -42,6 +48,29 @@ int main(int argc, char *argv[]) {
       // Signals handled in initialize_daemon()
 
       MySQLManager::initializeAndStartMySQL();
+
+      // Load peer config and restore connections
+      PeerManager &pm = PeerManager::getInstance();
+      pm.loadConfig();
+      if (pm.isLeader() && !pm.getPeerId().empty()) {
+        // Leader self-registers in database
+        string my_ip = getWgInterfaceIP();
+        char hostname[256];
+        string my_hostname = "";
+        if (gethostname(hostname, sizeof(hostname)) == 0) {
+          my_hostname = string(hostname);
+        }
+        PeerTable::upsertPeer(pm.getPeerId(), my_ip, "", my_hostname, true);
+        cerr << "Peer config restored: leader " << pm.getPeerId() << endl;
+      } else if (!pm.getLeaderAddress().empty()) {
+        // Worker connects to leader
+        if (pm.connectToLeader()) {
+          cerr << "Peer config restored: connected to leader at "
+               << pm.getLeaderAddress() << endl;
+        } else {
+          cerr << "Peer config restored: will retry leader connection" << endl;
+        }
+      }
 
       // Ensure socket directory exists
       std::filesystem::path socketDir =

@@ -2,7 +2,31 @@
 set -e
 
 INSTALL_DIR="/opt/automateLinux"
-echo "Starting AutomateLinux System-Wide Installation..."
+MINIMAL_INSTALL=false
+
+# Parse arguments
+for arg in "$@"; do
+    case $arg in
+        --minimal|-m)
+            MINIMAL_INSTALL=true
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: ./install.sh [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --minimal, -m    Skip optional software (gemini-cli, claude-cli)"
+            echo "  --help, -h       Show this help message"
+            exit 0
+            ;;
+    esac
+done
+
+if [ "$MINIMAL_INSTALL" = true ]; then
+    echo "Starting AutomateLinux MINIMAL System-Wide Installation..."
+else
+    echo "Starting AutomateLinux System-Wide Installation..."
+fi
 
 # 1. Require Root
 if [ "$(id -u)" -ne 0 ]; then
@@ -83,7 +107,11 @@ install_software() {
         echo "  Claude CLI is already installed."
     fi
 }
-install_software
+if [ "$MINIMAL_INSTALL" = false ]; then
+    install_software
+else
+    echo "Skipping optional software (minimal install)..."
+fi
 
 # 2.6. Configure Git Aliases
 configure_git() {

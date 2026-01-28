@@ -112,6 +112,25 @@ mkdir -p "$EXT_DIR"
 
 EXTENSIONS=("clock@ya-niv.com" "active-window-tracker@example.com" "window-selector@ya-niv.com")
 
+# Link shared lib directory (extensions use ../lib/ imports)
+LIB_SRC="$INSTALL_DIR/gnomeExtensions/lib"
+LIB_DEST="$EXT_DIR/lib"
+if [ -d "$LIB_SRC" ]; then
+    CURRENT_TARGET=$(readlink -f "$LIB_DEST" 2>/dev/null || echo "")
+    if [ "$CURRENT_TARGET" == "$LIB_SRC" ]; then
+        echo "  Shared lib directory already linked."
+    elif [ -L "$LIB_DEST" ]; then
+        echo "  Updating lib symlink..."
+        rm "$LIB_DEST"
+        ln -s "$LIB_SRC" "$LIB_DEST"
+    elif [ -e "$LIB_DEST" ]; then
+        echo "  Warning: $LIB_DEST already exists and is not a symlink. Skipping."
+    else
+        ln -s "$LIB_SRC" "$LIB_DEST"
+        echo "  Linked shared lib directory"
+    fi
+fi
+
 for EXT in "${EXTENSIONS[@]}"; do
     SRC="$INSTALL_DIR/gnomeExtensions/$EXT"
     DEST="$EXT_DIR/$EXT"

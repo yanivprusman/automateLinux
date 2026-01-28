@@ -7,6 +7,7 @@
 [AUTOSTART]   ~/.config/autostart -> /opt/automateLinux/autostart
 
 # GNOME Extensions (~/.local/share/gnome-shell/extensions/)
+[EXT_LIB]     lib -> /opt/automateLinux/gnomeExtensions/lib (shared modules for extensions)
 [EXT_CLOCK]   clock@ya-niv.com -> /opt/automateLinux/gnomeExtensions/clock@ya-niv.com
 [EXT_TRACKER] active-window-tracker@example.com -> /opt/automateLinux/gnomeExtensions/active-window-tracker@example.com
 [EXT_WINDOW]  window-selector@ya-niv.com -> /opt/automateLinux/gnomeExtensions/window-selector@ya-niv.com

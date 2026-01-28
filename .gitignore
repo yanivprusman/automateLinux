@@ -23,5 +23,6 @@ __pycache__
 keyBindingInsparation
 utilities/fileSize/fileSize
 /terminal/functions/extra/
-/extraApps/
+/extraApps/*
+!/extraApps/.gitkeep
 data/**

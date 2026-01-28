@@ -50,6 +50,11 @@ logOut() {
 }
 export -f logOut
 
+shutDown() {
+    systemctl poweroff
+}
+export -f shutDown
+
 setDesktopBackground(){
     gsettings set org.gnome.desktop.background picture-uri 'file:///usr/share/images/desktop-base/desktop-background.xml'
 }

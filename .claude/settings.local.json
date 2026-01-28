@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash -x -c:*)",
+      "Bash(bash -i -x -c 'exit 0')",
+      "Bash(timeout 5 ng completion:*)",
+      "Bash(command -v:*)",
+      "Bash(timeout 5 bash -c 'eval \"\"$\\(pyenv init --path\\)\"\"')",
+      "Bash(timeout 2 daemon:*)",
+      "Bash(timeout 20 bash:*)",
+      "Bash(echo:*)",
+      "Bash(timeout 3 bash:*)",
+      "Bash(timeout 10 bash -i -c '\necho \"\"Starting source test...\"\"\nfor step in \"\"firstThing\"\" \"\"colors\"\" \"\"aliases\"\" \"\"functions\"\" \"\"bindings\"\" \"\"exports\"\" \"\"gSettings\"\" \"\"completions\"\" \"\"geminiSessions\"\" \"\"touchDirectories\"\" \"\"PS1\"\"; do\n    echo \"\"Step: $step\"\"\ndone\necho \"\"Done\"\"\n')",
+      "Bash(git config:*)",
+      "Bash(sudo wg show:*)",
+      "Bash(sudo cat:*)",
+      "Bash(systemctl:*)"
+    ]
+  }
+}

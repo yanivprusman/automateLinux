@@ -17,7 +17,9 @@
       "Bash(systemctl:*)",
       "Bash(cat:*)",
       "Bash(sudo sed:*)",
-      "Bash(removeKeyringPassword)"
+      "Bash(removeKeyringPassword)",
+      "Bash(df:*)",
+      "Bash(~/.git-credentials)"
     ]
   }
 }

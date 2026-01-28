@@ -11,6 +11,9 @@
 
 using namespace std;
 
+// Forward declaration - implemented in DaemonServer.cpp
+extern string getWgInterfaceIP();
+
 PeerManager &PeerManager::getInstance() {
   static PeerManager instance;
   return instance;
@@ -89,10 +92,18 @@ bool PeerManager::connectToLeader() {
   m_connectedToLeader = true;
   logToFile("Connected to leader at " + m_leaderAddress, LOG_CORE);
 
-  // Send registration message
+  // Send registration message with peer info
   json regMsg;
   regMsg["command"] = COMMAND_REGISTER_PEER;
   regMsg["peer_id"] = m_peerId;
+  regMsg["ip"] = getWgInterfaceIP();
+
+  // Get hostname
+  char hostname[256];
+  if (gethostname(hostname, sizeof(hostname)) == 0) {
+    regMsg["hostname"] = string(hostname);
+  }
+
   sendToLeader(regMsg);
 
   return true;

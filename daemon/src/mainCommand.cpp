@@ -1724,17 +1724,46 @@ CmdResult handleClaimApp(const json &command) {
     my_peer_id = "local";  // Default if peer not configured
   }
 
+  // If we're a worker connected to leader, forward the request
+  if (!pm.isLeader() && pm.isConnectedToLeader()) {
+    json fwdCmd;
+    fwdCmd["command"] = COMMAND_CLAIM_APP;
+    fwdCmd[COMMAND_ARG_APP] = app_name;
+    fwdCmd["requesting_peer"] = my_peer_id;
+
+    int leaderFd = pm.getLeaderSocket();
+    string msg = fwdCmd.dump() + "\n";
+    if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
+      return CmdResult(1, "Failed to forward claimApp to leader\n");
+    }
+
+    // Read response from leader
+    char buffer[4096];
+    memset(buffer, 0, sizeof(buffer));
+    ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
+    if (n > 0) {
+      return CmdResult(0, string(buffer));
+    }
+    return CmdResult(1, "No response from leader\n");
+  }
+
+  // Leader logic: check requesting_peer if this is forwarded from a worker
+  string requesting_peer = my_peer_id;
+  if (command.contains("requesting_peer")) {
+    requesting_peer = command["requesting_peer"].get<string>();
+  }
+
   // Check if app is already assigned
   string current_owner = AppAssignmentTable::getOwner(app_name);
-  if (!current_owner.empty() && current_owner != my_peer_id) {
+  if (!current_owner.empty() && current_owner != requesting_peer) {
     AppAssignment assignment = AppAssignmentTable::getAssignment(app_name);
     return CmdResult(0, "WARNING: " + app_name + " is assigned to " +
                             current_owner + " since " + assignment.assigned_at +
                             "\n");
   }
 
-  // Assign to this peer
-  AppAssignmentTable::assignApp(app_name, my_peer_id);
+  // Assign to the requesting peer
+  AppAssignmentTable::assignApp(app_name, requesting_peer);
 
   // Get the dev port for this app
   string port_key = "port_" + app_name + "-dev";
@@ -1744,9 +1773,19 @@ CmdResult handleClaimApp(const json &command) {
   if (!port_str.empty()) {
     result_msg += " (dev port " + port_str + ")";
 
-    // TODO: Notify VPS to update nginx forwarding
-    // For now, just log
-    logToFile("App claimed: " + app_name + " by " + my_peer_id +
+    // If leader, notify VPS to update nginx forwarding
+    if (pm.isLeader() && requesting_peer != "vps") {
+      string peer_ip = PeerTable::getIpAddress(requesting_peer);
+      if (!peer_ip.empty()) {
+        json nginxCmd;
+        nginxCmd["command"] = COMMAND_UPDATE_NGINX_FORWARD;
+        nginxCmd[COMMAND_ARG_PORT] = port_str;
+        nginxCmd[COMMAND_ARG_TARGET] = peer_ip;
+        pm.sendToPeer("vps", nginxCmd);
+      }
+    }
+
+    logToFile("App claimed: " + app_name + " by " + requesting_peer +
                   ", dev port " + port_str,
               LOG_CORE);
   }
@@ -1763,19 +1802,48 @@ CmdResult handleReleaseApp(const json &command) {
     my_peer_id = "local";
   }
 
+  // If we're a worker connected to leader, forward the request
+  if (!pm.isLeader() && pm.isConnectedToLeader()) {
+    json fwdCmd;
+    fwdCmd["command"] = COMMAND_RELEASE_APP;
+    fwdCmd[COMMAND_ARG_APP] = app_name;
+    fwdCmd["requesting_peer"] = my_peer_id;
+
+    int leaderFd = pm.getLeaderSocket();
+    string msg = fwdCmd.dump() + "\n";
+    if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
+      return CmdResult(1, "Failed to forward releaseApp to leader\n");
+    }
+
+    // Read response from leader
+    char buffer[4096];
+    memset(buffer, 0, sizeof(buffer));
+    ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
+    if (n > 0) {
+      return CmdResult(0, string(buffer));
+    }
+    return CmdResult(1, "No response from leader\n");
+  }
+
+  // Leader logic: check requesting_peer if this is forwarded from a worker
+  string requesting_peer = my_peer_id;
+  if (command.contains("requesting_peer")) {
+    requesting_peer = command["requesting_peer"].get<string>();
+  }
+
   // Check if this peer owns the app
   string current_owner = AppAssignmentTable::getOwner(app_name);
   if (current_owner.empty()) {
     return CmdResult(0, app_name + " is not assigned to anyone.\n");
   }
 
-  if (current_owner != my_peer_id) {
+  if (current_owner != requesting_peer) {
     return CmdResult(1, "Cannot release " + app_name + " - owned by " +
                             current_owner + "\n");
   }
 
   AppAssignmentTable::releaseApp(app_name);
-  logToFile("App released: " + app_name + " by " + my_peer_id, LOG_CORE);
+  logToFile("App released: " + app_name + " by " + requesting_peer, LOG_CORE);
 
   return CmdResult(0, "Released " + app_name + "\n");
 }

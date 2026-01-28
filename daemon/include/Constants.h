@@ -134,6 +134,7 @@
 #define COMMAND_ARG_ID "id"
 #define COMMAND_ARG_PEER "peer"
 #define COMMAND_ARG_APP "app"
+#define COMMAND_ARG_FORCE "force"
 #define COMMAND_ARG_TARGET "target"
 
 // Peer Roles

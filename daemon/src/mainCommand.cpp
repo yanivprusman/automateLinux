@@ -1714,6 +1714,19 @@ CmdResult handleListPeers(const json &) {
   }
 
   auto peers = PeerTable::getAllPeers();
+
+  // Sort by IP address (numeric comparison of last octet for 10.0.0.x)
+  sort(peers.begin(), peers.end(), [](const PeerRecord &a, const PeerRecord &b) {
+    auto getLastOctet = [](const string &ip) -> int {
+      size_t lastDot = ip.rfind('.');
+      if (lastDot != string::npos) {
+        return stoi(ip.substr(lastDot + 1));
+      }
+      return 0;
+    };
+    return getLastOctet(a.ip_address) < getLastOctet(b.ip_address);
+  });
+
   ordered_json result = ordered_json::array();
 
   for (const auto &peer : peers) {
@@ -1887,13 +1900,21 @@ CmdResult handleReleaseApp(const json &command) {
     return CmdResult(0, app_name + " is not assigned to anyone.\n");
   }
 
-  if (current_owner != requesting_peer) {
+  bool force = false;
+  if (command.contains(COMMAND_ARG_FORCE)) {
+    auto &val = command[COMMAND_ARG_FORCE];
+    force = val.is_boolean() ? val.get<bool>() : (val.get<string>() == "true");
+  }
+
+  if (current_owner != requesting_peer && !force) {
     return CmdResult(1, "Cannot release " + app_name + " - owned by " +
-                            current_owner + "\n");
+                            current_owner + " (use --force to override)\n");
   }
 
   AppAssignmentTable::releaseApp(app_name);
-  logToFile("App released: " + app_name + " by " + requesting_peer, LOG_CORE);
+  logToFile("App released: " + app_name + " by " + requesting_peer +
+                (force ? " (forced)" : ""),
+            LOG_CORE);
 
   return CmdResult(0, "Released " + app_name + "\n");
 }

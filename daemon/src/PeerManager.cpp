@@ -106,6 +106,15 @@ bool PeerManager::connectToLeader() {
 
   sendToLeader(regMsg);
 
+  // Wait for and consume the registration response to avoid it being
+  // returned for subsequent commands
+  char buffer[1024];
+  memset(buffer, 0, sizeof(buffer));
+  ssize_t n = read(m_leaderSocket, buffer, sizeof(buffer) - 1);
+  if (n > 0) {
+    logToFile("Registration response: " + string(buffer), LOG_CORE);
+  }
+
   return true;
 }
 

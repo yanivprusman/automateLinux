@@ -289,15 +289,12 @@ int handle_peer_data(int peer_fd) {
       continue;
     }
 
-    // TODO: Handle peer messages (authentication, state sync, etc.)
-    // For now, just forward to mainCommand like a regular client
+    // Handle peer messages
+    // Peer connections are persistent - don't close based on mainCommand return
     logToFile("Peer message from " + state.peer_ip + ": " + message, LOG_CORE);
 
-    if (mainCommand(j, peer_fd) == 1) {
-      close(peer_fd);
-      peer_clients.erase(peer_fd);
-      return 0;
-    }
+    // Just process the command - peer connections stay open
+    mainCommand(j, peer_fd);
   }
   return 0;
 }

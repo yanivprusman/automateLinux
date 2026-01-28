@@ -61,8 +61,51 @@ d isLoomActive
 d publicTransportationOpenApp   # Opens in browser
 ```
 
+## App Assignment (Multi-Peer)
+
+When multiple machines (desktop, laptop, VPS) are connected via WireGuard VPN, the daemon tracks which peer is actively working on each extraApp to prevent git conflicts.
+
+### Claiming an App
+
+Use `gita` instead of `git add` when working in an extraApp directory:
+
+```bash
+cd /opt/automateLinux/extraApps/cad
+gita .                    # Claims app, then runs git add
+# Output: "Claimed cad (dev port 3001), VPS forwarding to 10.0.0.2"
+```
+
+The `gita` function automatically:
+1. Detects which extraApp you're in (cad, loom, or pt)
+2. Calls `d claimApp --app <name>` to register ownership
+3. Warns if another peer already owns the app
+4. Triggers VPS nginx to forward the dev port to your machine
+
+### Manual Commands
+
+```bash
+d claimApp --app cad       # Claim exclusive work on cad
+d releaseApp --app cad     # Release when done
+d listApps                 # Show all current assignments
+d getAppOwner --app cad    # Check who owns an app
+```
+
+### Conflict Warning
+
+If another peer owns the app:
+```bash
+gita .
+# WARNING: cad is assigned to laptop since 2026-01-28 10:14:43
+# Continue anyway? [y/N]
+```
+
+Choosing to continue will reassign the app to you (use with caution).
+
 ## Related Commands
 - `d listPorts`: See all currently registered app ports.
 - `d publicTransportationOpenApp`: Opens the PT app in Chrome based on the registered port.
 - `d restartLoom`: Management for the Loom screen recording integration.
+- `d claimApp --app <name>`: Claim exclusive work on an extraApp.
+- `d releaseApp --app <name>`: Release app assignment.
+- `d listApps`: Show all app assignments across peers.
 

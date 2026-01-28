@@ -82,14 +82,35 @@ testWireGuardProxy
 ```
 Internet
     |
-Server (31.133.102.195)
+Server/VPS (31.133.102.195)
     |  WireGuard: 10.0.0.1
-    |  nginx: 8080 -> 10.0.0.2:80
+    |  nginx: dynamic port forwarding to active peer
+    |  Daemon: worker, TCP:3600
     |
 [WireGuard Tunnel]
     |
-PC (10.0.0.2)
-    |  nginx: 80
+Desktop (10.0.0.2) - LEADER
+    |  Daemon: leader, TCP:3600
+    |  Source of truth for app assignments
+    |
+Laptop (10.0.0.4)
+    |  Daemon: worker, TCP:3600
+```
+
+## Daemon Peer Networking
+
+The daemon uses this WireGuard VPN for peer-to-peer communication on port 3600. See the main CLAUDE.md "Multi-Peer Networking" section for details on:
+- Leader/worker configuration
+- App assignment to prevent git conflicts on extraApps
+- Dynamic nginx port forwarding on VPS
+
+**Quick setup:**
+```bash
+# On desktop (leader)
+d setPeerConfig --role leader --id desktop
+
+# On VPS/laptop (workers)
+d setPeerConfig --role worker --id vps --leader 10.0.0.2
 ```
 
 ## Troubleshooting

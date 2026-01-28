@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 automateLinux is a suite of tools for personalizing and automating a Linux desktop environment:
-- **C++ Daemon** (`daemon/`): Central background service managing input events, port registry, database state, and command dispatching via UNIX sockets
+- **C++ Daemon** (`daemon/`): Central background service managing input events, port registry, database state, peer networking (over WireGuard VPN), and command dispatching via UNIX sockets and TCP
 - **Terminal Environment** (`terminal/`): Modular Bash scripts for shell customization including shared directory history (`Ctrl+Up/Down`), custom prompt, aliases, and functions
 - **Dashboard** (`dashboard/`): React/Vite web app for live logs, macro builder, and system configuration. Uses bridge.cjs to communicate with daemon
 - **Chrome Extension** (`chromeExtensions/daemon/`): Browser state sync via Native Messaging (tracks active tabs, Ctrl+V focus+paste on ChatGPT)
@@ -96,6 +96,18 @@ d simulateInput --type 1 --code 30 --value 1   # Raw key event (EV_KEY, KEY_A, p
 d restartLoom / stopLoom / isLoomActive
 d publicTransportationOpenApp
 d registerLogListener                           # For live log streaming
+
+# Peer networking commands
+d setPeerConfig --role leader --id desktop     # Configure as leader
+d setPeerConfig --role worker --id vps --leader 10.0.0.2  # Configure as worker
+d getPeerStatus                                 # Show role, connections
+d listPeers                                     # List registered peers
+
+# App assignment (prevents git conflicts on extraApps)
+d claimApp --app cad                           # Claim exclusive work on app
+d releaseApp --app cad                         # Release app assignment
+d listApps                                     # Show all app assignments
+d getAppOwner --app cad                        # Check who owns an app
 ```
 
 ## Adding a New Daemon Command
@@ -145,12 +157,94 @@ d registerLogListener                           # For live log streaming
 └───────┘ └─────────┘ └─────────┘ └───────┘ └───────┘ └──────────┘
 ```
 
+## Multi-Peer Networking
+
+The daemon supports distributed operation across multiple machines connected via WireGuard VPN. This enables:
+- **Centralized app assignment** - Prevent git conflicts by locking extraApps to specific peers
+- **Dynamic port forwarding** - VPS nginx automatically routes dev ports to the active peer
+
+### VPN Environment
+
+```
+                    WireGuard VPN (10.0.0.0/24)
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐
+│   Worker      │     │    LEADER     │     │   Worker      │
+│  10.0.0.4     │────▶│   10.0.0.2    │◀────│  10.0.0.1     │
+│  (Laptop)     │     │   (Desktop)   │     │  (VPS)        │
+└───────────────┘     └───────────────┘     └───────────────┘
+        TCP:3600              TCP:3600              TCP:3600
+```
+
+- **VPS**: 10.0.0.1 (public: 31.133.102.195) - nginx proxy host
+- **Desktop (Leader)**: 10.0.0.2 - source of truth for app assignments
+- **Laptop**: 10.0.0.4
+- **Port**: 3600 (peer TCP socket, bound to wg0 interface)
+
+### Setup
+
+**On the leader (Desktop):**
+```bash
+d setPeerConfig --role leader --id desktop
+```
+
+**On workers (VPS, Laptop):**
+```bash
+d setPeerConfig --role worker --id vps --leader 10.0.0.2
+d setPeerConfig --role worker --id laptop --leader 10.0.0.2
+```
+
+Workers automatically connect to the leader on startup and register themselves.
+
+### App Assignment (Preventing Git Conflicts)
+
+When working on extraApps (cad, loom, pt), the `gita` function automatically claims the app:
+
+```bash
+cd /opt/automateLinux/extraApps/cad
+gita .                    # Calls 'd claimApp --app cad' before git add
+# Output: "Claimed cad (dev port 3001), VPS forwarding to 10.0.0.2"
+```
+
+If another peer already owns the app:
+```bash
+gita .
+# Output: "WARNING: cad is assigned to laptop since 2026-01-28 10:14:43"
+# Prompt: "Continue anyway? [y/N]"
+```
+
+### Nginx Port Forwarding
+
+When a peer claims an app, the leader notifies VPS to update nginx:
+
+1. Laptop claims `cad` (dev port 3001)
+2. Leader sends `updateNginxForward` to VPS
+3. VPS creates `/etc/nginx/conf.d/daemon-forward-3001.conf`
+4. External traffic to `http://VPS_PUBLIC_IP:3001` routes to laptop over VPN
+
+### Key Commands
+
+| Command | Description |
+|---------|-------------|
+| `d setPeerConfig --role <role> --id <id> [--leader <ip>]` | Configure peer role |
+| `d getPeerStatus` | Show current peer configuration |
+| `d listPeers` | List all registered peers with status |
+| `d claimApp --app <name>` | Claim exclusive work on an extraApp |
+| `d releaseApp --app <name>` | Release app assignment |
+| `d listApps` | Show all app assignments |
+| `d getAppOwner --app <name>` | Check who owns an app |
+
 ### Key Source Files
 - **daemon/src/mainCommand.cpp**: Command dispatcher (all daemon commands)
 - **daemon/src/InputMapper.cpp**: Input event interception and remapping
-- **daemon/src/DaemonServer.cpp**: UNIX socket server
-- **daemon/src/DatabaseTableManagers.cpp**: SQLite table management
+- **daemon/src/DaemonServer.cpp**: UNIX socket server + TCP peer socket handling
+- **daemon/src/PeerManager.cpp**: Leader/worker connection management
+- **daemon/src/DatabaseTableManagers.cpp**: MySQL table management (including peer_registry, app_assignments)
 - **dashboard/bridge.cjs**: WebSocket/REST bridge to daemon for dashboard
+- **terminal/functions/git.sh**: Git helpers including `gita` with app claiming
 - **terminal/functions/*.sh**: Modular bash functions
 
 ### Terminal Environment

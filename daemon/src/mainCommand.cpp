@@ -25,6 +25,9 @@
 
 using namespace std;
 
+// Forward declaration - implemented in DaemonServer.cpp
+extern string getWgInterfaceIP();
+
 const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_EMPTY, {}),
     CommandSignature(COMMAND_HELP_DDASH, {}),
@@ -1776,12 +1779,24 @@ CmdResult handleClaimApp(const json &command) {
     // If leader, notify VPS to update nginx forwarding
     if (pm.isLeader() && requesting_peer != "vps") {
       string peer_ip = PeerTable::getIpAddress(requesting_peer);
+      // If requesting_peer is the leader itself, use own wg0 IP
+      if (peer_ip.empty() && requesting_peer == pm.getPeerId()) {
+        peer_ip = getWgInterfaceIP();
+      }
       if (!peer_ip.empty()) {
         json nginxCmd;
         nginxCmd["command"] = COMMAND_UPDATE_NGINX_FORWARD;
         nginxCmd[COMMAND_ARG_PORT] = port_str;
         nginxCmd[COMMAND_ARG_TARGET] = peer_ip;
-        pm.sendToPeer("vps", nginxCmd);
+        if (pm.sendToPeer("vps", nginxCmd)) {
+          result_msg += ", VPS forwarding to " + peer_ip;
+          logToFile("Sent nginx forward to VPS: port " + port_str + " -> " +
+                        peer_ip,
+                    LOG_CORE);
+        } else {
+          logToFile("Failed to send nginx forward to VPS (not connected?)",
+                    LOG_CORE);
+        }
       }
     }
 

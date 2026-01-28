@@ -6,6 +6,7 @@
 #include "KeyNames.h"
 #include "KeyboardManager.h"
 #include "MySQLManager.h"
+#include "PeerManager.h"
 #include "Utils.h"
 #include "common.h"
 #include "main.h"
@@ -102,6 +103,20 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_TEST_ECHO, {COMMAND_ARG_MESSAGE}),
     CommandSignature(COMMAND_TEST_LSOF_SCRIPT, {COMMAND_ARG_PORT}),
     CommandSignature(COMMAND_LIST_COMMANDS, {}),
+    // Peer Networking Commands
+    CommandSignature(COMMAND_SET_PEER_CONFIG, {}),
+    CommandSignature(COMMAND_GET_PEER_STATUS, {}),
+    CommandSignature(COMMAND_REGISTER_PEER, {}),
+    CommandSignature(COMMAND_LIST_PEERS, {}),
+    CommandSignature(COMMAND_GET_PEER_INFO, {COMMAND_ARG_PEER}),
+    // App Assignment Commands
+    CommandSignature(COMMAND_CLAIM_APP, {COMMAND_ARG_APP}),
+    CommandSignature(COMMAND_RELEASE_APP, {COMMAND_ARG_APP}),
+    CommandSignature(COMMAND_LIST_APPS, {}),
+    CommandSignature(COMMAND_GET_APP_OWNER, {COMMAND_ARG_APP}),
+    // VPS-specific Commands
+    CommandSignature(COMMAND_UPDATE_NGINX_FORWARD,
+                     {COMMAND_ARG_PORT, COMMAND_ARG_TARGET}),
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -1576,6 +1591,280 @@ CmdResult handleRevokeLoomTokens(const json &) {
   return CmdResult(0, "Loom tokens revoked.\n");
 }
 
+// ============================================================
+// Peer Networking Commands
+// ============================================================
+
+CmdResult handleSetPeerConfig(const json &command) {
+  PeerManager &pm = PeerManager::getInstance();
+
+  if (command.contains(COMMAND_ARG_ROLE)) {
+    string role = command[COMMAND_ARG_ROLE].get<string>();
+    if (role != PEER_ROLE_LEADER && role != PEER_ROLE_WORKER) {
+      return CmdResult(1, "Invalid role. Use 'leader' or 'worker'.\n");
+    }
+    pm.setRole(role);
+  }
+
+  if (command.contains(COMMAND_ARG_ID)) {
+    pm.setPeerId(command[COMMAND_ARG_ID].get<string>());
+  }
+
+  if (command.contains(COMMAND_ARG_LEADER)) {
+    pm.setLeaderAddress(command[COMMAND_ARG_LEADER].get<string>());
+  }
+
+  // If configured as worker and leader address is set, try to connect
+  if (pm.getRole() == PEER_ROLE_WORKER && !pm.getLeaderAddress().empty()) {
+    if (pm.connectToLeader()) {
+      return CmdResult(0, "Peer config saved. Connected to leader at " +
+                              pm.getLeaderAddress() + "\n");
+    } else {
+      return CmdResult(0,
+                       "Peer config saved. Failed to connect to leader at " +
+                           pm.getLeaderAddress() +
+                           " (will retry on next command)\n");
+    }
+  }
+
+  return CmdResult(0, "Peer config saved. Role: " + pm.getRole() +
+                          ", ID: " + pm.getPeerId() + "\n");
+}
+
+CmdResult handleGetPeerStatus(const json &) {
+  PeerManager &pm = PeerManager::getInstance();
+  ordered_json status;
+  status["role"] = pm.getRole();
+  status["peer_id"] = pm.getPeerId();
+  status["leader_address"] = pm.getLeaderAddress();
+  status["is_leader"] = pm.isLeader();
+  status["connected_to_leader"] = pm.isConnectedToLeader();
+
+  if (pm.isLeader()) {
+    auto peers = pm.listPeers();
+    status["connected_workers"] = (int)peers.size();
+  }
+
+  return CmdResult(0, status.dump(2) + "\n");
+}
+
+CmdResult handleRegisterPeer(const json &command) {
+  // This is called by a worker connecting to the leader
+  PeerManager &pm = PeerManager::getInstance();
+
+  if (!pm.isLeader()) {
+    return CmdResult(1, "This daemon is not the leader.\n");
+  }
+
+  string peer_id = command.contains("peer_id")
+                       ? command["peer_id"].get<string>()
+                       : "unknown";
+  string ip = command.contains("ip") ? command["ip"].get<string>() : "";
+  string mac = command.contains("mac") ? command["mac"].get<string>() : "";
+  string hostname =
+      command.contains("hostname") ? command["hostname"].get<string>() : "";
+
+  // Store in database
+  PeerTable::upsertPeer(peer_id, ip, mac, hostname, true);
+
+  // Register in memory
+  pm.registerPeer(peer_id, ip, mac, hostname, clientSocket);
+
+  logToFile("Peer registered: " + peer_id + " (" + ip + ")", LOG_CORE);
+  return CmdResult(0, "Peer registered: " + peer_id + "\n");
+}
+
+CmdResult handleListPeers(const json &) {
+  auto peers = PeerTable::getAllPeers();
+  ordered_json result = ordered_json::array();
+
+  for (const auto &peer : peers) {
+    ordered_json p;
+    p["peer_id"] = peer.peer_id;
+    p["ip_address"] = peer.ip_address;
+    p["mac_address"] = peer.mac_address;
+    p["hostname"] = peer.hostname;
+    p["last_seen"] = peer.last_seen;
+    p["is_online"] = peer.is_online;
+    result.push_back(p);
+  }
+
+  return CmdResult(0, result.dump(2) + "\n");
+}
+
+CmdResult handleGetPeerInfo(const json &command) {
+  string peer_id = command[COMMAND_ARG_PEER].get<string>();
+  PeerRecord peer = PeerTable::getPeer(peer_id);
+
+  if (peer.peer_id.empty()) {
+    return CmdResult(1, "Peer not found: " + peer_id + "\n");
+  }
+
+  ordered_json result;
+  result["peer_id"] = peer.peer_id;
+  result["ip_address"] = peer.ip_address;
+  result["mac_address"] = peer.mac_address;
+  result["hostname"] = peer.hostname;
+  result["last_seen"] = peer.last_seen;
+  result["is_online"] = peer.is_online;
+
+  return CmdResult(0, result.dump(2) + "\n");
+}
+
+// ============================================================
+// App Assignment Commands
+// ============================================================
+
+CmdResult handleClaimApp(const json &command) {
+  string app_name = command[COMMAND_ARG_APP].get<string>();
+  PeerManager &pm = PeerManager::getInstance();
+  string my_peer_id = pm.getPeerId();
+
+  if (my_peer_id.empty()) {
+    my_peer_id = "local";  // Default if peer not configured
+  }
+
+  // Check if app is already assigned
+  string current_owner = AppAssignmentTable::getOwner(app_name);
+  if (!current_owner.empty() && current_owner != my_peer_id) {
+    AppAssignment assignment = AppAssignmentTable::getAssignment(app_name);
+    return CmdResult(0, "WARNING: " + app_name + " is assigned to " +
+                            current_owner + " since " + assignment.assigned_at +
+                            "\n");
+  }
+
+  // Assign to this peer
+  AppAssignmentTable::assignApp(app_name, my_peer_id);
+
+  // Get the dev port for this app
+  string port_key = "port_" + app_name + "-dev";
+  string port_str = SettingsTable::getSetting(port_key);
+
+  string result_msg = "Claimed " + app_name;
+  if (!port_str.empty()) {
+    result_msg += " (dev port " + port_str + ")";
+
+    // TODO: Notify VPS to update nginx forwarding
+    // For now, just log
+    logToFile("App claimed: " + app_name + " by " + my_peer_id +
+                  ", dev port " + port_str,
+              LOG_CORE);
+  }
+
+  return CmdResult(0, result_msg + "\n");
+}
+
+CmdResult handleReleaseApp(const json &command) {
+  string app_name = command[COMMAND_ARG_APP].get<string>();
+  PeerManager &pm = PeerManager::getInstance();
+  string my_peer_id = pm.getPeerId();
+
+  if (my_peer_id.empty()) {
+    my_peer_id = "local";
+  }
+
+  // Check if this peer owns the app
+  string current_owner = AppAssignmentTable::getOwner(app_name);
+  if (current_owner.empty()) {
+    return CmdResult(0, app_name + " is not assigned to anyone.\n");
+  }
+
+  if (current_owner != my_peer_id) {
+    return CmdResult(1, "Cannot release " + app_name + " - owned by " +
+                            current_owner + "\n");
+  }
+
+  AppAssignmentTable::releaseApp(app_name);
+  logToFile("App released: " + app_name + " by " + my_peer_id, LOG_CORE);
+
+  return CmdResult(0, "Released " + app_name + "\n");
+}
+
+CmdResult handleListApps(const json &) {
+  auto assignments = AppAssignmentTable::getAllAssignments();
+  ordered_json result = ordered_json::array();
+
+  for (const auto &assignment : assignments) {
+    ordered_json a;
+    a["app_name"] = assignment.app_name;
+    a["assigned_peer"] = assignment.assigned_peer;
+    a["assigned_at"] = assignment.assigned_at;
+    a["last_activity"] = assignment.last_activity;
+    result.push_back(a);
+  }
+
+  return CmdResult(0, result.dump(2) + "\n");
+}
+
+CmdResult handleGetAppOwner(const json &command) {
+  string app_name = command[COMMAND_ARG_APP].get<string>();
+  string owner = AppAssignmentTable::getOwner(app_name);
+
+  if (owner.empty()) {
+    return CmdResult(0, app_name + " is not assigned.\n");
+  }
+
+  AppAssignment assignment = AppAssignmentTable::getAssignment(app_name);
+  return CmdResult(0, app_name + " is assigned to " + owner + " since " +
+                          assignment.assigned_at + "\n");
+}
+
+// ============================================================
+// VPS-specific Commands
+// ============================================================
+
+CmdResult handleUpdateNginxForward(const json &command) {
+  int port = 0;
+  if (command[COMMAND_ARG_PORT].is_number()) {
+    port = command[COMMAND_ARG_PORT].get<int>();
+  } else {
+    port = std::stoi(command[COMMAND_ARG_PORT].get<string>());
+  }
+  string target_ip = command[COMMAND_ARG_TARGET].get<string>();
+
+  // Generate nginx config for this port
+  string config_path = "/etc/nginx/conf.d/daemon-forward-" + to_string(port) +
+                       ".conf";
+
+  string nginx_config = "# Auto-generated by daemon. DO NOT EDIT.\n"
+                        "server {\n"
+                        "    listen " +
+                        to_string(port) +
+                        ";\n"
+                        "    location / {\n"
+                        "        proxy_pass http://" +
+                        target_ip + ":" + to_string(port) +
+                        ";\n"
+                        "        proxy_http_version 1.1;\n"
+                        "        proxy_set_header Upgrade $http_upgrade;\n"
+                        "        proxy_set_header Connection \"upgrade\";\n"
+                        "        proxy_set_header Host $host;\n"
+                        "    }\n"
+                        "}\n";
+
+  // Write config file
+  std::ofstream ofs(config_path);
+  if (!ofs.is_open()) {
+    return CmdResult(1, "Failed to write nginx config to " + config_path +
+                            ". Check permissions.\n");
+  }
+  ofs << nginx_config;
+  ofs.close();
+
+  // Reload nginx
+  int rc = system("nginx -t && systemctl reload nginx");
+  if (rc != 0) {
+    return CmdResult(1, "Nginx config written but reload failed. Check nginx "
+                        "config syntax.\n");
+  }
+
+  logToFile("Nginx forward updated: port " + to_string(port) + " -> " +
+                target_ip,
+            LOG_CORE);
+  return CmdResult(0, "Port " + to_string(port) + " now forwards to " +
+                          target_ip + "\n");
+}
+
 typedef CmdResult (*CommandHandler)(const json &);
 
 struct CommandDispatch {
@@ -1654,6 +1943,19 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GENERATE_LOOM_TOKEN, handleGenerateLoomToken},
     {COMMAND_REVOKE_LOOM_TOKENS, handleRevokeLoomTokens},
     {COMMAND_LIST_COMMANDS, handleListCommands},
+    // Peer Networking Commands
+    {COMMAND_SET_PEER_CONFIG, handleSetPeerConfig},
+    {COMMAND_GET_PEER_STATUS, handleGetPeerStatus},
+    {COMMAND_REGISTER_PEER, handleRegisterPeer},
+    {COMMAND_LIST_PEERS, handleListPeers},
+    {COMMAND_GET_PEER_INFO, handleGetPeerInfo},
+    // App Assignment Commands
+    {COMMAND_CLAIM_APP, handleClaimApp},
+    {COMMAND_RELEASE_APP, handleReleaseApp},
+    {COMMAND_LIST_APPS, handleListApps},
+    {COMMAND_GET_APP_OWNER, handleGetAppOwner},
+    // VPS-specific Commands
+    {COMMAND_UPDATE_NGINX_FORWARD, handleUpdateNginxForward},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =

@@ -8,7 +8,7 @@ _daemon_completion() {
     
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable isLoomActive restartLoom stopLoom generateLoomToken revokeLoomTokens publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow resetClock listPorts deletePort getPort setPort listCommands"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable isLoomActive restartLoom stopLoom generateLoomToken revokeLoomTokens publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow resetClock listPorts deletePort getPort setPort listCommands setPeerConfig getPeerStatus listPeers getPeerInfo claimApp releaseApp listApps getAppOwner updateNginxForward"
     }
 
     # Find the real command word and previous word, accounting for 'send'
@@ -88,6 +88,17 @@ _daemon_completion() {
     command_args[getPort]="--key"
     command_args[setPort]="--key --value"
 
+    # Peer networking commands
+    command_args[setPeerConfig]="--role --id --leader"
+    command_args[getPeerStatus]=""
+    command_args[listPeers]=""
+    command_args[getPeerInfo]="--peer"
+    command_args[claimApp]="--app"
+    command_args[releaseApp]="--app"
+    command_args[listApps]=""
+    command_args[getAppOwner]="--app"
+    command_args[updateNginxForward]="--port --target"
+
     # Define possible values for specific arguments
     declare -A arg_values
     arg_values[--enable]="true false"
@@ -105,6 +116,15 @@ _daemon_completion() {
     arg_values[--code]="" # Can be dynamically fetched or extensive, leave blank for now
     arg_values[--value]="" # Leave blank for now
     arg_values[--devicePathRegex]="" # Leave blank for now
+
+    # Peer networking argument values
+    arg_values[--role]="leader worker"
+    arg_values[--app]="cad loom pt"
+    arg_values[--id]="" # Custom peer ID
+    arg_values[--leader]="" # Leader IP address
+    arg_values[--peer]="" # Peer ID to query
+    arg_values[--target]="" # Target IP for nginx forwarding
+    arg_values[--port]="" # Port number
 
 
     # If completing a command argument

@@ -53,3 +53,11 @@ export -f logOut
 setDesktopBackground(){
     gsettings set org.gnome.desktop.background picture-uri 'file:///usr/share/images/desktop-base/desktop-background.xml'
 }
+export -f setDesktopBackground
+
+disableScreenLock(){
+    gsettings set org.gnome.desktop.screensaver lock-enabled false
+    gsettings set org.gnome.desktop.screensaver lock-delay 0
+    gsettings set org.gnome.desktop.session idle-delay 0
+}
+export -f disableScreenLock

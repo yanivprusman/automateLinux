@@ -119,7 +119,7 @@ _daemon_completion() {
 
     # Peer networking argument values
     arg_values[--role]="leader worker"
-    arg_values[--app]="cad loom pt"
+    arg_values[--app]="cad loom pt automateLinux"
     arg_values[--id]="" # Custom peer ID
     arg_values[--leader]="" # Leader IP address
     arg_values[--peer]="" # Peer ID to query

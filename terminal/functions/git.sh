@@ -195,7 +195,7 @@ gitl(){
     git l
 }
 
-# Helper to detect which extra app we're in
+# Helper to detect which claimable app we're in
 detectExtraApp() {
     local cwd
     cwd=$(pwd)
@@ -203,6 +203,7 @@ detectExtraApp() {
         */extraApps/cad*) echo "cad" ;;
         */extraApps/loom*) echo "loom" ;;
         */extraApps/publicTransportation*) echo "pt" ;;
+        */automateLinux*) echo "automateLinux" ;;  # Main repo (not in extraApps)
         *) echo "" ;;
     esac
 }

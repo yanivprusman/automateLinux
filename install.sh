@@ -113,13 +113,21 @@ install_software() {
         echo "  @google/gemini-cli is already installed."
     fi
 
-    # Check for Claude CLI
-    if ! command -v claude >/dev/null 2>&1; then
-        echo "  Installing Claude CLI..."
-        # Note: running as root will likely install to /root/.local or /usr/local
-        curl -fsSL https://claude.ai/install.sh | bash
-    else
+    # Check for Claude CLI (install system-wide to /usr/local/bin)
+    if [ -x /usr/local/bin/claude ]; then
         echo "  Claude CLI is already installed."
+    elif [ -x /root/.local/bin/claude ]; then
+        # Move existing installation to system-wide location
+        echo "  Moving Claude CLI to /usr/local/bin..."
+        mv /root/.local/bin/claude /usr/local/bin/claude
+    else
+        # Fresh install
+        echo "  Installing Claude CLI system-wide..."
+        curl -fsSL https://claude.ai/install.sh | bash
+        if [ -x /root/.local/bin/claude ]; then
+            mv /root/.local/bin/claude /usr/local/bin/claude
+            echo "  Moved Claude CLI to /usr/local/bin"
+        fi
     fi
 }
 if [ "$MINIMAL_INSTALL" = false ]; then
@@ -245,7 +253,10 @@ systemctl restart daemon.service
 # 8. Configure System-Wide PATH
 echo "Configuring system-wide PATH..."
 PROFILE_SCRIPT="/etc/profile.d/automatelinux.sh"
-echo 'export PATH=$PATH:/opt/automateLinux/symlinks' > "$PROFILE_SCRIPT"
+cat > "$PROFILE_SCRIPT" << 'EOF'
+# Add automateLinux symlinks to PATH
+export PATH=$PATH:/opt/automateLinux/symlinks
+EOF
 chmod 644 "$PROFILE_SCRIPT"
 
 echo "--------------------------------------------------------"

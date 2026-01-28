@@ -14,7 +14,10 @@
       "Bash(git config:*)",
       "Bash(sudo wg show:*)",
       "Bash(sudo cat:*)",
-      "Bash(systemctl:*)"
+      "Bash(systemctl:*)",
+      "Bash(cat:*)",
+      "Bash(sudo sed:*)",
+      "Bash(removeKeyringPassword)"
     ]
   }
 }

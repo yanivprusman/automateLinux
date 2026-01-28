@@ -116,19 +116,31 @@ Exec=bash -c "source /opt/automateLinux/terminal/bashrc && d restartLoom"
 
 ## Icon Guidelines
 
-### System Icons
-Use icons from `/usr/share/icons/` for standard actions:
-- Shutdown: `/usr/share/icons/Humanity/actions/32/system-shutdown.svg`
-- Reboot: `/usr/share/icons/Humanity/actions/32/system-reboot.svg`
-- Lock: `/usr/share/icons/Humanity/actions/32/system-lock-screen.svg`
+### Icon Theme Names (Recommended)
+Use icon theme names for portability across different systems and icon themes. The desktop environment automatically resolves these to the correct icon:
+
+```ini
+Icon=system-shutdown    # Shutdown/power off
+Icon=system-reboot      # Reboot/restart
+Icon=system-lock-screen # Lock screen
+Icon=system-log-out     # Log out
+Icon=application-exit   # Exit/quit
+```
+
+**Benefits**:
+- Works across different Linux distributions and icon themes
+- Automatically adapts to user's theme (dark/light/custom)
+- No need to check if icon file exists
 
 ### Custom Icons
-Store custom icons in `/opt/automateLinux/images/`:
-```bash
+Store custom icons in `/opt/automateLinux/images/` for project-specific launchers:
+```ini
 Icon=/opt/automateLinux/images/myicon.png
 ```
 
-Supported formats: PNG, SVG, JPG. Recommended size: 48x48 or 32x32 pixels.
+**Use absolute paths** starting with `/opt/automateLinux/images/` (not `~/` or relative paths).
+
+Supported formats: PNG, SVG, JPG. Recommended size: 48x48 or 256x256 pixels.
 
 ## Common Patterns
 

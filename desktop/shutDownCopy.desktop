@@ -2,9 +2,8 @@
 Version=1.0
 Name=ShutdownRight screen
 Comment=Shutdown the system
-Exec=/home/yaniv/shutdown-system.sh #/usr/bin/systemctl poweroff
-#Icon=/usr/share/icons/Humanity/actions/32/system-shutdown.svg
-Icon=/home/yaniv/Downloads/humberger-svgrepo-com.svg
+Exec=systemctl poweroff
+Icon=system-shutdown
 Terminal=false
 Type=Application
 Categories=System;

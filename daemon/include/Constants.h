@@ -12,6 +12,7 @@
 #define mustEndWithNewLine "\n"
 #define COMMAND_KEY "command"
 #define COMMAND_EMPTY ""
+#define COMMAND_HELP "help"
 #define COMMAND_HELP_DDASH "--help"
 #define COMMAND_OPENED_TTY "openedTty"
 #define COMMAND_CLOSED_TTY "closedTty"

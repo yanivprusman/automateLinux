@@ -31,6 +31,13 @@ echo -e "${GREEN}Build complete!${NC}" && \
 cp daemon .. && \
 cd ..
 
+# Install man page
+if [ -f "doc/daemon.1" ]; then
+    sudo mkdir -p /usr/local/share/man/man1
+    sudo cp doc/daemon.1 /usr/local/share/man/man1/daemon.1
+    sudo mandb -q 2>/dev/null || true
+fi
+
 if [ -z "$SKIP_SERVICE_RESTART" ]; then
     echo "Reloading systemd and starting daemon.service..."
     sudo /usr/bin/systemctl daemon-reload

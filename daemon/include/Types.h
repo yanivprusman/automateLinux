@@ -19,8 +19,11 @@ using std::vector;
 struct CommandSignature {
   string name;
   vector<string> requiredArgs;
-  CommandSignature(const string &n, const vector<string> &args)
-      : name(n), requiredArgs(args) {}
+  string description;
+  string optionalArgs;
+  CommandSignature(const string &n, const vector<string> &args,
+                   const string &desc = "", const string &optArgs = "")
+      : name(n), requiredArgs(args), description(desc), optionalArgs(optArgs) {}
 };
 
 struct CmdResult {

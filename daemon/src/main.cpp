@@ -42,8 +42,10 @@ int main(int argc, char *argv[]) {
       if (cmdJson.contains("error")) {
         return 1; // An error occurred during parsing
       }
+      if (cmdJson.contains("_help_shown")) {
+        return 0; // Help was displayed, no need to send to daemon
+      }
       return send_command_to_daemon(cmdJson);
-      // ... in main ...
     } else if (mode == "daemon") {
       // Signals handled in initialize_daemon()
 

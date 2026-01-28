@@ -30,97 +30,200 @@ using namespace std;
 extern string getWgInterfaceIP();
 
 const CommandSignature COMMAND_REGISTRY[] = {
-    CommandSignature(COMMAND_EMPTY, {}),
-    CommandSignature(COMMAND_HELP_DDASH, {}),
-    CommandSignature(COMMAND_OPENED_TTY, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_CLOSED_TTY, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_UPDATE_DIR_HISTORY,
-                     {COMMAND_ARG_TTY, COMMAND_ARG_PWD}),
-    CommandSignature(COMMAND_CD_FORWARD, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_CD_BACKWARD, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_SHELL_SIGNAL, {COMMAND_ARG_SIGNAL}),
-    CommandSignature(COMMAND_SHOW_TERMINAL_INSTANCE, {COMMAND_ARG_TTY}),
-    CommandSignature(COMMAND_SHOW_ALL_TERMINAL_INSTANCES, {}),
-    CommandSignature(COMMAND_DELETE_ENTRY, {COMMAND_ARG_KEY}),
-    CommandSignature(COMMAND_SHOW_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
-    CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX}),
-    CommandSignature(COMMAND_SHOW_DB, {}),
-    CommandSignature(COMMAND_PRINT_DIR_HISTORY, {}),
-    CommandSignature(COMMAND_UPSERT_ENTRY,
-                     {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
-    CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY}),
-    CommandSignature(COMMAND_PING, {}),
-    CommandSignature(COMMAND_GET_KEYBOARD_PATH, {}),
-    CommandSignature(COMMAND_GET_MOUSE_PATH, {}),
-    CommandSignature(COMMAND_GET_SOCKET_PATH, {}),
+    // Help Commands
+    CommandSignature(COMMAND_EMPTY, {}, "Show help message"),
+    CommandSignature(COMMAND_HELP, {}, "Show help message"),
+    CommandSignature(COMMAND_HELP_DDASH, {}, "Show help message"),
+
+    // Terminal History Commands
+    CommandSignature(COMMAND_OPENED_TTY, {COMMAND_ARG_TTY},
+                     "Notify daemon that a terminal was opened"),
+    CommandSignature(COMMAND_CLOSED_TTY, {COMMAND_ARG_TTY},
+                     "Notify daemon that a terminal was closed"),
+    CommandSignature(COMMAND_UPDATE_DIR_HISTORY, {COMMAND_ARG_TTY, COMMAND_ARG_PWD},
+                     "Update directory history for a terminal"),
+    CommandSignature(COMMAND_CD_FORWARD, {COMMAND_ARG_TTY},
+                     "Navigate forward in directory history (Ctrl+Down)"),
+    CommandSignature(COMMAND_CD_BACKWARD, {COMMAND_ARG_TTY},
+                     "Navigate backward in directory history (Ctrl+Up)"),
+    CommandSignature(COMMAND_SHELL_SIGNAL, {COMMAND_ARG_SIGNAL},
+                     "Handle shell signal events"),
+    CommandSignature(COMMAND_SHOW_TERMINAL_INSTANCE, {COMMAND_ARG_TTY},
+                     "Show terminal instance info for a TTY"),
+    CommandSignature(COMMAND_SHOW_ALL_TERMINAL_INSTANCES, {},
+                     "Show all active terminal instances"),
+    CommandSignature(COMMAND_PRINT_DIR_HISTORY, {},
+                     "Print all directory history entries"),
+    CommandSignature(COMMAND_EMPTY_DIR_HISTORY_TABLE, {},
+                     "Clear all directory history entries"),
+
+    // Database Commands
+    CommandSignature(COMMAND_DELETE_ENTRY, {COMMAND_ARG_KEY},
+                     "Delete a setting entry by key"),
+    CommandSignature(COMMAND_SHOW_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX},
+                     "(Deprecated) Show entries by prefix"),
+    CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX},
+                     "(Deprecated) Delete entries by prefix"),
+    CommandSignature(COMMAND_SHOW_DB, {},
+                     "Show database summary (terminal history, devices, settings)"),
+    CommandSignature(COMMAND_UPSERT_ENTRY, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE},
+                     "Insert or update a setting entry"),
+    CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY},
+                     "Get a setting entry by key"),
+
+    // System Commands
+    CommandSignature(COMMAND_PING, {}, "Ping the daemon (returns 'pong')"),
+    CommandSignature(COMMAND_QUIT, {}, "Stop the daemon"),
+    CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME},
+                     "Get daemon directory path (base, data, mappings)"),
+    CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME},
+                     "Get file path from data or mappings directory"),
+    CommandSignature(COMMAND_LIST_COMMANDS, {},
+                     "List all available command names"),
+
+    // Input Device Commands
+    CommandSignature(COMMAND_GET_KEYBOARD_PATH, {},
+                     "Get path to the grabbed keyboard device"),
+    CommandSignature(COMMAND_GET_MOUSE_PATH, {},
+                     "Get path to the grabbed mouse device"),
+    CommandSignature(COMMAND_GET_SOCKET_PATH, {},
+                     "Get the daemon's UNIX socket path"),
     CommandSignature(COMMAND_SET_KEYBOARD,
                      {COMMAND_ARG_WINDOW_TITLE, COMMAND_ARG_WM_CLASS,
-                      COMMAND_ARG_WM_INSTANCE, COMMAND_ARG_WINDOW_ID}),
+                      COMMAND_ARG_WM_INSTANCE, COMMAND_ARG_WINDOW_ID},
+                     "Simulate active window change (for debugging)"),
+    CommandSignature(COMMAND_GET_KEYBOARD, {},
+                     "Get current keyboard mapping state"),
+    CommandSignature(COMMAND_GET_KEYBOARD_ENABLED, {},
+                     "Check if keyboard input is enabled"),
+    CommandSignature(COMMAND_TOGGLE_KEYBOARD, {COMMAND_ARG_ENABLE},
+                     "Toggle auto-keyboard switching on window change"),
+    CommandSignature(COMMAND_DISABLE_KEYBOARD, {},
+                     "Disable keyboard input grabbing"),
+    CommandSignature(COMMAND_ENABLE_KEYBOARD, {},
+                     "Enable keyboard input grabbing"),
+    CommandSignature(COMMAND_SIMULATE_INPUT, {},
+                     "Simulate input event or type text",
+                     "--type --code --value (raw event) OR --string (text)"),
 
-    CommandSignature(COMMAND_GET_KEYBOARD, {}),
-    CommandSignature(COMMAND_GET_KEYBOARD_ENABLED, {}),
-    CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE}),
-    CommandSignature(COMMAND_GET_SHOULD_LOG, {}),
-    CommandSignature(COMMAND_TOGGLE_KEYBOARD, {COMMAND_ARG_ENABLE}),
-    CommandSignature(COMMAND_DISABLE_KEYBOARD, {}),
-    CommandSignature(COMMAND_ENABLE_KEYBOARD, {}),
-    CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME}),
-    CommandSignature(COMMAND_GET_FILE, {COMMAND_ARG_FILE_NAME}),
-    CommandSignature(COMMAND_QUIT, {}),
+    // Logging Commands
+    CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE},
+                     "Enable or disable logging"),
+    CommandSignature(COMMAND_GET_SHOULD_LOG, {},
+                     "Get current logging state"),
+    CommandSignature(COMMAND_REGISTER_LOG_LISTENER, {},
+                     "Register as a live log listener (streaming)"),
+    CommandSignature(COMMAND_ADD_LOG_FILTER, {COMMAND_ARG_ACTION},
+                     "Add granular input event log filter",
+                     "--type --code --value --devicePathRegex --isKeyboard"),
+    CommandSignature(COMMAND_REMOVE_LOG_FILTER, {},
+                     "Remove a log filter",
+                     "--type --code --value --devicePathRegex --isKeyboard"),
+    CommandSignature(COMMAND_LIST_LOG_FILTERS, {},
+                     "List all active log filters"),
+    CommandSignature(COMMAND_CLEAR_LOG_FILTERS, {},
+                     "Clear all log filters"),
+
+    // Window/Context Commands
     CommandSignature(COMMAND_ACTIVE_WINDOW_CHANGED,
                      {COMMAND_ARG_WINDOW_TITLE, COMMAND_ARG_WM_CLASS,
-                      COMMAND_ARG_WM_INSTANCE, COMMAND_ARG_WINDOW_ID}),
-    CommandSignature(COMMAND_SET_ACTIVE_TAB_URL, {COMMAND_ARG_URL}),
-    CommandSignature(COMMAND_REGISTER_NATIVE_HOST, {}),
-    CommandSignature(COMMAND_FOCUS_CHATGPT, {}),
-    CommandSignature(COMMAND_FOCUS_ACK, {}),
-    CommandSignature(COMMAND_GET_MACROS, {}),
-    CommandSignature(COMMAND_UPDATE_MACROS, {COMMAND_ARG_VALUE}),
-    CommandSignature(COMMAND_GET_ACTIVE_CONTEXT, {}),
-    CommandSignature(COMMAND_GET_EVENT_FILTERS, {}),
-    CommandSignature(COMMAND_SET_EVENT_FILTERS, {COMMAND_ARG_VALUE}),
-    CommandSignature(COMMAND_REGISTER_LOG_LISTENER, {}),
-    CommandSignature(COMMAND_TEST_INTEGRITY, {}),
-    CommandSignature(COMMAND_SIMULATE_INPUT, {}),
-    CommandSignature(COMMAND_ADD_LOG_FILTER, {COMMAND_ARG_ACTION}),
-    CommandSignature(COMMAND_REMOVE_LOG_FILTER, {}),
-    CommandSignature(COMMAND_LIST_LOG_FILTERS, {}),
-    CommandSignature(COMMAND_CLEAR_LOG_FILTERS, {}),
-    CommandSignature(COMMAND_EMPTY_DIR_HISTORY_TABLE, {}),
-    CommandSignature(COMMAND_GET_PORT, {COMMAND_ARG_KEY}),
-    CommandSignature(COMMAND_GET_PORT, {COMMAND_ARG_KEY}),
-    CommandSignature(COMMAND_SET_PORT, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE}),
-    CommandSignature(COMMAND_REGISTER_WINDOW_EXTENSION, {}),
-    CommandSignature(COMMAND_LIST_WINDOWS, {}),
-    CommandSignature(COMMAND_ACTIVATE_WINDOW, {COMMAND_ARG_WINDOW_ID}),
-    CommandSignature(COMMAND_RESET_CLOCK, {}),
-    CommandSignature(COMMAND_IS_LOOM_ACTIVE, {}),
-    CommandSignature(COMMAND_RESTART_LOOM, {}),
-    CommandSignature(COMMAND_STOP_LOOM, {}),
-    CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_START_PROXY, {}),
-    CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, {}),
-    CommandSignature(COMMAND_LIST_PORTS, {}),
-    CommandSignature(COMMAND_GENERATE_LOOM_TOKEN, {}),
-    CommandSignature(COMMAND_REVOKE_LOOM_TOKENS, {}),
-    CommandSignature(COMMAND_DELETE_PORT, {COMMAND_ARG_KEY}),
-    CommandSignature(COMMAND_TEST_LSOF, {COMMAND_ARG_PORT}),
-    CommandSignature(COMMAND_TEST_ECHO, {COMMAND_ARG_MESSAGE}),
-    CommandSignature(COMMAND_TEST_LSOF_SCRIPT, {COMMAND_ARG_PORT}),
-    CommandSignature(COMMAND_LIST_COMMANDS, {}),
+                      COMMAND_ARG_WM_INSTANCE, COMMAND_ARG_WINDOW_ID},
+                     "Notify daemon of active window change (from GNOME ext)"),
+    CommandSignature(COMMAND_SET_ACTIVE_TAB_URL, {COMMAND_ARG_URL},
+                     "Set active browser tab URL (from Chrome ext)"),
+    CommandSignature(COMMAND_REGISTER_NATIVE_HOST, {},
+                     "Register Chrome native messaging host"),
+    CommandSignature(COMMAND_FOCUS_CHATGPT, {},
+                     "Request focus on ChatGPT browser tab"),
+    CommandSignature(COMMAND_FOCUS_ACK, {},
+                     "Acknowledge focus request"),
+    CommandSignature(COMMAND_GET_ACTIVE_CONTEXT, {},
+                     "Get current active window context (JSON)"),
+    CommandSignature(COMMAND_REGISTER_WINDOW_EXTENSION, {},
+                     "Register GNOME window tracking extension"),
+    CommandSignature(COMMAND_LIST_WINDOWS, {},
+                     "List all tracked windows"),
+    CommandSignature(COMMAND_ACTIVATE_WINDOW, {COMMAND_ARG_WINDOW_ID},
+                     "Activate a window by ID"),
+
+    // Macro Commands
+    CommandSignature(COMMAND_GET_MACROS, {},
+                     "Get all configured macros (JSON)"),
+    CommandSignature(COMMAND_UPDATE_MACROS, {COMMAND_ARG_VALUE},
+                     "Update macro configuration"),
+    CommandSignature(COMMAND_GET_EVENT_FILTERS, {},
+                     "Get event filters for macro system"),
+    CommandSignature(COMMAND_SET_EVENT_FILTERS, {COMMAND_ARG_VALUE},
+                     "Set event filters for macro system"),
+
+    // Port Management Commands
+    CommandSignature(COMMAND_GET_PORT, {COMMAND_ARG_KEY},
+                     "Get assigned port for an app/service"),
+    CommandSignature(COMMAND_SET_PORT, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE},
+                     "Assign a port to an app/service"),
+    CommandSignature(COMMAND_LIST_PORTS, {},
+                     "List all port assignments"),
+    CommandSignature(COMMAND_DELETE_PORT, {COMMAND_ARG_KEY},
+                     "Delete a port assignment"),
+
+    // Loom Commands
+    CommandSignature(COMMAND_IS_LOOM_ACTIVE, {},
+                     "Check if Loom screen streaming is active"),
+    CommandSignature(COMMAND_RESTART_LOOM, {},
+                     "Start/restart Loom streaming server and client"),
+    CommandSignature(COMMAND_STOP_LOOM, {},
+                     "Stop Loom streaming"),
+    CommandSignature(COMMAND_GENERATE_LOOM_TOKEN, {},
+                     "Generate a new Loom authentication token"),
+    CommandSignature(COMMAND_REVOKE_LOOM_TOKENS, {},
+                     "Revoke all Loom authentication tokens"),
+    CommandSignature(COMMAND_RESET_CLOCK, {},
+                     "Reset Loom frame clock"),
+
+    // Public Transportation Commands
+    CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_START_PROXY, {},
+                     "Start public transportation proxy server"),
+    CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, {},
+                     "Open public transportation app"),
+
+    // Test/Debug Commands
+    CommandSignature(COMMAND_TEST_INTEGRITY, {},
+                     "Run internal integrity tests"),
+    CommandSignature(COMMAND_TEST_LSOF, {COMMAND_ARG_PORT},
+                     "Test lsof on a port"),
+    CommandSignature(COMMAND_TEST_ECHO, {COMMAND_ARG_MESSAGE},
+                     "Echo a test message"),
+    CommandSignature(COMMAND_TEST_LSOF_SCRIPT, {COMMAND_ARG_PORT},
+                     "Test lsof script on a port"),
+
     // Peer Networking Commands
-    CommandSignature(COMMAND_SET_PEER_CONFIG, {}),
-    CommandSignature(COMMAND_GET_PEER_STATUS, {}),
-    CommandSignature(COMMAND_REGISTER_PEER, {}),
-    CommandSignature(COMMAND_LIST_PEERS, {}),
-    CommandSignature(COMMAND_GET_PEER_INFO, {COMMAND_ARG_PEER}),
+    CommandSignature(COMMAND_SET_PEER_CONFIG, {},
+                     "Configure peer networking role and identity",
+                     "--role (leader|worker) --id <peer_id> [--leader <ip>]"),
+    CommandSignature(COMMAND_GET_PEER_STATUS, {},
+                     "Show current peer configuration and connection status"),
+    CommandSignature(COMMAND_REGISTER_PEER, {},
+                     "(Internal) Register a peer connection"),
+    CommandSignature(COMMAND_LIST_PEERS, {},
+                     "List all registered peers in the network"),
+    CommandSignature(COMMAND_GET_PEER_INFO, {COMMAND_ARG_PEER},
+                     "Get detailed info about a specific peer"),
+
     // App Assignment Commands
-    CommandSignature(COMMAND_CLAIM_APP, {COMMAND_ARG_APP}),
-    CommandSignature(COMMAND_RELEASE_APP, {COMMAND_ARG_APP}),
-    CommandSignature(COMMAND_LIST_APPS, {}),
-    CommandSignature(COMMAND_GET_APP_OWNER, {COMMAND_ARG_APP}),
+    CommandSignature(COMMAND_CLAIM_APP, {COMMAND_ARG_APP},
+                     "Claim exclusive work on an extraApp (prevents git conflicts)"),
+    CommandSignature(COMMAND_RELEASE_APP, {COMMAND_ARG_APP},
+                     "Release app assignment",
+                     "[--force true] to override ownership check"),
+    CommandSignature(COMMAND_LIST_APPS, {},
+                     "List all app assignments across peers"),
+    CommandSignature(COMMAND_GET_APP_OWNER, {COMMAND_ARG_APP},
+                     "Check which peer owns an app"),
+
     // VPS-specific Commands
     CommandSignature(COMMAND_UPDATE_NGINX_FORWARD,
-                     {COMMAND_ARG_PORT, COMMAND_ARG_TARGET}),
+                     {COMMAND_ARG_PORT, COMMAND_ARG_TARGET},
+                     "(VPS only) Update nginx port forwarding to target IP"),
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -587,54 +690,68 @@ static string errorEntryNotFound(const string &key) {
 }
 
 static const string HELP_MESSAGE =
-    "Usage: daemon [OPTIONS] <COMMAND>\n\n"
-    "Manage terminal history and database entries.\n\n"
-    "Commands:\n"
-    "  openedTty               Notify daemon that a terminal has been opened.\n"
-    "  closedTty               Notify daemon that a terminal has been closed.\n"
-    "  updateDirHistory        Update the directory history for a terminal.\n"
-    "  cdForward               Move forward in the directory history.\n"
-    "  cdBackward              Move backward in the directory history.\n"
-    "  showTerminalInstance    Show the current terminal instance.\n"
-    "  deleteEntry             Delete a specific entry from the database by "
-    "key.\n"
-    "  deleteEntriesByPrefix   Delete all entries with a specific prefix.\n"
-    "  showDB                  Display all entries in the database.\n"
-    "  ping                    Ping the daemon and receive pong response.\n"
-    "  getMousePath            Get the path to the mouse input device.\n"
-    "  getSocketPath           Get the path to the daemon's UNIX domain "
-    "socket.\n"
-    "  setKeyboard             Simulate active window change for debugging.\n"
-
-    "  disableKeyboard         Disable the keyboard.\n"
-    "  enableKeyboard          Enable the keyboard.\n"
-    "  getKeyboardEnabled      Get whether keyboard is enabled (true/false).\n"
-    "  shouldLog               Enable or disable logging (true/false).\n"
-    "  toggleKeyboard  Toggle automatic keyboard "
-    "switching on window change.\n"
-    "  getDir                  Get a daemon directory path by name (base, "
-    "data, mappings).\n"
-    "  simulateInput           Simulate an input event (type, code, value).\n"
-    "  addLogFilter            Add a granular filter for input event logging. "
-    "Args: --type --code --value --devicePathRegex --isKeyboard --action "
-    "(show/hide).\n"
-    "  removeLogFilter         Remove a granular filter for input event "
-    "logging. "
-    "Args: --type --code --value --devicePathRegex --isKeyboard.\n"
-    "  listLogFilters          List all active granular log filters.\n"
-    "  clearLogFilters         Clear all granular log filters.\n\n"
-    "  getDir                  Get a daemon directory path by name (base, "
-    "data, mappings).\n"
-    "  getFile                 Get file path by name from data or mapping "
-    "directories.\n\n"
-    "Options:\n"
-    "  --help                  Display this help message.\n"
-    "  --json                  Output results in JSON format.\n\n"
-    "Examples:\n"
-    "  daemon openedTty\n"
-    "  daemon cdForward\n"
-    "  daemon deleteEntriesByPrefix session_\n"
-    "  daemon showDB --json\n";
+    "Usage: d <command> [options]\n"
+    "       d <command> --help\n\n"
+    "automateLinux daemon - Central service for Linux desktop automation.\n\n"
+    "COMMON COMMANDS\n"
+    "  ping                    Check daemon is running (returns 'pong')\n"
+    "  help, --help            Show this help message\n"
+    "  listCommands            List all available commands\n\n"
+    "KEYBOARD/INPUT\n"
+    "  enableKeyboard          Enable keyboard input grabbing\n"
+    "  disableKeyboard         Disable keyboard input grabbing\n"
+    "  getKeyboardEnabled      Check if keyboard is enabled\n"
+    "  simulateInput           Simulate input events or type text\n"
+    "                          --string \"text\" OR --type --code --value\n\n"
+    "PORT MANAGEMENT\n"
+    "  listPorts               List all port assignments\n"
+    "  getPort --key <app>     Get assigned port for an app\n"
+    "  setPort --key <app> --value <port>\n"
+    "                          Assign port to an app\n"
+    "  deletePort --key <app>  Remove port assignment\n\n"
+    "PEER NETWORKING\n"
+    "  setPeerConfig           Configure peer role and identity\n"
+    "                          --role (leader|worker) --id <name>\n"
+    "                          [--leader <ip>] (for workers)\n"
+    "  getPeerStatus           Show peer config and connection status\n"
+    "  listPeers               List all peers in the network\n"
+    "  getPeerInfo --peer <id> Get detailed info about a peer\n\n"
+    "APP ASSIGNMENTS (prevents git conflicts)\n"
+    "  claimApp --app <name>   Claim exclusive work on an extraApp\n"
+    "  releaseApp --app <name> Release app assignment\n"
+    "                          [--force true] to override ownership\n"
+    "  listApps                List all app assignments\n"
+    "  getAppOwner --app <name>\n"
+    "                          Check which peer owns an app\n\n"
+    "LOOM (screen streaming)\n"
+    "  restartLoom             Start/restart Loom streaming\n"
+    "  stopLoom                Stop Loom streaming\n"
+    "  isLoomActive            Check if Loom is active\n\n"
+    "LOGGING\n"
+    "  shouldLog --enable <bool>\n"
+    "                          Enable or disable logging\n"
+    "  registerLogListener     Register for live log streaming\n"
+    "  addLogFilter            Add input event log filter\n"
+    "  listLogFilters          List active log filters\n"
+    "  clearLogFilters         Clear all log filters\n\n"
+    "DATABASE\n"
+    "  showDB                  Show database summary\n"
+    "  getEntry --key <k>      Get a setting value\n"
+    "  upsertEntry --key <k> --value <v>\n"
+    "                          Set a setting value\n"
+    "  deleteEntry --key <k>   Delete a setting\n\n"
+    "OPTIONS\n"
+    "  --help, -h              Show help for a specific command\n"
+    "  --json                  Output in JSON format (some commands)\n\n"
+    "EXAMPLES\n"
+    "  d ping\n"
+    "  d listPeers\n"
+    "  d claimApp --app cad\n"
+    "  d setPeerConfig --role leader --id desktop\n"
+    "  d simulateInput --string \"Hello World\"\n"
+    "  d getPort --key dashboard-dev\n\n"
+    "Run 'd <command> --help' for detailed help on any command.\n"
+    "See also: man daemon(1)\n";
 
 CmdResult handleHelp(const json &) { return CmdResult(0, HELP_MESSAGE); }
 
@@ -2013,6 +2130,7 @@ struct CommandDispatch {
 
 static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_EMPTY, handleHelp},
+    {COMMAND_HELP, handleHelp},
     {COMMAND_HELP_DDASH, handleHelp},
     {COMMAND_OPENED_TTY, handleOpenedTty},
     {COMMAND_CLOSED_TTY, handleClosedTty},

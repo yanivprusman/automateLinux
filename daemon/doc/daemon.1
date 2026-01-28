@@ -1,0 +1,251 @@
+.\" Man page for automateLinux daemon
+.\" Generated 2026-01-28
+.TH DAEMON 1 "January 2026" "automateLinux" "User Commands"
+.SH NAME
+daemon \- automateLinux background service for Linux desktop automation
+.SH SYNOPSIS
+.B d
+.I command
+.RI [ options ]
+.br
+.B d
+.I command
+.B \-\-help
+.br
+.B daemon send
+.I command
+.RI [ options ]
+.br
+.B daemon daemon
+.SH DESCRIPTION
+The automateLinux daemon is a central background service that manages input events,
+port registry, database state, peer networking (over WireGuard VPN), and command
+dispatching. It communicates via UNIX sockets and TCP.
+.PP
+The daemon provides:
+.IP \(bu 2
+Input device grabbing and remapping (keyboard/mouse)
+.IP \(bu 2
+Port management for local applications
+.IP \(bu 2
+Multi-peer networking for distributed operation
+.IP \(bu 2
+App assignment to prevent git conflicts across peers
+.IP \(bu 2
+Terminal directory history (Ctrl+Up/Down navigation)
+.IP \(bu 2
+Macro and automation support
+.IP \(bu 2
+Integration with Chrome, GNOME, and VS Code extensions
+.SH COMMON COMMANDS
+.TP
+.B ping
+Check if daemon is running (returns 'pong').
+.TP
+.B help\fR, \fB\-\-help
+Show main help message.
+.TP
+.B listCommands
+List all available command names.
+.SH KEYBOARD/INPUT COMMANDS
+.TP
+.B enableKeyboard
+Enable keyboard input grabbing.
+.TP
+.B disableKeyboard
+Disable keyboard input grabbing.
+.TP
+.B getKeyboardEnabled
+Check if keyboard input is enabled.
+.TP
+.B simulateInput \fR[\fB\-\-string\fR \fItext\fR | \fB\-\-type\fR \fIn\fR \fB\-\-code\fR \fIn\fR \fB\-\-value\fR \fIn\fR]
+Simulate input events. Use \fB\-\-string\fR to type text, or raw event parameters
+for low-level input simulation.
+.SH PORT MANAGEMENT COMMANDS
+.TP
+.B listPorts
+List all port assignments in JSON format.
+.TP
+.B getPort \fB\-\-key\fR \fIapp\fR
+Get the assigned port for an application or service.
+.TP
+.B setPort \fB\-\-key\fR \fIapp\fR \fB\-\-value\fR \fIport\fR
+Assign a port to an application.
+.TP
+.B deletePort \fB\-\-key\fR \fIapp\fR
+Remove a port assignment.
+.SS Port Allocation Scheme
+.TP
+3000-3499
+App prod/dev ports (2 per app, sequential)
+.TP
+3500+
+Special operational ports (WebSocket servers, bridges)
+.SH PEER NETWORKING COMMANDS
+The daemon supports distributed operation across multiple machines connected
+via WireGuard VPN. One peer acts as the leader, others as workers.
+.TP
+.B setPeerConfig \fB\-\-role\fR \fI(leader|worker)\fR \fB\-\-id\fR \fIname\fR [\fB\-\-leader\fR \fIip\fR]
+Configure peer networking. Leaders don't need \fB\-\-leader\fR. Workers must
+specify the leader's VPN IP address.
+.TP
+.B getPeerStatus
+Show current peer configuration and connection status.
+.TP
+.B listPeers
+List all registered peers in the network (sorted by IP).
+.TP
+.B getPeerInfo \fB\-\-peer\fR \fIid\fR
+Get detailed information about a specific peer.
+.SS Example Setup
+.PP
+On the leader (e.g., desktop at 10.0.0.2):
+.RS
+.nf
+d setPeerConfig --role leader --id desktop
+.fi
+.RE
+.PP
+On workers (e.g., laptop at 10.0.0.4):
+.RS
+.nf
+d setPeerConfig --role worker --id laptop --leader 10.0.0.2
+.fi
+.RE
+.SH APP ASSIGNMENT COMMANDS
+App assignments prevent git conflicts when multiple peers work on the same
+extraApps (cad, loom, pt). The leader tracks who owns each app.
+.TP
+.B claimApp \fB\-\-app\fR \fIname\fR
+Claim exclusive work on an extraApp. Updates VPS nginx forwarding.
+.TP
+.B releaseApp \fB\-\-app\fR \fIname\fR [\fB\-\-force\fR \fItrue\fR]
+Release app assignment. Use \fB\-\-force true\fR to release apps owned by
+a different peer (e.g., stale assignments).
+.TP
+.B listApps
+List all app assignments across all peers (JSON output).
+.TP
+.B getAppOwner \fB\-\-app\fR \fIname\fR
+Check which peer currently owns an app.
+.SH LOOM COMMANDS
+Loom provides screen streaming functionality.
+.TP
+.B restartLoom
+Start or restart Loom streaming server and client.
+.TP
+.B stopLoom
+Stop Loom streaming.
+.TP
+.B isLoomActive
+Check if Loom streaming is active.
+.TP
+.B generateLoomToken
+Generate a new Loom authentication token.
+.TP
+.B revokeLoomTokens
+Revoke all Loom authentication tokens.
+.SH LOGGING COMMANDS
+.TP
+.B shouldLog \fB\-\-enable\fR \fI(true|false)\fR
+Enable or disable logging.
+.TP
+.B registerLogListener
+Register as a live log listener for streaming logs.
+.TP
+.B addLogFilter \fB\-\-action\fR \fI(show|hide)\fR [\fIfilter-options\fR]
+Add a granular filter for input event logging. Options include
+\fB\-\-type\fR, \fB\-\-code\fR, \fB\-\-value\fR, \fB\-\-devicePathRegex\fR, \fB\-\-isKeyboard\fR.
+.TP
+.B listLogFilters
+List all active log filters.
+.TP
+.B clearLogFilters
+Remove all log filters.
+.SH DATABASE COMMANDS
+.TP
+.B showDB
+Show database summary (terminal history, devices, settings).
+.TP
+.B getEntry \fB\-\-key\fR \fIkey\fR
+Get a setting value by key.
+.TP
+.B upsertEntry \fB\-\-key\fR \fIkey\fR \fB\-\-value\fR \fIvalue\fR
+Insert or update a setting value.
+.TP
+.B deleteEntry \fB\-\-key\fR \fIkey\fR
+Delete a setting by key.
+.SH OPTIONS
+.TP
+.BR \-\-help ", " \-h
+Show detailed help for a specific command. Example: \fBd listPeers \-\-help\fR
+.TP
+.B \-\-json
+Output results in JSON format (supported by some commands).
+.SH ENVIRONMENT
+.TP
+.B AUTOMATE_LINUX_DIR
+Root project directory.
+.TP
+.B AUTOMATE_LINUX_SOCKET_PATH
+Daemon UNIX socket path (default: /run/automatelinux/automatelinux-daemon.sock).
+.TP
+.B AUTOMATE_LINUX_DATA_DIR
+Persistent data directory.
+.SH FILES
+.TP
+.I /run/automatelinux/automatelinux-daemon.sock
+UNIX domain socket for local communication.
+.TP
+.I /opt/automateLinux/daemon/daemon.service
+Systemd service file.
+.SH EXAMPLES
+.PP
+Check if daemon is running:
+.RS
+.nf
+d ping
+.fi
+.RE
+.PP
+List all peers in the network:
+.RS
+.nf
+d listPeers
+.fi
+.RE
+.PP
+Claim an app for exclusive work:
+.RS
+.nf
+d claimApp --app cad
+.fi
+.RE
+.PP
+Configure as network leader:
+.RS
+.nf
+d setPeerConfig --role leader --id desktop
+.fi
+.RE
+.PP
+Type text using input simulation:
+.RS
+.nf
+d simulateInput --string "Hello, World!"
+.fi
+.RE
+.PP
+Get help for a specific command:
+.RS
+.nf
+d releaseApp --help
+.fi
+.RE
+.SH SEE ALSO
+.BR systemctl (1),
+.BR wg (8)
+.SH BUGS
+Report bugs at https://github.com/anthropics/claude-code/issues
+.SH AUTHOR
+automateLinux project

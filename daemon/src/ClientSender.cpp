@@ -1,11 +1,51 @@
 #include "ClientSender.h"
 #include "common.h"
 #include <iostream>
+#include <sstream>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
 
 using namespace std;
+
+// Generate help text for a specific command
+string generate_command_help(const CommandSignature *cmd) {
+  stringstream ss;
+  ss << "Usage: d " << cmd->name;
+
+  // Add required arguments
+  for (const auto &arg : cmd->requiredArgs) {
+    ss << " --" << arg << " <value>";
+  }
+
+  // Add optional arguments hint if any
+  if (!cmd->optionalArgs.empty()) {
+    ss << " [" << cmd->optionalArgs << "]";
+  }
+
+  ss << "\n\n";
+
+  // Description
+  if (!cmd->description.empty()) {
+    ss << cmd->description << "\n\n";
+  }
+
+  // Required arguments section
+  if (!cmd->requiredArgs.empty()) {
+    ss << "Required arguments:\n";
+    for (const auto &arg : cmd->requiredArgs) {
+      ss << "  --" << arg << "\n";
+    }
+    ss << "\n";
+  }
+
+  // Optional arguments section
+  if (!cmd->optionalArgs.empty()) {
+    ss << "Optional arguments:\n  " << cmd->optionalArgs << "\n\n";
+  }
+
+  return ss.str();
+}
 
 int send_command_to_daemon(const ordered_json &jsonCmd) {
   int client_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -65,6 +105,16 @@ ordered_json parse_client_args(int argc, char *argv[], int start_index) {
     cerr << "Error: Unknown command '" << commandName << "'." << endl;
     j["error"] = "Unknown command.";
     return j;
+  }
+
+  // Check for --help flag after command name
+  if (argc > start_index + 1) {
+    string nextArg = argv[start_index + 1];
+    if (nextArg == "--help" || nextArg == "-h") {
+      cout << generate_command_help(foundCommand);
+      j["_help_shown"] = true;
+      return j;
+    }
   }
 
   // Parse arguments

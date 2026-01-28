@@ -5,25 +5,24 @@ description: Instructions for finding and managing extra/external applications l
 
 # Extra Applications
 
-The AutomateLinux ecosystem integrates several external applications. These are typically stored outside the main `automateLinux` repository but are linked for easy access.
+The AutomateLinux ecosystem integrates several external applications stored directly in the `extraApps/` directory.
 
 ## Locating Applications
 
 ### The `extraApps/` Directory
-The primary entry point for finding external apps is the `extraApps/` directory in the root of the `automateLinux` workspace.
+Applications are stored directly in `/opt/automateLinux/extraApps/`:
 
 ```bash
-ls -l ~/coding/automateLinux/extraApps
+ls -l /opt/automateLinux/extraApps
 ```
 
-This directory contains symlinks to the actual source locations:
-- **`cad`**: Points to `~/coding/cad/`
-- **`loom`**: Points to `~/coding/loom/`
-- **`publicTransportation`**: Points to `~/coding/publicTransportation/`
+This directory contains the actual source code (not symlinks):
+- **`cad`**: CAD Shed Generator - `/opt/automateLinux/extraApps/cad/`
+- **`loom`**: Screen recording integration - `/opt/automateLinux/extraApps/loom/`
+- **`publicTransportation`**: Public transport app - `/opt/automateLinux/extraApps/publicTransportation/`
 
-### Direct Paths
-- **CAD App**: `/home/yaniv/coding/cad`
-- **Public Transportation (PT) App**: `/home/yaniv/coding/publicTransportation`
+### Production Versions
+Production deployments are git worktrees located at `/opt/prod/<appName>/` (e.g., `/opt/prod/cad/`).
 
 ## Port Management
 External apps often run local development servers. Their ports are managed centrally by the daemon.
@@ -42,15 +41,25 @@ If you move an app to a different port, update the daemon so macros and proxies 
 d setPort --key pt --value 3005
 ```
 
-## Editing and Permissions
+## Starting Applications
 
-> [!IMPORTANT]
-> **Use Symlinks for Access**: When accessing or editing files for these external applications, **ALWAYS** use the symlinks located in `~/coding/automateLinux/extraApps/`.
->
-> **Correct**: `~/coding/automateLinux/extraApps/cad/src/file.ts`
-> **Incorrect**: `~/coding/cad/src/file.ts`
->
-> Using the `extraApps` path prevents redundant permission requests and maintains workspace context. The user has granted permission for the `automateLinux` workspace, so staying within its directory structure (via symlinks) is preferred.
+### CAD Dev Server
+```bash
+/opt/automateLinux/extraApps/cad/open_app.sh
+```
+This starts the dev server on the daemon-registered port (key: `cad-dev`) and opens Chrome in app mode.
+
+### Loom
+```bash
+d restartLoom   # Starts server + client + auto-selects screen
+d stopLoom
+d isLoomActive
+```
+
+### Public Transportation
+```bash
+d publicTransportationOpenApp   # Opens in browser
+```
 
 ## Related Commands
 - `d listPorts`: See all currently registered app ports.

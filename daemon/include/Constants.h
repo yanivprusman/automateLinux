@@ -111,6 +111,38 @@
 #define COMMAND_TEST_LSOF_SCRIPT "testLsofScript"
 
 #define COMMAND_LIST_COMMANDS "listCommands"
+
+// Peer Networking Commands
+#define COMMAND_SET_PEER_CONFIG "setPeerConfig"
+#define COMMAND_GET_PEER_STATUS "getPeerStatus"
+#define COMMAND_REGISTER_PEER "registerPeer"
+#define COMMAND_LIST_PEERS "listPeers"
+#define COMMAND_GET_PEER_INFO "getPeerInfo"
+
+// App Assignment Commands
+#define COMMAND_CLAIM_APP "claimApp"
+#define COMMAND_RELEASE_APP "releaseApp"
+#define COMMAND_LIST_APPS "listApps"
+#define COMMAND_GET_APP_OWNER "getAppOwner"
+
+// VPS-specific Commands
+#define COMMAND_UPDATE_NGINX_FORWARD "updateNginxForward"
+
+// Peer Arguments
+#define COMMAND_ARG_ROLE "role"
+#define COMMAND_ARG_LEADER "leader"
+#define COMMAND_ARG_ID "id"
+#define COMMAND_ARG_PEER "peer"
+#define COMMAND_ARG_APP "app"
+#define COMMAND_ARG_TARGET "target"
+
+// Peer Roles
+#define PEER_ROLE_LEADER "leader"
+#define PEER_ROLE_WORKER "worker"
+
+// Peer Networking Constants
+#define PEER_TCP_PORT 3600
+
 #define COMMAND_ARG_DEVICE_PATH_REGEX "devicePathRegex"
 #define COMMAND_ARG_IS_KEYBOARD "isKeyboard"
 #define COMMAND_ARG_ACTION "action"

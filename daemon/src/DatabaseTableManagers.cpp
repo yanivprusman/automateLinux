@@ -349,3 +349,258 @@ SettingsTable::getAllSettings() {
   }
   return results;
 }
+
+// PeerTable Implementation
+
+void PeerTable::upsertPeer(const std::string &peer_id, const std::string &ip,
+                           const std::string &mac, const std::string &hostname,
+                           bool is_online) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "INSERT INTO peer_registry (peer_id, ip_address, mac_address, hostname, "
+        "is_online, last_seen) VALUES (?, ?, ?, ?, ?, NOW()) "
+        "ON DUPLICATE KEY UPDATE ip_address = ?, mac_address = ?, hostname = ?, "
+        "is_online = ?, last_seen = NOW()"));
+    pstmt->setString(1, peer_id);
+    pstmt->setString(2, ip);
+    pstmt->setString(3, mac);
+    pstmt->setString(4, hostname);
+    pstmt->setBoolean(5, is_online);
+    pstmt->setString(6, ip);
+    pstmt->setString(7, mac);
+    pstmt->setString(8, hostname);
+    pstmt->setBoolean(9, is_online);
+    pstmt->executeUpdate();
+  } catch (sql::SQLException &e) {
+    logToFile("PeerTable: upsertPeer error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
+PeerRecord PeerTable::getPeer(const std::string &peer_id) {
+  PeerRecord result{"", "", "", "", "", false};
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return result;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "SELECT peer_id, ip_address, mac_address, hostname, last_seen, is_online "
+        "FROM peer_registry WHERE peer_id = ?"));
+    pstmt->setString(1, peer_id);
+    std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+    if (res->next()) {
+      result.peer_id = res->getString("peer_id");
+      result.ip_address = res->getString("ip_address");
+      result.mac_address = res->getString("mac_address");
+      result.hostname = res->getString("hostname");
+      result.last_seen = res->getString("last_seen");
+      result.is_online = res->getBoolean("is_online");
+    }
+  } catch (sql::SQLException &e) {
+    logToFile("PeerTable: getPeer error: " + std::string(e.what()), 0xFFFFFFFF);
+  }
+  return result;
+}
+
+std::vector<PeerRecord> PeerTable::getAllPeers() {
+  std::vector<PeerRecord> results;
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return results;
+  try {
+    std::unique_ptr<sql::Statement> stmt(con->createStatement());
+    std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
+        "SELECT peer_id, ip_address, mac_address, hostname, last_seen, is_online "
+        "FROM peer_registry ORDER BY peer_id"));
+    while (res->next()) {
+      PeerRecord record;
+      record.peer_id = res->getString("peer_id");
+      record.ip_address = res->getString("ip_address");
+      record.mac_address = res->getString("mac_address");
+      record.hostname = res->getString("hostname");
+      record.last_seen = res->getString("last_seen");
+      record.is_online = res->getBoolean("is_online");
+      results.push_back(record);
+    }
+  } catch (sql::SQLException &e) {
+    logToFile("PeerTable: getAllPeers error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+  return results;
+}
+
+void PeerTable::updateOnlineStatus(const std::string &peer_id, bool is_online) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "UPDATE peer_registry SET is_online = ?, last_seen = NOW() "
+        "WHERE peer_id = ?"));
+    pstmt->setBoolean(1, is_online);
+    pstmt->setString(2, peer_id);
+    pstmt->executeUpdate();
+  } catch (sql::SQLException &e) {
+    logToFile("PeerTable: updateOnlineStatus error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
+void PeerTable::deletePeer(const std::string &peer_id) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(
+        con->prepareStatement("DELETE FROM peer_registry WHERE peer_id = ?"));
+    pstmt->setString(1, peer_id);
+    pstmt->executeUpdate();
+  } catch (sql::SQLException &e) {
+    logToFile("PeerTable: deletePeer error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
+std::string PeerTable::getIpAddress(const std::string &peer_id) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return "";
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "SELECT ip_address FROM peer_registry WHERE peer_id = ?"));
+    pstmt->setString(1, peer_id);
+    std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+    if (res->next())
+      return res->getString("ip_address");
+  } catch (sql::SQLException &e) {
+    logToFile("PeerTable: getIpAddress error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+  return "";
+}
+
+// AppAssignmentTable Implementation
+
+void AppAssignmentTable::assignApp(const std::string &app_name,
+                                   const std::string &peer_id) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "INSERT INTO app_assignments (app_name, assigned_peer, assigned_at, "
+        "last_activity) VALUES (?, ?, NOW(), NOW()) "
+        "ON DUPLICATE KEY UPDATE assigned_peer = ?, assigned_at = NOW(), "
+        "last_activity = NOW()"));
+    pstmt->setString(1, app_name);
+    pstmt->setString(2, peer_id);
+    pstmt->setString(3, peer_id);
+    pstmt->executeUpdate();
+  } catch (sql::SQLException &e) {
+    logToFile("AppAssignmentTable: assignApp error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
+AppAssignment AppAssignmentTable::getAssignment(const std::string &app_name) {
+  AppAssignment result{"", "", "", ""};
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return result;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "SELECT app_name, assigned_peer, assigned_at, last_activity "
+        "FROM app_assignments WHERE app_name = ?"));
+    pstmt->setString(1, app_name);
+    std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+    if (res->next()) {
+      result.app_name = res->getString("app_name");
+      result.assigned_peer = res->getString("assigned_peer");
+      result.assigned_at = res->getString("assigned_at");
+      result.last_activity = res->getString("last_activity");
+    }
+  } catch (sql::SQLException &e) {
+    logToFile("AppAssignmentTable: getAssignment error: " +
+                  std::string(e.what()),
+              0xFFFFFFFF);
+  }
+  return result;
+}
+
+std::vector<AppAssignment> AppAssignmentTable::getAllAssignments() {
+  std::vector<AppAssignment> results;
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return results;
+  try {
+    std::unique_ptr<sql::Statement> stmt(con->createStatement());
+    std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
+        "SELECT app_name, assigned_peer, assigned_at, last_activity "
+        "FROM app_assignments ORDER BY app_name"));
+    while (res->next()) {
+      AppAssignment record;
+      record.app_name = res->getString("app_name");
+      record.assigned_peer = res->getString("assigned_peer");
+      record.assigned_at = res->getString("assigned_at");
+      record.last_activity = res->getString("last_activity");
+      results.push_back(record);
+    }
+  } catch (sql::SQLException &e) {
+    logToFile("AppAssignmentTable: getAllAssignments error: " +
+                  std::string(e.what()),
+              0xFFFFFFFF);
+  }
+  return results;
+}
+
+void AppAssignmentTable::releaseApp(const std::string &app_name) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(
+        con->prepareStatement("DELETE FROM app_assignments WHERE app_name = ?"));
+    pstmt->setString(1, app_name);
+    pstmt->executeUpdate();
+  } catch (sql::SQLException &e) {
+    logToFile("AppAssignmentTable: releaseApp error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
+void AppAssignmentTable::updateLastActivity(const std::string &app_name) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "UPDATE app_assignments SET last_activity = NOW() WHERE app_name = ?"));
+    pstmt->setString(1, app_name);
+    pstmt->executeUpdate();
+  } catch (sql::SQLException &e) {
+    logToFile("AppAssignmentTable: updateLastActivity error: " +
+                  std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
+std::string AppAssignmentTable::getOwner(const std::string &app_name) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return "";
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "SELECT assigned_peer FROM app_assignments WHERE app_name = ?"));
+    pstmt->setString(1, app_name);
+    std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+    if (res->next())
+      return res->getString("assigned_peer");
+  } catch (sql::SQLException &e) {
+    logToFile("AppAssignmentTable: getOwner error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+  return "";
+}

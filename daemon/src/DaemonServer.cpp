@@ -7,12 +7,16 @@
 #include "mainCommand.h"
 #include "sendKeys.h"
 #include "using.h"
+#include <arpa/inet.h>
 #include <array>
 #include <csignal>
 #include <cstdlib>
 #include <fcntl.h>
+#include <ifaddrs.h>
 #include <iostream>
 #include <map>
+#include <net/if.h>
+#include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -22,10 +26,11 @@
 using namespace std;
 
 static int socket_fd = -1;
-extern int g_keyboard_fd;       // Defined in main.cpp, used here
-extern volatile int running;    // Defined in main.cpp
-extern std::ofstream g_logFile; // Defined in Globals.h/main.cpp
-extern bool g_keyboardEnabled;  // Defined in mainCommand.cpp
+static int peer_socket_fd = -1;  // TCP socket for peer-to-peer communication
+extern int g_keyboard_fd;        // Defined in main.cpp, used here
+extern volatile int running;     // Defined in main.cpp
+extern std::ofstream g_logFile;  // Defined in Globals.h/main.cpp
+extern bool g_keyboardEnabled;   // Defined in mainCommand.cpp
 
 struct ClientState {
   int fd;
@@ -33,7 +38,15 @@ struct ClientState {
   struct ucred cred;
 };
 
+struct PeerClientState {
+  int fd;
+  string buffer;
+  string peer_ip;
+  bool authenticated;
+};
+
 static std::map<int, ClientState> clients;
+static std::map<int, PeerClientState> peer_clients;
 
 void emitDaemonReadySignal() {
   logToFile("Emitting daemon ready DBus signal", LOG_CORE);
@@ -133,6 +146,81 @@ int setup_socket() {
   return 0;
 }
 
+// Get the IP address of the wg0 interface
+string getWgInterfaceIP() {
+  struct ifaddrs *ifaddr, *ifa;
+  char ip[INET_ADDRSTRLEN];
+  string result = "";
+
+  if (getifaddrs(&ifaddr) == -1) {
+    cerr << "ERROR: getifaddrs() failed: " << strerror(errno) << endl;
+    return "";
+  }
+
+  for (ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+    if (ifa->ifa_addr == nullptr)
+      continue;
+
+    if (ifa->ifa_addr->sa_family == AF_INET) {
+      string ifname = ifa->ifa_name;
+      if (ifname == "wg0") {
+        struct sockaddr_in *addr = (struct sockaddr_in *)ifa->ifa_addr;
+        inet_ntop(AF_INET, &(addr->sin_addr), ip, INET_ADDRSTRLEN);
+        result = ip;
+        break;
+      }
+    }
+  }
+
+  freeifaddrs(ifaddr);
+  return result;
+}
+
+int setup_peer_socket() {
+  string wg_ip = getWgInterfaceIP();
+  if (wg_ip.empty()) {
+    cerr << "INFO: wg0 interface not found, peer networking disabled" << endl;
+    return 0;  // Not an error, just no WireGuard available
+  }
+
+  peer_socket_fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
+  if (peer_socket_fd < 0) {
+    cerr << "ERROR: peer socket() failed: " << strerror(errno) << endl;
+    return 1;
+  }
+
+  // Allow reuse of address
+  int opt = 1;
+  setsockopt(peer_socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+  struct sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(PEER_TCP_PORT);
+  inet_pton(AF_INET, wg_ip.c_str(), &addr.sin_addr);
+
+  if (bind(peer_socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    cerr << "ERROR: peer bind() failed for " << wg_ip << ":" << PEER_TCP_PORT
+         << ": " << strerror(errno) << endl;
+    close(peer_socket_fd);
+    peer_socket_fd = -1;
+    return 1;
+  }
+
+  if (listen(peer_socket_fd, 10) < 0) {
+    cerr << "ERROR: peer listen() failed: " << strerror(errno) << endl;
+    close(peer_socket_fd);
+    peer_socket_fd = -1;
+    return 1;
+  }
+
+  cerr << "Peer socket listening on: " << wg_ip << ":" << PEER_TCP_PORT << endl;
+  logToFile("Peer networking enabled on " + wg_ip + ":" +
+                to_string(PEER_TCP_PORT),
+            LOG_CORE);
+  return 0;
+}
+
 void accept_new_client() {
   int client_fd = accept(socket_fd, nullptr, nullptr);
   if (client_fd < 0)
@@ -150,6 +238,68 @@ void accept_new_client() {
   clients[client_fd] = ClientState{client_fd, "", cred};
   cerr << "Client connected: FD=" << client_fd << " PID=" << cred.pid
        << " UID=" << cred.uid << endl;
+}
+
+void accept_new_peer() {
+  struct sockaddr_in peer_addr;
+  socklen_t peer_len = sizeof(peer_addr);
+  int peer_fd = accept(peer_socket_fd, (struct sockaddr *)&peer_addr, &peer_len);
+  if (peer_fd < 0)
+    return;
+
+  fcntl(peer_fd, F_SETFD, FD_CLOEXEC);
+
+  char ip_str[INET_ADDRSTRLEN];
+  inet_ntop(AF_INET, &(peer_addr.sin_addr), ip_str, INET_ADDRSTRLEN);
+
+  peer_clients[peer_fd] = PeerClientState{peer_fd, "", ip_str, false};
+  cerr << "Peer connected: FD=" << peer_fd << " IP=" << ip_str << endl;
+  logToFile("Peer connected from " + string(ip_str), LOG_CORE);
+}
+
+int handle_peer_data(int peer_fd) {
+  PeerClientState &state = peer_clients[peer_fd];
+  char buffer[4096];
+  ssize_t bytesRead = read(peer_fd, buffer, sizeof(buffer) - 1);
+  if (bytesRead <= 0) {
+    cerr << "Peer disconnected: FD=" << peer_fd << " IP=" << state.peer_ip
+         << endl;
+    logToFile("Peer disconnected: " + state.peer_ip, LOG_CORE);
+    close(peer_fd);
+    peer_clients.erase(peer_fd);
+    return 0;
+  }
+
+  buffer[bytesRead] = '\0';
+  state.buffer += buffer;
+
+  size_t pos;
+  while ((pos = state.buffer.find('\n')) != string::npos) {
+    string message = state.buffer.substr(0, pos);
+    state.buffer.erase(0, pos + 1);
+    if (!message.empty() && message.back() == '\r')
+      message.pop_back();
+
+    ordered_json j;
+    try {
+      j = json::parse(message);
+    } catch (...) {
+      string result = "ERROR: Invalid JSON\n";
+      write(peer_fd, result.c_str(), result.length());
+      continue;
+    }
+
+    // TODO: Handle peer messages (authentication, state sync, etc.)
+    // For now, just forward to mainCommand like a regular client
+    logToFile("Peer message from " + state.peer_ip + ": " + message, LOG_CORE);
+
+    if (mainCommand(j, peer_fd) == 1) {
+      close(peer_fd);
+      peer_clients.erase(peer_fd);
+      return 0;
+    }
+  }
+  return 0;
 }
 
 int handle_client_data(int client_fd) {
@@ -245,6 +395,13 @@ int initialize_daemon() {
     return rc;
   }
 
+  // Setup peer-to-peer socket (optional - only if wg0 exists)
+  rc = setup_peer_socket();
+  if (rc != 0) {
+    logToFile("WARNING: Peer socket setup failed, continuing without peer networking", LOG_CORE);
+    // Don't fail daemon startup if peer socket fails
+  }
+
   // DISABLED: Keyboard grab feature removed - using separate keybinding project
   // if (KeyboardManager::setKeyboard(g_keyboardEnabled).status != 0) {
   //   logToFile("ERROR: Failed to initialize keyboard mapping", LOG_CORE);
@@ -298,7 +455,23 @@ void daemon_loop() {
     FD_ZERO(&read_fds);
     FD_SET(socket_fd, &read_fds);
     int max_fd = socket_fd;
+
+    // Add peer socket if available
+    if (peer_socket_fd >= 0) {
+      FD_SET(peer_socket_fd, &read_fds);
+      if (peer_socket_fd > max_fd)
+        max_fd = peer_socket_fd;
+    }
+
+    // Add local clients
     for (auto &pair : clients) {
+      FD_SET(pair.first, &read_fds);
+      if (pair.first > max_fd)
+        max_fd = pair.first;
+    }
+
+    // Add peer clients
+    for (auto &pair : peer_clients) {
       FD_SET(pair.first, &read_fds);
       if (pair.first > max_fd)
         max_fd = pair.first;
@@ -309,21 +482,45 @@ void daemon_loop() {
     int activity = select(max_fd + 1, &read_fds, nullptr, nullptr, &timeout);
     if (activity <= 0)
       continue;
+
+    // Accept new local clients
     if (FD_ISSET(socket_fd, &read_fds))
       accept_new_client();
 
+    // Accept new peer connections
+    if (peer_socket_fd >= 0 && FD_ISSET(peer_socket_fd, &read_fds))
+      accept_new_peer();
+
+    // Handle local client data
     vector<int> fds;
     for (auto &pair : clients)
       fds.push_back(pair.first);
     for (int fd : fds)
       if (FD_ISSET(fd, &read_fds) && clients.find(fd) != clients.end())
         handle_client_data(fd);
+
+    // Handle peer data
+    vector<int> peer_fds;
+    for (auto &pair : peer_clients)
+      peer_fds.push_back(pair.first);
+    for (int fd : peer_fds)
+      if (FD_ISSET(fd, &read_fds) && peer_clients.find(fd) != peer_clients.end())
+        handle_peer_data(fd);
   }
 
+  // Cleanup local clients
   for (auto &pair : clients)
     close(pair.first);
   close(socket_fd);
   unlink(socketPath.c_str());
+
+  // Cleanup peer clients and socket
+  for (auto &pair : peer_clients)
+    close(pair.first);
+  if (peer_socket_fd >= 0) {
+    close(peer_socket_fd);
+    peer_socket_fd = -1;
+  }
 
   if (g_keyboard_fd >= 0) {
     close(g_keyboard_fd);

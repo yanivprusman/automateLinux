@@ -170,6 +170,22 @@ void MySQLManager::createDatabaseAndUser(int port,
                        "setting_key VARCHAR(255) PRIMARY KEY, "
                        "setting_value TEXT NOT NULL)");
 
+    // 6. Peer Registry (for distributed daemon communication)
+    tableStmt->execute("CREATE TABLE IF NOT EXISTS peer_registry ("
+                       "peer_id VARCHAR(64) PRIMARY KEY, "
+                       "ip_address VARCHAR(15) NOT NULL, "
+                       "mac_address VARCHAR(17), "
+                       "hostname VARCHAR(255), "
+                       "last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                       "is_online BOOLEAN DEFAULT FALSE)");
+
+    // 7. App Assignments (lock apps to peers to prevent git conflicts)
+    tableStmt->execute("CREATE TABLE IF NOT EXISTS app_assignments ("
+                       "app_name VARCHAR(64) PRIMARY KEY, "
+                       "assigned_peer VARCHAR(64), "
+                       "assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                       "last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+
     logToFile(
         "MySQLManager: Database, user, and tables configured successfully.");
   } catch (sql::SQLException &e) {

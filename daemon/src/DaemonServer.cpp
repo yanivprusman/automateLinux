@@ -1,6 +1,7 @@
 #include "DaemonServer.h"
 #include "DatabaseTableManagers.h"
 #include "KeyboardManager.h"
+#include "PeerManager.h"
 #include "Utils.h"
 #include "common.h"
 #include "main.h"
@@ -299,6 +300,48 @@ int handle_peer_data(int peer_fd) {
   return 0;
 }
 
+// Handle commands from leader (for workers)
+static string leader_buffer;
+
+int handle_leader_data() {
+  PeerManager &pm = PeerManager::getInstance();
+  int leader_fd = pm.getLeaderSocket();
+  if (leader_fd < 0)
+    return 0;
+
+  char buffer[4096];
+  ssize_t bytesRead = read(leader_fd, buffer, sizeof(buffer) - 1);
+  if (bytesRead <= 0) {
+    logToFile("Lost connection to leader", LOG_CORE);
+    pm.disconnectFromLeader();
+    leader_buffer.clear();
+    return 0;
+  }
+
+  buffer[bytesRead] = '\0';
+  leader_buffer += buffer;
+
+  size_t pos;
+  while ((pos = leader_buffer.find('\n')) != string::npos) {
+    string message = leader_buffer.substr(0, pos);
+    leader_buffer.erase(0, pos + 1);
+    if (!message.empty() && message.back() == '\r')
+      message.pop_back();
+
+    ordered_json j;
+    try {
+      j = json::parse(message);
+    } catch (...) {
+      logToFile("Invalid JSON from leader: " + message, LOG_CORE);
+      continue;
+    }
+
+    logToFile("Command from leader: " + message, LOG_CORE);
+    mainCommand(j, leader_fd);
+  }
+  return 0;
+}
+
 int handle_client_data(int client_fd) {
   ClientState &state = clients[client_fd];
   char buffer[4096];
@@ -474,6 +517,15 @@ void daemon_loop() {
         max_fd = pair.first;
     }
 
+    // For workers: add leader socket to receive commands from leader
+    PeerManager &pm = PeerManager::getInstance();
+    int leader_fd = pm.isConnectedToLeader() ? pm.getLeaderSocket() : -1;
+    if (leader_fd >= 0) {
+      FD_SET(leader_fd, &read_fds);
+      if (leader_fd > max_fd)
+        max_fd = leader_fd;
+    }
+
     struct timeval timeout{
         0, 200000}; // 200ms timeout for faster shutdown response
     int activity = select(max_fd + 1, &read_fds, nullptr, nullptr, &timeout);
@@ -503,6 +555,10 @@ void daemon_loop() {
     for (int fd : peer_fds)
       if (FD_ISSET(fd, &read_fds) && peer_clients.find(fd) != peer_clients.end())
         handle_peer_data(fd);
+
+    // Handle data from leader (for workers)
+    if (leader_fd >= 0 && FD_ISSET(leader_fd, &read_fds))
+      handle_leader_data();
   }
 
   // Cleanup local clients

@@ -9,6 +9,7 @@ firstTime(){
     complete -F _to_completions to
     source "$AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR/openFunctionCompletion.sh"
     complete -F _openFunction_completions openFunction
+    initTerminalCapture
 }
 firstTime
 unset firstTime

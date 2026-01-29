@@ -48,7 +48,9 @@
       "Bash(sudo cp:*)",
       "Bash(sudo systemctl start:*)",
       "Bash(nc:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(du:*)",
+      "Bash(ls:*)"
     ]
   }
 }

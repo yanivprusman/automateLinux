@@ -1,5 +1,6 @@
 . $(theRealPath emoji.sh)
 . $(theRealPath terminal.sh)
+. $(theRealPath terminalCapture.sh)
 . $(theRealPath files.sh)
 . $(theRealPath daemon.sh)
 . $(theRealPath variables.sh)

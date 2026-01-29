@@ -9,6 +9,7 @@
 . $(theRealPath printDir.sh)
 . $(theRealPath db.sh)
 . $(theRealPath git.sh)
+. $(theRealPath sshgit.sh)
 . $(theRealPath log.sh)
 . $(theRealPath gemini.sh)
 . $(theRealPath evsieve.sh)

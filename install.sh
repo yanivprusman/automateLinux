@@ -60,10 +60,10 @@ verify_dependencies() {
     echo "Checking build dependencies..."
 
     # Core packages needed to build and run the daemon
-    CORE_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git curl"
+    CORE_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git curl xclip"
 
     # Extra packages for full desktop installation
-    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev"
+    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev code"
 
     if [ "$MINIMAL_INSTALL" = true ]; then
         REQUIRED_PACKAGES="$CORE_PACKAGES"
@@ -77,6 +77,16 @@ verify_dependencies() {
             MISSING_PACKAGES="$MISSING_PACKAGES $pkg"
         fi
     done
+
+    # Set up VS Code repository for non-minimal installs
+    if [ "$MINIMAL_INSTALL" = false ] && [ ! -f /etc/apt/sources.list.d/vscode.list ]; then
+        echo "Setting up VS Code repository..."
+        apt-get install -y wget gpg
+        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/packages.microsoft.gpg
+        install -D -o root -g root -m 644 /tmp/packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+        echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
+        rm -f /tmp/packages.microsoft.gpg
+    fi
 
     if [ -n "$MISSING_PACKAGES" ]; then
         echo "Missing packages:$MISSING_PACKAGES"

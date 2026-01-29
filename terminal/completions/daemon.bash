@@ -8,7 +8,7 @@ _daemon_completion() {
     
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable isLoomActive restartLoom stopLoom generateLoomToken revokeLoomTokens publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow resetClock listPorts deletePort getPort setPort listCommands setPeerConfig getPeerStatus listPeers getPeerInfo"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable isLoomActive restartLoom stopLoom generateLoomToken revokeLoomTokens publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow resetClock listPorts deletePort getPort setPort listCommands setPeerConfig getPeerStatus listPeers getPeerInfo setupWireGuardPeer listWireGuardPeers"
     }
 
     # Find the real command word and previous word, accounting for 'send'
@@ -94,6 +94,10 @@ _daemon_completion() {
     command_args[listPeers]=""
     command_args[getPeerInfo]="--peer"
 
+    # WireGuard setup commands
+    command_args[setupWireGuardPeer]="--host --name --vpnIp --mac --dualBoot --privateKey"
+    command_args[listWireGuardPeers]=""
+
     # Define possible values for specific arguments
     declare -A arg_values
     arg_values[--enable]="true false"
@@ -118,6 +122,13 @@ _daemon_completion() {
     arg_values[--leader]="" # Leader IP address
     arg_values[--peer]="" # Peer ID to query
 
+    # WireGuard setup argument values
+    arg_values[--host]="" # Remote host IP
+    arg_values[--name]="" # Peer name
+    arg_values[--vpnIp]="" # VPN IP to assign
+    arg_values[--mac]="" # MAC address
+    arg_values[--dualBoot]="true false"
+    arg_values[--privateKey]="" # Private key for dual-boot
 
     # If completing a command argument
     if [[ "$cur" == --* ]]; then

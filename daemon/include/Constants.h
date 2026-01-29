@@ -137,6 +137,25 @@
 // Peer Networking Constants
 #define PEER_TCP_PORT 3600
 
+// WireGuard Setup Commands
+#define COMMAND_SETUP_WIREGUARD_PEER "setupWireGuardPeer"
+#define COMMAND_LIST_WIREGUARD_PEERS "listWireGuardPeers"
+#define COMMAND_GET_WIREGUARD_IP "getWireGuardIp"
+
+// WireGuard Arguments
+#define COMMAND_ARG_HOST "host"
+#define COMMAND_ARG_NAME "name"
+#define COMMAND_ARG_VPN_IP "vpnIp"
+#define COMMAND_ARG_MAC "mac"
+#define COMMAND_ARG_DUAL_BOOT "dualBoot"
+#define COMMAND_ARG_PRIVATE_KEY "privateKey"
+
+// WireGuard Constants
+#define WG_SERVER_IP "31.133.102.195"
+#define WG_SERVER_USER "root"
+#define WG_VPN_SUBNET "10.0.0."
+#define WG_LEADER_IP "10.0.0.2"
+
 #define COMMAND_ARG_DEVICE_PATH_REGEX "devicePathRegex"
 #define COMMAND_ARG_IS_KEYBOARD "isKeyboard"
 #define COMMAND_ARG_ACTION "action"

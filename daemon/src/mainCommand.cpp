@@ -15,6 +15,7 @@
 #include "cmdSystem.h"
 #include "cmdTerminal.h"
 #include "cmdWindow.h"
+#include "cmdWireGuard.h"
 
 using namespace std;
 
@@ -207,6 +208,15 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Execute a command on a remote peer in specified directory"),
     CommandSignature(COMMAND_EXEC_REQUEST, {COMMAND_ARG_DIRECTORY, COMMAND_ARG_SHELL_CMD},
                      "(Internal) Handle exec request from another peer"),
+
+    // WireGuard Setup Commands
+    CommandSignature(COMMAND_SETUP_WIREGUARD_PEER, {COMMAND_ARG_NAME},
+                     "Set up WireGuard on a peer and register with daemon",
+                     "--host <ip> --vpnIp <ip> --mac <addr> --dualBoot --privateKey <key>"),
+    CommandSignature(COMMAND_LIST_WIREGUARD_PEERS, {},
+                     "List peers configured in WireGuard on the VPS"),
+    CommandSignature(COMMAND_GET_WIREGUARD_IP, {},
+                     "Get the local WireGuard (wg0) interface IP address"),
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -315,6 +325,11 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_PEER_INFO, handleGetPeerInfo},
     {COMMAND_EXEC_ON_PEER, handleExecOnPeer},
     {COMMAND_EXEC_REQUEST, handleExecRequest},
+
+    // WireGuard commands
+    {COMMAND_SETUP_WIREGUARD_PEER, handleSetupWireGuardPeer},
+    {COMMAND_LIST_WIREGUARD_PEERS, handleListWireGuardPeers},
+    {COMMAND_GET_WIREGUARD_IP, handleGetWireGuardIp},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =

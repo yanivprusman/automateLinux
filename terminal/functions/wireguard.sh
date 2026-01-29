@@ -191,213 +191,92 @@ wireGuardRestart(){
 
 # Run on the PEER machine to set up WireGuard client
 # Handles both new devices and dual-boot scenarios
+# Interactive wrapper for: d setupWireGuardPeer --name <name> [--vpnIp <ip>] [--dualBoot --privateKey <key>]
 setupWireGuardPeer() {
-    local SERVER_USER="$WG_SERVER_USER"
-    local SERVER_IP="$WG_SERVER_IP"
-    local IS_DUAL_BOOT=false
-    local SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=5"
+    local NAME=""
+    local VPN_IP=""
+    local DUAL_BOOT=""
+    local PRIVATE_KEY=""
+    local DAEMON_ARGS=""
 
     echo "=========================================="
-    echo "  WIREGUARD PEER SETUP (run from peer)"
+    echo "  WIREGUARD PEER SETUP (interactive)"
     echo "=========================================="
     echo
+    echo "For non-interactive setup, use:"
+    echo "  d setupWireGuardPeer --name <name> [--vpnIp <ip>]"
+    echo
 
-    # Check SSH connectivity first
-    echo "Checking SSH connectivity to server..."
-    if ! ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" "echo ok" &>/dev/null; then
-        echo "ERROR: Cannot SSH to $SERVER_USER@$SERVER_IP"
-        echo "Make sure you have SSH access to the server first."
+    # Get peer name
+    read -p "Enter a name for this peer (e.g., laptop, vps2): " NAME
+    if [ -z "$NAME" ]; then
+        echo "ERROR: Name is required"
         return 1
     fi
-    echo "   SSH connection OK"
-    echo
 
     # Ask if this is a new device or dual-boot
+    echo
     echo "Is this a new device or dual-boot (reusing existing peer)?"
     echo "  1) New device (generate new keys, auto-assign IP)"
     echo "  2) Dual-boot / existing peer (reuse keys and IP)"
     read -p "Choice [1/2]: " SETUP_CHOICE
 
     if [ "$SETUP_CHOICE" = "2" ]; then
-        IS_DUAL_BOOT=true
-    fi
+        DUAL_BOOT="true"
 
-    if [ "$IS_DUAL_BOOT" = true ]; then
-        # Dual-boot: get existing private key and IP
         echo
         echo "Enter the Private Key from your existing config (e.g., Windows side):"
-        read -s CLIENT_PRIV
+        read -s PRIVATE_KEY
         echo
-        if [ -z "$CLIENT_PRIV" ]; then
+        if [ -z "$PRIVATE_KEY" ]; then
             echo "ERROR: Private key is required for dual-boot setup"
             return 1
         fi
-        CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
-        echo "   Public key: $CLIENT_PUB"
 
         echo
-        read -p "Enter the IP address to use (e.g., 10.0.0.4): " CLIENT_IP
-        if [ -z "$CLIENT_IP" ]; then
-            echo "ERROR: IP address is required"
+        read -p "Enter the VPN IP address to use (e.g., 10.0.0.4): " VPN_IP
+        if [ -z "$VPN_IP" ]; then
+            echo "ERROR: IP address is required for dual-boot setup"
             return 1
         fi
-    else
-        # New device: prompt for name
-        read -p "Enter a name for this device (e.g., rpi5, laptop): " CLIENT_NAME
-        if [ -z "$CLIENT_NAME" ]; then
-            echo "ERROR: Device name required"
-            return 1
-        fi
-
-        # Check if config already exists and offer to reuse keys
-        if [ -f /etc/wireguard/wg0.conf ]; then
-            EXISTING_KEY=$(sudo grep -oP '^PrivateKey = \K.*' /etc/wireguard/wg0.conf 2>/dev/null)
-            if [ -n "$EXISTING_KEY" ]; then
-                EXISTING_PUB=$(echo "$EXISTING_KEY" | wg pubkey)
-                echo
-                echo "Found existing config with public key: $EXISTING_PUB"
-                read -p "Reuse existing key? [Y/n]: " REUSE_KEY
-                if [ "$REUSE_KEY" != "n" ] && [ "$REUSE_KEY" != "N" ]; then
-                    CLIENT_PRIV="$EXISTING_KEY"
-                    CLIENT_PUB="$EXISTING_PUB"
-                    echo "   Reusing existing key"
-                else
-                    echo
-                    echo "Generating NEW WireGuard keys..."
-                    CLIENT_PRIV=$(wg genkey)
-                    CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
-                    echo "   Public key: $CLIENT_PUB"
-                fi
-            else
-                echo
-                echo "Generating WireGuard keys locally..."
-                CLIENT_PRIV=$(wg genkey)
-                CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
-                echo "   Public key: $CLIENT_PUB"
-            fi
-        else
-            echo
-            echo "Generating WireGuard keys locally..."
-            CLIENT_PRIV=$(wg genkey)
-            CLIENT_PUB=$(echo "$CLIENT_PRIV" | wg pubkey)
-            echo "   Public key: $CLIENT_PUB"
-        fi
-        echo "   Public key: $CLIENT_PUB"
-
-        echo
-        echo "Querying server for next available IP..."
-        CLIENT_IP=$(ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" bash <<'REMOTE_SCRIPT'
-BASE_IP="10.0.0."
-USED_IPS=$(grep -oP 'AllowedIPs = \K10\.0\.0\.\d+' /etc/wireguard/wg0.conf 2>/dev/null)
-NEXT_IP=2
-while echo "$USED_IPS" | grep -q "${BASE_IP}${NEXT_IP}"; do
-    NEXT_IP=$((NEXT_IP+1))
-done
-echo "${BASE_IP}${NEXT_IP}"
-REMOTE_SCRIPT
-)
-        echo "   Assigned IP: $CLIENT_IP"
     fi
 
-    # Fetch server info (always needed)
-    echo
-    echo "Fetching server configuration..."
-    SERVER_INFO=$(ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" bash <<'REMOTE_SCRIPT'
-SERVER_PUBLIC_KEY=$(wg show wg0 public-key 2>/dev/null)
-if [ -z "$SERVER_PUBLIC_KEY" ]; then
-    wg-quick up wg0 2>/dev/null
-    sleep 1
-    SERVER_PUBLIC_KEY=$(wg show wg0 public-key)
-fi
-SERVER_PORT=$(grep '^ListenPort' /etc/wireguard/wg0.conf | awk '{print $3}')
-SERVER_PORT=${SERVER_PORT:-51820}
-echo "$SERVER_PUBLIC_KEY|$SERVER_PORT"
-REMOTE_SCRIPT
-)
-    SERVER_PUBLIC_KEY=$(echo "$SERVER_INFO" | cut -d'|' -f1)
-    SERVER_PORT=$(echo "$SERVER_INFO" | cut -d'|' -f2)
-    echo "   Server public key: $SERVER_PUBLIC_KEY"
-    echo "   Server port: $SERVER_PORT"
-
-    # Register peer on server (only for new devices)
-    if [ "$IS_DUAL_BOOT" = false ]; then
-        echo
-        echo "Registering peer on server..."
-        ssh $SSH_OPTS "$SERVER_USER@$SERVER_IP" bash <<REMOTE_SCRIPT
-# Add peer to server config
-echo -e "\n[Peer]\n# $CLIENT_NAME\nPublicKey = $CLIENT_PUB\nAllowedIPs = $CLIENT_IP/32" >> /etc/wireguard/wg0.conf
-
-# Reload WireGuard
-wg-quick down wg0 2>/dev/null
-wg-quick up wg0
-REMOTE_SCRIPT
-        echo "   Peer registered on server"
+    # Build daemon command arguments
+    DAEMON_ARGS="--name $NAME"
+    if [ -n "$VPN_IP" ]; then
+        DAEMON_ARGS="$DAEMON_ARGS --vpnIp $VPN_IP"
+    fi
+    if [ "$DUAL_BOOT" = "true" ]; then
+        DAEMON_ARGS="$DAEMON_ARGS --dualBoot true --privateKey '$PRIVATE_KEY'"
     fi
 
-    # Create local config
     echo
-    echo "Creating local WireGuard config..."
-    sudo bash -c "cat > /etc/wireguard/wg0.conf" <<EOF
-[Interface]
-PrivateKey = $CLIENT_PRIV
-Address = $CLIENT_IP/24
-
-[Peer]
-PublicKey = $SERVER_PUBLIC_KEY
-Endpoint = $SERVER_IP:$SERVER_PORT
-AllowedIPs = 10.0.0.0/24
-PersistentKeepalive = 25
-EOF
-    echo "   Config written to /etc/wireguard/wg0.conf"
-
-    # Start WireGuard
+    echo "Running: d setupWireGuardPeer $DAEMON_ARGS"
     echo
-    echo "Starting WireGuard..."
-    sudo wg-quick down wg0 2>/dev/null || true
-    sudo wg-quick up wg0
-    sudo systemctl enable wg-quick@wg0
 
-    # Test connection
-    echo
-    echo "Testing connection to server..."
-    sleep 2
-    if ping -c 2 -W 3 10.0.0.1 &>/dev/null; then
-        echo
-        echo "=========================================="
-        echo "   SUCCESS! WireGuard is connected"
-        echo "=========================================="
-        echo
-        echo "   Your VPN IP: $CLIENT_IP"
-        echo "   Server VPN IP: 10.0.0.1"
-        echo
-
-        # Setup SSH key authentication
-        echo "Setting up SSH key authentication..."
-        SSH_KEY="$HOME/.ssh/id_ed25519"
-        if [ ! -f "$SSH_KEY" ]; then
-            echo "   Generating SSH key..."
-            mkdir -p "$HOME/.ssh"
-            chmod 700 "$HOME/.ssh"
-            ssh-keygen -t ed25519 -f "$SSH_KEY" -N ""
-            echo "   SSH key generated"
-        else
-            echo "   SSH key already exists"
+    # Call daemon command (or script directly if daemon not available)
+    if [ -S "/run/automatelinux/automatelinux-daemon.sock" ]; then
+        # Build JSON command
+        local JSON_CMD="{\"command\":\"setupWireGuardPeer\",\"name\":\"$NAME\""
+        if [ -n "$VPN_IP" ]; then
+            JSON_CMD="$JSON_CMD,\"vpnIp\":\"$VPN_IP\""
         fi
-
-        echo "   Copying SSH key to server..."
-        if ssh-copy-id $SSH_OPTS "$SERVER_USER@$SERVER_IP" &>/dev/null; then
-            echo "   ✓ SSH key copied to server"
-        else
-            echo "   ⚠️  Failed to copy SSH key (may already exist)"
+        if [ "$DUAL_BOOT" = "true" ]; then
+            JSON_CMD="$JSON_CMD,\"dualBoot\":true,\"privateKey\":\"$PRIVATE_KEY\""
         fi
-        echo
+        JSON_CMD="$JSON_CMD}"
 
-        echo "   To restart: wireGuardRestart"
-        echo "   To test: ping 10.0.0.1"
+        echo "$JSON_CMD" | nc -U /run/automatelinux/automatelinux-daemon.sock
     else
-        echo
-        echo "   Connection test failed."
-        echo "   Check: sudo wg show"
-        echo "   Check server: ssh $SERVER_USER@$SERVER_IP 'wg show'"
+        # Fallback: run script directly
+        local SCRIPT_ARGS="--name $NAME"
+        if [ -n "$VPN_IP" ]; then
+            SCRIPT_ARGS="$SCRIPT_ARGS --ip $VPN_IP"
+        fi
+        if [ "$DUAL_BOOT" = "true" ]; then
+            SCRIPT_ARGS="$SCRIPT_ARGS --dual-boot --private-key '$PRIVATE_KEY'"
+        fi
+
+        bash "$AUTOMATE_LINUX_DIR/daemon/scripts/setup_wireguard_peer.sh" $SCRIPT_ARGS
     fi
 }

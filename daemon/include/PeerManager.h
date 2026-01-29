@@ -36,6 +36,7 @@ public:
   void disconnectFromLeader();
   bool isConnectedToLeader() const;
   int getLeaderSocket() const;
+  bool connectToPeer(const std::string &peer_id, const std::string &ip);
 
   // Peer tracking (for leader)
   void registerPeer(const std::string &peer_id, const std::string &ip,

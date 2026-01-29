@@ -140,7 +140,7 @@
 #define COMMAND_ARG_FORCE "force"
 #define COMMAND_ARG_TARGET "target"
 #define COMMAND_ARG_DIRECTORY "directory"
-#define COMMAND_ARG_COMMAND "command"
+#define COMMAND_ARG_SHELL_CMD "shellCmd"
 
 // Peer Roles
 #define PEER_ROLE_LEADER "leader"

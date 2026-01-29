@@ -37,7 +37,11 @@
       "Bash(wg show:*)",
       "Bash(ip addr:*)",
       "Bash(ping:*)",
-      "Bash(sshGit root@10.0.0.1 /opt/automateLinux pull)"
+      "Bash(sshGit root@10.0.0.1 /opt/automateLinux pull)",
+      "Bash(source /opt/automateLinux/terminal/functions/daemon.sh)",
+      "Bash(remoteDeployDaemon:*)",
+      "Bash(getPeerIdByIp 10.0.0.1)",
+      "Bash(source ./build.sh)"
     ]
   }
 }

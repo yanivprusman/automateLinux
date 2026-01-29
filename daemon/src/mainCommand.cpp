@@ -208,9 +208,9 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "List all registered peers in the network"),
     CommandSignature(COMMAND_GET_PEER_INFO, {COMMAND_ARG_PEER},
                      "Get detailed info about a specific peer"),
-    CommandSignature(COMMAND_EXEC_ON_PEER, {COMMAND_ARG_PEER, COMMAND_ARG_DIRECTORY, COMMAND_ARG_COMMAND},
+    CommandSignature(COMMAND_EXEC_ON_PEER, {COMMAND_ARG_PEER, COMMAND_ARG_DIRECTORY, COMMAND_ARG_SHELL_CMD},
                      "Execute a command on a remote peer in specified directory"),
-    CommandSignature(COMMAND_EXEC_REQUEST, {COMMAND_ARG_DIRECTORY, COMMAND_ARG_COMMAND},
+    CommandSignature(COMMAND_EXEC_REQUEST, {COMMAND_ARG_DIRECTORY, COMMAND_ARG_SHELL_CMD},
                      "(Internal) Handle exec request from another peer"),
 
     // App Assignment Commands
@@ -1886,24 +1886,37 @@ CmdResult handleGetPeerInfo(const json &command) {
 CmdResult handleExecOnPeer(const json &command) {
   string peer_id = command[COMMAND_ARG_PEER].get<string>();
   string directory = command[COMMAND_ARG_DIRECTORY].get<string>();
-  string cmd = command[COMMAND_ARG_COMMAND].get<string>();
+  string cmd = command[COMMAND_ARG_SHELL_CMD].get<string>();
 
   PeerManager &pm = PeerManager::getInstance();
 
-  // Check if peer exists and is online
+  // Check if peer is connected in memory
   PeerInfo peer = pm.getPeerInfo(peer_id);
-  if (peer.peer_id.empty()) {
-    return CmdResult(1, "Peer not found: " + peer_id + "\n");
-  }
-  if (!peer.is_online) {
-    return CmdResult(1, "Peer is offline: " + peer_id + "\n");
+  if (peer.peer_id.empty() || peer.socket_fd < 0) {
+    // Not connected - try to find in database and connect on-demand
+    PeerRecord dbPeer = PeerTable::getPeer(peer_id);
+    if (dbPeer.peer_id.empty()) {
+      return CmdResult(1, "Peer not found: " + peer_id + "\n");
+    }
+    if (dbPeer.ip_address.empty()) {
+      return CmdResult(1, "Peer has no IP address: " + peer_id + "\n");
+    }
+
+    logToFile("Peer " + peer_id + " not connected, attempting on-demand connection to " +
+                  dbPeer.ip_address,
+              LOG_CORE);
+
+    if (!pm.connectToPeer(peer_id, dbPeer.ip_address)) {
+      return CmdResult(1, "Failed to connect to peer: " + peer_id + " (" +
+                              dbPeer.ip_address + ")\n");
+    }
   }
 
   // Build exec request message
   json execRequest;
   execRequest["command"] = COMMAND_EXEC_REQUEST;
   execRequest[COMMAND_ARG_DIRECTORY] = directory;
-  execRequest[COMMAND_ARG_COMMAND] = cmd;
+  execRequest[COMMAND_ARG_SHELL_CMD] = cmd;
 
   // Send to peer
   if (!pm.sendToPeer(peer_id, execRequest)) {
@@ -1916,7 +1929,7 @@ CmdResult handleExecOnPeer(const json &command) {
 
 CmdResult handleExecRequest(const json &command) {
   string directory = command[COMMAND_ARG_DIRECTORY].get<string>();
-  string cmd = command[COMMAND_ARG_COMMAND].get<string>();
+  string cmd = command[COMMAND_ARG_SHELL_CMD].get<string>();
 
   // Build full command: cd to directory && execute command
   string full_cmd = "cd " + directory + " && " + cmd + " 2>&1";

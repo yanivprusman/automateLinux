@@ -129,6 +129,65 @@ void PeerManager::disconnectFromLeader() {
 
 bool PeerManager::isConnectedToLeader() const { return m_connectedToLeader; }
 
+bool PeerManager::connectToPeer(const string &peer_id, const string &ip) {
+  // Check if already connected
+  {
+    lock_guard<mutex> lock(m_peersMutex);
+    auto it = m_peers.find(peer_id);
+    if (it != m_peers.end() && it->second.socket_fd >= 0) {
+      return true; // Already connected
+    }
+  }
+
+  int sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (sock < 0) {
+    logToFile("Failed to create socket for peer " + peer_id + ": " +
+                  string(strerror(errno)),
+              LOG_CORE);
+    return false;
+  }
+
+  // Set connection timeout
+  struct timeval timeout;
+  timeout.tv_sec = 5;
+  timeout.tv_usec = 0;
+  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+
+  struct sockaddr_in addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(PEER_TCP_PORT);
+
+  if (inet_pton(AF_INET, ip.c_str(), &addr.sin_addr) <= 0) {
+    logToFile("Invalid peer address: " + ip, LOG_CORE);
+    close(sock);
+    return false;
+  }
+
+  if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+    logToFile("Failed to connect to peer " + peer_id + " at " + ip + ":" +
+                  to_string(PEER_TCP_PORT) + ": " + strerror(errno),
+              LOG_CORE);
+    close(sock);
+    return false;
+  }
+
+  logToFile("Connected to peer " + peer_id + " at " + ip, LOG_CORE);
+
+  // Register in memory
+  {
+    lock_guard<mutex> lock(m_peersMutex);
+    PeerInfo info;
+    info.peer_id = peer_id;
+    info.ip_address = ip;
+    info.is_online = true;
+    info.socket_fd = sock;
+    m_peers[peer_id] = info;
+  }
+
+  return true;
+}
+
 int PeerManager::getLeaderSocket() const { return m_leaderSocket; }
 
 void PeerManager::registerPeer(const string &peer_id, const string &ip,

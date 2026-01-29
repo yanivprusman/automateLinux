@@ -19,7 +19,25 @@
       "Bash(sudo sed:*)",
       "Bash(removeKeyringPassword)",
       "Bash(df:*)",
-      "Bash(~/.git-credentials)"
+      "Bash(~/.git-credentials)",
+      "Bash(ssh:*)",
+      "Bash(ssh-keyscan:*)",
+      "Bash(~/.ssh/known_hosts)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(vpsPull)",
+      "Bash(sshCmd root@10.0.0.1 /opt/automateLinux './install.sh')",
+      "Bash(sshCmd:*)",
+      "Bash(bd)",
+      "Bash(d ping)",
+      "Bash(d getPeerStatus)",
+      "Bash(getCurrentPeerId)",
+      "Bash(d:*)",
+      "Bash(wg show:*)",
+      "Bash(ip addr:*)",
+      "Bash(ping:*)",
+      "Bash(sshGit root@10.0.0.1 /opt/automateLinux pull)"
     ]
   }
 }

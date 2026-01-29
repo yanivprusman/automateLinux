@@ -122,23 +122,11 @@
 #define COMMAND_EXEC_ON_PEER "execOnPeer"
 #define COMMAND_EXEC_REQUEST "execRequest"
 
-// App Assignment Commands
-#define COMMAND_CLAIM_APP "claimApp"
-#define COMMAND_RELEASE_APP "releaseApp"
-#define COMMAND_LIST_APPS "listApps"
-#define COMMAND_GET_APP_OWNER "getAppOwner"
-
-// VPS-specific Commands
-#define COMMAND_UPDATE_NGINX_FORWARD "updateNginxForward"
-
 // Peer Arguments
 #define COMMAND_ARG_ROLE "role"
 #define COMMAND_ARG_LEADER "leader"
 #define COMMAND_ARG_ID "id"
 #define COMMAND_ARG_PEER "peer"
-#define COMMAND_ARG_APP "app"
-#define COMMAND_ARG_FORCE "force"
-#define COMMAND_ARG_TARGET "target"
 #define COMMAND_ARG_DIRECTORY "directory"
 #define COMMAND_ARG_SHELL_CMD "shellCmd"
 

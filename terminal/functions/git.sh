@@ -195,38 +195,7 @@ gitl(){
     git l
 }
 
-# Helper to detect which claimable app we're in
-detectExtraApp() {
-    local cwd
-    cwd=$(pwd)
-    case "$cwd" in
-        */extraApps/cad*) echo "cad" ;;
-        */extraApps/loom*) echo "loom" ;;
-        */extraApps/publicTransportation*) echo "pt" ;;
-        */automateLinux*) echo "automateLinux" ;;  # Main repo (not in extraApps)
-        *) echo "" ;;
-    esac
-}
-
 gita(){
-    # Check if in an extra app directory and claim it
-    local app_name
-    app_name=$(detectExtraApp)
-    if [ -n "$app_name" ]; then
-        local claim_result
-        claim_result=$(d claimApp --app "$app_name" 2>/dev/null)
-        if echo "$claim_result" | grep -q "WARNING"; then
-            echo -e "${YELLOW}$claim_result${NC}"
-            read -p "Continue anyway? [y/N] " confirm
-            if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-                echo "Aborted."
-                return 1
-            fi
-        elif [ -n "$claim_result" ]; then
-            echo -e "${GREEN}$claim_result${NC}"
-        fi
-    fi
-
     # Fetch latest from remote silently
     git fetch origin main &>/dev/null
 

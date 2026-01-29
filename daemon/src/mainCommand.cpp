@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 // Include all command handler headers
-#include "cmdApp.h"
 #include "cmdBrowser.h"
 #include "cmdDatabase.h"
 #include "cmdInput.h"
@@ -208,22 +207,6 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Execute a command on a remote peer in specified directory"),
     CommandSignature(COMMAND_EXEC_REQUEST, {COMMAND_ARG_DIRECTORY, COMMAND_ARG_SHELL_CMD},
                      "(Internal) Handle exec request from another peer"),
-
-    // App Assignment Commands
-    CommandSignature(COMMAND_CLAIM_APP, {COMMAND_ARG_APP},
-                     "Claim exclusive work on an extraApp (prevents git conflicts)"),
-    CommandSignature(COMMAND_RELEASE_APP, {COMMAND_ARG_APP},
-                     "Release app assignment",
-                     "[--force true] to override ownership check"),
-    CommandSignature(COMMAND_LIST_APPS, {},
-                     "List all app assignments across peers"),
-    CommandSignature(COMMAND_GET_APP_OWNER, {COMMAND_ARG_APP},
-                     "Check which peer owns an app"),
-
-    // VPS-specific Commands
-    CommandSignature(COMMAND_UPDATE_NGINX_FORWARD,
-                     {COMMAND_ARG_PORT, COMMAND_ARG_TARGET},
-                     "(VPS only) Update nginx port forwarding to target IP"),
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -332,13 +315,6 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_PEER_INFO, handleGetPeerInfo},
     {COMMAND_EXEC_ON_PEER, handleExecOnPeer},
     {COMMAND_EXEC_REQUEST, handleExecRequest},
-
-    // App commands
-    {COMMAND_CLAIM_APP, handleClaimApp},
-    {COMMAND_RELEASE_APP, handleReleaseApp},
-    {COMMAND_LIST_APPS, handleListApps},
-    {COMMAND_GET_APP_OWNER, handleGetAppOwner},
-    {COMMAND_UPDATE_NGINX_FORWARD, handleUpdateNginxForward},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =

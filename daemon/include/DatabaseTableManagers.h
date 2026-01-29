@@ -63,22 +63,4 @@ public:
   static std::string getIpAddress(const std::string &peer_id);
 };
 
-// App assignment structure for locking apps to peers
-struct AppAssignment {
-  std::string app_name;
-  std::string assigned_peer;
-  std::string assigned_at;
-  std::string last_activity;
-};
-
-class AppAssignmentTable {
-public:
-  static void assignApp(const std::string &app_name, const std::string &peer_id);
-  static AppAssignment getAssignment(const std::string &app_name);
-  static std::vector<AppAssignment> getAllAssignments();
-  static void releaseApp(const std::string &app_name);
-  static void updateLastActivity(const std::string &app_name);
-  static std::string getOwner(const std::string &app_name);
-};
-
 #endif // DATABASE_TABLE_MANAGERS_H

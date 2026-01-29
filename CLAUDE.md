@@ -102,12 +102,6 @@ d setPeerConfig --role leader --id desktop     # Configure as leader
 d setPeerConfig --role worker --id vps --leader 10.0.0.2  # Configure as worker
 d getPeerStatus                                 # Show role, connections
 d listPeers                                     # List registered peers
-
-# App assignment (prevents git conflicts on extraApps)
-d claimApp --app cad                           # Claim exclusive work on app
-d releaseApp --app cad                         # Release app assignment
-d listApps                                     # Show all app assignments
-d getAppOwner --app cad                        # Check who owns an app
 ```
 
 ## Adding a New Daemon Command
@@ -159,9 +153,7 @@ d getAppOwner --app cad                        # Check who owns an app
 
 ## Multi-Peer Networking
 
-The daemon supports distributed operation across multiple machines connected via WireGuard VPN. This enables:
-- **Centralized app assignment** - Prevent git conflicts by locking extraApps to specific peers
-- **Dynamic port forwarding** - VPS nginx automatically routes dev ports to the active peer
+The daemon supports distributed operation across multiple machines connected via WireGuard VPN. This enables remote command execution across peers.
 
 ### VPN Environment
 
@@ -180,7 +172,7 @@ The daemon supports distributed operation across multiple machines connected via
 ```
 
 - **VPS**: 10.0.0.1 (public: 31.133.102.195) - nginx proxy host
-- **Desktop (Leader)**: 10.0.0.2 - source of truth for app assignments
+- **Desktop (Leader)**: 10.0.0.2
 - **Laptop**: 10.0.0.4
 - **Port**: 3600 (peer TCP socket, bound to wg0 interface)
 
@@ -198,32 +190,6 @@ d setPeerConfig --role worker --id laptop --leader 10.0.0.2
 ```
 
 Workers automatically connect to the leader on startup and register themselves.
-
-### App Assignment (Preventing Git Conflicts)
-
-When working on extraApps (cad, loom, pt), the `gita` function automatically claims the app:
-
-```bash
-cd /opt/automateLinux/extraApps/cad
-gita .                    # Calls 'd claimApp --app cad' before git add
-# Output: "Claimed cad (dev port 3001), VPS forwarding to 10.0.0.2"
-```
-
-If another peer already owns the app:
-```bash
-gita .
-# Output: "WARNING: cad is assigned to laptop since 2026-01-28 10:14:43"
-# Prompt: "Continue anyway? [y/N]"
-```
-
-### Nginx Port Forwarding
-
-When a peer claims an app, the leader notifies VPS to update nginx:
-
-1. Laptop claims `cad` (dev port 3001)
-2. Leader sends `updateNginxForward` to VPS
-3. VPS creates `/etc/nginx/conf.d/daemon-forward-3001.conf`
-4. External traffic to `http://VPS_PUBLIC_IP:3001` routes to laptop over VPN
 
 ### Remote Command Execution
 
@@ -255,10 +221,6 @@ cd /opt/automateLinux && git pull && cd daemon && source ./build.sh
 | `d getPeerStatus` | Show current peer configuration |
 | `d listPeers` | List all registered peers with status |
 | `d execOnPeer --peer <id> --directory <path> --shellCmd <cmd>` | Execute shell command on remote peer |
-| `d claimApp --app <name>` | Claim exclusive work on an extraApp |
-| `d releaseApp --app <name>` | Release app assignment |
-| `d listApps` | Show all app assignments |
-| `d getAppOwner --app <name>` | Check who owns an app |
 
 ### Shell Helper Functions
 
@@ -275,9 +237,9 @@ cd /opt/automateLinux && git pull && cd daemon && source ./build.sh
 - **daemon/src/InputMapper.cpp**: Input event interception and remapping
 - **daemon/src/DaemonServer.cpp**: UNIX socket server + TCP peer socket handling
 - **daemon/src/PeerManager.cpp**: Leader/worker connection management
-- **daemon/src/DatabaseTableManagers.cpp**: MySQL table management (including peer_registry, app_assignments)
+- **daemon/src/DatabaseTableManagers.cpp**: MySQL table management (including peer_registry)
 - **dashboard/bridge.cjs**: WebSocket/REST bridge to daemon for dashboard
-- **terminal/functions/git.sh**: Git helpers including `gita` with app claiming
+- **terminal/functions/git.sh**: Git helpers including `gita` with behind-branch warning
 - **terminal/functions/*.sh**: Modular bash functions
 
 ### Terminal Environment

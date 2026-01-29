@@ -2,7 +2,33 @@
 set -e
 
 INSTALL_DIR="/opt/automateLinux"
-echo "Starting AutomateLinux User Configuration..."
+MINIMAL_INSTALL=false
+
+# Parse arguments
+for arg in "$@"; do
+    case $arg in
+        --minimal|-m)
+            MINIMAL_INSTALL=true
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: ./user_install.sh [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --minimal, -m    Minimal install for headless/VPS systems:"
+            echo "                   - Skip GNOME extensions"
+            echo "                   - Skip autostart configuration"
+            echo "  --help, -h       Show this help message"
+            exit 0
+            ;;
+    esac
+done
+
+if [ "$MINIMAL_INSTALL" = true ]; then
+    echo "Starting AutomateLinux User Configuration (MINIMAL)..."
+else
+    echo "Starting AutomateLinux User Configuration..."
+fi
 
 # 1. Determine User
 TARGET_USER=$(whoami)
@@ -106,77 +132,98 @@ if [ -f "$TMUX_TARGET" ]; then
 fi
 
 # 5. Configure GNOME Extensions
-echo "Configuring GNOME Extensions..."
-EXT_DIR="$USER_HOME/.local/share/gnome-shell/extensions"
-mkdir -p "$EXT_DIR"
+if [ "$MINIMAL_INSTALL" = false ]; then
+    echo "Configuring GNOME Extensions..."
+    EXT_DIR="$USER_HOME/.local/share/gnome-shell/extensions"
+    mkdir -p "$EXT_DIR"
 
-EXTENSIONS=("clock@ya-niv.com" "active-window-tracker@example.com" "window-selector@ya-niv.com")
+    EXTENSIONS=("clock@ya-niv.com" "active-window-tracker@example.com" "window-selector@ya-niv.com")
 
-# Link shared lib directory (extensions use ../lib/ imports)
-LIB_SRC="$INSTALL_DIR/gnomeExtensions/lib"
-LIB_DEST="$EXT_DIR/lib"
-if [ -d "$LIB_SRC" ]; then
-    CURRENT_TARGET=$(readlink -f "$LIB_DEST" 2>/dev/null || echo "")
-    if [ "$CURRENT_TARGET" == "$LIB_SRC" ]; then
-        echo "  Shared lib directory already linked."
-    elif [ -L "$LIB_DEST" ]; then
-        echo "  Updating lib symlink..."
-        rm "$LIB_DEST"
-        ln -s "$LIB_SRC" "$LIB_DEST"
-    elif [ -e "$LIB_DEST" ]; then
-        echo "  Warning: $LIB_DEST already exists and is not a symlink. Skipping."
-    else
-        ln -s "$LIB_SRC" "$LIB_DEST"
-        echo "  Linked shared lib directory"
+    # Link shared lib directory (extensions use ../lib/ imports)
+    LIB_SRC="$INSTALL_DIR/gnomeExtensions/lib"
+    LIB_DEST="$EXT_DIR/lib"
+    if [ -d "$LIB_SRC" ]; then
+        CURRENT_TARGET=$(readlink -f "$LIB_DEST" 2>/dev/null || echo "")
+        if [ "$CURRENT_TARGET" == "$LIB_SRC" ]; then
+            echo "  Shared lib directory already linked."
+        elif [ -L "$LIB_DEST" ]; then
+            echo "  Updating lib symlink..."
+            rm "$LIB_DEST"
+            ln -s "$LIB_SRC" "$LIB_DEST"
+        elif [ -e "$LIB_DEST" ]; then
+            echo "  Warning: $LIB_DEST already exists and is not a symlink. Skipping."
+        else
+            ln -s "$LIB_SRC" "$LIB_DEST"
+            echo "  Linked shared lib directory"
+        fi
     fi
+
+    for EXT in "${EXTENSIONS[@]}"; do
+        SRC="$INSTALL_DIR/gnomeExtensions/$EXT"
+        DEST="$EXT_DIR/$EXT"
+
+        if [ -d "$SRC" ]; then
+            CURRENT_TARGET=$(readlink -f "$DEST" 2>/dev/null || echo "")
+            if [ "$CURRENT_TARGET" == "$SRC" ]; then
+                echo "  Extension $EXT already linked."
+            elif [ -L "$DEST" ]; then
+                echo "  Updating extension $EXT symlink..."
+                rm "$DEST"
+                ln -s "$SRC" "$DEST"
+            elif [ -e "$DEST" ]; then
+                echo "  Warning: $DEST already exists and is not a symlink. Skipping."
+            else
+                ln -s "$SRC" "$DEST"
+                echo "  Linked extension $EXT"
+            fi
+        else
+            echo "  Warning: Extension source $SRC not found."
+        fi
+    done
+else
+    echo "Skipping GNOME extensions (minimal install)..."
 fi
 
-for EXT in "${EXTENSIONS[@]}"; do
-    SRC="$INSTALL_DIR/gnomeExtensions/$EXT"
-    DEST="$EXT_DIR/$EXT"
-
-    if [ -d "$SRC" ]; then
-        CURRENT_TARGET=$(readlink -f "$DEST" 2>/dev/null || echo "")
-        if [ "$CURRENT_TARGET" == "$SRC" ]; then
-            echo "  Extension $EXT already linked."
-        elif [ -L "$DEST" ]; then
-            echo "  Updating extension $EXT symlink..."
-            rm "$DEST"
-            ln -s "$SRC" "$DEST"
-        elif [ -e "$DEST" ]; then
-            echo "  Warning: $DEST already exists and is not a symlink. Skipping."
-        else
-            ln -s "$SRC" "$DEST"
-            echo "  Linked extension $EXT"
-        fi
-    else
-        echo "  Warning: Extension source $SRC not found."
-    fi
-done
-
 # 6. Configure Autostart
-echo "Configuring Autostart..."
-AUTOSTART_DIR="$USER_HOME/.config/autostart"
-AUTOSTART_TARGET="$INSTALL_DIR/autostart"
+if [ "$MINIMAL_INSTALL" = false ]; then
+    echo "Configuring Autostart..."
+    AUTOSTART_DIR="$USER_HOME/.config/autostart"
+    AUTOSTART_TARGET="$INSTALL_DIR/autostart"
 
-if [ -d "$AUTOSTART_TARGET" ]; then
-    CURRENT_TARGET=$(readlink -f "$AUTOSTART_DIR" 2>/dev/null || echo "")
-    if [ "$CURRENT_TARGET" == "$AUTOSTART_TARGET" ]; then
-        echo "  ~/.config/autostart is already correctly linked."
-    elif [ -L "$AUTOSTART_DIR" ]; then
-        echo "  Updating autostart symlink..."
-        rm "$AUTOSTART_DIR"
-        ln -s "$AUTOSTART_TARGET" "$AUTOSTART_DIR"
-        echo "  Done."
-    elif [ -e "$AUTOSTART_DIR" ]; then
-        echo "  Backing up existing autostart directory..."
-        mv "$AUTOSTART_DIR" "${AUTOSTART_DIR}.bakup"
-        ln -s "$AUTOSTART_TARGET" "$AUTOSTART_DIR"
-        echo "  Done."
-    else
-        ln -s "$AUTOSTART_TARGET" "$AUTOSTART_DIR"
-        echo "  Linked ~/.config/autostart"
+    if [ -d "$AUTOSTART_TARGET" ]; then
+        CURRENT_TARGET=$(readlink -f "$AUTOSTART_DIR" 2>/dev/null || echo "")
+        if [ "$CURRENT_TARGET" == "$AUTOSTART_TARGET" ]; then
+            echo "  ~/.config/autostart is already correctly linked."
+        elif [ -L "$AUTOSTART_DIR" ]; then
+            echo "  Updating autostart symlink..."
+            rm "$AUTOSTART_DIR"
+            ln -s "$AUTOSTART_TARGET" "$AUTOSTART_DIR"
+            echo "  Done."
+        elif [ -e "$AUTOSTART_DIR" ]; then
+            echo "  Backing up existing autostart directory..."
+            mv "$AUTOSTART_DIR" "${AUTOSTART_DIR}.bakup"
+            ln -s "$AUTOSTART_TARGET" "$AUTOSTART_DIR"
+            echo "  Done."
+        else
+            ln -s "$AUTOSTART_TARGET" "$AUTOSTART_DIR"
+            echo "  Linked ~/.config/autostart"
+        fi
     fi
+else
+    echo "Skipping autostart configuration (minimal install)..."
+fi
+
+# 7. Configure SSH Keys
+echo "Configuring SSH keys..."
+SSH_KEY="$USER_HOME/.ssh/id_ed25519"
+if [ ! -f "$SSH_KEY" ]; then
+    echo "  Generating SSH key at $SSH_KEY..."
+    mkdir -p "$USER_HOME/.ssh"
+    chmod 700 "$USER_HOME/.ssh"
+    ssh-keygen -t ed25519 -f "$SSH_KEY" -N ""
+    echo "  SSH key generated successfully."
+else
+    echo "  SSH key already exists at $SSH_KEY"
 fi
 
 echo "--------------------------------------------------------"

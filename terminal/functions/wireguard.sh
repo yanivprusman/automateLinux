@@ -370,6 +370,28 @@ EOF
         echo "   Your VPN IP: $CLIENT_IP"
         echo "   Server VPN IP: 10.0.0.1"
         echo
+
+        # Setup SSH key authentication
+        echo "Setting up SSH key authentication..."
+        SSH_KEY="$HOME/.ssh/id_ed25519"
+        if [ ! -f "$SSH_KEY" ]; then
+            echo "   Generating SSH key..."
+            mkdir -p "$HOME/.ssh"
+            chmod 700 "$HOME/.ssh"
+            ssh-keygen -t ed25519 -f "$SSH_KEY" -N ""
+            echo "   SSH key generated"
+        else
+            echo "   SSH key already exists"
+        fi
+
+        echo "   Copying SSH key to server..."
+        if ssh-copy-id $SSH_OPTS "$SERVER_USER@$SERVER_IP" &>/dev/null; then
+            echo "   ✓ SSH key copied to server"
+        else
+            echo "   ⚠️  Failed to copy SSH key (may already exist)"
+        fi
+        echo
+
         echo "   To restart: wireGuardRestart"
         echo "   To test: ping 10.0.0.1"
     else

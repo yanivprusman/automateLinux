@@ -208,6 +208,10 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "List all registered peers in the network"),
     CommandSignature(COMMAND_GET_PEER_INFO, {COMMAND_ARG_PEER},
                      "Get detailed info about a specific peer"),
+    CommandSignature(COMMAND_EXEC_ON_PEER, {COMMAND_ARG_PEER, COMMAND_ARG_DIRECTORY, COMMAND_ARG_COMMAND},
+                     "Execute a command on a remote peer in specified directory"),
+    CommandSignature(COMMAND_EXEC_REQUEST, {COMMAND_ARG_DIRECTORY, COMMAND_ARG_COMMAND},
+                     "(Internal) Handle exec request from another peer"),
 
     // App Assignment Commands
     CommandSignature(COMMAND_CLAIM_APP, {COMMAND_ARG_APP},
@@ -1879,6 +1883,73 @@ CmdResult handleGetPeerInfo(const json &command) {
   return CmdResult(0, result.dump(2) + "\n");
 }
 
+CmdResult handleExecOnPeer(const json &command) {
+  string peer_id = command[COMMAND_ARG_PEER].get<string>();
+  string directory = command[COMMAND_ARG_DIRECTORY].get<string>();
+  string cmd = command[COMMAND_ARG_COMMAND].get<string>();
+
+  PeerManager &pm = PeerManager::getInstance();
+
+  // Check if peer exists and is online
+  PeerInfo peer = pm.getPeerInfo(peer_id);
+  if (peer.peer_id.empty()) {
+    return CmdResult(1, "Peer not found: " + peer_id + "\n");
+  }
+  if (!peer.is_online) {
+    return CmdResult(1, "Peer is offline: " + peer_id + "\n");
+  }
+
+  // Build exec request message
+  json execRequest;
+  execRequest["command"] = COMMAND_EXEC_REQUEST;
+  execRequest[COMMAND_ARG_DIRECTORY] = directory;
+  execRequest[COMMAND_ARG_COMMAND] = cmd;
+
+  // Send to peer
+  if (!pm.sendToPeer(peer_id, execRequest)) {
+    return CmdResult(1, "Failed to send command to peer: " + peer_id + "\n");
+  }
+
+  logToFile("Sent exec request to " + peer_id + ": cd " + directory + " && " + cmd, LOG_CORE);
+  return CmdResult(0, "Exec request sent to " + peer_id + "\n");
+}
+
+CmdResult handleExecRequest(const json &command) {
+  string directory = command[COMMAND_ARG_DIRECTORY].get<string>();
+  string cmd = command[COMMAND_ARG_COMMAND].get<string>();
+
+  // Build full command: cd to directory && execute command
+  string full_cmd = "cd " + directory + " && " + cmd + " 2>&1";
+
+  logToFile("Executing: " + full_cmd, LOG_CORE);
+
+  // Execute command and capture output
+  FILE *pipe = popen(full_cmd.c_str(), "r");
+  if (!pipe) {
+    string error_msg = "Failed to execute command: " + string(strerror(errno));
+    logToFile(error_msg, LOG_CORE);
+    return CmdResult(1, error_msg + "\n");
+  }
+
+  // Read output
+  string output;
+  char buffer[256];
+  while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+    output += buffer;
+  }
+
+  int exit_code = pclose(pipe);
+  int actual_exit_code = WEXITSTATUS(exit_code);
+
+  logToFile("Command completed with exit code " + to_string(actual_exit_code), LOG_CORE);
+
+  if (actual_exit_code != 0) {
+    return CmdResult(actual_exit_code, output);
+  }
+
+  return CmdResult(0, output);
+}
+
 // ============================================================
 // App Assignment Commands
 // ============================================================
@@ -2206,6 +2277,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_REGISTER_PEER, handleRegisterPeer},
     {COMMAND_LIST_PEERS, handleListPeers},
     {COMMAND_GET_PEER_INFO, handleGetPeerInfo},
+    {COMMAND_EXEC_ON_PEER, handleExecOnPeer},
+    {COMMAND_EXEC_REQUEST, handleExecRequest},
     // App Assignment Commands
     {COMMAND_CLAIM_APP, handleClaimApp},
     {COMMAND_RELEASE_APP, handleReleaseApp},

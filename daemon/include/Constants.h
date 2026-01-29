@@ -119,6 +119,8 @@
 #define COMMAND_REGISTER_PEER "registerPeer"
 #define COMMAND_LIST_PEERS "listPeers"
 #define COMMAND_GET_PEER_INFO "getPeerInfo"
+#define COMMAND_EXEC_ON_PEER "execOnPeer"
+#define COMMAND_EXEC_REQUEST "execRequest"
 
 // App Assignment Commands
 #define COMMAND_CLAIM_APP "claimApp"
@@ -137,6 +139,8 @@
 #define COMMAND_ARG_APP "app"
 #define COMMAND_ARG_FORCE "force"
 #define COMMAND_ARG_TARGET "target"
+#define COMMAND_ARG_DIRECTORY "directory"
+#define COMMAND_ARG_COMMAND "command"
 
 // Peer Roles
 #define PEER_ROLE_LEADER "leader"

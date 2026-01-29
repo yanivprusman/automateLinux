@@ -41,7 +41,13 @@
       "Bash(source /opt/automateLinux/terminal/functions/daemon.sh)",
       "Bash(remoteDeployDaemon:*)",
       "Bash(getPeerIdByIp 10.0.0.1)",
-      "Bash(source ./build.sh)"
+      "Bash(source ./build.sh)",
+      "Bash(cmake:*)",
+      "Bash(wc:*)",
+      "Bash(sudo systemctl stop:*)",
+      "Bash(sudo cp:*)",
+      "Bash(sudo systemctl start:*)",
+      "Bash(nc:*)"
     ]
   }
 }

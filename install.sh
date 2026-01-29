@@ -63,7 +63,7 @@ verify_dependencies() {
     CORE_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git curl"
 
     # Extra packages for full desktop installation
-    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux"
+    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev"
 
     if [ "$MINIMAL_INSTALL" = true ]; then
         REQUIRED_PACKAGES="$CORE_PACKAGES"

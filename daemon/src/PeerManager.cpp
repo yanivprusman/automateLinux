@@ -68,6 +68,12 @@ bool PeerManager::connectToLeader() {
     return false;
   }
 
+  // Set connection timeout to avoid blocking for minutes if leader is unreachable
+  struct timeval timeout;
+  timeout.tv_sec = 5;
+  timeout.tv_usec = 0;
+  setsockopt(m_leaderSocket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+
   struct sockaddr_in addr;
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;

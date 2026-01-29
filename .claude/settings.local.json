@@ -50,7 +50,9 @@
       "Bash(nc:*)",
       "Bash(chmod:*)",
       "Bash(du:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(journalctl:*)"
     ]
   }
 }

@@ -1,3 +1,29 @@
+# Terminal Functions Skills
+
+## Daemon Functions (daemon.sh)
+
+### Remote Peer Execution
+
+Execute commands on remote peers connected via WireGuard VPN.
+
+| Function | Usage | Description |
+|----------|-------|-------------|
+| `getPeerIdByIp` | `getPeerIdByIp 10.0.0.1` | Lookup peer_id from IP |
+| `execOnPeerByIp` | `execOnPeerByIp <ip> <dir> <cmd>` | Run command on peer |
+| `remotePull` | `remotePull 10.0.0.1` | Git pull on remote peer |
+| `remoteBd` | `remoteBd 10.0.0.1` | Build daemon on remote peer |
+| `remoteDeployDaemon` | `remoteDeployDaemon 10.0.0.1` | Pull + build on peer |
+
+### Example Workflow
+
+```bash
+# After pushing changes locally, deploy to VPS
+git push
+remoteDeployDaemon $kamateraIp
+```
+
+---
+
 # Git Functions Skills
 
 ## gitCommitsToDirs

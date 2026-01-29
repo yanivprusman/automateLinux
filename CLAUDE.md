@@ -225,6 +225,28 @@ When a peer claims an app, the leader notifies VPS to update nginx:
 3. VPS creates `/etc/nginx/conf.d/daemon-forward-3001.conf`
 4. External traffic to `http://VPS_PUBLIC_IP:3001` routes to laptop over VPN
 
+### Remote Command Execution
+
+Execute shell commands on remote peers from the leader. The leader establishes on-demand TCP connections to peers listed in the database.
+
+```bash
+# Low-level daemon command
+d execOnPeer --peer vps --directory /opt/automateLinux --shellCmd "git pull"
+
+# Shell helper functions (defined in terminal/functions/daemon.sh)
+remotePull 10.0.0.1                    # git pull on remote peer
+remoteBd 10.0.0.1                      # Build daemon on remote peer
+remoteDeployDaemon 10.0.0.1            # Pull + build in one command
+execOnPeerByIp 10.0.0.1 /path "cmd"    # Execute arbitrary command
+```
+
+**Note:** The argument is `--shellCmd` (not `--command`) to avoid collision with the JSON `"command"` key.
+
+**Bootstrap requirement:** Remote peers must have the `execRequest` handler code before they can receive commands. For a fresh peer, manually SSH and run:
+```bash
+cd /opt/automateLinux && git pull && cd daemon && source ./build.sh
+```
+
 ### Key Commands
 
 | Command | Description |
@@ -232,10 +254,21 @@ When a peer claims an app, the leader notifies VPS to update nginx:
 | `d setPeerConfig --role <role> --id <id> [--leader <ip>]` | Configure peer role |
 | `d getPeerStatus` | Show current peer configuration |
 | `d listPeers` | List all registered peers with status |
+| `d execOnPeer --peer <id> --directory <path> --shellCmd <cmd>` | Execute shell command on remote peer |
 | `d claimApp --app <name>` | Claim exclusive work on an extraApp |
 | `d releaseApp --app <name>` | Release app assignment |
 | `d listApps` | Show all app assignments |
 | `d getAppOwner --app <name>` | Check who owns an app |
+
+### Shell Helper Functions
+
+| Function | Usage | Description |
+|----------|-------|-------------|
+| `getPeerIdByIp` | `getPeerIdByIp 10.0.0.1` | Lookup peer_id from IP address |
+| `execOnPeerByIp` | `execOnPeerByIp 10.0.0.1 /path "cmd"` | Execute command on peer by IP |
+| `remotePull` | `remotePull 10.0.0.1` | Git pull automateLinux on peer |
+| `remoteBd` | `remoteBd 10.0.0.1` | Build daemon on peer |
+| `remoteDeployDaemon` | `remoteDeployDaemon 10.0.0.1` | Pull + build daemon on peer |
 
 ### Key Source Files
 - **daemon/src/mainCommand.cpp**: Command dispatcher (all daemon commands)

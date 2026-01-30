@@ -80,7 +80,10 @@
       "Bash(sudo journalctl:*)",
       "Bash(sudo /usr/bin/systemctl start:*)",
       "Bash(sudo /usr/bin/systemctl status:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(pgrep:*)",
+      "Bash(lsof:*)",
+      "Bash(sudo ss:*)"
     ]
   }
 }

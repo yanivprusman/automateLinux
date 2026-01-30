@@ -193,25 +193,23 @@ Workers automatically connect to the leader on startup and register themselves.
 
 ### Remote Command Execution
 
-Execute shell commands on remote peers from the leader. The leader establishes on-demand TCP connections to peers listed in the database.
+> **⚠️ DO NOT USE SSH DIRECTLY.** Always use daemon commands for remote execution. SSH lacks directory context and causes repeated failures.
 
 ```bash
-# Low-level daemon command
+# ✅ CORRECT - Use daemon commands
 d execOnPeer --peer vps --directory /opt/automateLinux --shellCmd "git pull"
+execOnPeerByIp 10.0.0.1 /opt/automateLinux "git status"
+remotePull 10.0.0.1
+remoteBd 10.0.0.1
+remoteDeployDaemon 10.0.0.1
 
-# Shell helper functions (defined in terminal/functions/daemon.sh)
-remotePull 10.0.0.1                    # git pull on remote peer
-remoteBd 10.0.0.1                      # Build daemon on remote peer
-remoteDeployDaemon 10.0.0.1            # Pull + build in one command
-execOnPeerByIp 10.0.0.1 /path "cmd"    # Execute arbitrary command
+# ❌ WRONG - Never use raw SSH
+ssh 10.0.0.1 "git pull"  # Fails: no directory context
 ```
 
 **Note:** The argument is `--shellCmd` (not `--command`) to avoid collision with the JSON `"command"` key.
 
-**Bootstrap requirement:** Remote peers must have the `execRequest` handler code before they can receive commands. For a fresh peer, manually SSH and run:
-```bash
-cd /opt/automateLinux && git pull && cd daemon && source ./build.sh
-```
+**If a peer is unreachable:** Ask the user to manually bootstrap it. Never use SSH directly.
 
 ### Key Commands
 

@@ -21,104 +21,89 @@ Execute commands on remote peers via the daemon's peer networking infrastructure
 
 ## Architecture
 
+### Current Network Topology
+
+```
+                    WireGuard VPN (10.0.0.0/24)
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌───────────────┐     ┌───────────────┐     ┌───────────────┐
+│   Worker      │     │    LEADER     │     │   Worker      │
+│  10.0.0.4     │────▶│   10.0.0.1    │◀────│  10.0.0.2     │
+│  (Laptop)     │     │   (VPS)       │     │  (Desktop)    │
+└───────────────┘     └───────────────┘     └───────────────┘
+```
+
+- **VPS (10.0.0.1)**: Leader - maintains peer registry in database
+- **Desktop (10.0.0.2)**: Worker - queries leader for peer info
+- **Laptop (10.0.0.4)**: Worker - queries leader for peer info
+
 ### Daemon Commands
 
 #### `execOnPeer` - Execute arbitrary command on remote peer
-**Desktop initiates:**
 ```bash
-d execOnPeer --peer vps --directory /opt/automateLinux --command "git pull"
+d execOnPeer --peer vps --directory /opt/automateLinux --shellCmd "git pull"
 ```
 
 **What happens:**
-1. Desktop daemon validates peer exists and is online
-2. Desktop daemon sends `execRequest` message to VPS via TCP port 3600
-3. VPS daemon receives request, executes `cd /opt/automateLinux && git pull 2>&1`
-4. VPS daemon captures output and exit code
-5. VPS daemon returns result to desktop daemon
-6. Desktop daemon displays output
+1. Local daemon validates peer exists (queries leader if worker)
+2. Local daemon connects to target peer via TCP port 3600
+3. Sends `execRequest` message to target peer
+4. Target daemon executes `cd /opt/automateLinux && git pull 2>&1`
+5. Target daemon captures output and exit code
+6. Result returned synchronously to caller
 
-**Implementation:**
-- [Constants.h:122-123](daemon/include/Constants.h#L122-L123) - Command constants
-- [mainCommand.cpp:1882-1951](daemon/src/mainCommand.cpp#L1882-L1951) - Handler functions
-- [PeerManager.cpp:203-220](daemon/src/PeerManager.cpp#L203-L220) - Message sending
+#### Convenience Commands
 
-### Bash Wrapper Functions
+| Command | Description |
+|---------|-------------|
+| `d remotePull --peer <id>` | Git pull automateLinux on peer |
+| `d remoteBd --peer <id>` | Build daemon on peer |
+| `d remoteDeployDaemon --peer <id>` | Pull + build daemon (chained) |
 
-Located in [terminal/functions/sshgit.sh](terminal/functions/sshgit.sh)
+**Tab completion**: `d remotePull --peer <TAB>` dynamically queries `d listPeers`.
 
-#### Core Functions
+### Shell Helper Functions
 
-**`execOnPeer <peer_id> <directory> <command>`**
-Execute arbitrary command on remote peer.
-```bash
-execOnPeer vps /opt/automateLinux "git pull"
-execOnPeer desktop /home/yaniv/cad-prod "./build.sh"
-```
+Located in [terminal/functions/daemon.sh](terminal/functions/daemon.sh):
 
-**`gitOnPeer <peer_id> <directory> <git-operation>`**
-Convenience wrapper for git operations.
-```bash
-gitOnPeer vps /opt/automateLinux pull
-gitOnPeer vps /opt/automateLinux status
-gitOnPeer desktop /opt/automateLinux log --oneline -5
-```
-
-**`getCurrentPeerId()`**
-Detects current machine based on WireGuard IP (10.0.0.x).
-- 10.0.0.1 → vps
-- 10.0.0.2 → desktop
-- 10.0.0.4 → laptop
-
-#### Convenience Functions
-
-| Function | Description | Equivalent Command |
-|----------|-------------|-------------------|
-| `vpsPull` | Pull automateLinux on VPS | `gitOnPeer vps /opt/automateLinux pull` |
-| `vpsCADPull` | Pull CAD repo on VPS | `gitOnPeer vps /home/yaniv/cad-prod pull` |
-| `vpsInstall` | Run install.sh on VPS (with --minimal) | `execOnPeer vps /opt/automateLinux "./install.sh --minimal"` |
-| `vpsExec <cmd>` | Execute command on VPS in automateLinux dir | `execOnPeer vps /opt/automateLinux "<cmd>"` |
-| `desktopExec <cmd>` | Execute command on desktop in automateLinux dir | `execOnPeer desktop /opt/automateLinux "<cmd>"` |
-
-#### Legacy SSH Functions
-
-`sshGit` and `sshCmd` are retained for backward compatibility but deprecated. They print a notice to prefer daemon-based execution.
-
-## When to Use This Skill
-
-**Use daemon peer execution whenever you need to:**
-- Run git commands on remote peers (pull, status, log, diff)
-- Execute build scripts on remote machines
-- Run installation scripts on VPS
-- Check status or logs on remote peers
-- Any operation requiring directory context on remote machines
-
-**Requirements:**
-- Peers must be configured (see Peer Setup below)
-- Target peer must be online and connected
-- WireGuard VPN must be active (wg0 interface up)
+| Function | Usage | Description |
+|----------|-------|-------------|
+| `getPeerIdByIp` | `getPeerIdByIp 10.0.0.1` | Lookup peer_id from IP address |
+| `execOnPeerByIp` | `execOnPeerByIp 10.0.0.1 /path "cmd"` | Execute command on peer by IP |
 
 ## Peer Setup
 
 ### Initial Configuration
 
-**On leader (Desktop - 10.0.0.2):**
+**On leader (VPS - 10.0.0.1):**
 ```bash
-d setPeerConfig --role leader --id desktop
+d setPeerConfig --role leader --id vps
 ```
 
-**On workers (VPS - 10.0.0.1, Laptop - 10.0.0.4):**
+**On workers (Desktop, Laptop):**
 ```bash
-d setPeerConfig --role worker --id vps --leader 10.0.0.2
-d setPeerConfig --role worker --id laptop --leader 10.0.0.2
+d registerWorker    # Uses hostname as peer_id, connects to VPS (10.0.0.1)
 ```
 
-Workers automatically connect to leader on daemon startup.
+Or with explicit ID: `d setPeerConfig --role worker --id desktop --leader 10.0.0.1`
+
+Workers automatically connect to leader on daemon startup and register themselves.
+
+### Database Sanity Check
+
+Workers should not have peer_registry data (that's leader-only). If a worker was previously a leader or has stale data:
+```bash
+d dbSanityCheck    # Detects and deletes any peer_registry entries on workers
+```
 
 ### Verify Peer Status
 
 ```bash
 d getPeerStatus              # Show my peer config
-d listPeers                  # Show all registered peers
+d listPeers                  # Show all registered peers (queries leader)
 ```
 
 ## How to Invoke
@@ -127,206 +112,107 @@ d listPeers                  # Show all registered peers
 
 **CRITICAL RULES:**
 
-1. **Always use daemon-based functions**, not SSH:
+1. **Always use daemon commands**, not SSH:
    ```bash
-   ✅ vpsPull
-   ✅ gitOnPeer vps /opt/automateLinux pull
-   ✅ execOnPeer vps /opt/automateLinux "./install.sh --minimal"
+   ✅ d remotePull --peer vps
+   ✅ d execOnPeer --peer vps --directory /opt/automateLinux --shellCmd "git status"
+   ✅ d remoteDeployDaemon --peer laptop
 
    ❌ ssh root@10.0.0.1 'cd /opt/automateLinux && git pull'
-   ❌ sshCmd root@10.0.0.1 /opt/automateLinux git pull
    ```
 
-2. **Understand execution context:**
-   - Functions run **locally** but execute **remotely**
-   - `vpsPull` runs on current machine, executes git pull on VPS
-   - After `vpsPull`, you still need to source bashrc ON VPS if you changed bash functions
-   - To source on VPS: `execOnPeer vps /opt/automateLinux "source ~/.bashrc"`
+2. **Understand the argument name:**
+   - Use `--shellCmd` (not `--command`) to avoid collision with JSON `"command"` key
 
-3. **Don't assume functions are available remotely after local sourcing:**
+3. **Check peer status before assuming connectivity:**
    ```bash
-   ✅ source terminal/functions/sshgit.sh    # Functions available LOCALLY
-   ✅ vpsPull                                # Executes git pull ON VPS
-   ❌ vpsPull                                # Won't work ON VPS unless bashrc sourced there
-
-   # To make functions available on VPS:
-   ✅ vpsPull                                # Pull the updated sshgit.sh to VPS
-   ✅ execOnPeer vps ~ "source ~/.bashrc"   # Source bashrc on VPS
+   d listPeers                # Verify peer is registered
+   d getPeerStatus            # Verify local peer config
    ```
-
-4. **Machine detection:**
-   - Use `getCurrentPeerId` to detect which machine you're on
-   - Functions prevent executing on self (use local commands instead)
-   - If `getCurrentPeerId` returns "laptop", don't try `execOnPeer laptop ...`
-
-### For Human Users
-
-Functions are automatically available after running `user_install.sh` (sourced in bashrc).
 
 ## Common Workflows
 
-### Update VPS AutomateLinux Installation
+### Deploy Changes to All Peers
 
 ```bash
-# 1. Push changes from current machine (desktop/laptop)
-git add terminal/functions/sshgit.sh
-git commit -m "Update sshgit functions"
+# From local machine after committing
 git push
 
-# 2. Pull on VPS
-vpsPull
-
-# 3. Reinstall (if needed)
-vpsInstall
-
-# 4. Source bashrc on VPS (if bash functions changed)
-execOnPeer vps ~ "source ~/.bashrc"
+# Deploy to each peer
+d remoteDeployDaemon --peer vps
+d remoteDeployDaemon --peer laptop
 ```
 
-### Update VPS CAD Deployment
+### Check Status Across Peers
 
 ```bash
-# From CAD repo, after committing changes
-git push
-
-# Pull and rebuild on VPS
-vpsCADPull
-execOnPeer vps /home/yaniv/cad-prod "./build.sh"
+d execOnPeer --peer vps --directory /opt/automateLinux --shellCmd "git status"
+d execOnPeer --peer desktop --directory /opt/automateLinux --shellCmd "git log -1"
 ```
 
-### Check Status on Multiple Peers
+### Start App on Remote Peer
 
 ```bash
-gitOnPeer vps /opt/automateLinux status
-gitOnPeer desktop /opt/automateLinux status
-d listPeers  # See which peers are online
-```
-
-### Debug Remote Build Issues
-
-```bash
-# Check what's in the directory
-execOnPeer vps /opt/automateLinux "ls -la"
-
-# Check git status
-gitOnPeer vps /opt/automateLinux status
-
-# View recent logs
-execOnPeer vps /opt/automateLinux "tail -n 50 /var/log/daemon.log"
+d execOnPeer --peer vps --directory /opt/automateLinux --shellCmd "d startApp --app loom --mode prod"
 ```
 
 ## Error Messages
 
-### "Peer not found: vps"
-Peer hasn't been registered. Check with `d listPeers`. May need to restart daemon on that peer.
+### "Peer not found: laptop"
+Peer hasn't registered with the leader. On the missing peer, run:
+```bash
+d registerWorker    # Uses hostname, connects to VPS
+```
 
-### "Peer is offline: vps"
-Peer is registered but not connected. Check:
-- Is daemon running on target peer?
+### "Not connected to leader"
+Worker daemon hasn't connected to leader. Check:
+- Is leader daemon running?
 - Is WireGuard VPN up? (`wg show`)
-- Can you ping the peer IP? (`ping 10.0.0.1`)
+- Can you ping the leader? (`ping 10.0.0.1`)
 
-### "Failed to send command to peer"
-Network issue or peer disconnected. Check peer connection with `d listPeers`.
+### "Failed to connect to peer"
+Target peer is registered but not reachable. Check:
+- Is daemon running on target peer?
+- WireGuard connectivity (`ping <peer_ip>`)
 
-### "Cannot exec on self (laptop)"
-You tried to use `execOnPeer laptop ...` while on the laptop. Run the command locally instead.
-
-## Execution Model Clarification
-
-This is the single most important concept to understand:
-
-```
-┌──────────────────────────────────────────────────────────┐
-│  LAPTOP (10.0.0.4)                                        │
-│  ├─ You are here                                          │
-│  ├─ You source sshgit.sh → functions available LOCALLY   │
-│  ├─ You run: vpsPull                                      │
-│  │   ├─ Function runs on LAPTOP                           │
-│  │   ├─ Daemon sends command to VPS                       │
-│  │   └─ Result displayed on LAPTOP                        │
-│  └─ Functions like vpsPull are NOT available on VPS yet   │
-└──────────────────────────────────────────────────────────┘
-                           │
-                           │ daemon peer network (TCP 3600)
-                           ▼
-┌──────────────────────────────────────────────────────────┐
-│  VPS (10.0.0.1)                                           │
-│  ├─ Daemon receives execRequest                           │
-│  ├─ Executes: cd /opt/automateLinux && git pull          │
-│  ├─ Captures output                                       │
-│  ├─ Functions like vpsPull NOT available here             │
-│  └─ To make them available:                               │
-│      1. vpsPull (pulls updated sshgit.sh)                 │
-│      2. execOnPeer vps ~ "source ~/.bashrc"               │
-└──────────────────────────────────────────────────────────┘
-```
-
-**Key insight:** Sourcing locally does NOT make functions available remotely. Remote execution is through daemon message passing, not bash function availability.
+### "Timeout waiting for response"
+Command took too long (30 second timeout). Check:
+- Is the command hanging on target?
+- Network latency issues?
 
 ## Technical Details
 
 ### Command Flow
 
-1. **Local bash function** (`vpsPull`) calls `d execOnPeer ...`
-2. **Local daemon** (`/run/automatelinux/automatelinux-daemon.sock`) receives command
-3. **Validation** checks peer exists and is online
-4. **JSON message** sent via TCP socket (port 3600) over WireGuard to target peer
-5. **Remote daemon** receives `execRequest` message
-6. **Execution** via `popen()`: `cd <directory> && <command> 2>&1`
-7. **Output capture** reads stdout/stderr
-8. **Result return** sent back via TCP to requesting peer
-9. **Display** output shown to user on local machine
+1. **Local CLI** calls `d execOnPeer ...`
+2. **Local daemon** receives via UNIX socket
+3. **Peer lookup**: Leader checks database, worker queries leader
+4. **TCP connection** to target peer on port 3600 (wg0 interface)
+5. **execRequest message** sent as JSON
+6. **Target daemon** executes via `popen()`: `cd <dir> && <cmd> 2>&1`
+7. **Output capture** streams back to caller
+8. **Display** output shown on local machine
 
-### Files Modified
+### Key Source Files
 
-- [daemon/include/Constants.h](daemon/include/Constants.h) - Added command constants
-- [daemon/src/mainCommand.cpp](daemon/src/mainCommand.cpp) - Added handlers and registration
-- [terminal/functions/sshgit.sh](terminal/functions/sshgit.sh) - Complete rewrite for daemon-based execution
-- [SKILL.md](SKILL.md) - This documentation
-
-### Backward Compatibility
-
-Legacy SSH functions (`sshGit`, `sshCmd`) remain available for:
-- Situations where daemon peer connection is unavailable
-- Connecting to machines not in the peer network
-- Emergency access when daemon is down
-
-These functions now display a deprecation notice recommending daemon-based alternatives.
-
-## Testing
-
-```bash
-# 1. Verify peer connectivity
-d listPeers
-
-# 2. Test simple command
-execOnPeer vps /opt/automateLinux "pwd"
-
-# 3. Test git operation
-gitOnPeer vps /opt/automateLinux status
-
-# 4. Test convenience function
-vpsPull
-
-# 5. Verify output is displayed locally
-```
+- [daemon/include/Constants.h](daemon/include/Constants.h) - Command constants
+- [daemon/src/cmdPeer.cpp](daemon/src/cmdPeer.cpp) - Handler implementations
+- [daemon/src/PeerManager.cpp](daemon/src/PeerManager.cpp) - Peer connection management
+- [daemon/src/mainCommand.cpp](daemon/src/mainCommand.cpp) - Command registration
+- [terminal/completions/daemon.bash](terminal/completions/daemon.bash) - Tab completions
 
 ## Benefits Over SSH
 
 | Feature | SSH Approach | Daemon Approach |
 |---------|-------------|-----------------|
-| **Authentication** | Requires SSH keys | Uses existing peer connection |
-| **Logging** | SSH logs + command output | Unified in daemon logs |
-| **Network** | Separate SSH connection | Reuses persistent peer TCP socket |
-| **Integration** | External tool | Native daemon feature |
+| **Authentication** | Requires SSH keys | Uses peer connection |
+| **Logging** | Separate logs | Unified daemon logs |
+| **Network** | New connection each time | Persistent/on-demand TCP |
+| **Directory Context** | Manual `cd &&` | Enforced by command |
+| **Tab Completion** | None | Dynamic from peer list |
 | **Error Handling** | Shell exit codes | Structured CmdResult |
-| **Peer Awareness** | Must specify IP/user | Uses peer ID from network |
-| **Directory Context** | Manual `cd &&` | Enforced by daemon command |
 
 ## Related Documentation
 
 - [CLAUDE.md](CLAUDE.md) - General project guidance, peer networking section
-- [daemon/src/PeerManager.cpp](daemon/src/PeerManager.cpp) - Peer connection management
-- [daemon/src/mainCommand.cpp](daemon/src/mainCommand.cpp) - Command handlers
-- WireGuard VPN configuration - Network topology (10.0.0.x)
+- [peer-commands skill](.agent/skills/peer-commands/SKILL.md) - Quick reference

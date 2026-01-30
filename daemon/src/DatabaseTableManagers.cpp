@@ -481,3 +481,17 @@ std::string PeerTable::getIpAddress(const std::string &peer_id) {
   }
   return "";
 }
+
+int PeerTable::clearAllPeers() {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return 0;
+  try {
+    std::unique_ptr<sql::Statement> stmt(con->createStatement());
+    return stmt->executeUpdate("DELETE FROM peer_registry");
+  } catch (sql::SQLException &e) {
+    logToFile("PeerTable: clearAllPeers error: " + std::string(e.what()),
+              0xFFFFFFFF);
+    return 0;
+  }
+}

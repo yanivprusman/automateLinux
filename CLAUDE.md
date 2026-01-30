@@ -30,12 +30,26 @@ cd dashboard && npm run dev -- --port 3007       # Start frontend (port 3007)
 ```
 
 ### Extra Apps (CAD, Loom, PT)
-```bash
-# CAD Frontend
-cd extraApps/cad/web && npm run dev -- -p $(d getPort --key cad-dev)
 
-# Loom
-d restartLoom                    # Starts server + client + auto-selects screen
+Use daemon commands for all app lifecycle management:
+
+```bash
+# Generic app management (preferred)
+d listApps                                          # List available apps
+d appStatus                                         # Status of all apps
+d appStatus --app loom                              # Status of specific app
+d startApp --app loom --mode dev                    # Start app in dev mode
+d stopApp --app loom --mode dev                     # Stop specific mode
+d stopApp --app loom --mode all                     # Stop all modes
+d restartApp --app loom --mode prod                 # Restart app
+
+# Build and dependencies
+d buildApp --app loom --mode dev                    # Build C++ server component
+d installAppDeps --app loom --mode prod             # Install npm dependencies (all)
+d installAppDeps --app loom --component client      # Install client deps only
+
+# Legacy Loom shortcuts (redirect to generic handlers)
+d restartLoom                    # Alias for restartApp --app loom
 d stopLoom
 d isLoomActive
 ```
@@ -97,11 +111,20 @@ d restartLoom / stopLoom / isLoomActive
 d publicTransportationOpenApp
 d registerLogListener                           # For live log streaming
 
+# App management commands
+d listApps                                       # List registered apps
+d appStatus [--app <name>]                       # Show app service status
+d startApp --app <name> --mode <prod|dev>        # Start app services
+d stopApp --app <name> --mode <prod|dev|all>     # Stop app services
+d restartApp --app <name> --mode <prod|dev>      # Restart app services
+d buildApp --app <name> --mode <prod|dev>        # Build C++ server component
+d installAppDeps --app <name> [--component <x>]  # Install npm dependencies
+
 # Peer networking commands
-d setPeerConfig --role leader --id desktop     # Configure as leader
-d setPeerConfig --role worker --id vps --leader 10.0.0.2  # Configure as worker
-d getPeerStatus                                 # Show role, connections
-d listPeers                                     # List registered peers
+d setPeerConfig --role leader --id vps           # Configure VPS as leader
+d setPeerConfig --role worker --id desktop --leader 10.0.0.1  # Configure as worker
+d getPeerStatus                                  # Show role, connections
+d listPeers                                      # List registered peers (queries leader)
 ```
 
 ## Adding a New Daemon Command
@@ -165,29 +188,30 @@ The daemon supports distributed operation across multiple machines connected via
         ▼                     ▼                     ▼
 ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
 │   Worker      │     │    LEADER     │     │   Worker      │
-│  10.0.0.4     │────▶│   10.0.0.2    │◀────│  10.0.0.1     │
-│  (Laptop)     │     │   (Desktop)   │     │  (VPS)        │
+│  10.0.0.4     │────▶│   10.0.0.1    │◀────│  10.0.0.2     │
+│  (Laptop)     │     │   (VPS)       │     │  (Desktop)    │
 └───────────────┘     └───────────────┘     └───────────────┘
         TCP:3600              TCP:3600              TCP:3600
 ```
 
-- **VPS**: 10.0.0.1 (public: 31.133.102.195) - nginx proxy host
-- **Desktop (Leader)**: 10.0.0.2
+- **VPS (Leader)**: 10.0.0.1 (public: 31.133.102.195) - nginx proxy host, peer registry
+- **Desktop**: 10.0.0.2
 - **Laptop**: 10.0.0.4
 - **Port**: 3600 (peer TCP socket, bound to wg0 interface)
 
 ### Setup
 
-**On the leader (Desktop):**
+**On the leader (VPS):**
 ```bash
-d setPeerConfig --role leader --id desktop
+d setPeerConfig --role leader --id vps
 ```
 
-**On workers (VPS, Laptop):**
+**On workers (Desktop, Laptop):**
 ```bash
-d setPeerConfig --role worker --id vps --leader 10.0.0.2
-d setPeerConfig --role worker --id laptop --leader 10.0.0.2
+d registerWorker    # Uses hostname as peer_id, connects to VPS (10.0.0.1)
 ```
+
+Or with explicit ID: `d setPeerConfig --role worker --id laptop --leader 10.0.0.1`
 
 Workers automatically connect to the leader on startup and register themselves.
 
@@ -198,10 +222,9 @@ Workers automatically connect to the leader on startup and register themselves.
 ```bash
 # ✅ CORRECT - Use daemon commands
 d execOnPeer --peer vps --directory /opt/automateLinux --shellCmd "git pull"
-execOnPeerByIp 10.0.0.1 /opt/automateLinux "git status"
-remotePull 10.0.0.1
-remoteBd 10.0.0.1
-remoteDeployDaemon 10.0.0.1
+d remotePull --peer vps
+d remoteBd --peer laptop
+d remoteDeployDaemon --peer laptop
 
 # ❌ WRONG - Never use raw SSH
 ssh 10.0.0.1 "git pull"  # Fails: no directory context
@@ -215,10 +238,15 @@ ssh 10.0.0.1 "git pull"  # Fails: no directory context
 
 | Command | Description |
 |---------|-------------|
-| `d setPeerConfig --role <role> --id <id> [--leader <ip>]` | Configure peer role |
+| `d registerWorker` | Register as worker (uses hostname, connects to VPS) |
+| `d setPeerConfig --role <role> --id <id> [--leader <ip>]` | Configure peer role (advanced) |
 | `d getPeerStatus` | Show current peer configuration |
 | `d listPeers` | List all registered peers with status |
+| `d dbSanityCheck` | Check/fix worker database (delete leader-only data) |
 | `d execOnPeer --peer <id> --directory <path> --shellCmd <cmd>` | Execute shell command on remote peer |
+| `d remotePull --peer <id>` | Git pull automateLinux on peer |
+| `d remoteBd --peer <id>` | Build daemon on peer |
+| `d remoteDeployDaemon --peer <id>` | Pull + build daemon on peer |
 
 ### Shell Helper Functions
 
@@ -226,12 +254,10 @@ ssh 10.0.0.1 "git pull"  # Fails: no directory context
 |----------|-------|-------------|
 | `getPeerIdByIp` | `getPeerIdByIp 10.0.0.1` | Lookup peer_id from IP address |
 | `execOnPeerByIp` | `execOnPeerByIp 10.0.0.1 /path "cmd"` | Execute command on peer by IP |
-| `remotePull` | `remotePull 10.0.0.1` | Git pull automateLinux on peer |
-| `remoteBd` | `remoteBd 10.0.0.1` | Build daemon on peer |
-| `remoteDeployDaemon` | `remoteDeployDaemon 10.0.0.1` | Pull + build daemon on peer |
 
 ### Key Source Files
 - **daemon/src/mainCommand.cpp**: Command dispatcher (all daemon commands)
+- **daemon/src/cmdApp.cpp**: App lifecycle management (start/stop/restart/build/install)
 - **daemon/src/InputMapper.cpp**: Input event interception and remapping
 - **daemon/src/DaemonServer.cpp**: UNIX socket server + TCP peer socket handling
 - **daemon/src/PeerManager.cpp**: Leader/worker connection management

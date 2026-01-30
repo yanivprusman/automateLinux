@@ -105,6 +105,20 @@
 #define COMMAND_LIST_PORTS "listPorts"
 #define COMMAND_GENERATE_LOOM_TOKEN "generateLoomToken"
 #define COMMAND_REVOKE_LOOM_TOKENS "revokeLoomTokens"
+
+// App Management Commands
+#define COMMAND_START_APP "startApp"
+#define COMMAND_STOP_APP "stopApp"
+#define COMMAND_RESTART_APP "restartApp"
+#define COMMAND_APP_STATUS "appStatus"
+#define COMMAND_LIST_APPS "listApps"
+#define COMMAND_BUILD_APP "buildApp"
+#define COMMAND_INSTALL_APP_DEPS "installAppDeps"
+
+// App Arguments
+#define COMMAND_ARG_APP "app"
+#define COMMAND_ARG_MODE "mode"
+
 #define COMMAND_DELETE_PORT "deletePort"
 #define COMMAND_TEST_LSOF "testLsof"
 #define COMMAND_TEST_ECHO "testEcho"
@@ -121,6 +135,11 @@
 #define COMMAND_GET_PEER_INFO "getPeerInfo"
 #define COMMAND_EXEC_ON_PEER "execOnPeer"
 #define COMMAND_EXEC_REQUEST "execRequest"
+#define COMMAND_REMOTE_PULL "remotePull"
+#define COMMAND_REMOTE_BD "remoteBd"
+#define COMMAND_REMOTE_DEPLOY_DAEMON "remoteDeployDaemon"
+#define COMMAND_DB_SANITY_CHECK "dbSanityCheck"
+#define COMMAND_REGISTER_WORKER "registerWorker"
 
 // Peer Arguments
 #define COMMAND_ARG_ROLE "role"
@@ -154,7 +173,7 @@
 #define WG_SERVER_IP "31.133.102.195"
 #define WG_SERVER_USER "root"
 #define WG_VPN_SUBNET "10.0.0."
-#define WG_LEADER_IP "10.0.0.2"
+#define WG_LEADER_IP "10.0.0.1"
 
 #define COMMAND_ARG_DEVICE_PATH_REGEX "devicePathRegex"
 #define COMMAND_ARG_IS_KEYBOARD "isKeyboard"

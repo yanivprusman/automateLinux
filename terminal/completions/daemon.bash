@@ -8,7 +8,12 @@ _daemon_completion() {
     
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable isLoomActive restartLoom stopLoom generateLoomToken revokeLoomTokens publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow resetClock listPorts deletePort getPort setPort listCommands setPeerConfig getPeerStatus listPeers getPeerInfo setupWireGuardPeer listWireGuardPeers"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable isLoomActive restartLoom stopLoom generateLoomToken revokeLoomTokens publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow resetClock listPorts deletePort getPort setPort listCommands setPeerConfig getPeerStatus listPeers getPeerInfo execOnPeer remotePull remoteBd remoteDeployDaemon dbSanityCheck registerWorker setupWireGuardPeer listWireGuardPeers getWireGuardIp startApp stopApp restartApp appStatus listApps buildApp installAppDeps"
+    }
+
+    # Function to get peer IDs dynamically from daemon
+    get_peer_ids() {
+        daemon send listPeers 2>/dev/null | jq -r '.[].peer_id' 2>/dev/null | tr '\n' ' '
     }
 
     # Find the real command word and previous word, accounting for 'send'
@@ -94,9 +99,27 @@ _daemon_completion() {
     command_args[listPeers]=""
     command_args[getPeerInfo]="--peer"
 
+    # Peer exec commands
+    command_args[execOnPeer]="--peer --directory --shellCmd"
+    command_args[remotePull]="--peer"
+    command_args[remoteBd]="--peer"
+    command_args[remoteDeployDaemon]="--peer"
+    command_args[dbSanityCheck]=""
+    command_args[registerWorker]=""
+
+    # App management commands
+    command_args[startApp]="--app --mode"
+    command_args[stopApp]="--app --mode"
+    command_args[restartApp]="--app --mode"
+    command_args[appStatus]="--app"
+    command_args[listApps]=""
+    command_args[buildApp]="--app --mode"
+    command_args[installAppDeps]="--app --component"
+
     # WireGuard setup commands
     command_args[setupWireGuardPeer]="--host --name --vpnIp --mac --dualBoot --privateKey"
     command_args[listWireGuardPeers]=""
+    command_args[getWireGuardIp]=""
 
     # Define possible values for specific arguments
     declare -A arg_values
@@ -120,7 +143,14 @@ _daemon_completion() {
     arg_values[--role]="leader worker"
     arg_values[--id]="" # Custom peer ID
     arg_values[--leader]="" # Leader IP address
-    arg_values[--peer]="" # Peer ID to query
+    arg_values[--peer]="DYNAMIC_PEERS" # Peer ID - will be resolved dynamically
+    arg_values[--directory]="" # Directory path for exec
+    arg_values[--shellCmd]="" # Shell command to execute
+
+    # App management argument values
+    arg_values[--app]="loom cad publicTransportation"
+    arg_values[--mode]="dev prod all"
+    arg_values[--component]="client server"
 
     # WireGuard setup argument values
     arg_values[--host]="" # Remote host IP
@@ -154,15 +184,19 @@ _daemon_completion() {
 
     if [[ -n "$arg_key_for_value" ]]; then
         local values="${arg_values[$arg_key_for_value]}"
+        # Handle dynamic peer completion
+        if [[ "$values" == "DYNAMIC_PEERS" ]]; then
+            values=$(get_peer_ids)
+        fi
         if [[ -n "$values" ]]; then
             COMPREPLY=( $(compgen -W "$values" -- "$cur") )
             return 0
         fi
     fi
 
-    # Default completion for values (e.g., tty, pwd) - suggest files/dirs
-    if [[ "$prev" == --tty || "$prev" == --pwd ]]; then
-         _filedir
+    # Default completion for values (e.g., tty, pwd, directory) - suggest files/dirs
+    if [[ "$prev" == --tty || "$prev" == --pwd || "$prev" == --directory ]]; then
+         _filedir -d
          return 0
     fi
     

@@ -61,6 +61,7 @@ public:
   static void updateOnlineStatus(const std::string &peer_id, bool is_online);
   static void deletePeer(const std::string &peer_id);
   static std::string getIpAddress(const std::string &peer_id);
+  static int clearAllPeers();  // Returns count of deleted rows
 };
 
 #endif // DATABASE_TABLE_MANAGERS_H

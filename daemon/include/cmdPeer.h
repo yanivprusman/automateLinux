@@ -15,5 +15,10 @@ CmdResult handleListPeers(const json &command);
 CmdResult handleGetPeerInfo(const json &command);
 CmdResult handleExecOnPeer(const json &command);
 CmdResult handleExecRequest(const json &command);
+CmdResult handleRemotePull(const json &command);
+CmdResult handleRemoteBd(const json &command);
+CmdResult handleRemoteDeployDaemon(const json &command);
+CmdResult handleDbSanityCheck(const json &command);
+CmdResult handleRegisterWorker(const json &command);
 
 #endif // CMD_PEER_H

@@ -16,6 +16,7 @@
 #include "cmdTerminal.h"
 #include "cmdWindow.h"
 #include "cmdWireGuard.h"
+#include "cmdApp.h"
 
 using namespace std;
 
@@ -182,6 +183,23 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, {},
                      "Open public transportation app"),
 
+    // App Management Commands
+    CommandSignature(COMMAND_START_APP, {COMMAND_ARG_APP},
+                     "Start an app", "--mode <prod|dev>"),
+    CommandSignature(COMMAND_STOP_APP, {COMMAND_ARG_APP},
+                     "Stop an app", "--mode <prod|dev|all>"),
+    CommandSignature(COMMAND_RESTART_APP, {COMMAND_ARG_APP},
+                     "Restart an app", "--mode <prod|dev>"),
+    CommandSignature(COMMAND_APP_STATUS, {},
+                     "Show app status", "--app <name>"),
+    CommandSignature(COMMAND_LIST_APPS, {},
+                     "List all registered apps"),
+    CommandSignature(COMMAND_BUILD_APP, {COMMAND_ARG_APP},
+                     "Build an app's server component", "--mode <prod|dev>"),
+    CommandSignature(COMMAND_INSTALL_APP_DEPS, {COMMAND_ARG_APP},
+                     "Install npm dependencies for an app",
+                     "--mode <prod|dev> --component <client|server|all>"),
+
     // Test/Debug Commands
     CommandSignature(COMMAND_TEST_INTEGRITY, {},
                      "Run internal integrity tests"),
@@ -208,6 +226,16 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Execute a command on a remote peer in specified directory"),
     CommandSignature(COMMAND_EXEC_REQUEST, {COMMAND_ARG_DIRECTORY, COMMAND_ARG_SHELL_CMD},
                      "(Internal) Handle exec request from another peer"),
+    CommandSignature(COMMAND_REMOTE_PULL, {COMMAND_ARG_PEER},
+                     "Git pull automateLinux on a remote peer"),
+    CommandSignature(COMMAND_REMOTE_BD, {COMMAND_ARG_PEER},
+                     "Build daemon on a remote peer"),
+    CommandSignature(COMMAND_REMOTE_DEPLOY_DAEMON, {COMMAND_ARG_PEER},
+                     "Pull and build daemon on a remote peer"),
+    CommandSignature(COMMAND_DB_SANITY_CHECK, {},
+                     "Check and fix worker database (delete leader-only data)"),
+    CommandSignature(COMMAND_REGISTER_WORKER, {},
+                     "Register this machine as a worker (uses hostname, connects to VPS)"),
 
     // WireGuard Setup Commands
     CommandSignature(COMMAND_SETUP_WIREGUARD_PEER, {COMMAND_ARG_NAME},
@@ -317,6 +345,15 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GENERATE_LOOM_TOKEN, handleGenerateLoomToken},
     {COMMAND_REVOKE_LOOM_TOKENS, handleRevokeLoomTokens},
 
+    // App management commands
+    {COMMAND_START_APP, handleStartApp},
+    {COMMAND_STOP_APP, handleStopApp},
+    {COMMAND_RESTART_APP, handleRestartApp},
+    {COMMAND_APP_STATUS, handleAppStatus},
+    {COMMAND_LIST_APPS, handleListApps},
+    {COMMAND_BUILD_APP, handleBuildApp},
+    {COMMAND_INSTALL_APP_DEPS, handleInstallAppDeps},
+
     // Peer commands
     {COMMAND_SET_PEER_CONFIG, handleSetPeerConfig},
     {COMMAND_GET_PEER_STATUS, handleGetPeerStatus},
@@ -325,6 +362,11 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_GET_PEER_INFO, handleGetPeerInfo},
     {COMMAND_EXEC_ON_PEER, handleExecOnPeer},
     {COMMAND_EXEC_REQUEST, handleExecRequest},
+    {COMMAND_REMOTE_PULL, handleRemotePull},
+    {COMMAND_REMOTE_BD, handleRemoteBd},
+    {COMMAND_REMOTE_DEPLOY_DAEMON, handleRemoteDeployDaemon},
+    {COMMAND_DB_SANITY_CHECK, handleDbSanityCheck},
+    {COMMAND_REGISTER_WORKER, handleRegisterWorker},
 
     // WireGuard commands
     {COMMAND_SETUP_WIREGUARD_PEER, handleSetupWireGuardPeer},

@@ -338,3 +338,120 @@ CmdResult handleExecRequest(const json &command) {
 
   return CmdResult(0, output);
 }
+
+CmdResult handleRemotePull(const json &command) {
+  json execCmd;
+  execCmd["command"] = COMMAND_EXEC_ON_PEER;
+  execCmd[COMMAND_ARG_PEER] = command[COMMAND_ARG_PEER].get<string>();
+  execCmd[COMMAND_ARG_DIRECTORY] = "/opt/automateLinux";
+  execCmd[COMMAND_ARG_SHELL_CMD] = "git pull";
+  return handleExecOnPeer(execCmd);
+}
+
+CmdResult handleRemoteBd(const json &command) {
+  json execCmd;
+  execCmd["command"] = COMMAND_EXEC_ON_PEER;
+  execCmd[COMMAND_ARG_PEER] = command[COMMAND_ARG_PEER].get<string>();
+  execCmd[COMMAND_ARG_DIRECTORY] = "/opt/automateLinux/daemon";
+  execCmd[COMMAND_ARG_SHELL_CMD] = "source ./build.sh";
+  return handleExecOnPeer(execCmd);
+}
+
+CmdResult handleRemoteDeployDaemon(const json &command) {
+  string peer_id = command[COMMAND_ARG_PEER].get<string>();
+
+  // First: git pull
+  json pullCmd;
+  pullCmd["command"] = COMMAND_EXEC_ON_PEER;
+  pullCmd[COMMAND_ARG_PEER] = peer_id;
+  pullCmd[COMMAND_ARG_DIRECTORY] = "/opt/automateLinux";
+  pullCmd[COMMAND_ARG_SHELL_CMD] = "git pull";
+
+  CmdResult pullResult = handleExecOnPeer(pullCmd);
+  if (pullResult.status != 0) {
+    return CmdResult(pullResult.status, "Pull failed:\n" + pullResult.message);
+  }
+
+  // Second: build daemon
+  json buildCmd;
+  buildCmd["command"] = COMMAND_EXEC_ON_PEER;
+  buildCmd[COMMAND_ARG_PEER] = peer_id;
+  buildCmd[COMMAND_ARG_DIRECTORY] = "/opt/automateLinux/daemon";
+  buildCmd[COMMAND_ARG_SHELL_CMD] = "source ./build.sh";
+
+  CmdResult buildResult = handleExecOnPeer(buildCmd);
+  if (buildResult.status != 0) {
+    return CmdResult(buildResult.status, "Pull succeeded, build failed:\n" + buildResult.message);
+  }
+
+  return CmdResult(0, "Pull:\n" + pullResult.message + "\nBuild:\n" + buildResult.message);
+}
+
+CmdResult handleDbSanityCheck(const json &) {
+  PeerManager &pm = PeerManager::getInstance();
+  string role = pm.getRole();
+  ordered_json result;
+  result["role"] = role;
+  result["issues_found"] = false;
+  result["actions"] = ordered_json::array();
+
+  // Only workers need sanity checks - leaders are supposed to have peer data
+  if (role != PEER_ROLE_WORKER) {
+    result["message"] = "No sanity check needed for role: " + role;
+    return CmdResult(0, result.dump(2) + "\n");
+  }
+
+  // Check for peer_registry data on a worker (should not exist)
+  auto peers = PeerTable::getAllPeers();
+  if (!peers.empty()) {
+    result["issues_found"] = true;
+    ordered_json action;
+    action["issue"] = "Worker has peer_registry data (leader-only table)";
+    action["peer_count"] = (int)peers.size();
+
+    // List the errant peer IDs
+    ordered_json peer_ids = ordered_json::array();
+    for (const auto &peer : peers) {
+      peer_ids.push_back(peer.peer_id);
+    }
+    action["peer_ids"] = peer_ids;
+
+    // Clear the table
+    int deleted = PeerTable::clearAllPeers();
+    action["action_taken"] = "Deleted " + to_string(deleted) + " peer records";
+    result["actions"].push_back(action);
+  }
+
+  if (result["issues_found"].get<bool>()) {
+    result["message"] = "Sanity check completed: issues found and fixed";
+  } else {
+    result["message"] = "Sanity check passed: no issues found";
+  }
+
+  return CmdResult(0, result.dump(2) + "\n");
+}
+
+CmdResult handleRegisterWorker(const json &) {
+  PeerManager &pm = PeerManager::getInstance();
+
+  // Get hostname for peer_id
+  char hostname[256];
+  if (gethostname(hostname, sizeof(hostname)) != 0) {
+    return CmdResult(1, "Failed to get hostname\n");
+  }
+  string peer_id(hostname);
+
+  // Configure as worker
+  pm.setRole(PEER_ROLE_WORKER);
+  pm.setPeerId(peer_id);
+  pm.setLeaderAddress(WG_LEADER_IP);
+
+  // Connect to leader
+  if (pm.connectToLeader()) {
+    return CmdResult(0, "Registered as worker '" + peer_id + "', connected to leader at " +
+                            string(WG_LEADER_IP) + "\n");
+  } else {
+    return CmdResult(0, "Registered as worker '" + peer_id + "', failed to connect to leader at " +
+                            string(WG_LEADER_IP) + " (will retry on next command)\n");
+  }
+}

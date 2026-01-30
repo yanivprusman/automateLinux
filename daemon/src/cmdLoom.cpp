@@ -1,4 +1,5 @@
 #include "cmdLoom.h"
+#include "cmdApp.h"
 #include "Constants.h"
 #include "DatabaseTableManagers.h"
 #include "Globals.h"
@@ -7,12 +8,6 @@
 
 using namespace std;
 
-// Helper to check if a port is listening using ss (works without sudo, unlike lsof)
-static bool isPortListening(int port) {
-  string cmd = "/usr/bin/ss -tlnH sport = :" + std::to_string(port);
-  return !executeCommand(cmd.c_str()).empty();
-}
-
 CmdResult handleResetClock(const json &) {
   SettingsTable::deleteSetting("clockX");
   SettingsTable::deleteSetting("clockY");
@@ -20,10 +15,11 @@ CmdResult handleResetClock(const json &) {
 }
 
 CmdResult handleIsLoomActive(const json &) {
-  bool serverProdRunning = isPortListening(3500);
-  bool serverDevRunning = isPortListening(3505);
-  bool clientProdRunning = isPortListening(3004);
-  bool clientDevRunning = isPortListening(3005);
+  // Use AppManager functions for port checking
+  bool serverProdRunning = AppManager::isPortListening(3500);
+  bool serverDevRunning = AppManager::isPortListening(3505);
+  bool clientProdRunning = AppManager::isPortListening(3004);
+  bool clientDevRunning = AppManager::isPortListening(3005);
 
   std::stringstream ss;
   ss << "Loom Status:\n";
@@ -40,49 +36,19 @@ CmdResult handleIsLoomActive(const json &) {
 }
 
 CmdResult handleStopLoom(const json &command) {
-  // Check for --mode argument (prod, dev, or all)
-  string mode = "all";
-  if (command.contains("mode")) {
-    mode = command["mode"].get<string>();
-  }
-
-  string cmd =
-      directories.base + "daemon/scripts/stop_loom.sh --" + mode +
-      " > /dev/null 2>&1";
-
-  int rc = std::system(cmd.c_str());
-  if (rc != 0) {
-    return CmdResult(1, "Failed to execute stop script\n");
-  }
-
-  return CmdResult(0, "Loom stopped (" + mode + ").\n");
+  // Redirect to generic app handler
+  json appCmd;
+  appCmd["app"] = "loom";
+  appCmd["mode"] = command.contains("mode") ? command["mode"].get<string>() : "all";
+  return handleStopApp(appCmd);
 }
 
 CmdResult handleRestartLoom(const json &command) {
-  // Check for --mode argument (prod or dev, default: prod)
-  string mode = "prod";
-  if (command.contains("mode")) {
-    mode = command["mode"].get<string>();
-  }
-
-  // 1. First run the stop script synchronously to ensure clean state
-  string stopCmd =
-      directories.base + "daemon/scripts/stop_loom.sh --" + mode +
-      " > /dev/null 2>&1";
-  std::system(stopCmd.c_str());
-
-  // 2. Now launch the restart script
-  // We use `nohup` and `&` to ensure it continues running in background.
-  string cmd =
-      directories.base + "daemon/scripts/restart_loom.sh --" +
-      mode + " &";
-
-  int rc = std::system(cmd.c_str());
-  if (rc != 0) {
-    return CmdResult(1, "Failed to launch restart script\n");
-  }
-
-  return CmdResult(0, "");
+  // Redirect to generic app handler
+  json appCmd;
+  appCmd["app"] = "loom";
+  appCmd["mode"] = command.contains("mode") ? command["mode"].get<string>() : "prod";
+  return handleRestartApp(appCmd);
 }
 
 CmdResult handleGenerateLoomToken(const json &) {

@@ -66,7 +66,16 @@
       "Bash(sudo systemctl enable:*)",
       "WebFetch(domain:plonter.co.il)",
       "Bash(sudo systemctl:*)",
-      "WebFetch(domain:www.ivory.co.il)"
+      "WebFetch(domain:www.ivory.co.il)",
+      "Bash(/usr/local/bin/daemon send:*)",
+      "Bash(find /opt/automateLinux -name \".git\" -type d -exec sh -c 'echo \"\"=== {} ===\"\" && cat \"\"{}/config\"\" 2>/dev/null | grep -i yaniv' ;)",
+      "Bash(tee:*)",
+      "Bash(sudo git config:*)",
+      "Bash(git remote:*)",
+      "Bash(/usr/bin/ss:*)",
+      "Bash(sudo ln:*)",
+      "Bash(daemon send:*)",
+      "Bash(/opt/automateLinux/daemon/bin/daemon send:*)"
     ]
   }
 }

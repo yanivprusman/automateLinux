@@ -16,8 +16,8 @@ WorkingDirectory=/opt/automateLinux/extraApps/loom/server/build
 ExecStart=/opt/automateLinux/extraApps/loom/server/build/loom-server 3505 dev
 Restart=always
 RestartSec=5s
-User=root
-Group=root
+User=yaniv
+Group=yaniv
 StandardOutput=journal
 StandardError=journal
 

@@ -5,26 +5,54 @@ description: Instructions for configuring and using the Public Transportation ap
 
 # Public Transportation Application Integration
 
-The Public Transportation integration allows for a quick opening of a local transport monitoring application via a hardware macro or daemon command.
+The Public Transportation integration allows for quick opening of a local transport monitoring application via a hardware macro or daemon command.
 
-## Configuration
-
-### Port Configuration
-The application is expected to run on **port 3001**.
-To configure the daemon with this port, run the following command:
+## App Management
 
 ```bash
-daemon setPort pt 3001
+# Using generic app commands
+d appStatus --app pt                  # Check status
+d startApp --app pt --mode prod       # Start production
+d stopApp --app pt --mode all         # Stop all modes
+d restartApp --app pt --mode dev      # Restart dev
+
+# Install dependencies
+d installAppDeps --app pt --mode prod
+
+# Quick open (legacy command)
+d publicTransportationOpenApp         # Opens in Chrome
+```
+
+## Port Configuration
+
+| Mode | Port | Key |
+|------|------|-----|
+| Production | 3002 | `pt-prod` |
+| Development | 3003 | `pt-dev` |
+
+To view or update ports:
+
+```bash
+d getPort --key pt-prod               # Query current port
+d setPort --key pt-prod --value 3002  # Set port
+d listPorts                           # List all ports
 ```
 
 ## Commands
 
-- `d publicTransportationOpenApp`: Manually trigger the app opening.
-- `d publicTransportationStartProxy`: (Optional) Start the SSH proxy required for the app's data source.
+- `d publicTransportationOpenApp`: Opens the PT app in Chrome using the registered port
+- `d publicTransportationStartProxy`: (Optional) Start the SSH proxy required for the app's data source
 
+## File Locations
+
+| Mode | Path |
+|------|------|
+| Development | `/opt/automateLinux/extraApps/publicTransportation` |
+| Production | `/opt/prod/publicTransportation` |
 
 ## Troubleshooting
 
-- **Chrome doesn't open**: Ensure `google-chrome` is in your PATH.
-- **Port issue**: Verify the port is correctly set in the daemon using `daemon getPort pt`.
-- **Macro not firing**: Check daemon logs for "Triggering G3" or "Triggering Public Transportation macro".
+- **Chrome doesn't open**: Ensure `google-chrome` is in your PATH
+- **Port issue**: Verify the port is correctly set: `d getPort --key pt-prod`
+- **Macro not firing**: Check daemon logs for "Triggering G3" or "Triggering Public Transportation macro"
+- **Dependencies missing**: Run `d installAppDeps --app pt --mode prod`

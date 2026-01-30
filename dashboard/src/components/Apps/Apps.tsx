@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { Peer } from '../../peers';
 import './Apps.css';
 
 interface AppLauncher {
@@ -17,7 +18,11 @@ interface AppLauncher {
     }[];
 }
 
-const Apps = () => {
+interface Props {
+    selectedPeer: Peer;
+}
+
+const Apps = ({ selectedPeer }: Props) => {
     const [loading, setLoading] = useState<string | null>(null);
 
     const launchers: AppLauncher[] = [
@@ -25,8 +30,11 @@ const Apps = () => {
             id: 'loom',
             label: 'Loom',
             icon: '📹',
-            command: 'restartLoom',
-            description: 'Restart Loom Server & Client',
+            description: `View ${selectedPeer.name}'s screen`,
+            options: [
+                { label: 'Prod', url: `http://${selectedPeer.ip}:3004` },
+                { label: 'Dev', url: `http://${selectedPeer.ip}:3005` },
+            ]
         },
         {
             id: 'pt',

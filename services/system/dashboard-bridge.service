@@ -1,0 +1,18 @@
+[Unit]
+Description=Dashboard Bridge (daemon-to-frontend bridge)
+After=daemon.service
+Wants=daemon.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/automateLinux/dashboard
+ExecStart=/usr/bin/node bridge.cjs
+Restart=on-failure
+RestartSec=5s
+User=root
+Group=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

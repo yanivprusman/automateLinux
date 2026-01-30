@@ -8,8 +8,42 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 3501;
 const UDS_PATH = '/run/automatelinux/automatelinux-daemon.sock';
+
+// Query daemon for port assignment
+function getPortFromDaemon(portKey) {
+    return new Promise((resolve, reject) => {
+        const client = net.createConnection(UDS_PATH);
+        let response = '';
+
+        client.on('connect', () => {
+            client.write(JSON.stringify({ command: 'getPort', key: portKey }) + '\n');
+        });
+
+        client.on('data', (data) => {
+            response += data.toString();
+            if (response.endsWith('\n')) {
+                client.destroy();
+                const trimmed = response.trim();
+                const port = parseInt(trimmed, 10);
+                if (isNaN(port)) {
+                    reject(new Error(`Invalid port response for ${portKey}: ${trimmed}`));
+                } else {
+                    resolve(port);
+                }
+            }
+        });
+
+        client.on('error', (err) => {
+            reject(err);
+        });
+
+        setTimeout(() => {
+            client.destroy();
+            reject(new Error('Daemon connection timeout'));
+        }, 2000);
+    });
+}
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -133,6 +167,15 @@ app.post('/api/command', async (req, res) => {
     }
 });
 
-server.listen(PORT, () => {
-    console.log(`Bridge listening on http://localhost:${PORT}`);
-});
+// Start server with port from daemon
+(async () => {
+    try {
+        const PORT = await getPortFromDaemon('dashboard-bridge');
+        server.listen(PORT, () => {
+            console.log(`Bridge listening on http://localhost:${PORT}`);
+        });
+    } catch (err) {
+        console.error('Failed to get port from daemon:', err.message);
+        process.exit(1);
+    }
+})();

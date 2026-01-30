@@ -56,3 +56,24 @@ d send myNewAction --myParam "hello"
 
 > [!TIP]
 > Use `CmdResult(0, ...)` for success and `CmdResult(1, ...)` for errors. The second argument is the response string sent back to the client.
+
+## Alternative: Separate Command Files
+
+For related groups of commands, you can create separate files (e.g., `cmdApp.cpp`, `cmdLoom.cpp`):
+
+1. Create header `daemon/include/cmdMyFeature.h` with handler declarations
+2. Create implementation `daemon/src/cmdMyFeature.cpp`
+3. Include the header in `mainCommand.cpp`
+4. Register commands in `COMMAND_REGISTRY` and `COMMAND_HANDLERS` as usual
+
+Example structure:
+```
+daemon/
+├── include/
+│   ├── cmdApp.h          # App management declarations
+│   └── cmdLoom.h         # Loom-specific declarations
+└── src/
+    ├── cmdApp.cpp        # App lifecycle: start/stop/restart/build
+    ├── cmdLoom.cpp       # Loom shortcuts (redirect to cmdApp)
+    └── mainCommand.cpp   # Command dispatcher
+```

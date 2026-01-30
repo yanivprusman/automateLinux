@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import type { Peer } from '../peers';
+import PeerSelector from './PeerSelector';
 
 interface ContextData {
     activeApp: string;
@@ -7,7 +9,12 @@ interface ContextData {
     numLockActive: boolean;
 }
 
-const ContextMonitor = () => {
+interface Props {
+    selectedPeer: Peer;
+    onPeerChange: (peer: Peer) => void;
+}
+
+const ContextMonitor = ({ selectedPeer, onPeerChange }: Props) => {
     const [context, setContext] = useState<ContextData>({
         activeApp: 'loading...',
         activeUrl: '',
@@ -54,6 +61,8 @@ const ContextMonitor = () => {
                     <div className="status-dot"></div>
                     <span>Macros: {context.numLockActive ? 'OFF' : 'ON'}</span>
                 </div>
+
+                <PeerSelector peer={selectedPeer} onChange={onPeerChange} />
             </div>
 
             <div style={{ textAlign: 'right', flex: 1, marginLeft: '40px', overflow: 'hidden' }}>

@@ -6,6 +6,8 @@ import LiveLogs from './components/LiveLogs/LiveLogs';
 import Configs from './components/Configs/Configs';
 import Apps from './components/Apps/Apps';
 import type { ViewType } from './types';
+import type { Peer } from './peers';
+import { PEERS, STORAGE_KEY } from './peers';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewType>('apps');
@@ -14,6 +16,10 @@ function App() {
   const [filters, setFilters] = useState<string[]>([]);
   const [isLoggingEnabled, setIsLoggingEnabled] = useState(false);
   const isLoggingEnabledRef = useRef(false);
+  const [selectedPeer, setSelectedPeer] = useState<Peer>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return PEERS.find(p => p.id === saved) || PEERS[0];
+  });
 
   useEffect(() => {
     isLoggingEnabledRef.current = isLoggingEnabled;
@@ -81,7 +87,7 @@ function App() {
       />
 
       <main className="main-content">
-        <ContextMonitor />
+        <ContextMonitor selectedPeer={selectedPeer} onPeerChange={setSelectedPeer} />
         {currentView === 'logs' && (
           <LiveLogs
             logs={logs}
@@ -101,7 +107,7 @@ function App() {
         )}
 
         {currentView === 'apps' && (
-          <Apps />
+          <Apps selectedPeer={selectedPeer} />
         )}
       </main>
     </div>

@@ -56,7 +56,17 @@
       "Bash(remotePull:*)",
       "Bash(execOnPeerByIp 10.0.0.1 /opt/automateLinux \"git log --oneline -3\")",
       "Bash(source:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(ss:*)",
+      "WebFetch(domain:www.gold-touch.net)",
+      "WebFetch(domain:www.pccenter.co.il)",
+      "WebFetch(domain:www.netbitct.co.il)",
+      "WebFetch(domain:nb-tech.co.il)",
+      "Bash(sudo systemctl daemon-reload:*)",
+      "Bash(sudo systemctl enable:*)",
+      "WebFetch(domain:plonter.co.il)",
+      "Bash(sudo systemctl:*)",
+      "WebFetch(domain:www.ivory.co.il)"
     ]
   }
 }

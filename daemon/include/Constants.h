@@ -8,7 +8,7 @@
 #define TTY_KEY "tty"
 #define PWD_KEY "pwd"
 #define DIR_HISTORY_ENTRY_PREFIX "dirHistory"
-#define DIR_HISTORY_DEFAULT_DIR "/home/yaniv/coding/"
+#define DIR_HISTORY_DEFAULT_DIR "/opt/automateLinux/"
 #define mustEndWithNewLine "\n"
 #define COMMAND_KEY "command"
 #define COMMAND_EMPTY ""

@@ -7,7 +7,13 @@ shedSwitch(){
 
     # Store current directory to return later
     local original_dir=$(pwd)
-    local repo_dir="/home/yaniv/coding/cad"
+    # Query daemon for base directory, fallback to env var or hardcoded path
+    local base_dir
+    base_dir=$(d getDir --dirName base 2>/dev/null | tr -d '\n')
+    if [ -z "$base_dir" ]; then
+        base_dir="${AUTOMATE_LINUX_DIR:-/opt/automateLinux/}"
+    fi
+    local repo_dir="${base_dir}extraApps/cad"
 
     echo -e "${YELLOW}Switching shed version to: $target...${NC}"
     

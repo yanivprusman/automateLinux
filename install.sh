@@ -260,6 +260,31 @@ systemctl daemon-reload
 systemctl enable daemon.service
 systemctl restart daemon.service
 
+# 7.5. Install ExtraApps System Services
+if [ "$MINIMAL_INSTALL" = false ]; then
+    echo "Installing ExtraApps system services..."
+    SERVICES_SRC="$INSTALL_DIR/services/system"
+
+    if [ -d "$SERVICES_SRC" ]; then
+        for SERVICE_FILE in "$SERVICES_SRC"/*.service; do
+            if [ -f "$SERVICE_FILE" ]; then
+                SERVICE_NAME=$(basename "$SERVICE_FILE")
+                DEST="/etc/systemd/system/$SERVICE_NAME"
+                ln -sf "$SERVICE_FILE" "$DEST"
+                echo "  Linked $SERVICE_NAME"
+            fi
+        done
+
+        systemctl daemon-reload
+        systemctl enable cad-dev.service pt-dev.service 2>/dev/null || true
+        echo "  ExtraApps services installed. Start with: systemctl start cad-dev pt-dev"
+    else
+        echo "  Warning: $SERVICES_SRC not found, skipping extraApps services."
+    fi
+else
+    echo "Skipping ExtraApps services (minimal install)..."
+fi
+
 # 8. Configure System-Wide PATH
 echo "Configuring system-wide PATH..."
 PROFILE_SCRIPT="/etc/profile.d/automatelinux.sh"

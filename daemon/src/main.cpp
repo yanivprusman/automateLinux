@@ -6,6 +6,7 @@
 #include "KeyboardManager.h" // Added include
 #include "MySQLManager.h"
 #include "PeerManager.h"
+#include "Version.h"
 #include "common.h"
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -48,6 +49,7 @@ int main(int argc, char *argv[]) {
       return send_command_to_daemon(cmdJson);
     } else if (mode == "daemon") {
       // Signals handled in initialize_daemon()
+      cerr << "automateLinux daemon v" << DAEMON_VERSION << endl;
 
       MySQLManager::initializeAndStartMySQL();
 

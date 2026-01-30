@@ -1,6 +1,7 @@
 #include "mainCommand.h"
 #include "Constants.h"
 #include "Utils.h"
+#include "Version.h"
 #include <string>
 #include <unistd.h>
 
@@ -24,6 +25,11 @@ using namespace std;
 int g_clientSocket = -1;
 unsigned int shouldLog = LOG_ALL;
 bool g_keyboardEnabled = false;
+
+// Version handler - inline since it's trivial
+static CmdResult handleVersion(const json &) {
+  return CmdResult(0, std::to_string(DAEMON_VERSION) + "\n");
+}
 
 // Command registry - defines all available commands and their signatures
 const CommandSignature COMMAND_REGISTRY[] = {
@@ -70,6 +76,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
 
     // System Commands
     CommandSignature(COMMAND_PING, {}, "Ping the daemon (returns 'pong')"),
+    CommandSignature(COMMAND_VERSION, {}, "Show daemon version (git commit count)"),
     CommandSignature(COMMAND_QUIT, {}, "Stop the daemon"),
     CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME},
                      "Get daemon directory path (base, data, mappings)"),
@@ -266,6 +273,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_HELP, handleHelp},
     {COMMAND_HELP_DDASH, handleHelp},
     {COMMAND_PING, handlePing},
+    {COMMAND_VERSION, handleVersion},
     {COMMAND_QUIT, handleQuit},
     {COMMAND_GET_DIR, handleGetDir},
     {COMMAND_GET_FILE, handleGetFile},

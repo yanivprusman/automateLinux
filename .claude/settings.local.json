@@ -75,7 +75,12 @@
       "Bash(/usr/bin/ss:*)",
       "Bash(sudo ln:*)",
       "Bash(daemon send:*)",
-      "Bash(/opt/automateLinux/daemon/bin/daemon send:*)"
+      "Bash(/opt/automateLinux/daemon/bin/daemon send:*)",
+      "Bash(/opt/automateLinux/daemon/daemon send:*)",
+      "Bash(sudo journalctl:*)",
+      "Bash(sudo /usr/bin/systemctl start:*)",
+      "Bash(sudo /usr/bin/systemctl status:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

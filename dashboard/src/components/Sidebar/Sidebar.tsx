@@ -1,4 +1,4 @@
-
+import { useState, useEffect } from 'react';
 
 interface SidebarProps {
     currentView: string;
@@ -6,6 +6,15 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
+    const [version, setVersion] = useState<number | null>(null);
+
+    useEffect(() => {
+        fetch('http://localhost:3501/api/version')
+            .then(res => res.json())
+            .then(data => setVersion(data.version))
+            .catch(console.error);
+    }, []);
+
     const menuItems = [
         { id: 'apps', label: 'Apps', icon: '🚀' },
         { id: 'logs', label: 'Monitor', icon: '💎' },
@@ -42,7 +51,8 @@ const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
                         display: 'inline-block'
                     }}></span>
                     <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-                        Daemon System: <span style={{ color: 'var(--success)' }}>Active</span>
+                        Daemon: <span style={{ color: 'var(--success)' }}>Active</span>
+                        {version !== null && <span style={{ marginLeft: '8px', opacity: 0.7 }}>v{version}</span>}
                     </span>
                 </div>
             </div>

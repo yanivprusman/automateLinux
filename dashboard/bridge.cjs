@@ -79,6 +79,15 @@ function sendToDaemon(commandObj) {
 }
 
 // REST API for macros and filters
+app.get('/api/version', async (req, res) => {
+    try {
+        const result = await sendToDaemon({ command: 'version' });
+        res.json({ version: parseInt(result.trim(), 10) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/activeContext', async (req, res) => {
     try {
         const result = await sendToDaemon({ command: 'getActiveContext' });

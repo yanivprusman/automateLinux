@@ -36,6 +36,7 @@
 #define COMMAND_ARG_VALUE "value"
 #define COMMAND_ARG_SIGNAL "signal"
 #define COMMAND_PING "ping"
+#define COMMAND_VERSION "version"
 #define COMMAND_QUIT "quit"
 #define COMMAND_GET_PORT "getPort"
 #define COMMAND_SET_PORT "setPort"

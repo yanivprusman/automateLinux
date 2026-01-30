@@ -70,6 +70,17 @@ terminalToClipboard() {
     local start_idx end_idx
 
     case "$arg" in
+        -h|--help)
+            echo "Usage: terminalToClipboard [OPTION]"
+            echo "Copy terminal output to clipboard (escape sequences stripped)"
+            echo ""
+            echo "  (none), 1    Last non-empty line"
+            echo "  N            Line N from end (1=last, 2=second-to-last, ...)"
+            echo "  N-M          Lines N through M from end"
+            echo "  fromPrompt   All output from last command"
+            echo "  -h, --help   Show this help"
+            return 0
+            ;;
         ""|1)
             # Default or 1: last non-empty content line
             for ((i = content_count - 1; i >= 0; i--)); do

@@ -276,7 +276,31 @@ CmdResult handleExecOnPeer(const json &command) {
   }
 
   logToFile("Sent exec request to " + peer_id + ": cd " + directory + " && " + cmd, LOG_CORE);
-  return CmdResult(0, "Exec request sent to " + peer_id + "\n");
+
+  // Wait for response from peer
+  PeerInfo peerAfterSend = pm.getPeerInfo(peer_id);
+  if (peerAfterSend.socket_fd < 0) {
+    return CmdResult(1, "Lost connection to peer: " + peer_id + "\n");
+  }
+
+  // Set read timeout
+  struct timeval timeout;
+  timeout.tv_sec = 30;  // 30 second timeout for command execution
+  timeout.tv_usec = 0;
+  setsockopt(peerAfterSend.socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+  // Read response
+  char buffer[65536];
+  memset(buffer, 0, sizeof(buffer));
+  ssize_t n = read(peerAfterSend.socket_fd, buffer, sizeof(buffer) - 1);
+  if (n <= 0) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      return CmdResult(1, "Timeout waiting for response from " + peer_id + "\n");
+    }
+    return CmdResult(1, "Failed to read response from " + peer_id + ": " + strerror(errno) + "\n");
+  }
+
+  return CmdResult(0, string(buffer));
 }
 
 CmdResult handleExecRequest(const json &command) {

@@ -19,6 +19,46 @@ extern string getWgInterfaceIP();
 // External client socket - set by mainCommand before calling handlers
 extern int g_clientSocket;
 
+// Helper function for workers to query leader for peer IP
+static string queryLeaderForPeerIP(const string &peer_id) {
+  PeerManager &pm = PeerManager::getInstance();
+
+  if (!pm.isConnectedToLeader()) {
+    logToFile("Cannot query leader: not connected", LOG_CORE);
+    return "";
+  }
+
+  json query;
+  query["command"] = COMMAND_GET_PEER_INFO;
+  query[COMMAND_ARG_PEER] = peer_id;
+
+  if (!pm.sendToLeader(query)) {
+    logToFile("Failed to send getPeerInfo to leader", LOG_CORE);
+    return "";
+  }
+
+  // Read response from leader
+  char buffer[4096];
+  memset(buffer, 0, sizeof(buffer));
+  int leaderFd = pm.getLeaderSocket();
+  ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
+  if (n <= 0) {
+    logToFile("No response from leader for getPeerInfo", LOG_CORE);
+    return "";
+  }
+
+  try {
+    json response = json::parse(buffer);
+    if (response.contains("ip_address")) {
+      return response["ip_address"].get<string>();
+    }
+  } catch (const exception &e) {
+    logToFile("Failed to parse leader response: " + string(e.what()), LOG_CORE);
+  }
+
+  return "";
+}
+
 CmdResult handleSetPeerConfig(const json &command) {
   PeerManager &pm = PeerManager::getInstance();
 
@@ -189,25 +229,38 @@ CmdResult handleExecOnPeer(const json &command) {
 
   PeerManager &pm = PeerManager::getInstance();
 
-  // Check if peer is connected in memory
+  // Check if peer is already connected in memory
   PeerInfo peer = pm.getPeerInfo(peer_id);
   if (peer.peer_id.empty() || peer.socket_fd < 0) {
-    // Not connected - try to find in database and connect on-demand
-    PeerRecord dbPeer = PeerTable::getPeer(peer_id);
-    if (dbPeer.peer_id.empty()) {
-      return CmdResult(1, "Peer not found: " + peer_id + "\n");
-    }
-    if (dbPeer.ip_address.empty()) {
-      return CmdResult(1, "Peer has no IP address: " + peer_id + "\n");
+    // Not connected - need to find IP and connect on-demand
+    string ip;
+
+    if (pm.isLeader()) {
+      // Leader: look up in local database
+      PeerRecord dbPeer = PeerTable::getPeer(peer_id);
+      if (dbPeer.peer_id.empty()) {
+        return CmdResult(1, "Peer not found: " + peer_id + "\n");
+      }
+      if (dbPeer.ip_address.empty()) {
+        return CmdResult(1, "Peer has no IP address: " + peer_id + "\n");
+      }
+      ip = dbPeer.ip_address;
+    } else {
+      // Worker: query leader for peer IP
+      if (!pm.isConnectedToLeader()) {
+        return CmdResult(1, "Not connected to leader\n");
+      }
+      ip = queryLeaderForPeerIP(peer_id);
+      if (ip.empty()) {
+        return CmdResult(1, "Peer not found or leader unavailable: " + peer_id + "\n");
+      }
     }
 
-    logToFile("Peer " + peer_id + " not connected, attempting on-demand connection to " +
-                  dbPeer.ip_address,
+    logToFile("Peer " + peer_id + " not connected, attempting on-demand connection to " + ip,
               LOG_CORE);
 
-    if (!pm.connectToPeer(peer_id, dbPeer.ip_address)) {
-      return CmdResult(1, "Failed to connect to peer: " + peer_id + " (" +
-                              dbPeer.ip_address + ")\n");
+    if (!pm.connectToPeer(peer_id, ip)) {
+      return CmdResult(1, "Failed to connect to peer: " + peer_id + " (" + ip + ")\n");
     }
   }
 

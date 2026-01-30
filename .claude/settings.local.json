@@ -83,7 +83,8 @@
       "Bash(npx tsc:*)",
       "Bash(pgrep:*)",
       "Bash(lsof:*)",
-      "Bash(sudo ss:*)"
+      "Bash(sudo ss:*)",
+      "Bash(socat:*)"
     ]
   }
 }

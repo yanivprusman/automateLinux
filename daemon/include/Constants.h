@@ -133,6 +133,7 @@
 #define COMMAND_GET_PEER_STATUS "getPeerStatus"
 #define COMMAND_REGISTER_PEER "registerPeer"
 #define COMMAND_LIST_PEERS "listPeers"
+#define COMMAND_DELETE_PEER "deletePeer"
 #define COMMAND_GET_PEER_INFO "getPeerInfo"
 #define COMMAND_EXEC_ON_PEER "execOnPeer"
 #define COMMAND_EXEC_REQUEST "execRequest"

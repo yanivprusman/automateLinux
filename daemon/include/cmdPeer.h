@@ -12,6 +12,7 @@ CmdResult handleSetPeerConfig(const json &command);
 CmdResult handleGetPeerStatus(const json &command);
 CmdResult handleRegisterPeer(const json &command);
 CmdResult handleListPeers(const json &command);
+CmdResult handleDeletePeer(const json &command);
 CmdResult handleGetPeerInfo(const json &command);
 CmdResult handleExecOnPeer(const json &command);
 CmdResult handleExecRequest(const json &command);

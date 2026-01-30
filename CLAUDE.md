@@ -120,11 +120,13 @@ d restartApp --app <name> --mode <prod|dev>      # Restart app services
 d buildApp --app <name> --mode <prod|dev>        # Build C++ server component
 d installAppDeps --app <name> [--component <x>]  # Install npm dependencies
 
-# Peer networking commands
-d setPeerConfig --role leader --id vps           # Configure VPS as leader
-d setPeerConfig --role worker --id desktop --leader 10.0.0.1  # Configure as worker
-d getPeerStatus                                  # Show role, connections
-d listPeers                                      # List registered peers (queries leader)
+# Peer networking commands (all work from any peer)
+d registerWorker                                 # Register as worker, connect to VPS
+d getPeerStatus                                  # Show local role, connections
+d listPeers                                      # List all registered peers
+d getPeerInfo --peer <id>                        # Get info for specific peer
+d deletePeer --peer <id>                         # Remove peer from registry
+d execOnPeer --peer <id> --directory <path> --shellCmd <cmd>  # Remote exec
 ```
 
 ## Adding a New Daemon Command
@@ -236,12 +238,16 @@ ssh 10.0.0.1 "git pull"  # Fails: no directory context
 
 ### Key Commands
 
+All peer commands work from **any peer** (leader or worker). Workers automatically forward requests to the leader when needed.
+
 | Command | Description |
 |---------|-------------|
 | `d registerWorker` | Register as worker (uses hostname, connects to VPS) |
 | `d setPeerConfig --role <role> --id <id> [--leader <ip>]` | Configure peer role (advanced) |
-| `d getPeerStatus` | Show current peer configuration |
+| `d getPeerStatus` | Show current peer configuration (local) |
 | `d listPeers` | List all registered peers with status |
+| `d getPeerInfo --peer <id>` | Get detailed info for a specific peer |
+| `d deletePeer --peer <id>` | Remove a peer from the registry |
 | `d dbSanityCheck` | Check/fix worker database (delete leader-only data) |
 | `d execOnPeer --peer <id> --directory <path> --shellCmd <cmd>` | Execute shell command on remote peer |
 | `d remotePull --peer <id>` | Git pull automateLinux on peer |
@@ -257,6 +263,7 @@ ssh 10.0.0.1 "git pull"  # Fails: no directory context
 
 ### Key Source Files
 - **daemon/src/mainCommand.cpp**: Command dispatcher (all daemon commands)
+- **daemon/src/cmdPeer.cpp**: Peer networking command handlers (listPeers, deletePeer, execOnPeer, etc.)
 - **daemon/src/cmdApp.cpp**: App lifecycle management (start/stop/restart/build/install)
 - **daemon/src/InputMapper.cpp**: Input event interception and remapping
 - **daemon/src/DaemonServer.cpp**: UNIX socket server + TCP peer socket handling

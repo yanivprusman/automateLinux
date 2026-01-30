@@ -203,8 +203,73 @@ CmdResult handleListPeers(const json &) {
   return CmdResult(0, result.dump(2) + "\n");
 }
 
+CmdResult handleDeletePeer(const json &command) {
+  string peer_id = command[COMMAND_ARG_PEER].get<string>();
+
+  PeerManager &pm = PeerManager::getInstance();
+
+  // If we're a worker connected to leader, forward the request
+  if (!pm.isLeader() && pm.isConnectedToLeader()) {
+    json fwdCmd;
+    fwdCmd["command"] = COMMAND_DELETE_PEER;
+    fwdCmd[COMMAND_ARG_PEER] = peer_id;
+
+    int leaderFd = pm.getLeaderSocket();
+    string msg = fwdCmd.dump() + "\n";
+    if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
+      return CmdResult(1, "Failed to forward deletePeer to leader\n");
+    }
+
+    // Read response from leader
+    char buffer[4096];
+    memset(buffer, 0, sizeof(buffer));
+    ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
+    if (n > 0) {
+      return CmdResult(0, string(buffer));
+    }
+    return CmdResult(1, "No response from leader\n");
+  }
+
+  // Check if peer exists
+  PeerRecord peer = PeerTable::getPeer(peer_id);
+  if (peer.peer_id.empty()) {
+    return CmdResult(1, "Peer not found: " + peer_id + "\n");
+  }
+
+  // Delete from database
+  PeerTable::deletePeer(peer_id);
+
+  logToFile("Peer deleted: " + peer_id, LOG_CORE);
+  return CmdResult(0, "Deleted peer: " + peer_id + "\n");
+}
+
 CmdResult handleGetPeerInfo(const json &command) {
   string peer_id = command[COMMAND_ARG_PEER].get<string>();
+
+  PeerManager &pm = PeerManager::getInstance();
+
+  // If we're a worker connected to leader, forward the request
+  if (!pm.isLeader() && pm.isConnectedToLeader()) {
+    json fwdCmd;
+    fwdCmd["command"] = COMMAND_GET_PEER_INFO;
+    fwdCmd[COMMAND_ARG_PEER] = peer_id;
+
+    int leaderFd = pm.getLeaderSocket();
+    string msg = fwdCmd.dump() + "\n";
+    if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
+      return CmdResult(1, "Failed to forward getPeerInfo to leader\n");
+    }
+
+    // Read response from leader
+    char buffer[4096];
+    memset(buffer, 0, sizeof(buffer));
+    ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
+    if (n > 0) {
+      return CmdResult(0, string(buffer));
+    }
+    return CmdResult(1, "No response from leader\n");
+  }
+
   PeerRecord peer = PeerTable::getPeer(peer_id);
 
   if (peer.peer_id.empty()) {

@@ -55,7 +55,8 @@
       "Bash(journalctl:*)",
       "Bash(remotePull:*)",
       "Bash(execOnPeerByIp 10.0.0.1 /opt/automateLinux \"git log --oneline -3\")",
-      "Bash(source:*)"
+      "Bash(source:*)",
+      "Bash(curl:*)"
     ]
   }
 }

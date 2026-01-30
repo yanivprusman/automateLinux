@@ -139,3 +139,42 @@ d setPeerConfig --role worker --id vps --leader 10.0.0.2
 ### Command sent but nothing happens
 
 The remote daemon may not have the `execRequest` handler. Bootstrap manually via SSH.
+
+## CRITICAL: Always Specify Directory
+
+When executing commands on remote peers, you MUST always specify the working directory. The daemon and SSH do NOT automatically use `/opt/automateLinux`.
+
+### Using execOnPeer
+```bash
+# CORRECT - directory is explicit:
+d execOnPeer --peer vps --directory /opt/automateLinux --shellCmd "git pull"
+
+# The --directory parameter is REQUIRED
+```
+
+### Using SSH
+```bash
+# CORRECT - cd to directory first:
+ssh 10.0.0.1 "cd /opt/automateLinux && git pull"
+ssh 10.0.0.1 "cd /opt/automateLinux && git log --oneline -5"
+
+# WRONG - will fail with "not a git repository":
+ssh 10.0.0.1 "git pull"
+ssh 10.0.0.1 "git log"
+```
+
+### Why This Matters
+- SSH starts in the user's home directory, not the project directory
+- `execOnPeer` runs commands in the specified `--directory`
+- Forgetting the directory causes "not a git repository" errors
+- Always include `cd /opt/automateLinux &&` when using SSH for git commands
+
+### Verification
+After running remote commands, verify success by checking git state:
+```bash
+# Via SSH (include directory!):
+ssh 10.0.0.1 "cd /opt/automateLinux && git log --oneline -3"
+
+# Or use the shell function:
+execOnPeerByIp 10.0.0.1 /opt/automateLinux "git log --oneline -3"
+```

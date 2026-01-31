@@ -183,22 +183,11 @@ string AppManager::getAppPath(const string &appId, const string &mode) {
   return (mode == "prod") ? cfg.prodPath : cfg.devPath;
 }
 
-string AppManager::buildServerComponent(const string &appId,
-                                        const string &mode) {
-  AppConfig cfg = getAppConfig(appId);
-  if (cfg.appId.empty())
-    return "Error: Unknown app: " + appId + "\n";
-
-  if (!cfg.hasServerComponent || cfg.serverBuildSubdir.empty())
-    return "Error: App " + appId + " has no server component to build\n";
-
-  string appPath = getAppPath(appId, mode);
-  string serverPath = appPath + "/" + cfg.serverBuildSubdir;
-  string buildDir = serverPath + "/build";
+string AppManager::buildCppComponent(const string &path) {
+  string buildDir = path + "/build";
 
   stringstream result;
-  result << "Building " << appId << " server (" << mode << ")...\n";
-  result << "  Path: " << serverPath << "\n";
+  result << "  Path: " << path << "\n";
 
   // Create build directory
   string mkdirCmd = "/usr/bin/mkdir -p " + buildDir;
@@ -207,8 +196,7 @@ string AppManager::buildServerComponent(const string &appId,
   }
 
   // Run cmake
-  string cmakeCmd =
-      "cd " + buildDir + " && /usr/bin/cmake .. 2>&1";
+  string cmakeCmd = "cd " + buildDir + " && /usr/bin/cmake .. 2>&1";
   string cmakeOutput = executeCommand(cmakeCmd.c_str());
   if (cmakeOutput.find("Error") != string::npos ||
       cmakeOutput.find("error") != string::npos) {
@@ -225,6 +213,25 @@ string AppManager::buildServerComponent(const string &appId,
   }
   result << "  Make: OK\n";
   result << "Build complete.\n";
+
+  return result.str();
+}
+
+string AppManager::buildServerComponent(const string &appId,
+                                        const string &mode) {
+  AppConfig cfg = getAppConfig(appId);
+  if (cfg.appId.empty())
+    return "Error: Unknown app: " + appId + "\n";
+
+  if (!cfg.hasServerComponent || cfg.serverBuildSubdir.empty())
+    return "Error: App " + appId + " has no server component to build\n";
+
+  string appPath = getAppPath(appId, mode);
+  string serverPath = appPath + "/" + cfg.serverBuildSubdir;
+
+  stringstream result;
+  result << "Building " << appId << " server (" << mode << ")...\n";
+  result << buildCppComponent(serverPath);
 
   return result.str();
 }
@@ -296,11 +303,16 @@ CmdResult handleStartApp(const json &command) {
   }
 
   string appId = command["app"].get<string>();
-  string mode = command.contains("mode") ? command["mode"].get<string>() : "prod";
+  string mode = command.contains("mode") ? command["mode"].get<string>() : "dev";
 
   AppConfig config = AppManager::getAppConfig(appId);
   if (config.appId.empty()) {
     return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  // Validate mode for dev-only apps
+  if (mode == "prod" && config.prodPath.empty()) {
+    return CmdResult(1, appId + " is dev-only (no prod mode available)\n");
   }
 
   stringstream result;
@@ -345,8 +357,17 @@ CmdResult handleStopApp(const json &command) {
 
   vector<string> modes;
   if (mode == "all") {
-    modes = {"prod", "dev"};
+    // For dev-only apps (empty prodPath), only include dev mode
+    if (config.prodPath.empty()) {
+      modes = {"dev"};
+    } else {
+      modes = {"prod", "dev"};
+    }
   } else {
+    // Validate explicit mode for dev-only apps
+    if (mode == "prod" && config.prodPath.empty()) {
+      return CmdResult(1, appId + " is dev-only (no prod mode available)\n");
+    }
     modes = {mode};
   }
 
@@ -398,11 +419,16 @@ CmdResult handleRestartApp(const json &command) {
   }
 
   string appId = command["app"].get<string>();
-  string mode = command.contains("mode") ? command["mode"].get<string>() : "prod";
+  string mode = command.contains("mode") ? command["mode"].get<string>() : "dev";
 
   AppConfig config = AppManager::getAppConfig(appId);
   if (config.appId.empty()) {
     return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  // Validate mode for dev-only apps
+  if (mode == "prod" && config.prodPath.empty()) {
+    return CmdResult(1, appId + " is dev-only (no prod mode available)\n");
   }
 
   stringstream result;
@@ -485,6 +511,10 @@ CmdResult handleAppStatus(const json &command) {
     ss << "=== " << app.displayName << " (" << app.appId << ") ===\n";
 
     for (const auto &mode : {"prod", "dev"}) {
+      // Skip prod mode for apps without a prodPath (dev-only apps)
+      if (string(mode) == "prod" && app.prodPath.empty()) {
+        continue;
+      }
       ss << "  [" << mode << "]\n";
 
       // Server status
@@ -542,23 +572,53 @@ CmdResult handleBuildApp(const json &command) {
   }
 
   string appId = command["app"].get<string>();
-  string mode = command.contains("mode") ? command["mode"].get<string>() : "prod";
+  string mode = command.contains("mode") ? command["mode"].get<string>() : "dev";
+  string component = command.contains(COMMAND_ARG_COMPONENT)
+                         ? command[COMMAND_ARG_COMPONENT].get<string>()
+                         : "server";
 
   AppConfig config = AppManager::getAppConfig(appId);
   if (config.appId.empty()) {
     return CmdResult(1, "Unknown app: " + appId + "\n");
   }
 
-  if (!config.hasServerComponent) {
-    return CmdResult(1, "App " + appId + " has no server component to build\n");
+  // Validate mode for dev-only apps
+  if (mode == "prod" && config.prodPath.empty()) {
+    return CmdResult(1, appId + " is dev-only (no prod mode available)\n");
   }
 
-  string result = AppManager::buildServerComponent(appId, mode);
+  string appPath = AppManager::getAppPath(appId, mode);
+  stringstream result;
+
+  if (component == "server") {
+    if (!config.hasServerComponent) {
+      return CmdResult(1, "App " + appId + " has no server component to build\n");
+    }
+    result << AppManager::buildServerComponent(appId, mode);
+  } else if (component == "native-client") {
+    // Build native client from native-client subdirectory
+    string nativeClientPath = appPath + "/native-client";
+    string checkDir = "/usr/bin/test -d " + nativeClientPath;
+    if (std::system(checkDir.c_str()) != 0) {
+      return CmdResult(1, "No native-client directory found at: " + nativeClientPath + "\n");
+    }
+    result << "Building " << appId << " native-client (" << mode << ")...\n";
+    result << AppManager::buildCppComponent(nativeClientPath);
+  } else {
+    // Try to build from custom component subdirectory
+    string componentPath = appPath + "/" + component;
+    string checkDir = "/usr/bin/test -d " + componentPath;
+    if (std::system(checkDir.c_str()) != 0) {
+      return CmdResult(1, "No " + component + " directory found at: " + componentPath + "\n");
+    }
+    result << "Building " << appId << " " << component << " (" << mode << ")...\n";
+    result << AppManager::buildCppComponent(componentPath);
+  }
 
   // Check if build succeeded
-  bool success = result.find("Build complete") != string::npos;
+  bool success = result.str().find("Build complete") != string::npos;
 
-  return CmdResult(success ? 0 : 1, result);
+  return CmdResult(success ? 0 : 1, result.str());
 }
 
 CmdResult handleInstallAppDeps(const json &command) {
@@ -567,13 +627,18 @@ CmdResult handleInstallAppDeps(const json &command) {
   }
 
   string appId = command["app"].get<string>();
-  string mode = command.contains("mode") ? command["mode"].get<string>() : "prod";
+  string mode = command.contains("mode") ? command["mode"].get<string>() : "dev";
   string component =
       command.contains("component") ? command["component"].get<string>() : "all";
 
   AppConfig config = AppManager::getAppConfig(appId);
   if (config.appId.empty()) {
     return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  // Validate mode for dev-only apps
+  if (mode == "prod" && config.prodPath.empty()) {
+    return CmdResult(1, appId + " is dev-only (no prod mode available)\n");
   }
 
   string result = AppManager::installDependencies(appId, mode, component);
@@ -591,11 +656,16 @@ CmdResult handleEnableApp(const json &command) {
   }
 
   string appId = command["app"].get<string>();
-  string mode = command.contains("mode") ? command["mode"].get<string>() : "prod";
+  string mode = command.contains("mode") ? command["mode"].get<string>() : "dev";
 
   AppConfig config = AppManager::getAppConfig(appId);
   if (config.appId.empty()) {
     return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  // Validate mode for dev-only apps
+  if (mode == "prod" && config.prodPath.empty()) {
+    return CmdResult(1, appId + " is dev-only (no prod mode available)\n");
   }
 
   stringstream result;
@@ -643,8 +713,17 @@ CmdResult handleDisableApp(const json &command) {
 
   vector<string> modes;
   if (mode == "all") {
-    modes = {"prod", "dev"};
+    // For dev-only apps (empty prodPath), only include dev mode
+    if (config.prodPath.empty()) {
+      modes = {"dev"};
+    } else {
+      modes = {"prod", "dev"};
+    }
   } else {
+    // Validate explicit mode for dev-only apps
+    if (mode == "prod" && config.prodPath.empty()) {
+      return CmdResult(1, appId + " is dev-only (no prod mode available)\n");
+    }
     modes = {mode};
   }
 

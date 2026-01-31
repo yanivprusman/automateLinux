@@ -134,6 +134,7 @@
 #define COMMAND_ARG_HAS_SERVER "hasServer"
 #define COMMAND_ARG_SERVER_SUBDIR "serverSubdir"
 #define COMMAND_ARG_CLIENT_SUBDIR "clientSubdir"
+#define COMMAND_ARG_COMPONENT "component"
 
 // App Paths
 #define EXTRA_APPS_DIR "/opt/automateLinux/extraApps/"

@@ -73,6 +73,7 @@ std::string getAppPath(const std::string &appId, const std::string &mode);
 // Build helpers
 std::string buildServerComponent(const std::string &appId,
                                  const std::string &mode);
+std::string buildCppComponent(const std::string &path);
 
 // Dependency installation
 std::string installDependencies(const std::string &appId,

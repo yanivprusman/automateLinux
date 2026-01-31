@@ -96,7 +96,6 @@
       "Bash(strace:*)",
       "Bash(tail:*)",
       "Bash(mysql:*)",
-<<<<<<< Updated upstream
       "Bash(xxd:*)",
       "Bash(./build.sh:*)",
       "Bash(gnome-monitor-config list:*)",
@@ -105,10 +104,14 @@
       "Bash(gdbus introspect:*)",
       "Bash(git -C /opt/automateLinux/extraApps/loom remote:*)",
       "Bash(dpkg:*)",
-      "Bash(gst-inspect-1.0:*)"
-=======
-      "Bash(getent group:*)"
->>>>>>> Stashed changes
+      "Bash(gst-inspect-1.0:*)",
+      "Bash(getent group:*)",
+      "Bash(timeout 2 websocat:*)",
+      "Bash(netstat:*)",
+      "Bash(d stopApp:*)",
+      "Bash(d buildApp:*)",
+      "Bash(d help:*)",
+      "Bash(bd:*)"
     ]
   }
 }

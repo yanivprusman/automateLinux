@@ -121,6 +121,9 @@ d enableApp --app <name> --mode <prod|dev>       # Enable app for boot (systemct
 d disableApp --app <name> --mode <prod|dev|all>  # Disable app from boot
 d buildApp --app <name> --mode <prod|dev>        # Build C++ server component
 d installAppDeps --app <name> [--component <x>]  # Install npm dependencies
+d deployToProd --app <name> [--commit <hash>]    # Deploy dev to prod (ALWAYS use this)
+d prodStatus --app <name>                        # Check if prod is clean/dirty
+d cleanProd --app <name>                         # Discard uncommitted changes in prod
 
 # Peer networking commands (all work from any peer)
 d registerWorker                                 # Register as worker, connect to VPS
@@ -306,11 +309,15 @@ Applications in `extraApps/` are stored directly in this repo (not symlinks) to 
 
 **Production versions** are git worktrees at `/opt/prod/<appName>`, checked out at specific commits (detached HEAD). To update prod, use `git worktree` commands to move to a new commit.
 
-> **⚠️ NEVER DEVELOP IN PROD.** All development must happen in `extraApps/<appName>` (dev). The prod worktree at `/opt/prod/<appName>` must ONLY contain committed code - no local modifications ever. Workflow:
-> 1. Make changes in `extraApps/<appName>`
+> **⚠️ NEVER DEVELOP IN PROD.** All development must happen in `extraApps/<appName>` (dev). The prod worktree at `/opt/prod/<appName>` must ONLY contain committed code - no local modifications ever.
+>
+> **Deployment workflow (use daemon commands only):**
+> 1. Make changes in `extraApps/<appName>` and test with dev mode
 > 2. Commit changes to the app's git repo
-> 3. Update prod worktree to the new commit: `git -C /opt/prod/<appName> checkout <commit>`
-> 4. Rebuild prod: `d buildApp --app <name> --mode prod`
+> 3. Deploy to prod: `d deployToProd --app <name>` (uses latest dev commit)
+>    - Or specify commit: `d deployToProd --app <name> --commit <hash>`
+>
+> **Never use direct git commands on prod** - always use `d deployToProd`.
 
 ## Environment Variables
 

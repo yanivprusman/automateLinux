@@ -217,6 +217,12 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Remove an extra app from registry (keeps files)"),
     CommandSignature(COMMAND_LIST_EXTRA_APPS, {},
                      "List all extra apps registered in database"),
+    CommandSignature(COMMAND_DEPLOY_TO_PROD, {COMMAND_ARG_APP},
+                     "Deploy dev changes to prod worktree", "--commit <hash>"),
+    CommandSignature(COMMAND_PROD_STATUS, {COMMAND_ARG_APP},
+                     "Check prod worktree status (clean/dirty)"),
+    CommandSignature(COMMAND_CLEAN_PROD, {COMMAND_ARG_APP},
+                     "Discard uncommitted changes in prod worktree"),
 
     // Test/Debug Commands
     CommandSignature(COMMAND_TEST_INTEGRITY, {},
@@ -379,6 +385,9 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_ADD_EXTRA_APP, handleAddExtraApp},
     {COMMAND_REMOVE_EXTRA_APP, handleRemoveExtraApp},
     {COMMAND_LIST_EXTRA_APPS, handleListExtraApps},
+    {COMMAND_DEPLOY_TO_PROD, handleDeployToProd},
+    {COMMAND_PROD_STATUS, handleProdStatus},
+    {COMMAND_CLEAN_PROD, handleCleanProd},
 
     // Peer commands
     {COMMAND_SET_PEER_CONFIG, handleSetPeerConfig},

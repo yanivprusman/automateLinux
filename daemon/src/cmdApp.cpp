@@ -981,6 +981,195 @@ CmdResult handleRemoveExtraApp(const json &command) {
   return CmdResult(0, result.str());
 }
 
+CmdResult handleProdStatus(const json &command) {
+  if (!command.contains(COMMAND_ARG_APP)) {
+    return CmdResult(1, "Missing required argument: --app\n");
+  }
+
+  string appId = command[COMMAND_ARG_APP].get<string>();
+  AppConfig config = AppManager::getAppConfig(appId);
+  if (config.appId.empty()) {
+    return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  if (config.prodPath.empty()) {
+    return CmdResult(1, "App " + appId + " has no prod path configured\n");
+  }
+
+  stringstream result;
+  result << "Prod status for " << appId << ":\n";
+  result << "  Path: " << config.prodPath << "\n";
+
+  // Get current commit
+  string commitCmd =
+      "cd " + config.prodPath + " && /usr/bin/git rev-parse --short HEAD 2>&1";
+  string commit = executeCommand(commitCmd.c_str());
+  commit.erase(commit.find_last_not_of(" \n\r\t") + 1);
+  result << "  Commit: " << commit << "\n";
+
+  // Check for uncommitted changes
+  string statusCmd =
+      "cd " + config.prodPath + " && /usr/bin/git status --porcelain 2>&1";
+  string statusOutput = executeCommand(statusCmd.c_str());
+
+  if (statusOutput.empty()) {
+    result << "  Status: CLEAN\n";
+  } else {
+    result << "  Status: DIRTY (has uncommitted changes)\n";
+    result << "  Changes:\n";
+    // Indent each line
+    stringstream ss(statusOutput);
+    string line;
+    while (getline(ss, line)) {
+      result << "    " << line << "\n";
+    }
+  }
+
+  return CmdResult(0, result.str());
+}
+
+CmdResult handleCleanProd(const json &command) {
+  if (!command.contains(COMMAND_ARG_APP)) {
+    return CmdResult(1, "Missing required argument: --app\n");
+  }
+
+  string appId = command[COMMAND_ARG_APP].get<string>();
+  AppConfig config = AppManager::getAppConfig(appId);
+  if (config.appId.empty()) {
+    return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  if (config.prodPath.empty()) {
+    return CmdResult(1, "App " + appId + " has no prod path configured\n");
+  }
+
+  stringstream result;
+  result << "Cleaning prod for " << appId << "...\n";
+
+  // Discard all local changes
+  string cleanCmd = "cd " + config.prodPath +
+                    " && /usr/bin/git checkout -- . && /usr/bin/git clean -fd 2>&1";
+  string cleanOutput = executeCommand(cleanCmd.c_str());
+
+  if (cleanOutput.find("fatal") != string::npos ||
+      cleanOutput.find("error") != string::npos) {
+    return CmdResult(1, "Failed to clean prod:\n" + cleanOutput + "\n");
+  }
+
+  result << "  Discarded uncommitted changes\n";
+  result << "Prod is now clean.\n";
+
+  return CmdResult(0, result.str());
+}
+
+CmdResult handleDeployToProd(const json &command) {
+  if (!command.contains(COMMAND_ARG_APP)) {
+    return CmdResult(1, "Missing required argument: --app\n");
+  }
+
+  string appId = command[COMMAND_ARG_APP].get<string>();
+  string commit = command.contains(COMMAND_ARG_COMMIT)
+                      ? command[COMMAND_ARG_COMMIT].get<string>()
+                      : "";
+
+  AppConfig config = AppManager::getAppConfig(appId);
+  if (config.appId.empty()) {
+    return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  if (config.prodPath.empty()) {
+    return CmdResult(1, "App " + appId + " has no prod path configured\n");
+  }
+
+  stringstream result;
+  result << "Deploying " << appId << " to prod...\n";
+
+  // 1. If no commit specified, get latest from dev
+  if (commit.empty()) {
+    string getHashCmd =
+        "cd " + config.devPath + " && /usr/bin/git rev-parse HEAD 2>&1";
+    commit = executeCommand(getHashCmd.c_str());
+    // Trim whitespace
+    commit.erase(commit.find_last_not_of(" \n\r\t") + 1);
+    if (commit.empty() || commit.find("fatal") != string::npos) {
+      return CmdResult(1, "Failed to get commit from dev: " + commit + "\n");
+    }
+    result << "  Using latest dev commit: " << commit.substr(0, 7) << "\n";
+  } else {
+    result << "  Using specified commit: " << commit.substr(0, 7) << "\n";
+  }
+
+  // 2. Check prod worktree status - must be clean
+  string statusCmd =
+      "cd " + config.prodPath + " && /usr/bin/git status --porcelain 2>&1";
+  string statusOutput = executeCommand(statusCmd.c_str());
+  if (!statusOutput.empty() && statusOutput.find("fatal") == string::npos) {
+    return CmdResult(
+        1, "Prod worktree has uncommitted changes. Aborting.\n"
+           "Run: git -C " +
+               config.prodPath + " status\n");
+  }
+
+  // 3. Checkout the commit in prod
+  string checkoutCmd = "cd " + config.prodPath +
+                       " && /usr/bin/git checkout " + commit + " 2>&1";
+  string checkoutOutput = executeCommand(checkoutCmd.c_str());
+  if (checkoutOutput.find("fatal") != string::npos ||
+      checkoutOutput.find("error") != string::npos) {
+    return CmdResult(1, "Failed to checkout commit:\n" + checkoutOutput + "\n");
+  }
+  result << "  Checkout: OK\n";
+
+  // 4. Rebuild server if app has one
+  if (config.hasServerComponent) {
+    result << "  Rebuilding server...\n";
+    string buildResult = AppManager::buildServerComponent(appId, "prod");
+    if (buildResult.find("Build complete") == string::npos) {
+      return CmdResult(1, "Build failed:\n" + buildResult);
+    }
+    result << "  Build: OK\n";
+  }
+
+  // 5. Restart prod services
+  result << "  Restarting services...\n";
+
+  // Stop first
+  if (!config.clientServiceTemplate.empty()) {
+    string clientService = AppManager::resolveServiceName(
+        config.clientServiceTemplate, appId, "prod");
+    AppManager::stopService(clientService);
+  }
+  if (config.hasServerComponent && !config.serverServiceTemplate.empty()) {
+    string serverService = AppManager::resolveServiceName(
+        config.serverServiceTemplate, appId, "prod");
+    AppManager::stopService(serverService);
+  }
+
+  // Wait for ports
+  string portKey = "port_" + config.portKeyClient + "-prod";
+  string portStr = SettingsTable::getSetting(portKey);
+  if (!portStr.empty()) {
+    AppManager::waitForPortRelease(stoi(portStr));
+  }
+
+  // Start services
+  if (config.hasServerComponent && !config.serverServiceTemplate.empty()) {
+    string serverService = AppManager::resolveServiceName(
+        config.serverServiceTemplate, appId, "prod");
+    AppManager::startService(serverService);
+    result << "  Started " << serverService << "\n";
+  }
+  if (!config.clientServiceTemplate.empty()) {
+    string clientService = AppManager::resolveServiceName(
+        config.clientServiceTemplate, appId, "prod");
+    AppManager::startService(clientService);
+    result << "  Started " << clientService << "\n";
+  }
+
+  result << "\nDeploy complete!\n";
+  return CmdResult(0, result.str());
+}
+
 CmdResult handleListExtraApps(const json &) {
   vector<ExtraAppRecord> apps = ExtraAppTable::getAllApps();
 

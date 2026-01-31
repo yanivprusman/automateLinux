@@ -120,10 +120,14 @@
 #define COMMAND_ADD_EXTRA_APP "addExtraApp"
 #define COMMAND_REMOVE_EXTRA_APP "removeExtraApp"
 #define COMMAND_LIST_EXTRA_APPS "listExtraApps"
+#define COMMAND_DEPLOY_TO_PROD "deployToProd"
+#define COMMAND_PROD_STATUS "prodStatus"
+#define COMMAND_CLEAN_PROD "cleanProd"
 
 // App Arguments
 #define COMMAND_ARG_APP "app"
 #define COMMAND_ARG_MODE "mode"
+#define COMMAND_ARG_COMMIT "commit"
 #define COMMAND_ARG_REPO_URL "repoUrl"
 #define COMMAND_ARG_DISPLAY_NAME "displayName"
 #define COMMAND_ARG_HAS_SERVER "hasServer"

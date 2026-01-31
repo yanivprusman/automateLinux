@@ -13,7 +13,7 @@ import Gio from 'gi://Gio';
 
 import { Logger } from './lib/logging.js';
 
-const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome_window_selector.log']);
+const LOG_FILE_PATH = '/opt/automateLinux/data/gnome_window_selector.log';
 const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
 
 class PersistentDaemonConnector {

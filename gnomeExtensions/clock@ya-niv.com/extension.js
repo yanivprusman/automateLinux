@@ -14,7 +14,7 @@ import { DaemonConnector } from '../lib/daemon.js';
 import { ShellCommandExecutor } from '../lib/shellCommand.js';
 
 const DAEMON_SOCKET_PATH = '/run/automatelinux/automatelinux-daemon.sock';
-const LOG_FILE_PATH = GLib.build_filenamev([GLib.get_home_dir(), 'coding', 'automateLinux', 'data', 'gnome.log']);
+const LOG_FILE_PATH = '/opt/automateLinux/data/gnome.log';
 const shouldLog = true;
 
 // Custom menu item that closes on left-click, stays open on right-click

@@ -149,6 +149,7 @@ fi
 # 2.6. Configure Git Aliases
 configure_git() {
     echo "Configuring system-wide git aliases..."
+    git config --system color.ui auto
     git config --system alias.l "log --oneline -20"
     git config --system alias.r "reset --hard HEAD"
     git config --system alias.stat "status"

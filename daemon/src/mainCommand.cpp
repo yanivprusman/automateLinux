@@ -177,6 +177,8 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Start/restart Loom streaming server and client"),
     CommandSignature(COMMAND_STOP_LOOM, {},
                      "Stop Loom streaming"),
+    CommandSignature(COMMAND_LOOM_CONNECT, {},
+                     "Connect to peer's loom stream", "--peer <desktop|vps|laptop>"),
     CommandSignature(COMMAND_GENERATE_LOOM_TOKEN, {},
                      "Generate a new Loom authentication token"),
     CommandSignature(COMMAND_REVOKE_LOOM_TOKENS, {},
@@ -369,6 +371,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_IS_LOOM_ACTIVE, handleIsLoomActive},
     {COMMAND_RESTART_LOOM, handleRestartLoom},
     {COMMAND_STOP_LOOM, handleStopLoom},
+    {COMMAND_LOOM_CONNECT, handleLoomConnect},
     {COMMAND_GENERATE_LOOM_TOKEN, handleGenerateLoomToken},
     {COMMAND_REVOKE_LOOM_TOKENS, handleRevokeLoomTokens},
 

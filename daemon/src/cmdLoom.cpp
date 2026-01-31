@@ -94,3 +94,28 @@ CmdResult handleRevokeLoomTokens(const json &) {
 
   return CmdResult(0, "Loom tokens revoked.\n");
 }
+
+CmdResult handleLoomConnect(const json &command) {
+  string peer = "desktop"; // default
+  if (command.contains(COMMAND_ARG_PEER)) {
+    peer = command[COMMAND_ARG_PEER].get<string>();
+  }
+
+  // Validate peer
+  if (peer != "desktop" && peer != "vps" && peer != "laptop") {
+    return CmdResult(1, "Error: Unknown peer '" + peer +
+                            "'. Valid peers: desktop, vps, laptop\n");
+  }
+
+  // Launch GUI app as user with Wayland display environment
+  // Use nohup and setsid to fully detach from daemon
+  string cmd = "setsid sudo -u yaniv "
+               "WAYLAND_DISPLAY=wayland-0 "
+               "XDG_RUNTIME_DIR=/run/user/1000 "
+               "nohup /opt/automateLinux/extraApps/loom/native-client/build/loom-client "
+               "--peer " + peer + " >/tmp/loom-client.log 2>&1 &";
+
+  system(cmd.c_str());
+
+  return CmdResult(0, "Launching loom client connecting to " + peer + "...\n");
+}

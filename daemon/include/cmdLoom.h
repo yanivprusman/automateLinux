@@ -14,5 +14,6 @@ CmdResult handleRestartLoom(const json &command);
 CmdResult handleGenerateLoomToken(const json &command);
 CmdResult handleRevokeLoomTokens(const json &command);
 CmdResult handleResetClock(const json &command);
+CmdResult handleLoomConnect(const json &command);
 
 #endif // CMD_LOOM_H

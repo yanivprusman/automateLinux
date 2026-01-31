@@ -306,6 +306,12 @@ Applications in `extraApps/` are stored directly in this repo (not symlinks) to 
 
 **Production versions** are git worktrees at `/opt/prod/<appName>`, checked out at specific commits (detached HEAD). To update prod, use `git worktree` commands to move to a new commit.
 
+> **⚠️ NEVER DEVELOP IN PROD.** All development must happen in `extraApps/<appName>` (dev). The prod worktree at `/opt/prod/<appName>` must ONLY contain committed code - no local modifications ever. Workflow:
+> 1. Make changes in `extraApps/<appName>`
+> 2. Commit changes to the app's git repo
+> 3. Update prod worktree to the new commit: `git -C /opt/prod/<appName> checkout <commit>`
+> 4. Rebuild prod: `d buildApp --app <name> --mode prod`
+
 ## Environment Variables
 
 All prefixed with `AUTOMATE_LINUX_`:

@@ -101,11 +101,25 @@ CmdResult handleLoomConnect(const json &command) {
     peer = command[COMMAND_ARG_PEER].get<string>();
   }
 
+  string mode = "prod"; // default
+  if (command.contains(COMMAND_ARG_MODE)) {
+    mode = command[COMMAND_ARG_MODE].get<string>();
+  }
+
   // Validate peer
   if (peer != "desktop" && peer != "vps" && peer != "laptop") {
     return CmdResult(1, "Error: Unknown peer '" + peer +
                             "'. Valid peers: desktop, vps, laptop\n");
   }
+
+  // Validate mode
+  if (mode != "prod" && mode != "dev") {
+    return CmdResult(1, "Error: Unknown mode '" + mode +
+                            "'. Valid modes: prod, dev\n");
+  }
+
+  // Port based on mode
+  string port = (mode == "dev") ? "3505" : "3500";
 
   // Launch GUI app as user with Wayland display environment
   // Use nohup and setsid to fully detach from daemon
@@ -113,9 +127,9 @@ CmdResult handleLoomConnect(const json &command) {
                "WAYLAND_DISPLAY=wayland-0 "
                "XDG_RUNTIME_DIR=/run/user/1000 "
                "nohup /opt/automateLinux/extraApps/loom/native-client/build/loom-client "
-               "--peer " + peer + " >/tmp/loom-client.log 2>&1 &";
+               "--peer " + peer + " --port " + port + " >/tmp/loom-client.log 2>&1 &";
 
   system(cmd.c_str());
 
-  return CmdResult(0, "Launching loom client connecting to " + peer + "...\n");
+  return CmdResult(0, "Launching loom client connecting to " + peer + " (" + mode + " on port " + port + ")...\n");
 }

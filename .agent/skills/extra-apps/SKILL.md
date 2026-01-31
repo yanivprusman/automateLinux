@@ -33,6 +33,13 @@ d stopApp --app <name> --mode <prod|dev|all>  # Stop app services
 d restartApp --app <name> --mode <prod|dev>   # Restart app services
 ```
 
+### Enable/Disable for Boot
+
+```bash
+d enableApp --app <name> --mode <prod|dev>    # Enable services at boot (systemctl enable)
+d disableApp --app <name> --mode <prod|dev|all>  # Disable services from boot
+```
+
 ### Build and Dependencies
 
 ```bash

@@ -87,7 +87,15 @@
       "Bash(socat:*)",
       "Bash(claude --version:*)",
       "Bash(umask:*)",
-      "Bash(fixAutoLinuxPerms:*)"
+      "Bash(fixAutoLinuxPerms:*)",
+      "Bash(sudo -n whoami:*)",
+      "Bash(readlink:*)",
+      "Bash(/usr/bin/sudo --version)",
+      "Bash(tty:*)",
+      "Bash(sudo:*)",
+      "Bash(strace:*)",
+      "Bash(tail:*)",
+      "Bash(mysql:*)"
     ]
   }
 }

@@ -117,6 +117,8 @@ d appStatus [--app <name>]                       # Show app service status
 d startApp --app <name> --mode <prod|dev>        # Start app services
 d stopApp --app <name> --mode <prod|dev|all>     # Stop app services
 d restartApp --app <name> --mode <prod|dev>      # Restart app services
+d enableApp --app <name> --mode <prod|dev>       # Enable app for boot (systemctl enable)
+d disableApp --app <name> --mode <prod|dev|all>  # Disable app from boot
 d buildApp --app <name> --mode <prod|dev>        # Build C++ server component
 d installAppDeps --app <name> [--component <x>]  # Install npm dependencies
 
@@ -278,6 +280,25 @@ Loads via `~/.bashrc` sourcing `terminal/bashrc`:
 1. `firstThing.sh` - Sets `AUTOMATE_LINUX_*` environment variables
 2. `myBashrc.sh` - Sources modules (colors, aliases, functions, bindings)
 3. `functions/*.sh` - Modular functions (daemon.sh, git.sh, build.sh, etc.)
+
+### System Utilities
+
+| Function | Description |
+|----------|-------------|
+| `fixAutoLinuxPerms [path]` | Fix ownership (root:coding) and permissions (group-writable, setgid) on automateLinux directories |
+
+## Permissions Setup
+
+The repository uses `root:coding` ownership with group-writable permissions:
+- All users who need write access should be in the `coding` group
+- System-wide `umask 002` via PAM ensures new files are group-writable
+- The `%coding` group has `NOPASSWD` sudo access for build/deploy commands
+
+To fix permissions on a new machine:
+```bash
+fixAutoLinuxPerms                    # Fix /opt/automateLinux
+fixAutoLinuxPerms /opt/prod/loom     # Fix specific path
+```
 
 ## Extra Apps
 

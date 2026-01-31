@@ -25,6 +25,8 @@ d stopApp --app loom --mode prod      # Stop prod services
 d stopApp --app loom --mode all       # Stop all loom services
 d restartApp --app loom --mode dev    # Restart dev services
 d appStatus --app loom                # Show service status
+d enableApp --app loom --mode prod    # Enable for boot (systemctl enable)
+d disableApp --app loom --mode prod   # Disable from boot
 ```
 
 ### Build and Dependencies

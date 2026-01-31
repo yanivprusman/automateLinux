@@ -140,6 +140,7 @@
       "Bash(# Test the server encoding directly - save a few frames to file timeout 3 gst-launch-1.0 pipewiresrc path=68 do-timestamp=true num-buffers=10 \\\\ ! video/x-raw ! videoconvert ! pngenc ! multifilesink location=/tmp/loom_test_%d.png 2>&1 || true ls -la /tmp/loom_test_*.png)",
       "Bash(nc -u -w1 127.0.0.1 5001 sleep 3 kill $BG_PID ls -la /tmp/test_sw_decode.raw hexdump -C /tmp/test_sw_decode.raw)",
       "Bash(make:*)",
+<<<<<<< Updated upstream
       "Bash(sudo bash -c 'umask')",
       "Bash(d execOnPeer --peer desktop --directory /opt/automateLinux --shellCmd \"getfacl /opt/automateLinux 2>/dev/null | head -20\")",
       "Bash(getfacl:*)",
@@ -148,6 +149,9 @@
       "Bash(d execOnPeer --peer desktop --directory /opt/automateLinux --shellCmd \"ls -la /opt/automateLinux/.agent/skills/daemon-peer-execution/\")",
       "Bash(sudo find:*)",
       "Bash(timeout 2 tcpdump:*)"
+=======
+      "Bash(timeout 6 /opt/automateLinux/extraApps/loom/native-client/build/loom-client:*)"
+>>>>>>> Stashed changes
     ]
   }
 }

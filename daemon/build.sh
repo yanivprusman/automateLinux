@@ -43,7 +43,8 @@ cd build
 cmake .. > /dev/null && \
 make > /dev/null && \
 echo -e "${GREEN}Build complete!${NC}" && \
-cp daemon .. && \
+sudo cp daemon .. && \
+sudo chown root:coding ../daemon && \
 cd ..
 
 # Install man page

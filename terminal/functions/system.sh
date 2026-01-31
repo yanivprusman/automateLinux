@@ -66,3 +66,19 @@ disableScreenLock(){
     gsettings set org.gnome.desktop.session idle-delay 0
 }
 export -f disableScreenLock
+
+fixAutoLinuxPerms() {
+    local target="${1:-/opt/automateLinux}"
+    echo "Fixing permissions on $target..."
+    sudo chown -R root:coding "$target"
+    sudo chmod -R g+w "$target"
+    sudo find "$target" -type d -exec chmod g+s {} \;
+    echo "Done. Ownership: root:coding, group-writable, setgid on dirs."
+}
+export -f fixAutoLinuxPerms
+
+sudoVisudo() {
+    # Use script to allocate a PTY, bypassing terminal capture issues
+    script -q -c 'sudo visudo' /dev/null
+}
+export -f sudoVisudo

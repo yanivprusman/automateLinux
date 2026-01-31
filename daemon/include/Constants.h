@@ -115,6 +115,8 @@
 #define COMMAND_LIST_APPS "listApps"
 #define COMMAND_BUILD_APP "buildApp"
 #define COMMAND_INSTALL_APP_DEPS "installAppDeps"
+#define COMMAND_ENABLE_APP "enableApp"
+#define COMMAND_DISABLE_APP "disableApp"
 
 // App Arguments
 #define COMMAND_ARG_APP "app"

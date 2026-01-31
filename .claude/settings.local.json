@@ -84,7 +84,10 @@
       "Bash(pgrep:*)",
       "Bash(lsof:*)",
       "Bash(sudo ss:*)",
-      "Bash(socat:*)"
+      "Bash(socat:*)",
+      "Bash(claude --version:*)",
+      "Bash(umask:*)",
+      "Bash(fixAutoLinuxPerms:*)"
     ]
   }
 }

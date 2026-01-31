@@ -206,6 +206,10 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_INSTALL_APP_DEPS, {COMMAND_ARG_APP},
                      "Install npm dependencies for an app",
                      "--mode <prod|dev> --component <client|server|all>"),
+    CommandSignature(COMMAND_ENABLE_APP, {COMMAND_ARG_APP},
+                     "Enable app services for boot", "--mode <prod|dev>"),
+    CommandSignature(COMMAND_DISABLE_APP, {COMMAND_ARG_APP},
+                     "Disable app services from boot", "--mode <prod|dev|all>"),
 
     // Test/Debug Commands
     CommandSignature(COMMAND_TEST_INTEGRITY, {},
@@ -363,6 +367,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_LIST_APPS, handleListApps},
     {COMMAND_BUILD_APP, handleBuildApp},
     {COMMAND_INSTALL_APP_DEPS, handleInstallAppDeps},
+    {COMMAND_ENABLE_APP, handleEnableApp},
+    {COMMAND_DISABLE_APP, handleDisableApp},
 
     // Peer commands
     {COMMAND_SET_PEER_CONFIG, handleSetPeerConfig},

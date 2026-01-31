@@ -48,9 +48,28 @@ bool AppManager::restartService(const string &serviceName) {
   return (rc == 0);
 }
 
+bool AppManager::enableService(const string &serviceName) {
+  string cmd = "/usr/bin/systemctl enable " + serviceName + " 2>/dev/null";
+  int rc = std::system(cmd.c_str());
+  return (rc == 0);
+}
+
+bool AppManager::disableService(const string &serviceName) {
+  string cmd = "/usr/bin/systemctl disable " + serviceName + " 2>/dev/null";
+  int rc = std::system(cmd.c_str());
+  return (rc == 0);
+}
+
 bool AppManager::isServiceActive(const string &serviceName) {
   string cmd =
       "/usr/bin/systemctl is-active --quiet " + serviceName + " 2>/dev/null";
+  int rc = std::system(cmd.c_str());
+  return (rc == 0);
+}
+
+bool AppManager::isServiceEnabled(const string &serviceName) {
+  string cmd =
+      "/usr/bin/systemctl is-enabled --quiet " + serviceName + " 2>/dev/null";
   int rc = std::system(cmd.c_str());
   return (rc == 0);
 }
@@ -521,4 +540,90 @@ CmdResult handleInstallAppDeps(const json &command) {
                  result.find("ERR!") == string::npos;
 
   return CmdResult(success ? 0 : 1, result);
+}
+
+CmdResult handleEnableApp(const json &command) {
+  if (!command.contains("app")) {
+    return CmdResult(1, "Missing required argument: --app\n");
+  }
+
+  string appId = command["app"].get<string>();
+  string mode = command.contains("mode") ? command["mode"].get<string>() : "prod";
+
+  AppConfig config = AppManager::getAppConfig(appId);
+  if (config.appId.empty()) {
+    return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  stringstream result;
+  bool allSuccess = true;
+
+  // Enable server if app has one
+  if (config.hasServerComponent && !config.serverServiceTemplate.empty()) {
+    string serverService =
+        AppManager::resolveServiceName(config.serverServiceTemplate, appId, mode);
+    if (AppManager::enableService(serverService)) {
+      result << "Enabled " << serverService << "\n";
+    } else {
+      result << "Failed to enable " << serverService << "\n";
+      allSuccess = false;
+    }
+  }
+
+  // Enable client
+  if (!config.clientServiceTemplate.empty()) {
+    string clientService =
+        AppManager::resolveServiceName(config.clientServiceTemplate, appId, mode);
+    if (AppManager::enableService(clientService)) {
+      result << "Enabled " << clientService << "\n";
+    } else {
+      result << "Failed to enable " << clientService << "\n";
+      allSuccess = false;
+    }
+  }
+
+  return CmdResult(allSuccess ? 0 : 1, result.str());
+}
+
+CmdResult handleDisableApp(const json &command) {
+  if (!command.contains("app")) {
+    return CmdResult(1, "Missing required argument: --app\n");
+  }
+
+  string appId = command["app"].get<string>();
+  string mode = command.contains("mode") ? command["mode"].get<string>() : "all";
+
+  AppConfig config = AppManager::getAppConfig(appId);
+  if (config.appId.empty()) {
+    return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  vector<string> modes;
+  if (mode == "all") {
+    modes = {"prod", "dev"};
+  } else {
+    modes = {mode};
+  }
+
+  stringstream result;
+
+  for (const auto &m : modes) {
+    // Disable client
+    if (!config.clientServiceTemplate.empty()) {
+      string clientService =
+          AppManager::resolveServiceName(config.clientServiceTemplate, appId, m);
+      AppManager::disableService(clientService);
+      result << "Disabled " << clientService << "\n";
+    }
+
+    // Disable server
+    if (config.hasServerComponent && !config.serverServiceTemplate.empty()) {
+      string serverService =
+          AppManager::resolveServiceName(config.serverServiceTemplate, appId, m);
+      AppManager::disableService(serverService);
+      result << "Disabled " << serverService << "\n";
+    }
+  }
+
+  return CmdResult(0, result.str());
 }

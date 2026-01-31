@@ -12,14 +12,16 @@ initTerminalCapture() {
 }
 export -f initTerminalCapture
 
-# Strip ANSI escape sequences from text
+# Strip ANSI escape sequences and control characters from text
 stripEscapeSequences() {
     sed -E \
         -e 's/\x1b\[[0-9;?]*[A-Za-z]//g' \
         -e 's/\x1b\][^\x07]*(\x07|\x1b\\)//g' \
         -e 's/\x1b\([A-Z]//g' \
         -e 's/\x08//g' \
-        -e 's/\x0d//g'
+        -e 's/\x0d//g' \
+        -e 's/\x7f//g' \
+        -e 's/[\x00-\x08\x0b\x0c\x0e-\x1a]//g'
 }
 export -f stripEscapeSequences
 
@@ -31,6 +33,7 @@ export -f stripEscapeSequences
 #   terminalToClipboard fromPrompt - Copy all from previous prompt to current
 terminalToClipboard() {
     local arg="$1"
+    local arg2="$2"
     local capture_file="$AUTOMATE_LINUX_TERMINAL_CAPTURE_FILE"
     local marker_pattern="^---PROMPT\[timestamp:[0-9]+\]---$"
 
@@ -77,7 +80,8 @@ terminalToClipboard() {
             echo "  (none), 1    Last non-empty line"
             echo "  N            Line N from end (1=last, 2=second-to-last, ...)"
             echo "  N-M          Lines N through M from end"
-            echo "  fromPrompt   All output from last command"
+            echo "  fromPrompt [N]     Output from Nth previous command (default: 1)"
+            echo "  fromPrompt N-M     Output from commands N through M (e.g., 2-1)"
             echo "  -h, --help   Show this help"
             return 0
             ;;
@@ -92,9 +96,42 @@ terminalToClipboard() {
             done
             ;;
         fromPrompt)
-            # All output from last command (between prev_prompt and last_prompt)
-            local start_collect=$((prev_prompt == -1 ? 0 : prev_prompt + 1))
-            for ((i = start_collect; i < last_prompt; i++)); do
+            # Optional second argument: N or N-M (e.g., "ttc fromPrompt 2" or "ttc fromPrompt 2-1")
+            local fp_arg="$arg2"
+
+            # Find all prompt markers
+            local -a prompt_indexes
+            for ((i = 0; i < total; i++)); do
+                [[ "${lines[$i]}" =~ $marker_pattern ]] && prompt_indexes+=($i)
+            done
+            local prompt_count=${#prompt_indexes[@]}
+            [ $prompt_count -lt 2 ] && return 1
+
+            # Determine which prompts to use (1 = most recent command, 2 = one before, etc.)
+            local start_prompt=1 end_prompt=1
+            if [[ "$fp_arg" =~ ^[0-9]+-[0-9]+$ ]]; then
+                start_prompt="${fp_arg%-*}"
+                end_prompt="${fp_arg#*-}"
+            elif [[ "$fp_arg" =~ ^[0-9]+$ ]]; then
+                start_prompt="$fp_arg"
+                end_prompt="$fp_arg"
+            fi
+
+            # Ensure start >= end (start is further back)
+            [ $start_prompt -lt $end_prompt ] && { local t=$start_prompt; start_prompt=$end_prompt; end_prompt=$t; }
+
+            # Convert to indexes: prompt N means prompt_indexes[prompt_count - 1 - N]
+            local start_idx=$((prompt_count - 1 - start_prompt))
+            local end_idx=$((prompt_count - 1 - end_prompt))
+            [ $start_idx -lt 0 ] && start_idx=0
+            [ $end_idx -ge $prompt_count ] && end_idx=$((prompt_count - 1))
+
+            # Copy content from start_prompt+1 to end_prompt (exclusive of end marker)
+            local collect_from=$((${prompt_indexes[$start_idx]} + 1))
+            local collect_to=${prompt_indexes[$((end_idx + 1))]}
+            [ $((end_idx + 1)) -ge $prompt_count ] && collect_to=$total
+
+            for ((i = collect_from; i < collect_to; i++)); do
                 [[ ! "${lines[$i]}" =~ $marker_pattern ]] && to_copy+="${lines[$i]}"$'\n'
             done
             ;;
@@ -131,3 +168,4 @@ terminalToClipboard() {
 }
 export -f terminalToClipboard
 alias ttc='terminalToClipboard'
+alias ttcc='terminalToClipboard fromPrompt'

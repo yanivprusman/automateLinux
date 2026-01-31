@@ -31,6 +31,8 @@ CmdResult handleAppStatus(const json &command);
 CmdResult handleListApps(const json &command);
 CmdResult handleBuildApp(const json &command);
 CmdResult handleInstallAppDeps(const json &command);
+CmdResult handleEnableApp(const json &command);
+CmdResult handleDisableApp(const json &command);
 
 // App Manager namespace for internal utilities
 namespace AppManager {
@@ -39,7 +41,10 @@ namespace AppManager {
 bool startService(const std::string &serviceName);
 bool stopService(const std::string &serviceName);
 bool restartService(const std::string &serviceName);
+bool enableService(const std::string &serviceName);
+bool disableService(const std::string &serviceName);
 bool isServiceActive(const std::string &serviceName);
+bool isServiceEnabled(const std::string &serviceName);
 std::string getServiceStatus(const std::string &serviceName);
 
 // Port management

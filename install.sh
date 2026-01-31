@@ -60,7 +60,7 @@ verify_dependencies() {
     echo "Checking build dependencies..."
 
     # Core packages needed to build and run the daemon
-    CORE_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git curl xclip"
+    CORE_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git curl xclip ethtool wol"
 
     # Extra packages for full desktop installation
     EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev code"

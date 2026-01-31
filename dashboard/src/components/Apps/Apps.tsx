@@ -31,10 +31,7 @@ const Apps = ({ selectedPeer }: Props) => {
             label: 'Loom',
             icon: '📹',
             description: `View ${selectedPeer.name}'s screen`,
-            options: [
-                { label: 'Prod', url: `http://${selectedPeer.ip}:3004` },
-                { label: 'Dev', url: `http://${selectedPeer.ip}:3005` },
-            ]
+            url: `http://${selectedPeer.ip}:3005`,
         },
         {
             id: 'pt',

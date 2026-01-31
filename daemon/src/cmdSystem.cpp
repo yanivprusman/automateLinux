@@ -49,7 +49,7 @@ static const string HELP_MESSAGE =
     "  restartLoom             Start/restart Loom streaming\n"
     "  stopLoom                Stop Loom streaming\n"
     "  isLoomActive            Check if Loom is active\n"
-    "  loomConnect --peer <id> [--mode <prod|dev>]\n"
+    "  loomConnect --peer <id>\n"
     "                          Connect to peer's loom stream\n\n"
     "LOGGING\n"
     "  shouldLog --enable <bool>\n"

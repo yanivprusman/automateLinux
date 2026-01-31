@@ -15,22 +15,14 @@ CmdResult handleResetClock(const json &) {
 }
 
 CmdResult handleIsLoomActive(const json &) {
-  // Use AppManager functions for port checking
-  bool serverProdRunning = AppManager::isPortListening(3500);
-  bool serverDevRunning = AppManager::isPortListening(3505);
-  bool clientProdRunning = AppManager::isPortListening(3004);
-  bool clientDevRunning = AppManager::isPortListening(3005);
+  // Use AppManager functions for port checking (dev only)
+  bool serverRunning = AppManager::isPortListening(3505);
+  bool clientRunning = AppManager::isPortListening(3005);
 
   std::stringstream ss;
   ss << "Loom Status:\n";
-  ss << "  Server (Prod:3500): "
-     << (serverProdRunning ? "RUNNING" : "NOT RUNNING") << "\n";
-  ss << "  Server (Dev:3505): "
-     << (serverDevRunning ? "RUNNING" : "NOT RUNNING") << "\n";
-  ss << "  Client (Prod:3004): "
-     << (clientProdRunning ? "RUNNING" : "NOT RUNNING") << "\n";
-  ss << "  Client (Dev:3005): "
-     << (clientDevRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Server (3505): " << (serverRunning ? "RUNNING" : "NOT RUNNING") << "\n";
+  ss << "  Client (3005): " << (clientRunning ? "RUNNING" : "NOT RUNNING") << "\n";
 
   return CmdResult(0, ss.str());
 }
@@ -47,15 +39,15 @@ CmdResult handleRestartLoom(const json &command) {
   // Redirect to generic app handler
   json appCmd;
   appCmd["app"] = "loom";
-  appCmd["mode"] = command.contains("mode") ? command["mode"].get<string>() : "prod";
+  appCmd["mode"] = command.contains("mode") ? command["mode"].get<string>() : "dev";
   return handleRestartApp(appCmd);
 }
 
 CmdResult handleGenerateLoomToken(const json &) {
   // Use port from registry if possible
-  string portStr = SettingsTable::getSetting("port_loom-server");
+  string portStr = SettingsTable::getSetting("port_loom-server-dev");
   if (portStr.empty())
-    portStr = "3500";
+    portStr = "3505";
 
   string cmd =
       "curl -s --max-time 2 http://localhost:" + portStr + "/api/generateToken";
@@ -71,9 +63,9 @@ CmdResult handleGenerateLoomToken(const json &) {
     auto j = json::parse(output);
     if (j.contains("token")) {
       string token = j["token"].get<string>();
-      // Construct link - assume client is on 3004
+      // Construct link - client is on 3005
       return CmdResult(0, "Token: " + token +
-                              "\nLink: http://localhost:3004/?token=" + token +
+                              "\nLink: http://localhost:3005/?token=" + token +
                               "\n");
     }
   } catch (...) {
@@ -84,9 +76,9 @@ CmdResult handleGenerateLoomToken(const json &) {
 }
 
 CmdResult handleRevokeLoomTokens(const json &) {
-  string portStr = SettingsTable::getSetting("port_loom-server");
+  string portStr = SettingsTable::getSetting("port_loom-server-dev");
   if (portStr.empty())
-    portStr = "3500";
+    portStr = "3505";
 
   string cmd =
       "curl -s --max-time 2 http://localhost:" + portStr + "/api/revokeAll";
@@ -101,25 +93,14 @@ CmdResult handleLoomConnect(const json &command) {
     peer = command[COMMAND_ARG_PEER].get<string>();
   }
 
-  string mode = "prod"; // default
-  if (command.contains(COMMAND_ARG_MODE)) {
-    mode = command[COMMAND_ARG_MODE].get<string>();
-  }
-
   // Validate peer
   if (peer != "desktop" && peer != "vps" && peer != "laptop") {
     return CmdResult(1, "Error: Unknown peer '" + peer +
                             "'. Valid peers: desktop, vps, laptop\n");
   }
 
-  // Validate mode
-  if (mode != "prod" && mode != "dev") {
-    return CmdResult(1, "Error: Unknown mode '" + mode +
-                            "'. Valid modes: prod, dev\n");
-  }
-
-  // Port based on mode
-  string port = (mode == "dev") ? "3505" : "3500";
+  // Dev only - port 3505
+  string port = "3505";
 
   // Launch GUI app as user with Wayland display environment
   // Use nohup and setsid to fully detach from daemon
@@ -131,5 +112,5 @@ CmdResult handleLoomConnect(const json &command) {
 
   system(cmd.c_str());
 
-  return CmdResult(0, "Launching loom client connecting to " + peer + " (" + mode + " on port " + port + ")...\n");
+  return CmdResult(0, "Launching loom client connecting to " + peer + " (port " + port + ")...\n");
 }

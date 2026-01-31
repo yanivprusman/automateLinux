@@ -15,7 +15,7 @@ using namespace std;
 static const vector<AppConfig> APP_CONFIGS = {
     {"loom", "Loom Screen Streaming", true, "loom-server-{mode}",
      "loom-client-{mode}", "loom", "loom-server",
-     "/opt/automateLinux/extraApps/loom", "/opt/prod/loom", "server", "client"},
+     "/opt/automateLinux/extraApps/loom", "", "server", "client"},
     {"cad", "CAD Application", false, "", "cad-{mode}", "cad", "",
      "/opt/automateLinux/extraApps/cad", "/opt/prod/cad", "", "web"},
     {"pt", "Public Transportation", false, "", "pt-{mode}", "pt", "",

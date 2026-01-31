@@ -15,7 +15,7 @@ struct AppConfig {
   bool hasServerComponent;
   std::string serverServiceTemplate; // e.g., "{app}-server-{mode}"
   std::string clientServiceTemplate; // e.g., "{app}-client-{mode}"
-  std::string portKeyClient;         // e.g., "loom" -> port_loom-prod, port_loom-dev
+  std::string portKeyClient;         // e.g., "loom" -> port_loom-dev
   std::string portKeyServer;         // e.g., "loom-server" -> port_loom-server
   std::string devPath;               // e.g., "/opt/automateLinux/extraApps/loom"
   std::string prodPath;              // e.g., "/opt/prod/loom"
@@ -62,7 +62,7 @@ void killProcessOnPort(int port);
 AppConfig getAppConfig(const std::string &appId);
 std::vector<AppConfig> getAllApps();
 
-// Service name resolution: "{app}-server-{mode}" -> "loom-server-prod"
+// Service name resolution: "{app}-server-{mode}" -> "loom-server-dev"
 std::string resolveServiceName(const std::string &templateStr,
                                const std::string &appId,
                                const std::string &mode);

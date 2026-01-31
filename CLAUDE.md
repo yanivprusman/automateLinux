@@ -40,12 +40,10 @@ d appStatus                                         # Status of all apps
 d appStatus --app loom                              # Status of specific app
 d startApp --app loom --mode dev                    # Start app in dev mode
 d stopApp --app loom --mode dev                     # Stop specific mode
-d stopApp --app loom --mode all                     # Stop all modes
-d restartApp --app loom --mode prod                 # Restart app
+d restartApp --app loom --mode dev                  # Restart app
 
 # Build and dependencies
 d buildApp --app loom --mode dev                    # Build C++ server component
-d installAppDeps --app loom --mode prod             # Install npm dependencies (all)
 d installAppDeps --app loom --component client      # Install client deps only
 
 # Legacy Loom shortcuts (redirect to generic handlers)
@@ -88,8 +86,7 @@ d deletePort --key <app>                # Remove port entry
 | cad-dev | 3001 | CAD app development |
 | pt-prod | 3002 | Public Transportation production |
 | pt-dev | 3003 | Public Transportation development |
-| loom-prod | 3004 | Loom client production |
-| loom-dev | 3005 | Loom client development |
+| loom-dev | 3005 | Loom client (dev only) |
 | dashboard-prod | 3006 | Dashboard frontend production |
 | dashboard-dev | 3007 | Dashboard frontend development |
 | loom-server | 3500 | Loom WebSocket stream server |

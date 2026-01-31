@@ -447,28 +447,22 @@ int initialize_daemon() {
   //   logToFile("ERROR: Failed to initialize keyboard mapping", LOG_CORE);
   // }
 
-  // Start Loom on daemon startup (both prod and dev)
+  // Start Loom on daemon startup (dev only)
   string restartLoomScript =
       directories.base + "daemon/scripts/restart_loom.sh";
   // Export DBUS_SESSION_BUS_ADDRESS so it can talk to the user bus.
-  string cmdBase =
+  string cmdDev =
       "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; " +
-      restartLoomScript;
+      restartLoomScript + " --dev > /dev/null 2>&1 &";
 
-  string cmdProd = cmdBase + " --prod > /dev/null 2>&1 &";
-  string cmdDev = cmdBase + " --dev > /dev/null 2>&1 &";
-
-  int prodRc = system(cmdProd.c_str());
   int devRc = system(cmdDev.c_str());
 
-  if (prodRc != 0 || devRc != 0) {
-    logToFile(
-        "WARNING: Failed to start Loom (Prod RC=" + std::to_string(prodRc) +
-            ", Dev RC=" + std::to_string(devRc) + ")",
-        LOG_CORE);
-  } else {
-    logToFile("Loom startup scripts (prod & dev) executed as user yaniv",
+  if (devRc != 0) {
+    logToFile("WARNING: Failed to start Loom (Dev RC=" + std::to_string(devRc) +
+                  ")",
               LOG_CORE);
+  } else {
+    logToFile("Loom startup script (dev) executed as user yaniv", LOG_CORE);
   }
 
   // Start Dashboard

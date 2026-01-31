@@ -178,7 +178,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_STOP_LOOM, {},
                      "Stop Loom streaming"),
     CommandSignature(COMMAND_LOOM_CONNECT, {},
-                     "Connect to peer's loom stream", "--peer <desktop|vps|laptop> [--mode <prod|dev>]"),
+                     "Connect to peer's loom stream", "--peer <desktop|vps|laptop>"),
     CommandSignature(COMMAND_GENERATE_LOOM_TOKEN, {},
                      "Generate a new Loom authentication token"),
     CommandSignature(COMMAND_REVOKE_LOOM_TOKENS, {},

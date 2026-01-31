@@ -53,8 +53,7 @@ The daemon is the central authority for port assignments.
 | pt-prod | 3002 | Public Transportation production |
 | pt-dev | 3003 | Public Transportation development |
 | pt-proxy | 3502 | Public Transportation MOT SSH Proxy |
-| loom-prod | 3004 | Loom client production |
-| loom-dev | 3005 | Loom client development |
+| loom-dev | 3005 | Loom client (dev only) |
 | dashboard-prod | 3006 | Dashboard frontend production |
 | dashboard-dev | 3007 | Dashboard frontend development |
 | loom-server | 3500 | Loom WebSocket stream server |

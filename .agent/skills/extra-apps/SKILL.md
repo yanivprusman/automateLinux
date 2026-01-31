@@ -11,7 +11,7 @@ The AutomateLinux ecosystem integrates several external applications stored dire
 
 | App ID | Display Name | Has Server | Dev Path | Prod Path |
 |--------|--------------|------------|----------|-----------|
-| `loom` | Loom Screen Streaming | Yes | `/opt/automateLinux/extraApps/loom` | `/opt/prod/loom` |
+| `loom` | Loom Screen Streaming | Yes | `/opt/automateLinux/extraApps/loom` | N/A (dev only) |
 | `cad` | CAD Application | No | `/opt/automateLinux/extraApps/cad` | `/opt/prod/cad` |
 | `pt` | Public Transportation | No | `/opt/automateLinux/extraApps/publicTransportation` | `/opt/prod/publicTransportation` |
 
@@ -45,10 +45,10 @@ d disableApp --app <name> --mode <prod|dev|all>  # Disable services from boot
 ```bash
 # Build C++ server components (cmake && make)
 d buildApp --app loom --mode dev
-d buildApp --app loom --mode prod
+d buildApp --app cad --mode prod
 
 # Install npm dependencies
-d installAppDeps --app loom --mode prod                      # Install all components
+d installAppDeps --app loom --mode dev                       # Install all components
 d installAppDeps --app loom --mode dev --component client    # Client only
 d installAppDeps --app loom --mode dev --component server    # Server only
 ```
@@ -65,8 +65,7 @@ App ports are managed centrally by the daemon.
 | **CAD** | Dev | 3001 | CAD frontend development |
 | **PT** | Prod | 3002 | Public Transportation production |
 | **PT** | Dev | 3003 | Public Transportation development |
-| **Loom** | Prod Client | 3004 | Loom web viewer production |
-| **Loom** | Dev Client | 3005 | Loom web viewer development |
+| **Loom** | Dev Client | 3005 | Loom web viewer (dev only) |
 | **Loom** | Server | 3500 | Loom GStreamer server (WebSocket) |
 
 ### Updating Ports
@@ -88,20 +87,20 @@ ls /opt/prod/
 
 To update a production deployment:
 ```bash
-cd /opt/prod/loom
+cd /opt/prod/cad
 git fetch origin
 git checkout <commit-or-tag>
-d buildApp --app loom --mode prod           # Rebuild server
-d installAppDeps --app loom --mode prod     # Reinstall deps
-d restartApp --app loom --mode prod         # Restart services
+d buildApp --app cad --mode prod           # Rebuild server
+d installAppDeps --app cad --mode prod     # Reinstall deps
+d restartApp --app cad --mode prod         # Restart services
 ```
 
 ## Starting Applications
 
-### Loom
+### Loom (dev only)
 ```bash
-d restartApp --app loom --mode prod   # Or use shortcut: d restartLoom
-d stopApp --app loom --mode all       # Or use shortcut: d stopLoom
+d restartApp --app loom --mode dev    # Or use shortcut: d restartLoom
+d stopApp --app loom --mode dev       # Or use shortcut: d stopLoom
 d isLoomActive                        # Check port status
 ```
 

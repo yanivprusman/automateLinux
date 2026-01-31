@@ -105,10 +105,8 @@ CmdResult handleListPorts(const json &) {
           key == "dashboard-bridge") {
         repoPath = directories.base;
       } else if (key == "loom-dev" || key == "loom-server-dev" ||
-                 key == "loom-client-dev") {
+                 key == "loom-client-dev" || key == "loom-server") {
         repoPath = directories.base + "extraApps/loom";
-      } else if (key == "loom-prod" || key == "loom-server") {
-        repoPath = "/opt/prod/loom";
       } else if (key == "cad-dev") {
         repoPath = directories.base + "extraApps/cad";
       } else if (key == "cad-prod") {

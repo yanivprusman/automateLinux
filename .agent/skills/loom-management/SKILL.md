@@ -10,32 +10,31 @@ This skill provides instructions for managing the Loom screen recording integrat
 ## Architecture
 
 Loom consists of:
-- **Server**: C++ GStreamer-based screen capture (ports 3500 prod, 3505 dev)
-- **Client**: React/Vite web viewer (ports 3004 prod, 3005 dev)
+- **Server**: C++ GStreamer-based screen capture (port 3500)
+- **Client**: React/Vite web viewer (port 3005)
 
-Both run as systemd services managed by the daemon's app management system.
+Loom runs in dev mode only. Both components run as systemd services managed by the daemon's app management system.
 
 ## Commands
 
 ### Generic App Commands (Preferred)
 
 ```bash
-d startApp --app loom --mode prod     # Start both server + client
-d stopApp --app loom --mode prod      # Stop prod services
-d stopApp --app loom --mode all       # Stop all loom services
+d startApp --app loom --mode dev      # Start both server + client
+d stopApp --app loom --mode dev       # Stop dev services
 d restartApp --app loom --mode dev    # Restart dev services
 d appStatus --app loom                # Show service status
-d enableApp --app loom --mode prod    # Enable for boot (systemctl enable)
-d disableApp --app loom --mode prod   # Disable from boot
+d enableApp --app loom --mode dev     # Enable for boot (systemctl enable)
+d disableApp --app loom --mode dev    # Disable from boot
 ```
 
 ### Build and Dependencies
 
 ```bash
 d buildApp --app loom --mode dev      # Build C++ server (cmake && make)
-d installAppDeps --app loom --mode prod --component client  # npm install for client
-d installAppDeps --app loom --mode prod --component server  # npm install for server
-d installAppDeps --app loom --mode prod                     # Install all deps
+d installAppDeps --app loom --mode dev --component client  # npm install for client
+d installAppDeps --app loom --mode dev --component server  # npm install for server
+d installAppDeps --app loom --mode dev                     # Install all deps
 ```
 
 ### Legacy Shortcuts
@@ -43,19 +42,17 @@ d installAppDeps --app loom --mode prod                     # Install all deps
 These redirect to the generic app handlers:
 
 ```bash
-d restartLoom [--mode prod|dev]       # Alias for restartApp --app loom
-d stopLoom [--mode prod|dev|all]      # Alias for stopApp --app loom
-d isLoomActive                        # Check port status (3500, 3505, 3004, 3005)
+d restartLoom                         # Alias for restartApp --app loom --mode dev
+d stopLoom                            # Alias for stopApp --app loom --mode dev
+d isLoomActive                        # Check port status (3500, 3005)
 ```
 
 ## Service Details
 
 | Service | Description | Working Directory |
 |---------|-------------|-------------------|
-| `loom-server-prod` | Production server on port 3500 | `/opt/prod/loom/server/build` |
-| `loom-server-dev` | Development server on port 3505 | `/opt/automateLinux/extraApps/loom/server/build` |
-| `loom-client-prod` | Production client on port 3004 | `/opt/prod/loom/client` |
-| `loom-client-dev` | Development client on port 3005 | `/opt/automateLinux/extraApps/loom/client` |
+| `loom-server-dev` | Server on port 3500 | `/opt/automateLinux/extraApps/loom/server/build` |
+| `loom-client-dev` | Client on port 3005 | `/opt/automateLinux/extraApps/loom/client` |
 
 Services run as user `yaniv` (not root) to access the user's DBus session for GNOME/Mutter ScreenCast.
 
@@ -77,12 +74,12 @@ If loom-server fails with "DBus connection failed: The connection is closed":
 
 ### Binary Not Found (status=203/EXEC)
 ```bash
-d buildApp --app loom --mode prod
+d buildApp --app loom --mode dev
 ```
 
 ### Missing node_modules
 ```bash
-d installAppDeps --app loom --mode prod --component client
+d installAppDeps --app loom --mode dev --component client
 ```
 
 ### Screen Share Window Not Detected

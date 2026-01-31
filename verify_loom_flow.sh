@@ -30,12 +30,12 @@ nohup python3 utilities/autoSelectLoomScreen.py > /tmp/loom_auto.log 2>&1 &
 # 5. Start Client
 echo "Starting Client..."
 cd extraApps/loom/client
-nohup npm run dev -- --host 0.0.0.0 --port 3004 > /tmp/loom_client.log 2>&1 &
+nohup npm run dev -- --host 0.0.0.0 --port 3005 > /tmp/loom_client.log 2>&1 &
 CLIENT_PID=$!
 echo "Client PID: $CLIENT_PID"
 
 # Wait for client to be ready
 echo "Waiting for client..."
-timeout 30s bash -c "until curl -s http://localhost:3004 > /dev/null; do sleep 1; done"
+timeout 30s bash -c "until curl -s http://localhost:3005 > /dev/null; do sleep 1; done"
 
 echo "Loom stack currently running. Ready for browser test."

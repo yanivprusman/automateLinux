@@ -153,7 +153,7 @@ d execOnPeer --peer desktop --directory /opt/automateLinux --shellCmd "git log -
 ### Start App on Remote Peer
 
 ```bash
-d execOnPeer --peer vps --directory /opt/automateLinux --shellCmd "d startApp --app loom --mode prod"
+d execOnPeer --peer vps --directory /opt/automateLinux --shellCmd "d startApp --app cad --mode prod"
 ```
 
 ## Error Messages

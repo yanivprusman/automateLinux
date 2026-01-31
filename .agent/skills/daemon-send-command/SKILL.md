@@ -27,7 +27,7 @@ Use `--key` and `--value` (or other defined arguments) for commands that require
 d setPort --key pt --value 3001
 d simulateInput --type 1 --code 1003 --value 1
 d startApp --app loom --mode dev
-d buildApp --app loom --mode prod
+d buildApp --app loom --mode dev
 d installAppDeps --app loom --component client
 ```
 

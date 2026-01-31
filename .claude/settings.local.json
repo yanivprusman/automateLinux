@@ -96,7 +96,15 @@
       "Bash(strace:*)",
       "Bash(tail:*)",
       "Bash(mysql:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "Bash(./build.sh:*)",
+      "Bash(gnome-monitor-config list:*)",
+      "Bash(xrandr:*)",
+      "Bash(gdbus call:*)",
+      "Bash(gdbus introspect:*)",
+      "Bash(git -C /opt/automateLinux/extraApps/loom remote:*)",
+      "Bash(dpkg:*)",
+      "Bash(gst-inspect-1.0:*)"
     ]
   }
 }

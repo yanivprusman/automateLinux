@@ -95,7 +95,8 @@
       "Bash(sudo:*)",
       "Bash(strace:*)",
       "Bash(tail:*)",
-      "Bash(mysql:*)"
+      "Bash(mysql:*)",
+      "Bash(xxd:*)"
     ]
   }
 }

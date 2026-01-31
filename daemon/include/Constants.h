@@ -101,6 +101,8 @@
 #define COMMAND_RESTART_LOOM "restartLoom"
 #define COMMAND_STOP_LOOM "stopLoom"
 #define COMMAND_LOOM_CONNECT "loomConnect"
+#define COMMAND_RUN_LOOM_CLIENT "runLoomClient"
+#define COMMAND_RUN_LOOM_SERVER "runLoomServer"
 #define COMMAND_PUBLIC_TRANSPORTATION_START_PROXY                              \
   "publicTransportationStartProxy"
 #define COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP "publicTransportationOpenApp"

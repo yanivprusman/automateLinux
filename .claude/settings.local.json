@@ -111,7 +111,15 @@
       "Bash(d stopApp:*)",
       "Bash(d buildApp:*)",
       "Bash(d help:*)",
-      "Bash(bd:*)"
+      "Bash(bd:*)",
+      "Bash(pkill:*)",
+      "Bash(timeout 15 ./loom-client:*)",
+      "Bash(timeout 20:*)",
+      "Bash(sudo chown:*)",
+      "Bash(sudo chmod:*)",
+      "Bash(d runLoomClient:*)",
+      "Bash(pkg-config:*)",
+      "Bash(dpkg -l:*)"
     ]
   }
 }

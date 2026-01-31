@@ -185,6 +185,10 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Revoke all Loom authentication tokens"),
     CommandSignature(COMMAND_RESET_CLOCK, {},
                      "Reset Loom frame clock"),
+    CommandSignature(COMMAND_RUN_LOOM_CLIENT, {},
+                     "Launch Loom native client GUI", "--peer <local|desktop|vps|laptop>"),
+    CommandSignature(COMMAND_RUN_LOOM_SERVER, {},
+                     "Launch Loom RTP server (waits for client connections)"),
 
     // Public Transportation Commands
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_START_PROXY, {},
@@ -374,6 +378,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_LOOM_CONNECT, handleLoomConnect},
     {COMMAND_GENERATE_LOOM_TOKEN, handleGenerateLoomToken},
     {COMMAND_REVOKE_LOOM_TOKENS, handleRevokeLoomTokens},
+    {COMMAND_RUN_LOOM_CLIENT, handleRunLoomClient},
+    {COMMAND_RUN_LOOM_SERVER, handleRunLoomServer},
 
     // App management commands
     {COMMAND_START_APP, handleStartApp},

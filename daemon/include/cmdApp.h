@@ -39,6 +39,8 @@ CmdResult handleListExtraApps(const json &command);
 CmdResult handleDeployToProd(const json &command);
 CmdResult handleProdStatus(const json &command);
 CmdResult handleCleanProd(const json &command);
+CmdResult handleRunLoomClient(const json &command);
+CmdResult handleRunLoomServer(const json &command);
 
 // App Manager namespace for internal utilities
 namespace AppManager {

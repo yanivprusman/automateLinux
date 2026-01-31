@@ -1285,3 +1285,76 @@ CmdResult handleListExtraApps(const json &) {
 
   return CmdResult(0, ss.str());
 }
+
+CmdResult handleRunLoomClient(const json &command) {
+  string peer = command.contains(COMMAND_ARG_PEER)
+                    ? command[COMMAND_ARG_PEER].get<string>()
+                    : "local";
+
+  // Path to the native client binary
+  string clientPath = "/opt/automateLinux/extraApps/loom/native-client/build/loom-client";
+
+  // Check if binary exists
+  string checkCmd = "/usr/bin/test -x " + clientPath;
+  if (std::system(checkCmd.c_str()) != 0) {
+    return CmdResult(1, "Loom native client not found. Build it first with:\n"
+                        "  d buildApp --app loom --component native-client\n");
+  }
+
+  // Get the logged-in user (first user with an active graphical session)
+  string getUserCmd = "loginctl list-sessions --no-legend | awk '{print $3}' | head -1";
+  string user = executeCommand(getUserCmd.c_str());
+  // Trim whitespace
+  user.erase(user.find_last_not_of(" \n\r\t") + 1);
+  if (user.empty()) {
+    user = "yaniv"; // Fallback
+  }
+
+  // Get user's UID
+  string getUidCmd = "id -u " + user;
+  string uid = executeCommand(getUidCmd.c_str());
+  uid.erase(uid.find_last_not_of(" \n\r\t") + 1);
+
+  // Launch the client using machinectl shell to inherit user's full session
+  // This properly gets display access on Wayland/GNOME
+  string launchCmd = "machinectl shell " + user + "@.host /bin/bash -c '"
+                     "nohup " + clientPath + " --peer " + peer +
+                     " > /tmp/loom-client.log 2>&1 &' &";
+
+  std::system(launchCmd.c_str());
+
+  return CmdResult(0, "Launched loom native client connecting to: " + peer + "\n"
+                      "Log: /tmp/loom-client.log\n");
+}
+
+CmdResult handleRunLoomServer(const json &) {
+  // Path to the RTP server binary
+  string serverPath = "/opt/automateLinux/extraApps/loom/server/build/loom-rtp";
+
+  // Check if binary exists
+  string checkCmd = "/usr/bin/test -x " + serverPath;
+  if (std::system(checkCmd.c_str()) != 0) {
+    return CmdResult(1, "Loom RTP server not found. Build it first with:\n"
+                        "  d buildApp --app loom --mode dev\n");
+  }
+
+  // Get the logged-in user (first user with an active graphical session)
+  string getUserCmd = "loginctl list-sessions --no-legend | awk '{print $3}' | head -1";
+  string user = executeCommand(getUserCmd.c_str());
+  user.erase(user.find_last_not_of(" \n\r\t") + 1);
+  if (user.empty()) {
+    user = "yaniv"; // Fallback
+  }
+
+  // Launch using machinectl to get proper PipeWire access
+  string launchCmd = "machinectl shell " + user + "@.host /bin/bash -c '"
+                     "nohup " + serverPath +
+                     " > /tmp/loom-server.log 2>&1 &' &";
+
+  std::system(launchCmd.c_str());
+
+  return CmdResult(0, "Loom RTP server started.\n"
+                      "Waiting for client connections on port 5001\n"
+                      "Video will stream on port 5000\n"
+                      "Log: /tmp/loom-server.log\n");
+}

@@ -64,4 +64,29 @@ public:
   static int clearAllPeers();  // Returns count of deleted rows
 };
 
+// Extra app record structure for installed applications
+struct ExtraAppRecord {
+  std::string app_id;
+  std::string display_name;
+  std::string repo_url;
+  bool has_server_component;
+  std::string server_service_template;
+  std::string client_service_template;
+  std::string port_key_client;
+  std::string port_key_server;
+  std::string dev_path;
+  std::string prod_path;
+  std::string server_build_subdir;
+  std::string client_subdir;
+};
+
+class ExtraAppTable {
+public:
+  static void upsertApp(const ExtraAppRecord &app);
+  static ExtraAppRecord getApp(const std::string &app_id);
+  static std::vector<ExtraAppRecord> getAllApps();
+  static void deleteApp(const std::string &app_id);
+  static bool appExists(const std::string &app_id);
+};
+
 #endif // DATABASE_TABLE_MANAGERS_H

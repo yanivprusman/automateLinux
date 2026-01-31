@@ -495,3 +495,153 @@ int PeerTable::clearAllPeers() {
     return 0;
   }
 }
+
+// ExtraAppTable Implementation
+
+void ExtraAppTable::upsertApp(const ExtraAppRecord &app) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "INSERT INTO extra_apps (app_id, display_name, repo_url, "
+        "has_server_component, server_service_template, client_service_template, "
+        "port_key_client, port_key_server, dev_path, prod_path, "
+        "server_build_subdir, client_subdir) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        "ON DUPLICATE KEY UPDATE display_name = ?, repo_url = ?, "
+        "has_server_component = ?, server_service_template = ?, "
+        "client_service_template = ?, port_key_client = ?, port_key_server = ?, "
+        "dev_path = ?, prod_path = ?, server_build_subdir = ?, client_subdir = ?"));
+    // Insert values
+    pstmt->setString(1, app.app_id);
+    pstmt->setString(2, app.display_name);
+    pstmt->setString(3, app.repo_url);
+    pstmt->setBoolean(4, app.has_server_component);
+    pstmt->setString(5, app.server_service_template);
+    pstmt->setString(6, app.client_service_template);
+    pstmt->setString(7, app.port_key_client);
+    pstmt->setString(8, app.port_key_server);
+    pstmt->setString(9, app.dev_path);
+    pstmt->setString(10, app.prod_path);
+    pstmt->setString(11, app.server_build_subdir);
+    pstmt->setString(12, app.client_subdir);
+    // Update values
+    pstmt->setString(13, app.display_name);
+    pstmt->setString(14, app.repo_url);
+    pstmt->setBoolean(15, app.has_server_component);
+    pstmt->setString(16, app.server_service_template);
+    pstmt->setString(17, app.client_service_template);
+    pstmt->setString(18, app.port_key_client);
+    pstmt->setString(19, app.port_key_server);
+    pstmt->setString(20, app.dev_path);
+    pstmt->setString(21, app.prod_path);
+    pstmt->setString(22, app.server_build_subdir);
+    pstmt->setString(23, app.client_subdir);
+    pstmt->executeUpdate();
+  } catch (sql::SQLException &e) {
+    logToFile("ExtraAppTable: upsertApp error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
+ExtraAppRecord ExtraAppTable::getApp(const std::string &app_id) {
+  ExtraAppRecord result{"", "", "", false, "", "", "", "", "", "", "", ""};
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return result;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "SELECT app_id, display_name, repo_url, has_server_component, "
+        "server_service_template, client_service_template, port_key_client, "
+        "port_key_server, dev_path, prod_path, server_build_subdir, client_subdir "
+        "FROM extra_apps WHERE app_id = ?"));
+    pstmt->setString(1, app_id);
+    std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+    if (res->next()) {
+      result.app_id = res->getString("app_id");
+      result.display_name = res->getString("display_name");
+      result.repo_url = res->getString("repo_url");
+      result.has_server_component = res->getBoolean("has_server_component");
+      result.server_service_template = res->getString("server_service_template");
+      result.client_service_template = res->getString("client_service_template");
+      result.port_key_client = res->getString("port_key_client");
+      result.port_key_server = res->getString("port_key_server");
+      result.dev_path = res->getString("dev_path");
+      result.prod_path = res->getString("prod_path");
+      result.server_build_subdir = res->getString("server_build_subdir");
+      result.client_subdir = res->getString("client_subdir");
+    }
+  } catch (sql::SQLException &e) {
+    logToFile("ExtraAppTable: getApp error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+  return result;
+}
+
+std::vector<ExtraAppRecord> ExtraAppTable::getAllApps() {
+  std::vector<ExtraAppRecord> results;
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return results;
+  try {
+    std::unique_ptr<sql::Statement> stmt(con->createStatement());
+    std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
+        "SELECT app_id, display_name, repo_url, has_server_component, "
+        "server_service_template, client_service_template, port_key_client, "
+        "port_key_server, dev_path, prod_path, server_build_subdir, client_subdir "
+        "FROM extra_apps ORDER BY app_id"));
+    while (res->next()) {
+      ExtraAppRecord record;
+      record.app_id = res->getString("app_id");
+      record.display_name = res->getString("display_name");
+      record.repo_url = res->getString("repo_url");
+      record.has_server_component = res->getBoolean("has_server_component");
+      record.server_service_template = res->getString("server_service_template");
+      record.client_service_template = res->getString("client_service_template");
+      record.port_key_client = res->getString("port_key_client");
+      record.port_key_server = res->getString("port_key_server");
+      record.dev_path = res->getString("dev_path");
+      record.prod_path = res->getString("prod_path");
+      record.server_build_subdir = res->getString("server_build_subdir");
+      record.client_subdir = res->getString("client_subdir");
+      results.push_back(record);
+    }
+  } catch (sql::SQLException &e) {
+    logToFile("ExtraAppTable: getAllApps error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+  return results;
+}
+
+void ExtraAppTable::deleteApp(const std::string &app_id) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(
+        con->prepareStatement("DELETE FROM extra_apps WHERE app_id = ?"));
+    pstmt->setString(1, app_id);
+    pstmt->executeUpdate();
+  } catch (sql::SQLException &e) {
+    logToFile("ExtraAppTable: deleteApp error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
+bool ExtraAppTable::appExists(const std::string &app_id) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return false;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "SELECT 1 FROM extra_apps WHERE app_id = ?"));
+    pstmt->setString(1, app_id);
+    std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
+    return res->next();
+  } catch (sql::SQLException &e) {
+    logToFile("ExtraAppTable: appExists error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+  return false;
+}

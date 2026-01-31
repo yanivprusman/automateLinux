@@ -210,6 +210,13 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Enable app services for boot", "--mode <prod|dev>"),
     CommandSignature(COMMAND_DISABLE_APP, {COMMAND_ARG_APP},
                      "Disable app services from boot", "--mode <prod|dev|all>"),
+    CommandSignature(COMMAND_ADD_EXTRA_APP, {COMMAND_ARG_REPO_URL},
+                     "Add an extra app from git repository",
+                     "--displayName <name> --hasServer --serverSubdir <dir> --clientSubdir <dir>"),
+    CommandSignature(COMMAND_REMOVE_EXTRA_APP, {COMMAND_ARG_APP},
+                     "Remove an extra app from registry (keeps files)"),
+    CommandSignature(COMMAND_LIST_EXTRA_APPS, {},
+                     "List all extra apps registered in database"),
 
     // Test/Debug Commands
     CommandSignature(COMMAND_TEST_INTEGRITY, {},
@@ -369,6 +376,9 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_INSTALL_APP_DEPS, handleInstallAppDeps},
     {COMMAND_ENABLE_APP, handleEnableApp},
     {COMMAND_DISABLE_APP, handleDisableApp},
+    {COMMAND_ADD_EXTRA_APP, handleAddExtraApp},
+    {COMMAND_REMOVE_EXTRA_APP, handleRemoveExtraApp},
+    {COMMAND_LIST_EXTRA_APPS, handleListExtraApps},
 
     // Peer commands
     {COMMAND_SET_PEER_CONFIG, handleSetPeerConfig},

@@ -33,6 +33,9 @@ CmdResult handleBuildApp(const json &command);
 CmdResult handleInstallAppDeps(const json &command);
 CmdResult handleEnableApp(const json &command);
 CmdResult handleDisableApp(const json &command);
+CmdResult handleAddExtraApp(const json &command);
+CmdResult handleRemoveExtraApp(const json &command);
+CmdResult handleListExtraApps(const json &command);
 
 // App Manager namespace for internal utilities
 namespace AppManager {

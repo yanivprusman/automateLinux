@@ -117,10 +117,22 @@
 #define COMMAND_INSTALL_APP_DEPS "installAppDeps"
 #define COMMAND_ENABLE_APP "enableApp"
 #define COMMAND_DISABLE_APP "disableApp"
+#define COMMAND_ADD_EXTRA_APP "addExtraApp"
+#define COMMAND_REMOVE_EXTRA_APP "removeExtraApp"
+#define COMMAND_LIST_EXTRA_APPS "listExtraApps"
 
 // App Arguments
 #define COMMAND_ARG_APP "app"
 #define COMMAND_ARG_MODE "mode"
+#define COMMAND_ARG_REPO_URL "repoUrl"
+#define COMMAND_ARG_DISPLAY_NAME "displayName"
+#define COMMAND_ARG_HAS_SERVER "hasServer"
+#define COMMAND_ARG_SERVER_SUBDIR "serverSubdir"
+#define COMMAND_ARG_CLIENT_SUBDIR "clientSubdir"
+
+// App Paths
+#define EXTRA_APPS_DIR "/opt/automateLinux/extraApps/"
+#define PROD_APPS_DIR "/opt/prod/"
 
 #define COMMAND_DELETE_PORT "deletePort"
 #define COMMAND_TEST_LSOF "testLsof"

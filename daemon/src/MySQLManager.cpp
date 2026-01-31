@@ -186,6 +186,22 @@ void MySQLManager::createDatabaseAndUser(int port,
                        "assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
                        "last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
 
+    // 8. Extra Apps (track installed extra applications)
+    tableStmt->execute("CREATE TABLE IF NOT EXISTS extra_apps ("
+                       "app_id VARCHAR(64) PRIMARY KEY, "
+                       "display_name VARCHAR(128) NOT NULL, "
+                       "repo_url TEXT NOT NULL, "
+                       "has_server_component BOOLEAN DEFAULT FALSE, "
+                       "server_service_template VARCHAR(128), "
+                       "client_service_template VARCHAR(128), "
+                       "port_key_client VARCHAR(64), "
+                       "port_key_server VARCHAR(64), "
+                       "dev_path TEXT NOT NULL, "
+                       "prod_path TEXT NOT NULL, "
+                       "server_build_subdir VARCHAR(128), "
+                       "client_subdir VARCHAR(128), "
+                       "installed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+
     logToFile(
         "MySQLManager: Database, user, and tables configured successfully.");
   } catch (sql::SQLException &e) {

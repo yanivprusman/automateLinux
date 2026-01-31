@@ -4,8 +4,10 @@
 #include "Utils.h"
 #include <algorithm>
 #include <chrono>
+#include <set>
 #include <sstream>
 #include <thread>
+#include <tuple>
 
 using namespace std;
 
@@ -105,16 +107,57 @@ bool AppManager::waitForPortRelease(int port, int timeoutMs) {
   return !isPortListening(port);
 }
 
+// Helper: Convert ExtraAppRecord to AppConfig
+static AppConfig recordToConfig(const ExtraAppRecord &record) {
+  AppConfig cfg;
+  cfg.appId = record.app_id;
+  cfg.displayName = record.display_name;
+  cfg.hasServerComponent = record.has_server_component;
+  cfg.serverServiceTemplate = record.server_service_template;
+  cfg.clientServiceTemplate = record.client_service_template;
+  cfg.portKeyClient = record.port_key_client;
+  cfg.portKeyServer = record.port_key_server;
+  cfg.devPath = record.dev_path;
+  cfg.prodPath = record.prod_path;
+  cfg.serverBuildSubdir = record.server_build_subdir;
+  cfg.clientSubdir = record.client_subdir;
+  return cfg;
+}
+
 AppConfig AppManager::getAppConfig(const string &appId) {
+  // First check hardcoded apps
   for (const auto &cfg : APP_CONFIGS) {
     if (cfg.appId == appId) {
       return cfg;
     }
   }
+  // Then check database
+  ExtraAppRecord record = ExtraAppTable::getApp(appId);
+  if (!record.app_id.empty()) {
+    return recordToConfig(record);
+  }
   return AppConfig{}; // Empty config if not found
 }
 
-vector<AppConfig> AppManager::getAllApps() { return APP_CONFIGS; }
+vector<AppConfig> AppManager::getAllApps() {
+  vector<AppConfig> allApps = APP_CONFIGS;
+  // Add apps from database
+  vector<ExtraAppRecord> dbApps = ExtraAppTable::getAllApps();
+  for (const auto &record : dbApps) {
+    // Avoid duplicates (in case app is both hardcoded and in DB)
+    bool exists = false;
+    for (const auto &cfg : allApps) {
+      if (cfg.appId == record.app_id) {
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) {
+      allApps.push_back(recordToConfig(record));
+    }
+  }
+  return allApps;
+}
 
 string AppManager::resolveServiceName(const string &templateStr,
                                       const string &appId,
@@ -626,4 +669,351 @@ CmdResult handleDisableApp(const json &command) {
   }
 
   return CmdResult(0, result.str());
+}
+
+// ============================================================================
+// Extra App Management
+// ============================================================================
+
+// Helper: Extract app name from repo URL
+// e.g., https://github.com/user/loom.git -> loom
+static string extractAppNameFromUrl(const string &repoUrl) {
+  // Find last '/' and extract everything after it
+  size_t lastSlash = repoUrl.rfind('/');
+  if (lastSlash == string::npos) {
+    return "";
+  }
+  string name = repoUrl.substr(lastSlash + 1);
+  // Remove .git suffix if present
+  if (name.size() > 4 && name.substr(name.size() - 4) == ".git") {
+    name = name.substr(0, name.size() - 4);
+  }
+  return name;
+}
+
+// Helper: Find next available port pair for apps (3000-3499 range)
+static pair<int, int> findNextAvailablePortPair() {
+  // Get all existing port assignments
+  auto settings = SettingsTable::getAllSettings();
+  set<int> usedPorts;
+  for (const auto &[key, value] : settings) {
+    if (key.find("port_") == 0) {
+      try {
+        usedPorts.insert(stoi(value));
+      } catch (...) {}
+    }
+  }
+
+  // Find first available pair in 3000-3499 range
+  for (int base = 3000; base < 3500; base += 2) {
+    if (usedPorts.find(base) == usedPorts.end() &&
+        usedPorts.find(base + 1) == usedPorts.end()) {
+      return {base, base + 1};
+    }
+  }
+  return {-1, -1}; // No ports available
+}
+
+// Helper: Find next available server port (3500+ range)
+static int findNextAvailableServerPort() {
+  auto settings = SettingsTable::getAllSettings();
+  set<int> usedPorts;
+  for (const auto &[key, value] : settings) {
+    if (key.find("port_") == 0) {
+      try {
+        usedPorts.insert(stoi(value));
+      } catch (...) {}
+    }
+  }
+
+  // Find first available port in 3500+ range
+  for (int port = 3500; port < 4000; port++) {
+    if (usedPorts.find(port) == usedPorts.end()) {
+      return port;
+    }
+  }
+  return -1;
+}
+
+// Helper: Detect app structure (hasServer, serverSubdir, clientSubdir)
+static tuple<bool, string, string> detectAppStructure(const string &appPath) {
+  bool hasServer = false;
+  string serverSubdir = "";
+  string clientSubdir = "";
+
+  // Check for common server directories
+  vector<string> serverDirs = {"server", "backend", "api"};
+  for (const auto &dir : serverDirs) {
+    string checkPath = appPath + "/" + dir;
+    string checkCmd = "/usr/bin/test -d " + checkPath;
+    if (std::system(checkCmd.c_str()) == 0) {
+      // Check if it has CMakeLists.txt (C++ server)
+      string cmakeCheck = "/usr/bin/test -f " + checkPath + "/CMakeLists.txt";
+      if (std::system(cmakeCheck.c_str()) == 0) {
+        hasServer = true;
+        serverSubdir = dir;
+        break;
+      }
+    }
+  }
+
+  // Check for common client directories
+  vector<string> clientDirs = {"client", "web", "frontend", "app"};
+  for (const auto &dir : clientDirs) {
+    string checkPath = appPath + "/" + dir;
+    string checkCmd = "/usr/bin/test -d " + checkPath;
+    if (std::system(checkCmd.c_str()) == 0) {
+      // Check if it has package.json (Node/React app)
+      string pkgCheck = "/usr/bin/test -f " + checkPath + "/package.json";
+      if (std::system(pkgCheck.c_str()) == 0) {
+        clientSubdir = dir;
+        break;
+      }
+    }
+  }
+
+  // If no client subdir found, check root for package.json
+  if (clientSubdir.empty()) {
+    string pkgCheck = "/usr/bin/test -f " + appPath + "/package.json";
+    if (std::system(pkgCheck.c_str()) == 0) {
+      clientSubdir = ""; // Root level
+    }
+  }
+
+  return {hasServer, serverSubdir, clientSubdir};
+}
+
+CmdResult handleAddExtraApp(const json &command) {
+  if (!command.contains(COMMAND_ARG_REPO_URL)) {
+    return CmdResult(1, "Missing required argument: --repoUrl\n");
+  }
+
+  string repoUrl = command[COMMAND_ARG_REPO_URL].get<string>();
+  string appId = extractAppNameFromUrl(repoUrl);
+
+  if (appId.empty()) {
+    return CmdResult(1, "Could not extract app name from URL: " + repoUrl + "\n");
+  }
+
+  // Check if app already exists in hardcoded list
+  for (const auto &cfg : APP_CONFIGS) {
+    if (cfg.appId == appId) {
+      return CmdResult(1, "App already exists in hardcoded config: " + appId + "\n");
+    }
+  }
+
+  // Check if app already exists in database
+  if (ExtraAppTable::appExists(appId)) {
+    return CmdResult(1, "App already registered in database: " + appId + "\n");
+  }
+
+  stringstream result;
+  result << "Adding extra app: " << appId << "\n";
+
+  string devPath = string(EXTRA_APPS_DIR) + appId;
+  string prodPath = string(PROD_APPS_DIR) + appId;
+
+  // 1. Check if directory exists, if not clone it
+  string checkDir = "/usr/bin/test -d " + devPath;
+  bool needsClone = (std::system(checkDir.c_str()) != 0);
+
+  if (needsClone) {
+    result << "  Cloning repository to " << devPath << "...\n";
+    string cloneCmd = "/usr/bin/git clone " + repoUrl + " " + devPath + " 2>&1";
+    string cloneOutput = executeCommand(cloneCmd.c_str());
+    if (cloneOutput.find("fatal") != string::npos ||
+        cloneOutput.find("error") != string::npos) {
+      return CmdResult(1, "Failed to clone repository:\n" + cloneOutput + "\n");
+    }
+    result << "  Clone: OK\n";
+  } else {
+    result << "  Directory already exists: " << devPath << "\n";
+  }
+
+  // 2. Create prod worktree if it doesn't exist
+  string checkProd = "/usr/bin/test -d " + prodPath;
+  if (std::system(checkProd.c_str()) != 0) {
+    result << "  Creating prod worktree at " << prodPath << "...\n";
+
+    // First ensure /opt/prod exists
+    std::system("/usr/bin/mkdir -p /opt/prod");
+
+    // Get current commit hash
+    string getHashCmd = "cd " + devPath + " && /usr/bin/git rev-parse HEAD";
+    string commitHash = executeCommand(getHashCmd.c_str());
+    // Trim whitespace
+    commitHash.erase(commitHash.find_last_not_of(" \n\r\t") + 1);
+
+    // Create worktree at detached HEAD
+    string worktreeCmd = "cd " + devPath + " && /usr/bin/git worktree add --detach " +
+                         prodPath + " " + commitHash + " 2>&1";
+    string worktreeOutput = executeCommand(worktreeCmd.c_str());
+    if (worktreeOutput.find("fatal") != string::npos) {
+      result << "  Warning: Could not create worktree: " << worktreeOutput << "\n";
+    } else {
+      result << "  Worktree: OK\n";
+    }
+  } else {
+    result << "  Prod worktree already exists: " << prodPath << "\n";
+  }
+
+  // 3. Detect app structure
+  auto [hasServer, serverSubdir, clientSubdir] = detectAppStructure(devPath);
+
+  // Allow overrides from command
+  if (command.contains(COMMAND_ARG_HAS_SERVER)) {
+    hasServer = command[COMMAND_ARG_HAS_SERVER].get<bool>();
+  }
+  if (command.contains(COMMAND_ARG_SERVER_SUBDIR)) {
+    serverSubdir = command[COMMAND_ARG_SERVER_SUBDIR].get<string>();
+    if (!serverSubdir.empty()) hasServer = true;
+  }
+  if (command.contains(COMMAND_ARG_CLIENT_SUBDIR)) {
+    clientSubdir = command[COMMAND_ARG_CLIENT_SUBDIR].get<string>();
+  }
+
+  result << "  Structure detected:\n";
+  result << "    Has server: " << (hasServer ? "yes" : "no") << "\n";
+  if (hasServer) {
+    result << "    Server subdir: " << serverSubdir << "\n";
+  }
+  result << "    Client subdir: " << (clientSubdir.empty() ? "(root)" : clientSubdir) << "\n";
+
+  // 4. Allocate ports
+  auto [prodPort, devPort] = findNextAvailablePortPair();
+  if (prodPort < 0) {
+    return CmdResult(1, "No available ports in 3000-3499 range\n");
+  }
+
+  int serverPort = -1;
+  if (hasServer) {
+    serverPort = findNextAvailableServerPort();
+    if (serverPort < 0) {
+      return CmdResult(1, "No available server ports in 3500+ range\n");
+    }
+  }
+
+  // Save ports to database
+  SettingsTable::setSetting("port_" + appId + "-prod", to_string(prodPort));
+  SettingsTable::setSetting("port_" + appId + "-dev", to_string(devPort));
+  if (hasServer) {
+    SettingsTable::setSetting("port_" + appId + "-server", to_string(serverPort));
+  }
+
+  result << "  Ports allocated:\n";
+  result << "    " << appId << "-prod: " << prodPort << "\n";
+  result << "    " << appId << "-dev: " << devPort << "\n";
+  if (hasServer) {
+    result << "    " << appId << "-server: " << serverPort << "\n";
+  }
+
+  // 5. Create app record
+  ExtraAppRecord appRecord;
+  appRecord.app_id = appId;
+  appRecord.display_name = command.contains(COMMAND_ARG_DISPLAY_NAME)
+      ? command[COMMAND_ARG_DISPLAY_NAME].get<string>()
+      : appId;
+  appRecord.repo_url = repoUrl;
+  appRecord.has_server_component = hasServer;
+  appRecord.server_service_template = hasServer ? (appId + "-server-{mode}") : "";
+  appRecord.client_service_template = appId + "-{mode}";
+  appRecord.port_key_client = appId;
+  appRecord.port_key_server = hasServer ? (appId + "-server") : "";
+  appRecord.dev_path = devPath;
+  appRecord.prod_path = prodPath;
+  appRecord.server_build_subdir = serverSubdir;
+  appRecord.client_subdir = clientSubdir;
+
+  ExtraAppTable::upsertApp(appRecord);
+  result << "  Database entry: OK\n";
+
+  // 6. Fix permissions
+  string fixPermsCmd = "fixAutoLinuxPerms " + devPath + " 2>/dev/null";
+  std::system(fixPermsCmd.c_str());
+  fixPermsCmd = "fixAutoLinuxPerms " + prodPath + " 2>/dev/null";
+  std::system(fixPermsCmd.c_str());
+
+  result << "\nApp added successfully!\n";
+  result << "Next steps:\n";
+  result << "  1. Install dependencies: d installAppDeps --app " << appId << "\n";
+  if (hasServer) {
+    result << "  2. Build server: d buildApp --app " << appId << " --mode dev\n";
+  }
+  result << "  3. Create systemd services for " << appId << "-dev and " << appId << "-prod\n";
+  result << "  4. Start app: d startApp --app " << appId << " --mode dev\n";
+
+  return CmdResult(0, result.str());
+}
+
+CmdResult handleRemoveExtraApp(const json &command) {
+  if (!command.contains(COMMAND_ARG_APP)) {
+    return CmdResult(1, "Missing required argument: --app\n");
+  }
+
+  string appId = command[COMMAND_ARG_APP].get<string>();
+
+  if (!ExtraAppTable::appExists(appId)) {
+    return CmdResult(1, "App not found in database: " + appId + "\n");
+  }
+
+  stringstream result;
+  result << "Removing extra app: " << appId << "\n";
+
+  // Get app info before deleting
+  ExtraAppRecord app = ExtraAppTable::getApp(appId);
+
+  // Delete port assignments
+  SettingsTable::deleteSetting("port_" + appId + "-prod");
+  SettingsTable::deleteSetting("port_" + appId + "-dev");
+  if (app.has_server_component) {
+    SettingsTable::deleteSetting("port_" + appId + "-server");
+  }
+  result << "  Removed port assignments\n";
+
+  // Delete from database
+  ExtraAppTable::deleteApp(appId);
+  result << "  Removed database entry\n";
+
+  result << "\nApp removed from registry.\n";
+  result << "Note: Files at " << app.dev_path << " and " << app.prod_path << " were NOT deleted.\n";
+  result << "To fully remove, manually delete these directories and any systemd services.\n";
+
+  return CmdResult(0, result.str());
+}
+
+CmdResult handleListExtraApps(const json &) {
+  vector<ExtraAppRecord> apps = ExtraAppTable::getAllApps();
+
+  if (apps.empty()) {
+    return CmdResult(0, "No extra apps registered in database.\n");
+  }
+
+  stringstream ss;
+  ss << "Extra Apps (from database):\n";
+  ss << "==========================\n";
+
+  for (const auto &app : apps) {
+    ss << "\n" << app.app_id << ":\n";
+    ss << "  Display Name: " << app.display_name << "\n";
+    ss << "  Repo URL: " << app.repo_url << "\n";
+    ss << "  Dev Path: " << app.dev_path << "\n";
+    ss << "  Prod Path: " << app.prod_path << "\n";
+    ss << "  Has Server: " << (app.has_server_component ? "yes" : "no") << "\n";
+    if (app.has_server_component) {
+      ss << "  Server Subdir: " << app.server_build_subdir << "\n";
+    }
+    ss << "  Client Subdir: " << (app.client_subdir.empty() ? "(root)" : app.client_subdir) << "\n";
+
+    // Show port assignments
+    string prodPort = SettingsTable::getSetting("port_" + app.app_id + "-prod");
+    string devPort = SettingsTable::getSetting("port_" + app.app_id + "-dev");
+    ss << "  Ports: prod=" << prodPort << ", dev=" << devPort;
+    if (app.has_server_component) {
+      string serverPort = SettingsTable::getSetting("port_" + app.app_id + "-server");
+      ss << ", server=" << serverPort;
+    }
+    ss << "\n";
+  }
+
+  return CmdResult(0, ss.str());
 }

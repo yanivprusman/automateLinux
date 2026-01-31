@@ -121,7 +121,7 @@ bool MySQLManager::isServerRunning(const std::string &socketPath) {
 }
 
 void MySQLManager::createDatabaseAndUser(int port,
-                                         const std::string &socketPath) {
+                                         [[maybe_unused]] const std::string &socketPath) {
   try {
     sql::Driver *driver = get_driver_instance();
     // Connect as root (no password because of initialize-insecure)

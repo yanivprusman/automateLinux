@@ -119,7 +119,27 @@
       "Bash(sudo chmod:*)",
       "Bash(d runLoomClient:*)",
       "Bash(pkg-config:*)",
-      "Bash(dpkg -l:*)"
+      "Bash(dpkg -l:*)",
+      "Bash(/opt/automateLinux/extraApps/loom/server/build/loom-rtp:*)",
+      "Bash(machinectl shell yaniv@.host /bin/bash -c 'echo \"\"test\"\" > /tmp/test-machinectl.txt')",
+      "Bash(apt-get install:*)",
+      "Bash(sudo apt-get install:*)",
+      "Bash(d runLoomServer:*)",
+      "Bash(/usr/bin/machinectl shell yaniv@.host /bin/bash -c 'echo \"\"test\"\" > /tmp/machinectl-test.txt')",
+      "Bash(/usr/bin/machinectl shell yaniv@.host /bin/bash -c 'nohup /opt/automateLinux/extraApps/loom/server/build/loom-rtp > /tmp/loom-server.log 2>&1 &')",
+      "Bash(sudo -u yaniv XDG_RUNTIME_DIR=/run/user/1000 systemd-run:*)",
+      "Bash(sudo -u yaniv XDG_RUNTIME_DIR=/run/user/1000 systemctl --user stop:*)",
+      "Bash(sudo -u yaniv XDG_RUNTIME_DIR=/run/user/1000 journalctl:*)",
+      "Bash(timeout 5 gst-launch-1.0:*)",
+      "Bash(pw-cli list-objects:*)",
+      "Bash(git -C /opt/automateLinux show HEAD~10:extraApps/loom/server/src/ScreenCapture.cpp)",
+      "Bash(git -C /opt/automateLinux log --oneline --all -- \"extraApps/loom/server/src/ScreenCapture*\")",
+      "Bash(wmctrl:*)",
+      "Bash(systemctl --user status:*)",
+      "Bash(timeout 8 /opt/automateLinux/extraApps/loom/native-client/build/loom-client:*)",
+      "Bash(# Test the server encoding directly - save a few frames to file timeout 3 gst-launch-1.0 pipewiresrc path=68 do-timestamp=true num-buffers=10 \\\\ ! video/x-raw ! videoconvert ! pngenc ! multifilesink location=/tmp/loom_test_%d.png 2>&1 || true ls -la /tmp/loom_test_*.png)",
+      "Bash(nc -u -w1 127.0.0.1 5001 sleep 3 kill $BG_PID ls -la /tmp/test_sw_decode.raw hexdump -C /tmp/test_sw_decode.raw)",
+      "Bash(make:*)"
     ]
   }
 }

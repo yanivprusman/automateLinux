@@ -62,16 +62,11 @@ verify_dependencies() {
     # Core packages needed to build and run the daemon
     CORE_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git curl xclip ethtool"
 
-    # Wake-on-LAN package: 'wol' on x86, 'wakeonlan' on ARM
-    ARCH=$(dpkg --print-architecture)
-    if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "i386" ]; then
-        CORE_PACKAGES="$CORE_PACKAGES wol"
-    else
-        CORE_PACKAGES="$CORE_PACKAGES wakeonlan"
-    fi
+    # Wake-on-LAN package (wakeonlan is universally available)
+    CORE_PACKAGES="$CORE_PACKAGES wakeonlan"
 
     # Extra packages for full desktop installation
-    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev code freerdp3-x11"
+    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev code freerdp3-x11 krb5-user"
 
     if [ "$MINIMAL_INSTALL" = true ]; then
         REQUIRED_PACKAGES="$CORE_PACKAGES"
@@ -100,7 +95,13 @@ verify_dependencies() {
         echo "Missing packages:$MISSING_PACKAGES"
         echo "Installing missing dependencies..."
         apt-get update
-        apt-get install -y $MISSING_PACKAGES
+        # Preconfigure krb5-user to avoid interactive prompts
+        if echo "$MISSING_PACKAGES" | grep -q "krb5-user"; then
+            echo "krb5-config krb5-config/default_realm string LOCAL" | debconf-set-selections
+            echo "krb5-config krb5-config/kerberos_servers string localhost" | debconf-set-selections
+            echo "krb5-config krb5-config/admin_server string localhost" | debconf-set-selections
+        fi
+        DEBIAN_FRONTEND=noninteractive apt-get install -y $MISSING_PACKAGES
     else
         echo "All dependencies determined to be installed."
     fi
@@ -114,6 +115,23 @@ verify_dependencies() {
         if systemctl list-unit-files | grep -q "^sshd.service"; then
              echo "Ensuring SSHD service is active..."
              systemctl enable --now sshd || true
+        fi
+
+        # Configure Kerberos for FreeRDP NLA authentication
+        if [ ! -f /etc/krb5.conf ] || ! grep -q "default_realm" /etc/krb5.conf 2>/dev/null; then
+            echo "Configuring Kerberos for RDP..."
+            cat > /etc/krb5.conf << 'KRBEOF'
+[libdefaults]
+    default_realm = LOCAL
+    dns_lookup_realm = false
+    dns_lookup_kdc = false
+
+[realms]
+    LOCAL = {
+        kdc = localhost
+        admin_server = localhost
+    }
+KRBEOF
         fi
     fi
 }

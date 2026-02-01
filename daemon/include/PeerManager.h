@@ -1,10 +1,12 @@
 #ifndef PEER_MANAGER_H
 #define PEER_MANAGER_H
 
+#include <atomic>
 #include <map>
 #include <mutex>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <thread>
 
 using json = nlohmann::json;
 using ordered_json = nlohmann::ordered_json;
@@ -38,6 +40,10 @@ public:
   int getLeaderSocket() const;
   bool connectToPeer(const std::string &peer_id, const std::string &ip);
 
+  // Reconnection loop (for workers)
+  void startReconnectLoop();
+  void stopReconnectLoop();
+
   // Peer tracking (for leader)
   void registerPeer(const std::string &peer_id, const std::string &ip,
                     const std::string &mac, const std::string &hostname,
@@ -69,6 +75,11 @@ private:
 
   std::map<std::string, PeerInfo> m_peers;  // For leader: tracks all workers
   mutable std::mutex m_peersMutex;
+
+  // Reconnection loop
+  std::thread m_reconnectThread;
+  std::atomic<bool> m_reconnectRunning{false};
+  void reconnectLoop();
 };
 
 #endif // PEER_MANAGER_H

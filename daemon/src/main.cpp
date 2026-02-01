@@ -31,6 +31,7 @@ std::ofstream g_logFile;
 // Signal handler for clean shutdown
 void signalHandler(int signum) {
   cout << "Interrupt signal (" << signum << ") received.\n";
+  PeerManager::getInstance().stopReconnectLoop();
   MySQLManager::stopMySQL();
   exit(signum);
 }
@@ -76,6 +77,8 @@ int main(int argc, char *argv[]) {
         } else {
           cerr << "Peer config restored: will retry leader connection" << endl;
         }
+        // Start background reconnect loop (handles disconnections and failed initial connects)
+        pm.startReconnectLoop();
       }
 
       // Ensure socket directory exists
@@ -107,6 +110,7 @@ int main(int argc, char *argv[]) {
       }
 
       daemon_loop();
+      pm.stopReconnectLoop();
       KeyboardManager::mapper
           .stop(); // Explicitly stop mapper to ungrab devices
       MySQLManager::stopMySQL();

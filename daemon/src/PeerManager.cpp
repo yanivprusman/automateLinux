@@ -3,10 +3,12 @@
 #include "DatabaseTableManagers.h"
 #include "Utils.h"
 #include <arpa/inet.h>
+#include <chrono>
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <thread>
 #include <unistd.h>
 
 using namespace std;
@@ -318,4 +320,48 @@ void PeerManager::saveConfig() {
     SettingsTable::setSetting("peer_id", m_peerId);
   if (!m_leaderAddress.empty())
     SettingsTable::setSetting("peer_leader_address", m_leaderAddress);
+}
+
+void PeerManager::startReconnectLoop() {
+  if (isLeader()) {
+    return; // Leaders don't need to reconnect
+  }
+  if (m_leaderAddress.empty()) {
+    return; // No leader configured
+  }
+  if (m_reconnectRunning.load()) {
+    return; // Already running
+  }
+
+  m_reconnectRunning.store(true);
+  m_reconnectThread = std::thread(&PeerManager::reconnectLoop, this);
+  logToFile("Started reconnect loop thread", LOG_CORE);
+}
+
+void PeerManager::stopReconnectLoop() {
+  m_reconnectRunning.store(false);
+  if (m_reconnectThread.joinable()) {
+    m_reconnectThread.join();
+  }
+  logToFile("Stopped reconnect loop thread", LOG_CORE);
+}
+
+void PeerManager::reconnectLoop() {
+  const int RECONNECT_INTERVAL_SECS = 15;
+
+  while (m_reconnectRunning.load()) {
+    if (!m_connectedToLeader) {
+      logToFile("Attempting to reconnect to leader at " + m_leaderAddress,
+                LOG_CORE);
+      if (connectToLeader()) {
+        logToFile("Reconnected to leader successfully", LOG_CORE);
+      }
+    }
+
+    // Sleep in small increments to allow quick shutdown
+    for (int i = 0; i < RECONNECT_INTERVAL_SECS && m_reconnectRunning.load();
+         i++) {
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+  }
 }

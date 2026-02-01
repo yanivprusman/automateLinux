@@ -346,6 +346,22 @@ export PATH=$PATH:/opt/automateLinux/symlinks
 EOF
 chmod 644 "$PROFILE_SCRIPT"
 
+# 9. Set up WireGuard and register with peer network
+if ip link show wg0 >/dev/null 2>&1; then
+    echo "WireGuard already configured, registering with peer network..."
+    sleep 1
+    "$INSTALL_DIR/daemon/daemon" registerWorker 2>/dev/null || echo "  Warning: Failed to register with leader (is VPS reachable?)"
+else
+    echo "Setting up WireGuard..."
+    PEER_NAME=$(hostname)
+    if "$INSTALL_DIR/daemon/scripts/setup_wireguard_peer.sh" --name "$PEER_NAME" 2>/dev/null; then
+        echo "WireGuard configured and peer registered as '$PEER_NAME'"
+    else
+        echo "  Warning: WireGuard setup failed (need SSH access to VPS?)"
+        echo "  To set up later: d setupWireGuardPeer --name $PEER_NAME"
+    fi
+fi
+
 echo "--------------------------------------------------------"
 echo "System-Wide Installation Complete!"
 echo "Installed to: $INSTALL_DIR"

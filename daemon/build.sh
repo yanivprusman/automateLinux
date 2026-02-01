@@ -38,6 +38,7 @@ fi
 
 if [ ! -d "build" ]; then
     mkdir -p build
+    chmod g+s build
 fi
 cd build
 cmake .. > /dev/null && \

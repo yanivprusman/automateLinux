@@ -91,6 +91,7 @@ d deletePort --key <app>                # Remove port entry
 | dashboard-dev | 3007 | Dashboard frontend development |
 | loom-server | 3500 | Loom WebSocket stream server |
 | dashboard-bridge | 3501 | Dashboard daemon bridge |
+| peer-socket | 3502 | Daemon peer-to-peer TCP socket (WireGuard) |
 
 ## Daemon Communication
 
@@ -195,13 +196,13 @@ The daemon supports distributed operation across multiple machines connected via
 │  10.0.0.4     │────▶│   10.0.0.1    │◀────│  10.0.0.2     │
 │  (Laptop)     │     │   (VPS)       │     │  (Desktop)    │
 └───────────────┘     └───────────────┘     └───────────────┘
-        TCP:3600              TCP:3600              TCP:3600
+        TCP:3502              TCP:3502              TCP:3502
 ```
 
 - **VPS (Leader)**: 10.0.0.1 (public: 31.133.102.195) - nginx proxy host, peer registry
 - **Desktop**: 10.0.0.2
 - **Laptop**: 10.0.0.4
-- **Port**: 3600 (peer TCP socket, bound to wg0 interface)
+- **Port**: 3502 (peer TCP socket, bound to wg0 interface)
 
 ### Setup
 

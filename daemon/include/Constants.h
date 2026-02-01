@@ -178,7 +178,7 @@
 #define PEER_ROLE_WORKER "worker"
 
 // Peer Networking Constants
-#define PEER_TCP_PORT 3600
+#define PEER_TCP_PORT 3502
 
 // WireGuard Setup Commands
 #define COMMAND_SETUP_WIREGUARD_PEER "setupWireGuardPeer"

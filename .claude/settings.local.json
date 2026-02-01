@@ -153,7 +153,14 @@
       "Bash(grdctl rdp set-credentials:*)",
       "Bash(git stash:*)",
       "Bash(git pull:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(./scripts/build-freerdp.sh:*)",
+      "Bash(~/Android/Sdk/cmdline-tools/*/bin/sdkmanager)",
+      "Bash(~/Android/Sdk/tools/bin/sdkmanager:*)",
+      "Bash(gradle wrapper:*)",
+      "Bash(export ANDROID_HOME=~/Android/Sdk)",
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(export JAVA_HOME=/opt/android-studio/jbr)"
     ]
   }
 }

@@ -82,13 +82,24 @@ verify_dependencies() {
     done
 
     # Set up VS Code repository for non-minimal installs
-    if [ "$MINIMAL_INSTALL" = false ] && [ ! -f /etc/apt/sources.list.d/vscode.list ]; then
-        echo "Setting up VS Code repository..."
-        apt-get install -y wget gpg
-        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/packages.microsoft.gpg
-        install -D -o root -g root -m 644 /tmp/packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
-        echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
-        rm -f /tmp/packages.microsoft.gpg
+    if [ "$MINIMAL_INSTALL" = false ]; then
+        # Count how many source files reference VS Code repo
+        VSCODE_SOURCES=$(grep -rl "packages.microsoft.com/repos/code" /etc/apt/sources.list.d/ 2>/dev/null | wc -l)
+
+        if [ "$VSCODE_SOURCES" -gt 1 ]; then
+            # Multiple sources = conflict. Remove ours if it exists, keep the other.
+            echo "Detected conflicting VS Code repository sources, cleaning up..."
+            rm -f /etc/apt/sources.list.d/vscode.list
+        elif [ "$VSCODE_SOURCES" -eq 0 ]; then
+            # No VS Code repo configured, add ours
+            echo "Setting up VS Code repository..."
+            apt-get install -y wget gpg
+            wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /tmp/packages.microsoft.gpg
+            install -D -o root -g root -m 644 /tmp/packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+            echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list
+            rm -f /tmp/packages.microsoft.gpg
+        fi
+        # If exactly 1 source exists, it's already configured correctly - do nothing
     fi
 
     if [ -n "$MISSING_PACKAGES" ]; then

@@ -60,7 +60,15 @@ verify_dependencies() {
     echo "Checking build dependencies..."
 
     # Core packages needed to build and run the daemon
-    CORE_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git curl xclip ethtool wol"
+    CORE_PACKAGES="cmake make g++ libcurl4-openssl-dev pkg-config libmysqlcppconn-dev libboost-system-dev nlohmann-json3-dev libjsoncpp-dev libevdev-dev libsystemd-dev mysql-server git curl xclip ethtool"
+
+    # Wake-on-LAN package: 'wol' on x86, 'wakeonlan' on ARM
+    ARCH=$(dpkg --print-architecture)
+    if [ "$ARCH" = "amd64" ] || [ "$ARCH" = "i386" ]; then
+        CORE_PACKAGES="$CORE_PACKAGES wol"
+    else
+        CORE_PACKAGES="$CORE_PACKAGES wakeonlan"
+    fi
 
     # Extra packages for full desktop installation
     EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev code freerdp3-x11"

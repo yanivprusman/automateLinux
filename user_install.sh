@@ -213,7 +213,62 @@ else
     echo "Skipping autostart configuration (minimal install)..."
 fi
 
-# 7. Configure SSH Keys
+# 7. Configure GNOME Remote Desktop (RDP)
+if [ "$MINIMAL_INSTALL" = false ]; then
+    echo "Configuring GNOME Remote Desktop..."
+    GRD_DIR="$USER_HOME/.local/share/gnome-remote-desktop"
+    GRD_KEY="$GRD_DIR/rdp-tls.key"
+    GRD_CERT="$GRD_DIR/rdp-tls.crt"
+
+    # Check if gnome-remote-desktop is available
+    if command -v grdctl >/dev/null 2>&1; then
+        mkdir -p "$GRD_DIR"
+
+        # Generate TLS certificates if they don't exist
+        if [ ! -f "$GRD_KEY" ] || [ ! -f "$GRD_CERT" ]; then
+            echo "  Generating TLS certificates..."
+            openssl req -x509 -newkey rsa:2048 \
+                -keyout "$GRD_KEY" \
+                -out "$GRD_CERT" \
+                -days 365 -nodes -subj "/CN=localhost" 2>/dev/null
+            chmod 600 "$GRD_KEY"
+            echo "  TLS certificates generated."
+        else
+            echo "  TLS certificates already exist."
+        fi
+
+        # Configure RDP (use default password, user should change it)
+        echo "  Enabling RDP..."
+        grdctl rdp enable 2>/dev/null || true
+        grdctl rdp set-tls-key "$GRD_KEY" 2>/dev/null || true
+        grdctl rdp set-tls-cert "$GRD_CERT" 2>/dev/null || true
+        grdctl rdp disable-view-only 2>/dev/null || true
+
+        # Check if credentials are set
+        if ! grdctl status 2>/dev/null | grep -q "Username: (hidden)"; then
+            echo "  Setting default RDP credentials (change with: grdctl rdp set-credentials USER PASS)"
+            grdctl rdp set-credentials "$TARGET_USER" "changeme123" 2>/dev/null || true
+        fi
+
+        # Disable xrdp if it exists (it conflicts on port 3389)
+        if systemctl is-active --quiet xrdp 2>/dev/null; then
+            echo "  Disabling xrdp (conflicts with gnome-remote-desktop on port 3389)..."
+            sudo systemctl stop xrdp xrdp-sesman 2>/dev/null || true
+            sudo systemctl disable xrdp xrdp-sesman 2>/dev/null || true
+        fi
+
+        # Restart gnome-remote-desktop to apply changes
+        systemctl --user restart gnome-remote-desktop 2>/dev/null || true
+
+        echo "  RDP enabled on port 3389. Connect with: xfreerdp3 /v:<IP>:3389 /u:$TARGET_USER /p:<password>"
+    else
+        echo "  grdctl not found, skipping RDP configuration."
+    fi
+else
+    echo "Skipping GNOME Remote Desktop (minimal install)..."
+fi
+
+# 8. Configure SSH Keys
 echo "Configuring SSH keys..."
 SSH_KEY="$USER_HOME/.ssh/id_ed25519"
 if [ ! -f "$SSH_KEY" ]; then

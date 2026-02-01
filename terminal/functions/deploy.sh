@@ -3,7 +3,7 @@ deploy() {
     
     if [ -z "$app_name" ]; then
         echo "Usage: deploy <app_name>"
-        echo "Supported apps: cad, pt (publicTransportation), loom"
+        echo "Supported apps: cad, pt (publicTransportation)"
         return 1
     fi
 
@@ -67,7 +67,7 @@ deploy() {
 
 _deploy_completions() {
     local cur="${COMP_WORDS[COMP_CWORD]}"
-    local apps="cad pt loom"
+    local apps="cad pt"
     COMPREPLY=($(compgen -W "$apps" -- "$cur"))
 }
 

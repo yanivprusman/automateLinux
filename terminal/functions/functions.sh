@@ -21,7 +21,6 @@
 . $(theRealPath prompt.sh)
 . $(theRealPath tree.sh)
 . $(theRealPath user.sh)
-. $(theRealPath loom.sh)
 . $(theRealPath cad.sh)
 . $(theRealPath windowSwitcher.sh)
 . $(theRealPath to.sh)

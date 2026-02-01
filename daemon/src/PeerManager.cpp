@@ -11,8 +11,9 @@
 
 using namespace std;
 
-// Forward declaration - implemented in DaemonServer.cpp
+// Forward declarations - implemented in DaemonServer.cpp
 extern string getWgInterfaceIP();
+extern string getPrimaryMacAddress();
 
 PeerManager &PeerManager::getInstance() {
   static PeerManager instance;
@@ -104,6 +105,7 @@ bool PeerManager::connectToLeader() {
   regMsg["command"] = COMMAND_REGISTER_PEER;
   regMsg["peer_id"] = m_peerId;
   regMsg["ip"] = getWgInterfaceIP();
+  regMsg["mac"] = getPrimaryMacAddress();
 
   // Get hostname
   char hostname[256];

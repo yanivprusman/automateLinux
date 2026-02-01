@@ -13,8 +13,9 @@
 using namespace std;
 using ordered_json = nlohmann::ordered_json;
 
-// Forward declaration - implemented in DaemonServer.cpp
+// Forward declarations - implemented in DaemonServer.cpp
 extern string getWgInterfaceIP();
+extern string getPrimaryMacAddress();
 
 // External client socket - set by mainCommand before calling handlers
 extern int g_clientSocket;
@@ -81,12 +82,13 @@ CmdResult handleSetPeerConfig(const json &command) {
   // If configured as leader, register self in database
   if (pm.isLeader() && !pm.getPeerId().empty()) {
     string my_ip = getWgInterfaceIP();
+    string my_mac = getPrimaryMacAddress();
     char hostname[256];
     string my_hostname = "";
     if (gethostname(hostname, sizeof(hostname)) == 0) {
       my_hostname = string(hostname);
     }
-    PeerTable::upsertPeer(pm.getPeerId(), my_ip, "", my_hostname, true);
+    PeerTable::upsertPeer(pm.getPeerId(), my_ip, my_mac, my_hostname, true);
   }
 
   // If configured as worker and leader address is set, try to connect
@@ -519,4 +521,77 @@ CmdResult handleRegisterWorker(const json &) {
     return CmdResult(0, "Registered as worker '" + peer_id + "', failed to connect to leader at " +
                             string(WG_LEADER_IP) + " (will retry on next command)\n");
   }
+}
+
+CmdResult handleUpdatePeerMac(const json &) {
+  PeerManager &pm = PeerManager::getInstance();
+  string peer_id = pm.getPeerId();
+
+  if (peer_id.empty()) {
+    return CmdResult(1, "Peer not configured. Run registerWorker first.\n");
+  }
+
+  string mac = getPrimaryMacAddress();
+  if (mac.empty()) {
+    return CmdResult(1, "Failed to detect MAC address\n");
+  }
+
+  // If we're the leader, update directly in database
+  if (pm.isLeader()) {
+    PeerRecord peer = PeerTable::getPeer(peer_id);
+    if (peer.peer_id.empty()) {
+      return CmdResult(1, "Peer not found in database: " + peer_id + "\n");
+    }
+    PeerTable::upsertPeer(peer_id, peer.ip_address, mac, peer.hostname, peer.is_online);
+    return CmdResult(0, "Updated MAC for " + peer_id + ": " + mac + "\n");
+  }
+
+  // Worker: send update to leader
+  if (!pm.isConnectedToLeader()) {
+    // Try to connect
+    if (!pm.connectToLeader()) {
+      return CmdResult(1, "Not connected to leader\n");
+    }
+  }
+
+  json updateMsg;
+  updateMsg["command"] = "updatePeerMacInternal";
+  updateMsg["peer_id"] = peer_id;
+  updateMsg["mac"] = mac;
+
+  if (!pm.sendToLeader(updateMsg)) {
+    return CmdResult(1, "Failed to send MAC update to leader\n");
+  }
+
+  // Read response
+  char buffer[1024];
+  memset(buffer, 0, sizeof(buffer));
+  int leaderFd = pm.getLeaderSocket();
+  ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
+  if (n > 0) {
+    return CmdResult(0, string(buffer));
+  }
+
+  return CmdResult(0, "Sent MAC update to leader: " + mac + "\n");
+}
+
+CmdResult handleUpdatePeerMacInternal(const json &command) {
+  // This is called on the leader when a worker sends their MAC update
+  PeerManager &pm = PeerManager::getInstance();
+
+  if (!pm.isLeader()) {
+    return CmdResult(1, "This command should only be received by the leader\n");
+  }
+
+  string peer_id = command["peer_id"].get<string>();
+  string mac = command["mac"].get<string>();
+
+  PeerRecord peer = PeerTable::getPeer(peer_id);
+  if (peer.peer_id.empty()) {
+    return CmdResult(1, "Peer not found: " + peer_id + "\n");
+  }
+
+  PeerTable::upsertPeer(peer_id, peer.ip_address, mac, peer.hostname, peer.is_online);
+  logToFile("Updated MAC for peer " + peer_id + ": " + mac, LOG_CORE);
+  return CmdResult(0, "Updated MAC for " + peer_id + ": " + mac + "\n");
 }

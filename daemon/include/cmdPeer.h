@@ -21,5 +21,7 @@ CmdResult handleRemoteBd(const json &command);
 CmdResult handleRemoteDeployDaemon(const json &command);
 CmdResult handleDbSanityCheck(const json &command);
 CmdResult handleRegisterWorker(const json &command);
+CmdResult handleUpdatePeerMac(const json &command);
+CmdResult handleUpdatePeerMacInternal(const json &command);
 
 #endif // CMD_PEER_H

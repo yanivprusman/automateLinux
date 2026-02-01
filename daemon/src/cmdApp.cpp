@@ -13,9 +13,6 @@ using namespace std;
 
 // Static app configurations - hardcoded for now, can move to DB later
 static const vector<AppConfig> APP_CONFIGS = {
-    {"loom", "Loom Screen Streaming", true, "loom-server-{mode}",
-     "loom-client-{mode}", "loom", "loom-server",
-     "/opt/automateLinux/extraApps/loom", "", "server", "client"},
     {"cad", "CAD Application", false, "", "cad-{mode}", "cad", "",
      "/opt/automateLinux/extraApps/cad", "/opt/prod/cad", "", "web"},
     {"pt", "Public Transportation", false, "", "pt-{mode}", "pt", "",
@@ -755,7 +752,7 @@ CmdResult handleDisableApp(const json &command) {
 // ============================================================================
 
 // Helper: Extract app name from repo URL
-// e.g., https://github.com/user/loom.git -> loom
+// e.g., https://github.com/user/myapp.git -> myapp
 static string extractAppNameFromUrl(const string &repoUrl) {
   // Find last '/' and extract everything after it
   size_t lastSlash = repoUrl.rfind('/');
@@ -1284,89 +1281,4 @@ CmdResult handleListExtraApps(const json &) {
   }
 
   return CmdResult(0, ss.str());
-}
-
-CmdResult handleRunLoomClient(const json &command) {
-  string peer = command.contains(COMMAND_ARG_PEER)
-                    ? command[COMMAND_ARG_PEER].get<string>()
-                    : "local";
-
-  // Path to the native client binary
-  string clientPath = "/opt/automateLinux/extraApps/loom/native-client/build/loom-client";
-
-  // Check if binary exists
-  string checkCmd = "/usr/bin/test -x " + clientPath;
-  if (std::system(checkCmd.c_str()) != 0) {
-    return CmdResult(1, "Loom native client not found. Build it first with:\n"
-                        "  d buildApp --app loom --component native-client\n");
-  }
-
-  // Get the logged-in user (first user with an active graphical session)
-  string getUserCmd = "loginctl list-sessions --no-legend | awk '{print $3}' | head -1";
-  string user = executeCommand(getUserCmd.c_str());
-  user.erase(user.find_last_not_of(" \n\r\t") + 1);
-  if (user.empty()) {
-    user = "yaniv"; // Fallback
-  }
-
-  // Get user's UID for XDG_RUNTIME_DIR
-  string getUidCmd = "id -u " + user;
-  string uid = executeCommand(getUidCmd.c_str());
-  uid.erase(uid.find_last_not_of(" \n\r\t") + 1);
-
-  // Stop any existing loom-client service first
-  string stopCmd = "sudo -u " + user + " XDG_RUNTIME_DIR=/run/user/" + uid +
-                   " systemctl --user stop loom-client.service 2>/dev/null || true";
-  std::system(stopCmd.c_str());
-
-  // Launch using systemd-run --user to get proper Wayland/PipeWire access
-  string launchCmd = "sudo -u " + user + " XDG_RUNTIME_DIR=/run/user/" + uid +
-                     " systemd-run --user --unit=loom-client " +
-                     clientPath + " --peer " + peer + " 2>&1";
-
-  string result = executeCommand(launchCmd.c_str());
-
-  return CmdResult(0, "Launched loom native client connecting to: " + peer + "\n" +
-                      result + "\n");
-}
-
-CmdResult handleRunLoomServer(const json &) {
-  // Path to the RTP server binary
-  string serverPath = "/opt/automateLinux/extraApps/loom/server/build/loom-rtp";
-
-  // Check if binary exists
-  string checkCmd = "/usr/bin/test -x " + serverPath;
-  if (std::system(checkCmd.c_str()) != 0) {
-    return CmdResult(1, "Loom RTP server not found. Build it first with:\n"
-                        "  d buildApp --app loom --mode dev\n");
-  }
-
-  // Get the logged-in user (first user with an active graphical session)
-  string getUserCmd = "loginctl list-sessions --no-legend | awk '{print $3}' | head -1";
-  string user = executeCommand(getUserCmd.c_str());
-  user.erase(user.find_last_not_of(" \n\r\t") + 1);
-  if (user.empty()) {
-    user = "yaniv"; // Fallback
-  }
-
-  // Get user's UID for XDG_RUNTIME_DIR
-  string getUidCmd = "id -u " + user;
-  string uid = executeCommand(getUidCmd.c_str());
-  uid.erase(uid.find_last_not_of(" \n\r\t") + 1);
-
-  // Stop any existing loom-rtp service first
-  string stopCmd = "sudo -u " + user + " XDG_RUNTIME_DIR=/run/user/" + uid +
-                   " systemctl --user stop loom-rtp.service 2>/dev/null || true";
-  std::system(stopCmd.c_str());
-
-  // Launch using systemd-run --user to get proper PipeWire access
-  string launchCmd = "sudo -u " + user + " XDG_RUNTIME_DIR=/run/user/" + uid +
-                     " systemd-run --user --unit=loom-rtp " + serverPath + " 2>&1";
-
-  string result = executeCommand(launchCmd.c_str());
-
-  return CmdResult(0, "Loom RTP server started.\n"
-                      "Waiting for client connections on port 5001\n"
-                      "Video will stream on port 5000\n" +
-                      result + "\n");
 }

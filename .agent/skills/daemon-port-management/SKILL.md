@@ -67,10 +67,8 @@ if (!port.empty()) {
 | cad-dev | 3001 | CAD app development |
 | pt-prod | 3002 | Public Transportation production |
 | pt-dev | 3003 | Public Transportation development |
-| loom-dev | 3005 | Loom client (dev only) |
 | dashboard-prod | 3006 | Dashboard frontend production |
 | dashboard-dev | 3007 | Dashboard frontend development |
-| loom-server | 3500 | Loom WebSocket stream server |
 | dashboard-bridge | 3501 | Dashboard daemon bridge |
 
 > [!NOTE]

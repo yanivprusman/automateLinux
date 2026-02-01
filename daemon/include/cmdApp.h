@@ -15,10 +15,10 @@ struct AppConfig {
   bool hasServerComponent;
   std::string serverServiceTemplate; // e.g., "{app}-server-{mode}"
   std::string clientServiceTemplate; // e.g., "{app}-client-{mode}"
-  std::string portKeyClient;         // e.g., "loom" -> port_loom-dev
-  std::string portKeyServer;         // e.g., "loom-server" -> port_loom-server
-  std::string devPath;               // e.g., "/opt/automateLinux/extraApps/loom"
-  std::string prodPath;              // e.g., "/opt/prod/loom"
+  std::string portKeyClient;         // e.g., "cad" -> port_cad-dev
+  std::string portKeyServer;         // e.g., "cad-server" -> port_cad-server
+  std::string devPath;               // e.g., "/opt/automateLinux/extraApps/cad"
+  std::string prodPath;              // e.g., "/opt/prod/cad"
   std::string serverBuildSubdir;     // e.g., "server" (relative to app path)
   std::string clientSubdir;          // e.g., "client" (relative to app path)
 };
@@ -39,8 +39,6 @@ CmdResult handleListExtraApps(const json &command);
 CmdResult handleDeployToProd(const json &command);
 CmdResult handleProdStatus(const json &command);
 CmdResult handleCleanProd(const json &command);
-CmdResult handleRunLoomClient(const json &command);
-CmdResult handleRunLoomServer(const json &command);
 
 // App Manager namespace for internal utilities
 namespace AppManager {
@@ -64,7 +62,7 @@ void killProcessOnPort(int port);
 AppConfig getAppConfig(const std::string &appId);
 std::vector<AppConfig> getAllApps();
 
-// Service name resolution: "{app}-server-{mode}" -> "loom-server-dev"
+// Service name resolution: "{app}-server-{mode}" -> "cad-server-dev"
 std::string resolveServiceName(const std::string &templateStr,
                                const std::string &appId,
                                const std::string &mode);

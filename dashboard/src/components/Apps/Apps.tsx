@@ -27,13 +27,6 @@ const Apps = ({ selectedPeer }: Props) => {
 
     const launchers: AppLauncher[] = [
         {
-            id: 'loom',
-            label: 'Loom',
-            icon: '📹',
-            description: `View ${selectedPeer.name}'s screen`,
-            url: `http://${selectedPeer.ip}:3005`,
-        },
-        {
             id: 'pt',
             label: 'Public Transport',
             icon: '🚌',

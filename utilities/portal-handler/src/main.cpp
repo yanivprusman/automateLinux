@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
       // Keep the process alive?
       // The FD might be closed if we exit?
-      // Yes, checking the Loom implementation, it holds the FD.
+      // The caller is expected to hold the FD.
       // If this is a one-shot CLI tool, handing off the FD is tricky via
       // stdout. Usually, this tool would be subprocessed and the parent would
       // inherit the FD or receive it via unix socket. BUT, for simple testing
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
       // For now, let's keep it running until a signal or input?
       // "write a dedicated XDG Desktop Portal handleing app"
-      // Loom's PortalManager is inside the server which runs continuously.
+      // A typical PortalManager is inside a server that runs continuously.
 
       // If other apps use this, they will likely spawn it and read the output.
       // If this app exits, the FD is closed.

@@ -12,7 +12,7 @@ automateLinux is a suite of tools for personalizing and automating a Linux deskt
 - **GNOME Extensions** (`gnomeExtensions/`): Desktop integration - status menu for daemon control, active window tracking.
 - **VS Code Extensions** (`visualStudioCodeExtensions/`): Editor integrations for daemon monitoring, git workflows, and log viewing.
 - **Utilities** (`utilities/`): Standalone tools - termcontrol, sendKeysUInput, lastChanged, cleanBetween, emergencyRestore.sh.
-- **Extra Apps** (`extraApps/`): Standalone applications housed directly in this repo (cad, loom, publicTransportation).
+- **Extra Apps** (`extraApps/`): Standalone applications housed directly in this repo (cad, publicTransportation).
   > [!IMPORTANT]
   > **AI AGENT ACCESS**: To avoid security prompts/permission gates when accessing `extraApps/`, ALWAYS call tools (like `grep` or `find`) from the **root project directory** with path filters. Nested `.git` folders in these directories are part of the trusted workspace and should NOT be treated as external project boundaries.
 
@@ -30,15 +30,10 @@ node dashboard/bridge.cjs &                      # Start bridge (port 3501)
 cd dashboard && npm run dev -- --port 3007       # Start frontend (port 3007)
 ```
 
-### Extra Apps (CAD, Loom, PT)
+### Extra Apps (CAD, PT)
 ```bash
 # CAD Frontend
 cd extraApps/cad/web && npm run dev -- -p $(d getPort --key cad-dev)
-
-# Loom
-d restartLoom                    # Starts server + client + auto-selects screen
-d stopLoom
-d isLoomActive
 ```
 
 ## Port Management
@@ -53,11 +48,8 @@ The daemon is the central authority for port assignments.
 | pt-prod | 3002 | Public Transportation production |
 | pt-dev | 3003 | Public Transportation development |
 | pt-proxy | 3502 | Public Transportation MOT SSH Proxy |
-| loom-dev | 3005 | Loom client (dev only) |
 | dashboard-prod | 3006 | Dashboard frontend production |
 | dashboard-dev | 3007 | Dashboard frontend development |
-| loom-server | 3500 | Loom WebSocket stream server |
-| loom-server-dev | 3505 | Loom WebSocket stream server (Dev) |
 | dashboard-bridge | 3501 | Dashboard daemon bridge |
 
 ## Daemon Communication
@@ -72,7 +64,6 @@ d listPorts
 d enableKeyboard / disableKeyboard
 d simulateInput --string "text"
 d simulateInput --type 1 --code 30 --value 1   # Raw key event (EV_KEY, KEY_A, press)
-d restartLoom / stopLoom / isLoomActive
 d publicTransportationOpenApp
 d registerLogListener                           # For live log streaming
 ```
@@ -90,7 +81,7 @@ graph TD
     Daemon -->|Native Messaging| Chrome["Chrome Extension"]
     Daemon -->|UNIX Socket| GNOME["GNOME Extensions"]
     Daemon -->|UNIX Socket| VSCode["VS Code Extensions"]
-    Daemon -->|Direct Interaction| Extra["Extra Apps (cad/loom)"]
+    Daemon -->|Direct Interaction| Extra["Extra Apps (cad/pt)"]
 
     style Daemon fill:#f9f,stroke:#333,stroke-width:4px
 ```
@@ -105,7 +96,6 @@ graph TD
 
 Some applications within the `extraApps/` directory have their own dedicated documentation:
 - **CAD**: [GEMINI.md](file:///opt/automateLinux/extraApps/cad/GEMINI.md)
-- **Loom**: [GEMINI.md](file:///opt/automateLinux/extraApps/loom/GEMINI.md)
 
 ## Environment Variables
 

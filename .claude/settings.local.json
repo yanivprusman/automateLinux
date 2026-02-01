@@ -150,7 +150,10 @@
       "Bash(timeout 2 tcpdump:*)",
       "Bash(timeout 6 /opt/automateLinux/extraApps/loom/native-client/build/loom-client:*)",
       "Bash(grdctl rdp:*)",
-      "Bash(grdctl rdp set-credentials:*)"
+      "Bash(grdctl rdp set-credentials:*)",
+      "Bash(git stash:*)",
+      "Bash(git pull:*)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

@@ -36,8 +36,7 @@ This is the preferred method for robust, invisible automation. It uses the DBus 
 This is the fallback method when native tokens act up or for applications that don't support them natively. It involves visually identifying the window and simulating user input to select the screen.
 
 **Key Components:**
--   `utilities/autoSelectLoomScreen.py` (Python script)
--   `terminal/functions/loom.sh` -> `forceLoomShare` (Bash function)
+-   Custom scripts that use daemon commands for input simulation
 
 **Mechanism:**
 1.  **Detection**: Poll `listWindows` (daemon command) for a window titled "Share Screen" or with class `xdg-desktop-portal`.
@@ -49,21 +48,10 @@ This is the fallback method when native tokens act up or for applications that d
 
 ## Usage
 
-### Using the Python Automator
-The Python script is the most robust implementation of the simulate input method.
-
-```bash
-# Run in background to catch the popup when it appears
-python3 utilities/autoSelectLoomScreen.py &
-```
-
-### Using the Bash Function
-Quick manual trigger from the terminal.
-
-```bash
-source terminal/functions/loom.sh
-forceLoomShare
-```
+The automation can be triggered by scripts that:
+1. Poll for the "Share Screen" window using `d listWindows`
+2. Focus it with `d activateWindow`
+3. Send keystrokes with `d simulateInput`
 
 ## Troubleshooting
 

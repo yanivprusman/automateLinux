@@ -15,8 +15,9 @@
 using namespace std;
 using json = nlohmann::json;
 
-// Forward declaration - implemented in DaemonServer.cpp
+// Forward declarations - implemented in DaemonServer.cpp
 extern string getWgInterfaceIP();
+extern string getPrimaryMacAddress();
 
 string socketPath;
 Directories actualDirectories;
@@ -59,12 +60,13 @@ int main(int argc, char *argv[]) {
       if (pm.isLeader() && !pm.getPeerId().empty()) {
         // Leader self-registers in database
         string my_ip = getWgInterfaceIP();
+        string my_mac = getPrimaryMacAddress();
         char hostname[256];
         string my_hostname = "";
         if (gethostname(hostname, sizeof(hostname)) == 0) {
           my_hostname = string(hostname);
         }
-        PeerTable::upsertPeer(pm.getPeerId(), my_ip, "", my_hostname, true);
+        PeerTable::upsertPeer(pm.getPeerId(), my_ip, my_mac, my_hostname, true);
         cerr << "Peer config restored: leader " << pm.getPeerId() << endl;
       } else if (!pm.getLeaderAddress().empty()) {
         // Worker connects to leader

@@ -1,6 +1,6 @@
 ---
 name: extra-apps
-description: Instructions for finding and managing extra/external applications like CAD, Loom, and Public Transportation.
+description: Instructions for finding and managing extra/external applications like CAD and Public Transportation.
 ---
 
 # Extra Applications
@@ -11,7 +11,6 @@ The AutomateLinux ecosystem integrates several external applications stored dire
 
 | App ID | Display Name | Has Server | Dev Path | Prod Path |
 |--------|--------------|------------|----------|-----------|
-| `loom` | Loom Screen Streaming | Yes | `/opt/automateLinux/extraApps/loom` | N/A (dev only) |
 | `cad` | CAD Application | No | `/opt/automateLinux/extraApps/cad` | `/opt/prod/cad` |
 | `pt` | Public Transportation | No | `/opt/automateLinux/extraApps/publicTransportation` | `/opt/prod/publicTransportation` |
 
@@ -22,7 +21,7 @@ The AutomateLinux ecosystem integrates several external applications stored dire
 ```bash
 d listApps                        # List all registered apps
 d appStatus                       # Show status of all apps
-d appStatus --app loom            # Show status of specific app
+d appStatus --app cad             # Show status of specific app
 ```
 
 ### Start/Stop/Restart
@@ -44,13 +43,11 @@ d disableApp --app <name> --mode <prod|dev|all>  # Disable services from boot
 
 ```bash
 # Build C++ server components (cmake && make)
-d buildApp --app loom --mode dev
 d buildApp --app cad --mode prod
 
 # Install npm dependencies
-d installAppDeps --app loom --mode dev                       # Install all components
-d installAppDeps --app loom --mode dev --component client    # Client only
-d installAppDeps --app loom --mode dev --component server    # Server only
+d installAppDeps --app cad --mode dev                        # Install all components
+d installAppDeps --app cad --mode dev --component client     # Client only
 ```
 
 ## Port Management
@@ -65,14 +62,12 @@ App ports are managed centrally by the daemon.
 | **CAD** | Dev | 3001 | CAD frontend development |
 | **PT** | Prod | 3002 | Public Transportation production |
 | **PT** | Dev | 3003 | Public Transportation development |
-| **Loom** | Dev Client | 3005 | Loom web viewer (dev only) |
-| **Loom** | Server | 3500 | Loom GStreamer server (WebSocket) |
 
 ### Updating Ports
 
 ```bash
 d setPort --key pt-dev --value 3005   # Update port assignment
-d getPort --key loom-dev              # Query current port
+d getPort --key cad-dev               # Query current port
 d listPorts                           # List all port mappings
 ```
 
@@ -82,7 +77,7 @@ Production deployments are git worktrees located at `/opt/prod/<appName>/`:
 
 ```bash
 ls /opt/prod/
-# loom/  cad/  publicTransportation/
+# cad/  publicTransportation/
 ```
 
 To update a production deployment:
@@ -96,13 +91,6 @@ d restartApp --app cad --mode prod         # Restart services
 ```
 
 ## Starting Applications
-
-### Loom (dev only)
-```bash
-d restartApp --app loom --mode dev    # Or use shortcut: d restartLoom
-d stopApp --app loom --mode dev       # Or use shortcut: d stopLoom
-d isLoomActive                        # Check port status
-```
 
 ### CAD Dev Server
 ```bash

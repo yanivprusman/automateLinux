@@ -84,7 +84,7 @@ export -f shutDown
 ### Example: Daemon Command Launcher
 
 ```ini
-Exec=bash -c "source /opt/automateLinux/terminal/bashrc && d restartLoom"
+Exec=bash -c "source /opt/automateLinux/terminal/bashrc && d publicTransportationOpenApp"
 ```
 
 ## Creating a New Launcher
@@ -161,7 +161,7 @@ Exec=bash -c "source /opt/automateLinux/terminal/bashrc && d ping"
 
 ### Terminal Function (Multiple Commands)
 ```ini
-Exec=bash -c "source /opt/automateLinux/terminal/bashrc && d restartLoom && notify-send 'Loom restarted'"
+Exec=bash -c "source /opt/automateLinux/terminal/bashrc && d ping && notify-send 'Daemon pinged'"
 ```
 
 ### With Terminal Output (set Terminal=true)

@@ -59,7 +59,7 @@ d send myNewAction --myParam "hello"
 
 ## Alternative: Separate Command Files
 
-For related groups of commands, you can create separate files (e.g., `cmdApp.cpp`, `cmdLoom.cpp`):
+For related groups of commands, you can create separate files (e.g., `cmdApp.cpp`, `cmdPeer.cpp`):
 
 1. Create header `daemon/include/cmdMyFeature.h` with handler declarations
 2. Create implementation `daemon/src/cmdMyFeature.cpp`
@@ -71,9 +71,9 @@ Example structure:
 daemon/
 ├── include/
 │   ├── cmdApp.h          # App management declarations
-│   └── cmdLoom.h         # Loom-specific declarations
+│   └── cmdPeer.h         # Peer networking declarations
 └── src/
     ├── cmdApp.cpp        # App lifecycle: start/stop/restart/build
-    ├── cmdLoom.cpp       # Loom shortcuts (redirect to cmdApp)
+    ├── cmdPeer.cpp       # Peer networking commands
     └── mainCommand.cpp   # Command dispatcher
 ```

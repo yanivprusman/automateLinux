@@ -10,7 +10,6 @@
 #include "cmdDatabase.h"
 #include "cmdInput.h"
 #include "cmdLogging.h"
-#include "cmdLoom.h"
 #include "cmdPeer.h"
 #include "cmdPort.h"
 #include "cmdSystem.h"
@@ -170,26 +169,6 @@ const CommandSignature COMMAND_REGISTRY[] = {
     CommandSignature(COMMAND_DELETE_PORT, {COMMAND_ARG_KEY},
                      "Delete a port assignment"),
 
-    // Loom Commands
-    CommandSignature(COMMAND_IS_LOOM_ACTIVE, {},
-                     "Check if Loom screen streaming is active"),
-    CommandSignature(COMMAND_RESTART_LOOM, {},
-                     "Start/restart Loom streaming server and client"),
-    CommandSignature(COMMAND_STOP_LOOM, {},
-                     "Stop Loom streaming"),
-    CommandSignature(COMMAND_LOOM_CONNECT, {},
-                     "Connect to peer's loom stream", "--peer <desktop|vps|laptop>"),
-    CommandSignature(COMMAND_GENERATE_LOOM_TOKEN, {},
-                     "Generate a new Loom authentication token"),
-    CommandSignature(COMMAND_REVOKE_LOOM_TOKENS, {},
-                     "Revoke all Loom authentication tokens"),
-    CommandSignature(COMMAND_RESET_CLOCK, {},
-                     "Reset Loom frame clock"),
-    CommandSignature(COMMAND_RUN_LOOM_CLIENT, {},
-                     "Launch Loom native client GUI", "--peer <local|desktop|vps|laptop>"),
-    CommandSignature(COMMAND_RUN_LOOM_SERVER, {},
-                     "Launch Loom RTP server (waits for client connections)"),
-
     // Public Transportation Commands
     CommandSignature(COMMAND_PUBLIC_TRANSPORTATION_START_PROXY, {},
                      "Start public transportation proxy server"),
@@ -268,6 +247,10 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Check and fix worker database (delete leader-only data)"),
     CommandSignature(COMMAND_REGISTER_WORKER, {},
                      "Register this machine as a worker (uses hostname, connects to VPS)"),
+    CommandSignature(COMMAND_UPDATE_PEER_MAC, {},
+                     "Update this peer's MAC address in the leader's database"),
+    CommandSignature("updatePeerMacInternal", {},
+                     "(internal) Receives MAC update from worker"),
 
     // WireGuard Setup Commands
     CommandSignature(COMMAND_SETUP_WIREGUARD_PEER, {COMMAND_ARG_NAME},
@@ -375,17 +358,6 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_PUBLIC_TRANSPORTATION_START_PROXY, handlePublicTransportationStartProxy},
     {COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, handlePublicTransportationOpenApp},
 
-    // Loom commands
-    {COMMAND_RESET_CLOCK, handleResetClock},
-    {COMMAND_IS_LOOM_ACTIVE, handleIsLoomActive},
-    {COMMAND_RESTART_LOOM, handleRestartLoom},
-    {COMMAND_STOP_LOOM, handleStopLoom},
-    {COMMAND_LOOM_CONNECT, handleLoomConnect},
-    {COMMAND_GENERATE_LOOM_TOKEN, handleGenerateLoomToken},
-    {COMMAND_REVOKE_LOOM_TOKENS, handleRevokeLoomTokens},
-    {COMMAND_RUN_LOOM_CLIENT, handleRunLoomClient},
-    {COMMAND_RUN_LOOM_SERVER, handleRunLoomServer},
-
     // App management commands
     {COMMAND_START_APP, handleStartApp},
     {COMMAND_STOP_APP, handleStopApp},
@@ -417,6 +389,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_REMOTE_DEPLOY_DAEMON, handleRemoteDeployDaemon},
     {COMMAND_DB_SANITY_CHECK, handleDbSanityCheck},
     {COMMAND_REGISTER_WORKER, handleRegisterWorker},
+    {COMMAND_UPDATE_PEER_MAC, handleUpdatePeerMac},
+    {"updatePeerMacInternal", handleUpdatePeerMacInternal},
 
     // WireGuard commands
     {COMMAND_SETUP_WIREGUARD_PEER, handleSetupWireGuardPeer},

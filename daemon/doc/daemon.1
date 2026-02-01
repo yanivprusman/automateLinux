@@ -114,7 +114,7 @@ d setPeerConfig --role worker --id laptop --leader 10.0.0.2
 .RE
 .SH APP ASSIGNMENT COMMANDS
 App assignments prevent git conflicts when multiple peers work on the same
-extraApps (cad, loom, pt). The leader tracks who owns each app.
+extraApps (cad, pt). The leader tracks who owns each app.
 .TP
 .B claimApp \fB\-\-app\fR \fIname\fR
 Claim exclusive work on an extraApp. Updates VPS nginx forwarding.
@@ -128,23 +128,6 @@ List all app assignments across all peers (JSON output).
 .TP
 .B getAppOwner \fB\-\-app\fR \fIname\fR
 Check which peer currently owns an app.
-.SH LOOM COMMANDS
-Loom provides screen streaming functionality.
-.TP
-.B restartLoom
-Start or restart Loom streaming server and client.
-.TP
-.B stopLoom
-Stop Loom streaming.
-.TP
-.B isLoomActive
-Check if Loom streaming is active.
-.TP
-.B generateLoomToken
-Generate a new Loom authentication token.
-.TP
-.B revokeLoomTokens
-Revoke all Loom authentication tokens.
 .SH LOGGING COMMANDS
 .TP
 .B shouldLog \fB\-\-enable\fR \fI(true|false)\fR

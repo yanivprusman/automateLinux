@@ -11,6 +11,8 @@
 #include <arpa/inet.h>
 #include <array>
 #include <csignal>
+#include <dirent.h>
+#include <fstream>
 #include <cstdlib>
 #include <fcntl.h>
 #include <ifaddrs.h>
@@ -93,8 +95,7 @@ void openKeyboardDevice() {
 }
 
 int setup_socket() {
-  // Use SOCK_CLOEXEC to prevent child processes (like loom-server) from
-  // inheriting this FD
+  // Use SOCK_CLOEXEC to prevent child processes from inheriting this FD
   socket_fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
   if (socket_fd < 0) {
     cerr << "ERROR: socket() failed: " << strerror(errno) << endl;
@@ -145,6 +146,66 @@ int setup_socket() {
   chown(socketPath.c_str(), getuid(), getgid());
   cerr << "Socket listening on: " << socketPath << endl;
   return 0;
+}
+
+// Get the MAC address of the primary network interface (not wg0/lo)
+string getPrimaryMacAddress() {
+  // Read from /sys/class/net/<interface>/address
+  // Priority: eth*, en*, wlan*, then any non-virtual interface
+  const char* prefixes[] = {"eth", "en", "wlan", nullptr};
+
+  DIR* netDir = opendir("/sys/class/net");
+  if (!netDir) {
+    return "";
+  }
+
+  string result = "";
+  struct dirent* entry;
+
+  // First pass: look for preferred interfaces
+  for (int i = 0; prefixes[i] != nullptr && result.empty(); i++) {
+    rewinddir(netDir);
+    while ((entry = readdir(netDir)) != nullptr) {
+      string ifname = entry->d_name;
+      if (ifname.find(prefixes[i]) == 0) {
+        string path = "/sys/class/net/" + ifname + "/address";
+        ifstream f(path);
+        if (f.is_open()) {
+          getline(f, result);
+          f.close();
+          if (!result.empty() && result != "00:00:00:00:00:00") {
+            closedir(netDir);
+            return result;
+          }
+          result = "";
+        }
+      }
+    }
+  }
+
+  // Second pass: any non-virtual interface (skip lo, wg*, veth*, docker*, br*)
+  rewinddir(netDir);
+  while ((entry = readdir(netDir)) != nullptr) {
+    string ifname = entry->d_name;
+    if (ifname == "." || ifname == ".." || ifname == "lo" ||
+        ifname.find("wg") == 0 || ifname.find("veth") == 0 ||
+        ifname.find("docker") == 0 || ifname.find("br-") == 0) {
+      continue;
+    }
+    string path = "/sys/class/net/" + ifname + "/address";
+    ifstream f(path);
+    if (f.is_open()) {
+      getline(f, result);
+      f.close();
+      if (!result.empty() && result != "00:00:00:00:00:00") {
+        break;
+      }
+      result = "";
+    }
+  }
+
+  closedir(netDir);
+  return result;
 }
 
 // Get the IP address of the wg0 interface
@@ -228,8 +289,7 @@ void accept_new_client() {
     return;
 
   // Set FD_CLOEXEC logic to prevent child processes from inheriting this FD.
-  // This is crucial for commands like restartLoom that spawn long-running
-  // children.
+  // This is crucial for commands that spawn long-running children.
   fcntl(client_fd, F_SETFD, FD_CLOEXEC);
 
   struct ucred cred;
@@ -446,24 +506,6 @@ int initialize_daemon() {
   // if (KeyboardManager::setKeyboard(g_keyboardEnabled).status != 0) {
   //   logToFile("ERROR: Failed to initialize keyboard mapping", LOG_CORE);
   // }
-
-  // Start Loom on daemon startup (dev only)
-  string restartLoomScript =
-      directories.base + "daemon/scripts/restart_loom.sh";
-  // Export DBUS_SESSION_BUS_ADDRESS so it can talk to the user bus.
-  string cmdDev =
-      "export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; " +
-      restartLoomScript + " --dev > /dev/null 2>&1 &";
-
-  int devRc = system(cmdDev.c_str());
-
-  if (devRc != 0) {
-    logToFile("WARNING: Failed to start Loom (Dev RC=" + std::to_string(devRc) +
-                  ")",
-              LOG_CORE);
-  } else {
-    logToFile("Loom startup script (dev) executed as user yaniv", LOG_CORE);
-  }
 
   // Start Dashboard
   string startDashboardScript =

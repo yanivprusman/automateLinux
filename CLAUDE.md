@@ -12,7 +12,7 @@ automateLinux is a suite of tools for personalizing and automating a Linux deskt
 - **GNOME Extensions** (`gnomeExtensions/`): Desktop integration - status menu for daemon control, active window tracking
 - **VS Code Extensions** (`visualStudioCodeExtensions/`): Editor integrations for daemon monitoring, git workflows, and log viewing
 - **Utilities** (`utilities/`): Standalone tools - termcontrol, sendKeysUInput, lastChanged, cleanBetween, emergencyRestore.sh
-- **Extra Apps** (`extraApps/`): Standalone applications housed directly in this repo (cad, loom, publicTransportation) to simplify agent access.
+- **Extra Apps** (`extraApps/`): Standalone applications housed directly in this repo (cad, publicTransportation) to simplify agent access.
 
 ## Build Commands
 
@@ -29,7 +29,7 @@ cd dashboard && npm run dev -- --port 3007       # Start frontend (port 3007)
 # Then open http://localhost:3007
 ```
 
-### Extra Apps (CAD, Loom, PT)
+### Extra Apps (CAD, PT)
 
 Use daemon commands for all app lifecycle management:
 
@@ -37,19 +37,14 @@ Use daemon commands for all app lifecycle management:
 # Generic app management (preferred)
 d listApps                                          # List available apps
 d appStatus                                         # Status of all apps
-d appStatus --app loom                              # Status of specific app
-d startApp --app loom --mode dev                    # Start app in dev mode
-d stopApp --app loom --mode dev                     # Stop specific mode
-d restartApp --app loom --mode dev                  # Restart app
+d appStatus --app cad                               # Status of specific app
+d startApp --app cad --mode dev                     # Start app in dev mode
+d stopApp --app cad --mode dev                      # Stop specific mode
+d restartApp --app cad --mode dev                   # Restart app
 
 # Build and dependencies
-d buildApp --app loom --mode dev                    # Build C++ server component
-d installAppDeps --app loom --component client      # Install client deps only
-
-# Legacy Loom shortcuts (redirect to generic handlers)
-d restartLoom                    # Alias for restartApp --app loom
-d stopLoom
-d isLoomActive
+d buildApp --app cad --mode dev                     # Build C++ server component
+d installAppDeps --app cad --component client       # Install client deps only
 ```
 
 ### C++ Utilities
@@ -86,10 +81,8 @@ d deletePort --key <app>                # Remove port entry
 | cad-dev | 3001 | CAD app development |
 | pt-prod | 3002 | Public Transportation production |
 | pt-dev | 3003 | Public Transportation development |
-| loom-dev | 3005 | Loom client (dev only) |
 | dashboard-prod | 3006 | Dashboard frontend production |
 | dashboard-dev | 3007 | Dashboard frontend development |
-| loom-server | 3500 | Loom WebSocket stream server |
 | dashboard-bridge | 3501 | Dashboard daemon bridge |
 | peer-socket | 3502 | Daemon peer-to-peer TCP socket (WireGuard) |
 
@@ -105,7 +98,6 @@ d listPorts
 d enableKeyboard / disableKeyboard
 d simulateInput --string "text"
 d simulateInput --type 1 --code 30 --value 1   # Raw key event (EV_KEY, KEY_A, press)
-d restartLoom / stopLoom / isLoomActive
 d publicTransportationOpenApp
 d registerLogListener                           # For live log streaming
 
@@ -175,7 +167,7 @@ d execOnPeer --peer <id> --directory <path> --shellCmd <cmd>  # Remote exec
    ▼         ▼           ▼           ▼           ▼           ▼
 ┌───────┐ ┌─────────┐ ┌─────────┐ ┌───────┐ ┌───────┐ ┌──────────┐
 │Term   │ │Dashboard│ │Chrome   │ │GNOME  │ │VS Code│ │Extra Apps│
-│(bash) │ │(React)  │ │Extension│ │Ext    │ │Ext    │ │cad/loom  │
+│(bash) │ │(React)  │ │Extension│ │Ext    │ │Ext    │ │cad/pt    │
 └───────┘ └─────────┘ └─────────┘ └───────┘ └───────┘ └──────────┘
 ```
 
@@ -298,7 +290,7 @@ The repository uses `root:coding` ownership with group-writable permissions:
 To fix permissions on a new machine:
 ```bash
 fixAutoLinuxPerms                    # Fix /opt/automateLinux
-fixAutoLinuxPerms /opt/prod/loom     # Fix specific path
+fixAutoLinuxPerms /opt/prod/cad      # Fix specific path
 ```
 
 ## Extra Apps

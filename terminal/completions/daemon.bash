@@ -8,7 +8,7 @@ _daemon_completion() {
     
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable isLoomActive restartLoom stopLoom loomConnect generateLoomToken revokeLoomTokens publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow resetClock listPorts deletePort getPort setPort listCommands setPeerConfig getPeerStatus listPeers getPeerInfo execOnPeer remotePull remoteBd remoteDeployDaemon dbSanityCheck registerWorker setupWireGuardPeer listWireGuardPeers getWireGuardIp startApp stopApp restartApp appStatus listApps buildApp installAppDeps addExtraApp runLoomClient runLoomServer version"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow listPorts deletePort getPort setPort listCommands setPeerConfig getPeerStatus listPeers getPeerInfo execOnPeer remotePull remoteBd remoteDeployDaemon dbSanityCheck registerWorker setupWireGuardPeer listWireGuardPeers getWireGuardIp startApp stopApp restartApp appStatus listApps buildApp installAppDeps addExtraApp version"
     }
 
     # Function to get peer IDs dynamically from daemon
@@ -78,19 +78,10 @@ _daemon_completion() {
     command_args[listLogFilters]=""
     command_args[clearLogFilters]=""
     command_args[emptyDirHistoryTable]=""
-    command_args[isLoomActive]=""
-    command_args[restartLoom]=""
-    command_args[stopLoom]=""
-    command_args[loomConnect]="--peer --mode"
-    command_args[generateLoomToken]=""
-    command_args[revokeLoomTokens]=""
-    command_args[runLoomClient]="--peer"
-    command_args[runLoomServer]=""
     command_args[publicTransportationStartProxy]=""
     command_args[publicTransportationOpenApp]=""
     command_args[listWindows]=""
     command_args[activateWindow]="--windowId"
-    command_args[resetClock]=""
     command_args[listPorts]=""
     command_args[deletePort]="--key"
     command_args[getPort]="--key"
@@ -153,7 +144,7 @@ _daemon_completion() {
     arg_values[--shellCmd]="" # Shell command to execute
 
     # App management argument values
-    arg_values[--app]="loom cad publicTransportation"
+    arg_values[--app]="cad publicTransportation"
     arg_values[--mode]="dev prod all"
     arg_values[--component]="client server native-client"
     arg_values[--repoUrl]="" # Git repository URL for addExtraApp

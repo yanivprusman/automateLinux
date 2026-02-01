@@ -66,7 +66,7 @@ verify_dependencies() {
     CORE_PACKAGES="$CORE_PACKAGES wakeonlan"
 
     # Extra packages for full desktop installation
-    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev code freerdp3-x11 krb5-user"
+    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev code freerdp3-x11 krb5-user xrdp"
 
     if [ "$MINIMAL_INSTALL" = true ]; then
         REQUIRED_PACKAGES="$CORE_PACKAGES"
@@ -132,6 +132,15 @@ verify_dependencies() {
         admin_server = localhost
     }
 KRBEOF
+        fi
+
+        # Configure xrdp for remote desktop access
+        if systemctl list-unit-files | grep -q "^xrdp.service"; then
+            echo "Configuring xrdp..."
+            # Enable xrdp service
+            systemctl enable xrdp
+            systemctl start xrdp || true
+            echo "  xrdp enabled on port 3389"
         fi
     fi
 }

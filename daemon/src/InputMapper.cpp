@@ -219,7 +219,7 @@ bool InputMapper::setupUinput() {
   libevdev_enable_event_type(uinput_template, EV_KEY);
   libevdev_enable_event_type(uinput_template, EV_SYN);
 
-  // Enable absolute positioning for remote control (Loom)
+  // Enable absolute positioning for remote control
   libevdev_enable_event_type(uinput_template, EV_ABS);
   // input_absinfo fields: value, minimum, maximum, fuzz, flat, resolution
   struct input_absinfo abs_info = {0, 0, 32767, 0, 0, 0};

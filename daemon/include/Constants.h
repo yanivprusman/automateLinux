@@ -96,19 +96,10 @@
 #define COMMAND_REGISTER_WINDOW_EXTENSION "registerWindowExtension"
 #define COMMAND_LIST_WINDOWS "listWindows"
 #define COMMAND_ACTIVATE_WINDOW "activateWindow"
-#define COMMAND_RESET_CLOCK "resetClock"
-#define COMMAND_IS_LOOM_ACTIVE "isLoomActive"
-#define COMMAND_RESTART_LOOM "restartLoom"
-#define COMMAND_STOP_LOOM "stopLoom"
-#define COMMAND_LOOM_CONNECT "loomConnect"
-#define COMMAND_RUN_LOOM_CLIENT "runLoomClient"
-#define COMMAND_RUN_LOOM_SERVER "runLoomServer"
 #define COMMAND_PUBLIC_TRANSPORTATION_START_PROXY                              \
   "publicTransportationStartProxy"
 #define COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP "publicTransportationOpenApp"
 #define COMMAND_LIST_PORTS "listPorts"
-#define COMMAND_GENERATE_LOOM_TOKEN "generateLoomToken"
-#define COMMAND_REVOKE_LOOM_TOKENS "revokeLoomTokens"
 
 // App Management Commands
 #define COMMAND_START_APP "startApp"
@@ -164,6 +155,7 @@
 #define COMMAND_REMOTE_DEPLOY_DAEMON "remoteDeployDaemon"
 #define COMMAND_DB_SANITY_CHECK "dbSanityCheck"
 #define COMMAND_REGISTER_WORKER "registerWorker"
+#define COMMAND_UPDATE_PEER_MAC "updatePeerMac"
 
 // Peer Arguments
 #define COMMAND_ARG_ROLE "role"

@@ -250,25 +250,29 @@ if [ "$MINIMAL_INSTALL" = false ]; then
             grdctl rdp set-credentials "$TARGET_USER" "changeme123" 2>/dev/null || true
         fi
 
-        # Disable xrdp if it exists (it conflicts on port 3389)
+        # Check if xrdp is running (system-level install.sh enables it)
         if systemctl is-active --quiet xrdp 2>/dev/null; then
-            echo "  Disabling xrdp (conflicts with gnome-remote-desktop on port 3389)..."
-            sudo systemctl stop xrdp xrdp-sesman 2>/dev/null || true
-            sudo systemctl disable xrdp xrdp-sesman 2>/dev/null || true
+            echo "  xrdp is active on port 3389 (system service)"
+            echo "  Note: gnome-remote-desktop disabled to avoid port conflict"
+            # Disable gnome-remote-desktop to avoid port conflict
+            systemctl --user stop gnome-remote-desktop 2>/dev/null || true
+            systemctl --user disable gnome-remote-desktop 2>/dev/null || true
+        else
+            # No xrdp, use gnome-remote-desktop
+            # Disable system-level gnome-remote-desktop (we use user daemon for screen sharing)
+            if systemctl is-enabled --quiet gnome-remote-desktop 2>/dev/null; then
+                echo "  Disabling system gnome-remote-desktop (using user daemon instead)..."
+                sudo systemctl stop gnome-remote-desktop 2>/dev/null || true
+                sudo systemctl disable gnome-remote-desktop 2>/dev/null || true
+            fi
+
+            # Enable and restart user gnome-remote-desktop
+            systemctl --user enable gnome-remote-desktop 2>/dev/null || true
+            systemctl --user restart gnome-remote-desktop 2>/dev/null || true
+            echo "  gnome-remote-desktop enabled on port 3389"
         fi
 
-        # Disable system-level gnome-remote-desktop (we use user daemon for screen sharing)
-        if systemctl is-enabled --quiet gnome-remote-desktop 2>/dev/null; then
-            echo "  Disabling system gnome-remote-desktop (using user daemon instead)..."
-            sudo systemctl stop gnome-remote-desktop 2>/dev/null || true
-            sudo systemctl disable gnome-remote-desktop 2>/dev/null || true
-        fi
-
-        # Enable and restart user gnome-remote-desktop
-        systemctl --user enable gnome-remote-desktop 2>/dev/null || true
-        systemctl --user restart gnome-remote-desktop 2>/dev/null || true
-
-        echo "  RDP enabled on port 3389. Connect with: xfreerdp3 /v:<IP>:3389 /u:$TARGET_USER /p:<password>"
+        echo "  Connect with: rdp <IP> or xfreerdp3 /v:<IP>:3389 /u:$TARGET_USER"
     else
         echo "  grdctl not found, skipping RDP configuration."
     fi

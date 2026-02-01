@@ -151,6 +151,11 @@ KRBEOF
             # Enable xrdp service
             systemctl enable xrdp
             systemctl start xrdp || true
+            # Add sudo user to ssl-cert group (required for xrdp authentication)
+            if [ -n "$SUDO_USER" ]; then
+                usermod -aG ssl-cert "$SUDO_USER"
+                echo "  Added $SUDO_USER to ssl-cert group"
+            fi
             echo "  xrdp enabled on port 3389"
         fi
     fi

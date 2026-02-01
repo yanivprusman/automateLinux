@@ -20,3 +20,10 @@ _printRemoteFiles_completion() {
     COMPREPLY=( $(compgen -W "$available_opts" -- "$cur") )
 }
 complete -F _printRemoteFiles_completion printRemoteFiles
+
+_rdp_completion() {
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local peers="desktop laptop vps local"
+    COMPREPLY=( $(compgen -W "$peers" -- "$cur") )
+}
+complete -F _rdp_completion rdp

@@ -55,3 +55,34 @@ sshPhone(){
 sshLaptop(){
     ssh root@$laptopIp
 }
+
+# RDP to peer using gnome-remote-desktop
+# Usage: rdp <peer> [password]
+# Peers: desktop (10.0.0.2), laptop (10.0.0.4), vps (10.0.0.1), or IP address
+rdp(){
+    local peer="${1:-desktop}"
+    local pass="${2:-testpass123}"
+    local ip
+
+    case "$peer" in
+        desktop|pc)
+            ip="10.0.0.2"
+            ;;
+        laptop)
+            ip="10.0.0.4"
+            ;;
+        vps)
+            ip="10.0.0.1"
+            ;;
+        local|localhost)
+            ip="127.0.0.1"
+            ;;
+        *)
+            # Assume it's an IP address
+            ip="$peer"
+            ;;
+    esac
+
+    echo "Connecting to $peer ($ip)..."
+    xfreerdp3 /v:"$ip":3389 /u:yaniv /p:"$pass" /f /dynamic-resolution
+}

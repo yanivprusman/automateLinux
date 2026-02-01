@@ -244,10 +244,30 @@ if [ "$MINIMAL_INSTALL" = false ]; then
         grdctl rdp set-tls-cert "$GRD_CERT" 2>/dev/null || true
         grdctl rdp disable-view-only 2>/dev/null || true
 
-        # Check if credentials are set
-        if ! grdctl status 2>/dev/null | grep -q "Username: (hidden)"; then
-            echo "  Setting default RDP credentials (change with: grdctl rdp set-credentials USER PASS)"
-            grdctl rdp set-credentials "$TARGET_USER" "changeme123" 2>/dev/null || true
+        # Check if credentials are set (shows "(null)" or "(hidden)" when set)
+        CRED_STATUS=$(grdctl status --show-credentials 2>/dev/null | grep -E "Username:|Password:" || true)
+        if echo "$CRED_STATUS" | grep -q "(null)"; then
+            echo "  Setting default RDP credentials..."
+            CRED_OUTPUT=$(grdctl rdp set-credentials "$TARGET_USER" "changeme123" 2>&1)
+            CRED_RESULT=$?
+
+            if [ $CRED_RESULT -ne 0 ] || echo "$CRED_OUTPUT" | grep -qi "locked"; then
+                echo ""
+                echo "  ⚠ WARNING: Could not set RDP credentials - keyring is locked!"
+                echo "  This happens when keyring password doesn't match login password."
+                echo ""
+                echo "  To fix, reset your keyring by running:"
+                echo "    rm ~/.local/share/keyrings/login.keyring"
+                echo "    # Then log out and log back in"
+                echo "    # On next login, a new keyring matching your password will be created"
+                echo "    # Then re-run: ./user_install.sh"
+                echo ""
+            else
+                echo "  RDP credentials set (password: changeme123)"
+                echo "  Change with: grdctl rdp set-credentials USER NEWPASS"
+            fi
+        elif echo "$CRED_STATUS" | grep -q "(hidden)"; then
+            echo "  RDP credentials already set."
         fi
 
         # Disable xrdp if running (we prefer gnome-remote-desktop for existing sessions)
@@ -267,9 +287,17 @@ if [ "$MINIMAL_INSTALL" = false ]; then
         # Enable and restart user gnome-remote-desktop
         systemctl --user enable gnome-remote-desktop 2>/dev/null || true
         systemctl --user restart gnome-remote-desktop 2>/dev/null || true
-        echo "  gnome-remote-desktop enabled on port 3389"
 
-        echo "  Connect with: rdp <IP> or xfreerdp3 /v:<IP>:3389 /u:$TARGET_USER"
+        # Wait and verify RDP is listening
+        sleep 1
+        if ss -tlnp 2>/dev/null | grep -q ":3389 " || netstat -tlnp 2>/dev/null | grep -q ":3389 "; then
+            echo "  ✓ gnome-remote-desktop listening on port 3389"
+            echo "  Connect with: rdp <IP> or xfreerdp3 /v:<IP>:3389 /u:$TARGET_USER"
+        else
+            echo "  ✗ gnome-remote-desktop NOT listening on port 3389"
+            echo "  This usually means RDP credentials aren't set (keyring locked)"
+            echo "  Fix keyring and re-run user_install.sh (see warning above)"
+        fi
     else
         echo "  grdctl not found, skipping RDP configuration."
     fi

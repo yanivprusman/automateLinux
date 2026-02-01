@@ -8,7 +8,7 @@ _daemon_completion() {
     
     # Function to get daemon commands (excluding the `send` itself)
     get_daemon_commands() {
-        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable isLoomActive restartLoom stopLoom loomConnect generateLoomToken revokeLoomTokens publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow resetClock listPorts deletePort getPort setPort listCommands setPeerConfig getPeerStatus listPeers getPeerInfo execOnPeer remotePull remoteBd remoteDeployDaemon dbSanityCheck registerWorker setupWireGuardPeer listWireGuardPeers getWireGuardIp startApp stopApp restartApp appStatus listApps buildApp installAppDeps addExtraApp runLoomClient runLoomServer"
+        echo "(openedTty) (closedTty) (updateDirHistory) (cdForward) (cdBackward) showTerminalInstance showAllTerminalInstances deleteEntry showEntriesByPrefix deleteEntriesByPrefix showDB printDirHistory upsertEntry getEntry ping getKeyboardPath getMousePath getSocketPath setKeyboard enableKeyboard disableKeyboard getKeyboard getKeyboardEnabled shouldLog toggleKeyboard getDir getFile (activeWindowChanged) help quit simulateInput addLogFilter removeLogFilter listLogFilters clearLogFilters emptyDirHistoryTable isLoomActive restartLoom stopLoom loomConnect generateLoomToken revokeLoomTokens publicTransportationStartProxy publicTransportationOpenApp listWindows activateWindow resetClock listPorts deletePort getPort setPort listCommands setPeerConfig getPeerStatus listPeers getPeerInfo execOnPeer remotePull remoteBd remoteDeployDaemon dbSanityCheck registerWorker setupWireGuardPeer listWireGuardPeers getWireGuardIp startApp stopApp restartApp appStatus listApps buildApp installAppDeps addExtraApp runLoomClient runLoomServer version"
     }
 
     # Function to get peer IDs dynamically from daemon
@@ -124,6 +124,7 @@ _daemon_completion() {
     command_args[setupWireGuardPeer]="--host --name --vpnIp --mac --dualBoot --privateKey"
     command_args[listWireGuardPeers]=""
     command_args[getWireGuardIp]=""
+    command_args[version]=""
 
     # Define possible values for specific arguments
     declare -A arg_values

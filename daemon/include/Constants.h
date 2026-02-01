@@ -185,6 +185,11 @@
 #define COMMAND_LIST_WIREGUARD_PEERS "listWireGuardPeers"
 #define COMMAND_GET_WIREGUARD_IP "getWireGuardIp"
 
+// RDP Setup Commands
+#define COMMAND_SETUP_RDP "setupRdp"
+#define COMMAND_ARG_RDP_USERNAME "rdpUsername"
+#define COMMAND_ARG_RDP_PASSWORD "rdpPassword"
+
 // WireGuard Arguments
 #define COMMAND_ARG_HOST "host"
 #define COMMAND_ARG_NAME "name"

@@ -277,6 +277,11 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "List peers configured in WireGuard on the VPS"),
     CommandSignature(COMMAND_GET_WIREGUARD_IP, {},
                      "Get the local WireGuard (wg0) interface IP address"),
+
+    // RDP Setup Commands
+    CommandSignature(COMMAND_SETUP_RDP, {},
+                     "Configure GNOME Remote Desktop for RDP access",
+                     "--rdpUsername <user> --rdpPassword <pass>"),
 };
 
 const size_t COMMAND_REGISTRY_SIZE =
@@ -417,6 +422,9 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_SETUP_WIREGUARD_PEER, handleSetupWireGuardPeer},
     {COMMAND_LIST_WIREGUARD_PEERS, handleListWireGuardPeers},
     {COMMAND_GET_WIREGUARD_IP, handleGetWireGuardIp},
+
+    // RDP commands
+    {COMMAND_SETUP_RDP, handleSetupRdp},
 };
 
 static const size_t COMMAND_HANDLERS_SIZE =

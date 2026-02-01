@@ -189,3 +189,43 @@ CmdResult handleGetWireGuardIp(const json &) {
 
   return CmdResult(0, ip + "\n");
 }
+
+CmdResult handleSetupRdp(const json &command) {
+  // Default credentials match terminal/functions/remote.sh rdp function
+  string username = command.value(COMMAND_ARG_RDP_USERNAME, "yaniv");
+  string password = command.value(COMMAND_ARG_RDP_PASSWORD, "testpass123");
+
+  logToFile("Setting up GNOME Remote Desktop for RDP access", LOG_CORE);
+
+  // Build the setup commands
+  string cmd = "("
+    "grdctl rdp enable && "
+    "grdctl rdp set-credentials '" + username + "' '" + password + "' && "
+    "grdctl rdp disable-view-only && "
+    "echo 'RDP setup complete'"
+    ") 2>&1";
+
+  FILE *pipe = popen(cmd.c_str(), "r");
+  if (!pipe) {
+    string error_msg = "Failed to execute grdctl: " + string(strerror(errno));
+    logToFile(error_msg, LOG_CORE);
+    return CmdResult(1, error_msg + "\n");
+  }
+
+  string output;
+  char buffer[256];
+  while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+    output += buffer;
+  }
+
+  int exit_code = pclose(pipe);
+  int actual_exit_code = WEXITSTATUS(exit_code);
+
+  if (actual_exit_code != 0) {
+    logToFile("RDP setup failed: " + output, LOG_CORE);
+    return CmdResult(actual_exit_code, "RDP setup failed:\n" + output);
+  }
+
+  logToFile("RDP setup completed successfully", LOG_CORE);
+  return CmdResult(0, "RDP enabled for user '" + username + "' on port 3389\n");
+}

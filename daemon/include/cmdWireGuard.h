@@ -11,4 +11,7 @@ CmdResult handleSetupWireGuardPeer(const json &command);
 CmdResult handleListWireGuardPeers(const json &command);
 CmdResult handleGetWireGuardIp(const json &command);
 
+// RDP Setup Command Handlers
+CmdResult handleSetupRdp(const json &command);
+
 #endif // CMD_WIREGUARD_H

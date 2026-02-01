@@ -84,5 +84,5 @@ rdp(){
     esac
 
     echo "Connecting to $peer ($ip)..."
-    xfreerdp3 /v:"$ip":3389 /u:yaniv /p:"$pass" /f /dynamic-resolution
+    xfreerdp3 /v:"$ip":3389 /u:yaniv /p:"$pass" /f /smart-sizing
 }

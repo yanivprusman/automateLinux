@@ -73,6 +73,7 @@ bool PeerManager::connectToLeader() {
   timeout.tv_sec = 5;
   timeout.tv_usec = 0;
   setsockopt(m_leaderSocket, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+  setsockopt(m_leaderSocket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
   struct sockaddr_in addr;
   memset(&addr, 0, sizeof(addr));

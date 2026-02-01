@@ -162,7 +162,11 @@
       "Bash(./gradlew assembleDebug:*)",
       "Bash(export JAVA_HOME=/opt/android-studio/jbr)",
       "Bash(./gradlew clean:*)",
-      "Bash(./gradlew:*)"
+      "Bash(./gradlew:*)",
+      "Bash(/opt/android-studio/jbr/bin/jlink:*)",
+      "Bash(yes:*)",
+      "Bash(~/Android/Sdk/cmdline-tools/latest/bin/sdkmanager:*)",
+      "Bash(export ANDROID_NDK_HOME:*)"
     ]
   }
 }

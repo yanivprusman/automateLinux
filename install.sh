@@ -145,18 +145,18 @@ verify_dependencies() {
 KRBEOF
         fi
 
-        # Configure xrdp for remote desktop access
+        # xrdp is installed but NOT enabled by default
+        # We prefer gnome-remote-desktop which connects to the existing session
+        # To use xrdp instead: sudo systemctl enable --now xrdp
         if systemctl list-unit-files | grep -q "^xrdp.service"; then
-            echo "Configuring xrdp..."
-            # Enable xrdp service
-            systemctl enable xrdp
-            systemctl start xrdp || true
-            # Add sudo user to ssl-cert group (required for xrdp authentication)
+            # Add sudo user to ssl-cert group (required if xrdp is used later)
             if [ -n "$SUDO_USER" ]; then
                 usermod -aG ssl-cert "$SUDO_USER"
-                echo "  Added $SUDO_USER to ssl-cert group"
             fi
-            echo "  xrdp enabled on port 3389"
+            # Ensure xrdp is disabled so gnome-remote-desktop can use port 3389
+            systemctl disable xrdp 2>/dev/null || true
+            systemctl stop xrdp 2>/dev/null || true
+            echo "  xrdp installed but disabled (use gnome-remote-desktop for existing sessions)"
         fi
     fi
 }

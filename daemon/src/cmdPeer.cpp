@@ -420,7 +420,7 @@ CmdResult handleRemoteBd(const json &command) {
   execCmd["command"] = COMMAND_EXEC_ON_PEER;
   execCmd[COMMAND_ARG_PEER] = command[COMMAND_ARG_PEER].get<string>();
   execCmd[COMMAND_ARG_DIRECTORY] = "/opt/automateLinux/daemon";
-  execCmd[COMMAND_ARG_SHELL_CMD] = "source ./build.sh";
+  execCmd[COMMAND_ARG_SHELL_CMD] = "bash -c 'source ./build.sh'";
   return handleExecOnPeer(execCmd);
 }
 
@@ -444,7 +444,7 @@ CmdResult handleRemoteDeployDaemon(const json &command) {
   buildCmd["command"] = COMMAND_EXEC_ON_PEER;
   buildCmd[COMMAND_ARG_PEER] = peer_id;
   buildCmd[COMMAND_ARG_DIRECTORY] = "/opt/automateLinux/daemon";
-  buildCmd[COMMAND_ARG_SHELL_CMD] = "source ./build.sh";
+  buildCmd[COMMAND_ARG_SHELL_CMD] = "bash -c 'source ./build.sh'";
 
   CmdResult buildResult = handleExecOnPeer(buildCmd);
   if (buildResult.status != 0) {

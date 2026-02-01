@@ -270,18 +270,12 @@ if [ "$MINIMAL_INSTALL" = false ]; then
             echo "  RDP credentials already set."
         fi
 
-        # Disable xrdp if running (we prefer gnome-remote-desktop for existing sessions)
+        # Check if xrdp is blocking port 3389
         if systemctl is-active --quiet xrdp 2>/dev/null; then
-            echo "  Disabling xrdp (prefer gnome-remote-desktop for existing sessions)..."
-            sudo systemctl stop xrdp 2>/dev/null || true
-            sudo systemctl disable xrdp 2>/dev/null || true
-        fi
-
-        # Disable system-level gnome-remote-desktop (we use user daemon for screen sharing)
-        if systemctl is-enabled --quiet gnome-remote-desktop 2>/dev/null; then
-            echo "  Disabling system gnome-remote-desktop (using user daemon instead)..."
-            sudo systemctl stop gnome-remote-desktop 2>/dev/null || true
-            sudo systemctl disable gnome-remote-desktop 2>/dev/null || true
+            echo ""
+            echo "  ⚠ WARNING: xrdp is running and blocking port 3389!"
+            echo "  Run 'sudo install.sh' to mask xrdp, then re-run user_install.sh"
+            echo ""
         fi
 
         # Enable and restart user gnome-remote-desktop
@@ -291,8 +285,14 @@ if [ "$MINIMAL_INSTALL" = false ]; then
         # Wait and verify RDP is listening
         sleep 1
         if ss -tlnp 2>/dev/null | grep -q ":3389 " || netstat -tlnp 2>/dev/null | grep -q ":3389 "; then
-            echo "  ✓ gnome-remote-desktop listening on port 3389"
-            echo "  Connect with: rdp <IP> or xfreerdp3 /v:<IP>:3389 /u:$TARGET_USER"
+            # Check if it's gnome-remote-desktop or xrdp
+            if pgrep -x xrdp >/dev/null 2>&1; then
+                echo "  ⚠ Port 3389 is xrdp (not gnome-remote-desktop)"
+                echo "  Run 'sudo install.sh' to mask xrdp"
+            else
+                echo "  ✓ gnome-remote-desktop listening on port 3389"
+                echo "  Connect with: rdp <IP> or xfreerdp3 /v:<IP>:3389 /u:$TARGET_USER"
+            fi
         else
             echo "  ✗ gnome-remote-desktop NOT listening on port 3389"
             echo "  This usually means RDP credentials aren't set (keyring locked)"

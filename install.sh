@@ -153,10 +153,12 @@ KRBEOF
             if [ -n "$SUDO_USER" ]; then
                 usermod -aG ssl-cert "$SUDO_USER"
             fi
-            # Ensure xrdp is disabled so gnome-remote-desktop can use port 3389
-            systemctl disable xrdp 2>/dev/null || true
+            # Mask xrdp so it can never start (gnome-remote-desktop uses port 3389)
+            # Use mask instead of disable - mask prevents any start attempts
             systemctl stop xrdp 2>/dev/null || true
-            echo "  xrdp installed but disabled (use gnome-remote-desktop for existing sessions)"
+            systemctl mask xrdp 2>/dev/null || true
+            echo "  xrdp installed but masked (use gnome-remote-desktop for existing sessions)"
+            echo "  To use xrdp instead: sudo systemctl unmask xrdp && sudo systemctl enable --now xrdp"
         fi
     fi
 }

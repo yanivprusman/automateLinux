@@ -257,7 +257,15 @@ if [ "$MINIMAL_INSTALL" = false ]; then
             sudo systemctl disable xrdp xrdp-sesman 2>/dev/null || true
         fi
 
-        # Restart gnome-remote-desktop to apply changes
+        # Disable system-level gnome-remote-desktop (we use user daemon for screen sharing)
+        if systemctl is-enabled --quiet gnome-remote-desktop 2>/dev/null; then
+            echo "  Disabling system gnome-remote-desktop (using user daemon instead)..."
+            sudo systemctl stop gnome-remote-desktop 2>/dev/null || true
+            sudo systemctl disable gnome-remote-desktop 2>/dev/null || true
+        fi
+
+        # Enable and restart user gnome-remote-desktop
+        systemctl --user enable gnome-remote-desktop 2>/dev/null || true
         systemctl --user restart gnome-remote-desktop 2>/dev/null || true
 
         echo "  RDP enabled on port 3389. Connect with: xfreerdp3 /v:<IP>:3389 /u:$TARGET_USER /p:<password>"

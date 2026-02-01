@@ -148,7 +148,9 @@
       "Bash(d execOnPeer --peer desktop --directory /opt/automateLinux --shellCmd \"ls -la /opt/automateLinux/.agent/skills/daemon-peer-execution/\")",
       "Bash(sudo find:*)",
       "Bash(timeout 2 tcpdump:*)",
-      "Bash(timeout 6 /opt/automateLinux/extraApps/loom/native-client/build/loom-client:*)"
+      "Bash(timeout 6 /opt/automateLinux/extraApps/loom/native-client/build/loom-client:*)",
+      "Bash(grdctl rdp:*)",
+      "Bash(grdctl rdp set-credentials:*)"
     ]
   }
 }

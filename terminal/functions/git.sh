@@ -340,5 +340,46 @@ gitCommitsToDirs() {
         git worktree add "../${repo}_${i}" "$c"
         i=$((i+1))
     done
-    cd "$start_dir" 
+    cd "$start_dir"
 }
+
+gitInfo() {
+    if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+        echo "Not a git repository"
+        return 1
+    fi
+
+    local branch remote_url last_commit_hash last_commit_msg last_commit_date
+    local total_commits behind ahead
+
+    branch=$(git branch --show-current 2>/dev/null)
+    [ -z "$branch" ] && branch="(detached HEAD)"
+
+    remote_url=$(git remote get-url origin 2>/dev/null || echo "(no remote)")
+
+    last_commit_hash=$(git rev-parse --short HEAD 2>/dev/null)
+    last_commit_msg=$(git log -1 --pretty=format:'%s' 2>/dev/null)
+    last_commit_date=$(git log -1 --pretty=format:'%ad' --date=format:'%Y-%m-%d %H:%M' 2>/dev/null)
+
+    total_commits=$(git rev-list --count HEAD 2>/dev/null)
+
+    # Fetch and check ahead/behind
+    git fetch origin "$branch" &>/dev/null 2>&1
+    local counts
+    counts=$(git rev-list --left-right --count "origin/$branch...HEAD" 2>/dev/null)
+    if [ -n "$counts" ]; then
+        behind=$(echo "$counts" | cut -f1)
+        ahead=$(echo "$counts" | cut -f2)
+    else
+        behind="-"
+        ahead="-"
+    fi
+
+    echo -e "${YELLOW}Branch:${NC}       $branch"
+    echo -e "${YELLOW}Remote:${NC}       $remote_url"
+    echo -e "${YELLOW}Last commit:${NC}  $last_commit_hash - $last_commit_msg"
+    echo -e "${YELLOW}Date:${NC}         $last_commit_date"
+    echo -e "${YELLOW}Total:${NC}        $total_commits commits"
+    echo -e "${YELLOW}Ahead/Behind:${NC} +$ahead / -$behind"
+}
+export -f gitInfo

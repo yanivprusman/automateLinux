@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "WebFetch",
       "Bash(bash -x -c:*)",
       "Bash(bash -i -x -c 'exit 0')",
       "Bash(timeout 5 ng completion:*)",

@@ -8,7 +8,7 @@ initTerminalCapture() {
     : > "$AUTOMATE_LINUX_TERMINAL_CAPTURE_FILE"
 
     # Redirect stdout and stderr through tee to capture file
-    exec > >(tee -a "$AUTOMATE_LINUX_TERMINAL_CAPTURE_FILE") 2>&1
+    # exec > >(tee -a "$AUTOMATE_LINUX_TERMINAL_CAPTURE_FILE") 2>&1
 }
 export -f initTerminalCapture
 

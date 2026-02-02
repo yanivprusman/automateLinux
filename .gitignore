@@ -27,3 +27,5 @@ utilities/fileSize/fileSize
 !/extraApps/.gitkeep
 data/**
 daemon/include/Version.h
+node_modules/
+mcpServers/*/dist/

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "automatelinux-daemon": {
+      "command": "node",
+      "args": ["/opt/automateLinux/mcpServers/daemon/dist/index.js"]
+    }
+  }
+}

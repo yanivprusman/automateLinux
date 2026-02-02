@@ -166,7 +166,15 @@
       "Bash(/opt/android-studio/jbr/bin/jlink:*)",
       "Bash(yes:*)",
       "Bash(~/Android/Sdk/cmdline-tools/latest/bin/sdkmanager:*)",
-      "Bash(export ANDROID_NDK_HOME:*)"
+      "Bash(export ANDROID_NDK_HOME:*)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 3 node:*)",
+      "Bash(git fetch:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "automatelinux-daemon"
+  ]
 }

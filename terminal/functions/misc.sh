@@ -236,6 +236,9 @@ typeMode() {
 
     echo "Typing mode: Ctrl+X to copy, Ctrl+U to clear all, Ctrl+D to exit"
 
+    # Set terminal title
+    printf "\033]0;typeMode\007" >/dev/tty
+
     # Raw mode: disable signals, canonical mode, and echo
     stty raw -echo -isig </dev/tty
 
@@ -252,6 +255,7 @@ typeMode() {
                 ;;
             $'\x04')  # Ctrl+D - exit
                 stty "$old_stty" </dev/tty
+                printf "\033]0;\007" >/dev/tty  # Reset title
                 printf "\r\n" >/dev/tty
                 return 0
                 ;;

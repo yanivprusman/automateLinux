@@ -186,6 +186,13 @@ string AppManager::buildCppComponent(const string &path) {
   stringstream result;
   result << "  Path: " << path << "\n";
 
+  // Clean rebuild: delete build directory first for consistency
+  string rmCmd = "/usr/bin/rm -rf " + buildDir;
+  if (std::system(rmCmd.c_str()) != 0) {
+    result << "  Warning: Failed to remove old build directory\n";
+  }
+  result << "  Clean: OK\n";
+
   // Create build directory
   string mkdirCmd = "/usr/bin/mkdir -p " + buildDir;
   if (std::system(mkdirCmd.c_str()) != 0) {

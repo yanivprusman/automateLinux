@@ -383,3 +383,12 @@ gitInfo() {
     echo -e "${YELLOW}Ahead/Behind:${NC} +$ahead / -$behind"
 }
 export -f gitInfo
+
+gitClone(){
+    if [ -z "$1" ]; then
+        echo "Usage: gitClone <repo_name>"
+        return 1
+    fi
+    git clone "https://github.com/yanivprusman/$1"
+}
+export -f gitClone

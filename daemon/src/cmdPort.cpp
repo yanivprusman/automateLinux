@@ -21,13 +21,19 @@ using namespace std;
 static CmdResult forwardToLeader(const json &cmd, const string &cmdName) {
   PeerManager &pm = PeerManager::getInstance();
 
+  logToFile("forwardToLeader: " + cmdName + " isLeader=" +
+            (pm.isLeader() ? "true" : "false") +
+            " connectedToLeader=" + (pm.isConnectedToLeader() ? "true" : "false"), LOG_CORE);
+
   if (pm.isLeader()) {
     // We are the leader, don't forward
+    logToFile("forwardToLeader: handling locally (we are leader)", LOG_CORE);
     return CmdResult(-1, ""); // Signal to handle locally
   }
 
   if (!pm.isConnectedToLeader()) {
     // Try to connect
+    logToFile("forwardToLeader: not connected, trying to connect", LOG_CORE);
     if (!pm.connectToLeader()) {
       return CmdResult(1, "Not connected to leader. Run 'd registerWorker' first.\n");
     }

@@ -7,7 +7,11 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <netinet/in.h>
+#include <signal.h>
+#include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <time.h>
 #include <unistd.h>
 
 using namespace std;
@@ -370,40 +374,121 @@ CmdResult handleExecOnPeer(const json &command) {
   return CmdResult(0, string(buffer));
 }
 
+// Execute a command in a forked process to avoid blocking the daemon
+// Returns output via pipe, with timeout protection
+static string executeCommandWithTimeout(const string &full_cmd, int timeout_sec, int &exit_code) {
+  int pipefd[2];
+  if (pipe(pipefd) == -1) {
+    exit_code = 1;
+    return "Failed to create pipe: " + string(strerror(errno));
+  }
+
+  pid_t pid = fork();
+  if (pid == -1) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    exit_code = 1;
+    return "Failed to fork: " + string(strerror(errno));
+  }
+
+  if (pid == 0) {
+    // Child process
+    close(pipefd[0]); // Close read end
+    dup2(pipefd[1], STDOUT_FILENO);
+    dup2(pipefd[1], STDERR_FILENO);
+    close(pipefd[1]);
+
+    // Execute via shell
+    execl("/bin/sh", "sh", "-c", full_cmd.c_str(), nullptr);
+    _exit(127); // exec failed
+  }
+
+  // Parent process
+  close(pipefd[1]); // Close write end
+
+  // Set read timeout using select
+  string output;
+  char buffer[256];
+  fd_set readfds;
+  struct timeval tv;
+  time_t start_time = time(nullptr);
+
+  while (true) {
+    FD_ZERO(&readfds);
+    FD_SET(pipefd[0], &readfds);
+
+    // Calculate remaining timeout
+    int elapsed = time(nullptr) - start_time;
+    int remaining = timeout_sec - elapsed;
+    if (remaining <= 0) {
+      // Timeout - kill the child
+      kill(pid, SIGKILL);
+      waitpid(pid, nullptr, 0);
+      close(pipefd[0]);
+      exit_code = 124; // timeout exit code
+      return output + "\n[TIMEOUT after " + to_string(timeout_sec) + "s]";
+    }
+
+    tv.tv_sec = remaining;
+    tv.tv_usec = 0;
+
+    int ret = select(pipefd[0] + 1, &readfds, nullptr, nullptr, &tv);
+    if (ret == -1) {
+      if (errno == EINTR) continue;
+      break;
+    }
+    if (ret == 0) {
+      // Timeout
+      kill(pid, SIGKILL);
+      waitpid(pid, nullptr, 0);
+      close(pipefd[0]);
+      exit_code = 124;
+      return output + "\n[TIMEOUT after " + to_string(timeout_sec) + "s]";
+    }
+
+    ssize_t n = read(pipefd[0], buffer, sizeof(buffer) - 1);
+    if (n <= 0) break;
+    buffer[n] = '\0';
+    output += buffer;
+  }
+
+  close(pipefd[0]);
+
+  // Wait for child and get exit code
+  int status;
+  waitpid(pid, &status, 0);
+  exit_code = WIFEXITED(status) ? WEXITSTATUS(status) : 1;
+
+  return output;
+}
+
 CmdResult handleExecRequest(const json &command) {
   string directory = command[COMMAND_ARG_DIRECTORY].get<string>();
   string cmd = command[COMMAND_ARG_SHELL_CMD].get<string>();
+
+  // Prevent deadlock: reject commands that would try to connect back to this daemon
+  if (cmd.find("daemon send") != string::npos ||
+      cmd.find("daemon daemon") != string::npos ||
+      cmd.find("/daemon send") != string::npos ||
+      cmd.find(" d ") != string::npos ||
+      (cmd.length() >= 2 && cmd[0] == 'd' && cmd[1] == ' ')) {
+    logToFile("Rejected deadlock-prone command: " + cmd, LOG_CORE);
+    return CmdResult(1, "Error: Cannot run daemon commands via execOnPeer (would cause deadlock). "
+                        "Use direct daemon commands instead (e.g., 'd listPorts' locally forwards to leader).\n");
+  }
 
   // Build full command: cd to directory && execute command
   string full_cmd = "cd " + directory + " && " + cmd + " 2>&1";
 
   logToFile("Executing: " + full_cmd, LOG_CORE);
 
-  // Execute command and capture output
-  FILE *pipe = popen(full_cmd.c_str(), "r");
-  if (!pipe) {
-    string error_msg = "Failed to execute command: " + string(strerror(errno));
-    logToFile(error_msg, LOG_CORE);
-    return CmdResult(1, error_msg + "\n");
-  }
+  // Execute with 60 second timeout to prevent hangs
+  int exit_code = 0;
+  string output = executeCommandWithTimeout(full_cmd, 60, exit_code);
 
-  // Read output
-  string output;
-  char buffer[256];
-  while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-    output += buffer;
-  }
+  logToFile("Command completed with exit code " + to_string(exit_code), LOG_CORE);
 
-  int exit_code = pclose(pipe);
-  int actual_exit_code = WEXITSTATUS(exit_code);
-
-  logToFile("Command completed with exit code " + to_string(actual_exit_code), LOG_CORE);
-
-  if (actual_exit_code != 0) {
-    return CmdResult(actual_exit_code, output);
-  }
-
-  return CmdResult(0, output);
+  return CmdResult(exit_code, output);
 }
 
 CmdResult handleRemotePull(const json &command) {

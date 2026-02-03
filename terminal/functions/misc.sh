@@ -344,6 +344,7 @@ typeMode() {
     done
 }
 export -f typeMode
+alias tm='typeMode'
 
 enableGraphocalSessionForRoot() {
     sudo cp /etc/gdm3/custom.conf /etc/gdm3/custom.conf.bak

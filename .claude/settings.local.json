@@ -171,7 +171,12 @@
       "Bash(npm install)",
       "Bash(npm run build:*)",
       "Bash(timeout 3 node:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(bash:*)",
+      "Bash(# Test by sending Ctrl+C character \\(0x03\\) followed by Ctrl+D \\(0x04\\) to the function source /opt/automateLinux/terminal/functions/misc.sh # Create a test with simulated input \\( printf ''hello'' # type hello printf ''\\\\x03'' # Ctrl+C sleep 0.1 printf ''\\\\x04'' # Ctrl+D to exit \\))",
+      "Bash(./test_typeMode.sh)",
+      "Bash(timeout 10 ./test_typeMode.sh:*)",
+      "Bash(timeout 30:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

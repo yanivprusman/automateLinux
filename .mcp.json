@@ -3,6 +3,10 @@
     "automatelinux-daemon": {
       "command": "node",
       "args": ["/opt/automateLinux/mcpServers/daemon/dist/index.js"]
+    },
+    "immersive-rdp": {
+      "command": "node",
+      "args": ["/opt/automateLinux/extraApps/immersiveRDP/mcp/dist/index.js"]
     }
   }
 }

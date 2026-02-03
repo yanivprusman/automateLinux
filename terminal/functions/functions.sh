@@ -6,7 +6,6 @@
 . $(theRealPath variables.sh)
 . $(theRealPath system.sh)
 . $(theRealPath misc.sh)
-. $(theRealPath typeMode.sh)
 . $(theRealPath build.sh)
 . $(theRealPath printDir.sh)
 . $(theRealPath db.sh)

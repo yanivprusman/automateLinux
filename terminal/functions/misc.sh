@@ -232,12 +232,13 @@ typeMode() {
     local lines=0
     local col=0
     local old_stty
+    local -a history=()
+    local hist_idx=0
     old_stty=$(stty -g </dev/tty)
 
-    echo "Typing mode: Ctrl+X to copy, Ctrl+U to clear all, Ctrl+D to exit"
-
-    # Set terminal title
+    # Set terminal title and clear screen
     printf "\033]0;typeMode\007" >/dev/tty
+    printf "\033[2J\033[H" >/dev/tty
 
     # Raw mode: disable signals, canonical mode, and echo
     stty raw -echo -isig </dev/tty
@@ -246,8 +247,59 @@ typeMode() {
         IFS= read -r -n1 char </dev/tty
 
         case "$char" in
-            $'\x18')  # Ctrl+X - copy and clear
-                echo -n "$text" | xclip -selection clipboard
+            $'\x1b')  # Escape sequence
+                IFS= read -r -n1 c2 </dev/tty
+                if [[ "$c2" == "[" ]]; then
+                    IFS= read -r -n1 c3 </dev/tty
+                    case "$c3" in
+                        A)  # Up - move cursor up
+                            printf "\033[A" >/dev/tty
+                            ;;
+                        B)  # Down - move cursor down
+                            printf "\033[B" >/dev/tty
+                            ;;
+                        C)  # Right - move cursor right
+                            printf "\033[C" >/dev/tty
+                            ;;
+                        D)  # Left - move cursor left
+                            printf "\033[D" >/dev/tty
+                            ;;
+                        1)  # Could be Ctrl+arrow
+                            IFS= read -r -n3 rest </dev/tty
+                            if [[ "$rest" == ";5A" ]]; then
+                                # Ctrl+Up - previous history
+                                if [ $hist_idx -gt 0 ]; then
+                                    ((hist_idx--))
+                                    printf "\033[2J\033[H" >/dev/tty
+                                    text="${history[$hist_idx]}"
+                                    printf '%s' "$text" >/dev/tty
+                                    lines=$(printf '%s' "$text" | tr -cd '\n' | wc -c)
+                                fi
+                            elif [[ "$rest" == ";5B" ]]; then
+                                # Ctrl+Down - next history
+                                if [ $hist_idx -lt ${#history[@]} ]; then
+                                    ((hist_idx++))
+                                    printf "\033[2J\033[H" >/dev/tty
+                                    if [ $hist_idx -lt ${#history[@]} ]; then
+                                        text="${history[$hist_idx]}"
+                                        printf '%s' "$text" >/dev/tty
+                                        lines=$(printf '%s' "$text" | tr -cd '\n' | wc -c)
+                                    else
+                                        text=""
+                                        lines=0
+                                    fi
+                                fi
+                            fi
+                            ;;
+                    esac
+                fi
+                ;;
+            $'\x18')  # Ctrl+X - copy, save to history, and clear
+                if [ -n "$text" ]; then
+                    echo -n "$text" | xclip -selection clipboard
+                    history+=("$text")
+                    hist_idx=${#history[@]}
+                fi
                 printf "\033[2J\033[H" >/dev/tty
                 text=""
                 lines=0
@@ -259,15 +311,10 @@ typeMode() {
                 printf "\r\n" >/dev/tty
                 return 0
                 ;;
-            $'\x15')  # Ctrl+U - clear all: move up and clear each line
-                # Clear current line
-                printf "\r\033[K" >/dev/tty
-                # Move up and clear each previous line
-                while [ $lines -gt 0 ]; do
-                    printf "\033[A\033[K" >/dev/tty
-                    ((lines--))
-                done
+            $'\x15')  # Ctrl+U - clear all
+                printf "\033[2J\033[H" >/dev/tty
                 text=""
+                lines=0
                 col=0
                 ;;
             $'\x7f'|$'\x08')  # Backspace
@@ -275,7 +322,6 @@ typeMode() {
                     local last_char="${text: -1}"
                     text="${text%?}"
                     if [[ "$last_char" == $'\n' ]]; then
-                        # Move up one line, go to end
                         ((lines--))
                         printf "\033[A\033[999C" >/dev/tty
                     else

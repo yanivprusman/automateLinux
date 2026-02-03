@@ -122,7 +122,7 @@ set action [lindex $argv 0]
 
 # Source bash environment and define function inline for expect
 set bash_setup {
-    source /opt/automateLinux/terminal/functions/misc.sh 2>/dev/null
+    shopt -s extglob; source /opt/automateLinux/terminal/functions/typeMode.sh 2>/dev/null
 }
 
 proc start_typemode {} {
@@ -672,7 +672,7 @@ test_suite_unit_tests() {
 
     # Test: Function exists after sourcing
     ((TESTS_RUN++))
-    source "$TERMINAL_DIR/functions/misc.sh" 2>/dev/null
+    source "$TERMINAL_DIR/functions/typeMode.sh" 2>/dev/null
     if declare -f typeMode >/dev/null 2>&1; then
         echo -e "${GREEN}✓ PASS${NC}: typeMode function is defined"
         ((TESTS_PASSED++))
@@ -683,11 +683,11 @@ test_suite_unit_tests() {
 
     # Test: tm alias exists (check file directly since aliases don't expand in non-interactive shells)
     ((TESTS_RUN++))
-    if grep -q "alias tm='typeMode'" "$TERMINAL_DIR/functions/misc.sh"; then
-        echo -e "${GREEN}✓ PASS${NC}: tm alias is defined in misc.sh"
+    if grep -q "alias tm='typeMode'" "$TERMINAL_DIR/functions/typeMode.sh"; then
+        echo -e "${GREEN}✓ PASS${NC}: tm alias is defined in typeMode.sh"
         ((TESTS_PASSED++))
     else
-        echo -e "${RED}✗ FAIL${NC}: tm alias is not defined in misc.sh"
+        echo -e "${RED}✗ FAIL${NC}: tm alias is not defined in typeMode.sh"
         ((TESTS_FAILED++))
     fi
 
@@ -718,7 +718,7 @@ test_suite_edge_cases() {
         cat > "$TEST_RESULTS_DIR/edge_empty_history.exp" << 'EOF'
 #!/usr/bin/expect -f
 set timeout 3
-spawn bash -c "source /opt/automateLinux/terminal/functions/misc.sh; typeMode"
+spawn bash -c "shopt -s extglob; source /opt/automateLinux/terminal/functions/typeMode.sh; typeMode"
 sleep 0.3
 # Ctrl+Up with empty history
 send "\x1b\[1;5A"
@@ -748,7 +748,7 @@ EOF
         cat > "$TEST_RESULTS_DIR/edge_history_bounds.exp" << 'EOF'
 #!/usr/bin/expect -f
 set timeout 3
-spawn bash -c "source /opt/automateLinux/terminal/functions/misc.sh; typeMode"
+spawn bash -c "shopt -s extglob; source /opt/automateLinux/terminal/functions/typeMode.sh; typeMode"
 sleep 0.3
 send "test"
 send "\x18"
@@ -780,7 +780,7 @@ EOF
         cat > "$TEST_RESULTS_DIR/edge_empty_backspace.exp" << 'EOF'
 #!/usr/bin/expect -f
 set timeout 3
-spawn bash -c "source /opt/automateLinux/terminal/functions/misc.sh; typeMode"
+spawn bash -c "shopt -s extglob; source /opt/automateLinux/terminal/functions/typeMode.sh; typeMode"
 sleep 0.3
 # Multiple backspaces on empty buffer
 send "\x7f\x7f\x7f\x7f\x7f"
@@ -816,7 +816,7 @@ EOF
         cat > "$TEST_RESULTS_DIR/edge_multi_clear.exp" << 'EOF'
 #!/usr/bin/expect -f
 set timeout 3
-spawn bash -c "source /opt/automateLinux/terminal/functions/misc.sh; typeMode"
+spawn bash -c "shopt -s extglob; source /opt/automateLinux/terminal/functions/typeMode.sh; typeMode"
 sleep 0.3
 send "text1"
 send "\x15"
@@ -871,7 +871,7 @@ test_suite_stress() {
     cat > "$TEST_RESULTS_DIR/stress_history.exp" << 'EOF'
 #!/usr/bin/expect -f
 set timeout 15
-spawn bash -c "source /opt/automateLinux/terminal/functions/misc.sh; typeMode"
+spawn bash -c "shopt -s extglob; source /opt/automateLinux/terminal/functions/typeMode.sh; typeMode"
 sleep 0.3
 
 # Create 20 history entries
@@ -907,7 +907,7 @@ EOF
     cat > "$TEST_RESULTS_DIR/stress_rapid.exp" << 'EOF'
 #!/usr/bin/expect -f
 set timeout 5
-spawn bash -c "source /opt/automateLinux/terminal/functions/misc.sh; typeMode"
+spawn bash -c "shopt -s extglob; source /opt/automateLinux/terminal/functions/typeMode.sh; typeMode"
 sleep 0.3
 
 # Rapid typing
@@ -936,7 +936,7 @@ EOF
     cat > "$TEST_RESULTS_DIR/stress_long.exp" << 'EOF'
 #!/usr/bin/expect -f
 set timeout 10
-spawn bash -c "source /opt/automateLinux/terminal/functions/misc.sh; typeMode"
+spawn bash -c "shopt -s extglob; source /opt/automateLinux/terminal/functions/typeMode.sh; typeMode"
 sleep 0.3
 
 # Type a very long string (500+ chars)
@@ -962,7 +962,7 @@ EOF
     cat > "$TEST_RESULTS_DIR/stress_sequence.exp" << 'EOF'
 #!/usr/bin/expect -f
 set timeout 15
-spawn bash -c "source /opt/automateLinux/terminal/functions/misc.sh; typeMode"
+spawn bash -c "shopt -s extglob; source /opt/automateLinux/terminal/functions/typeMode.sh; typeMode"
 sleep 0.3
 
 # Repeated: type, save, clear, type, save
@@ -1011,7 +1011,7 @@ test_suite_terminal_state() {
     cat > "$TEST_RESULTS_DIR/terminal_restore.exp" << 'EOF'
 #!/usr/bin/expect -f
 set timeout 3
-spawn bash -c "source /opt/automateLinux/terminal/functions/misc.sh; typeMode"
+spawn bash -c "shopt -s extglob; source /opt/automateLinux/terminal/functions/typeMode.sh; typeMode"
 sleep 0.3
 send "test"
 send "\x04"
@@ -1038,7 +1038,7 @@ EOF
     cat > "$TEST_RESULTS_DIR/terminal_interrupt.exp" << 'EOF'
 #!/usr/bin/expect -f
 set timeout 3
-spawn bash -c "source /opt/automateLinux/terminal/functions/misc.sh; typeMode; echo 'EXITED_CLEANLY'"
+spawn bash -c "source /opt/automateLinux/terminal/functions/typeMode.sh; typeMode; echo 'EXITED_CLEANLY'"
 sleep 0.3
 send "test"
 sleep 0.1
@@ -1091,7 +1091,7 @@ main() {
     echo "═══════════════════════════════════════════════════════════════"
     echo "typeMode Test Suite"
     echo "═══════════════════════════════════════════════════════════════"
-    echo "Testing: $TERMINAL_DIR/functions/misc.sh:typeMode"
+    echo "Testing: $TERMINAL_DIR/functions/typeMode.sh"
     echo ""
 
     setup

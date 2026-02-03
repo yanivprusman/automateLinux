@@ -2,9 +2,11 @@
 #include "Constants.h"
 #include "DatabaseTableManagers.h"
 #include "Globals.h"
+#include "PeerManager.h"
 #include "Utils.h"
 #include <algorithm>
 #include <arpa/inet.h>
+#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <netinet/in.h>
@@ -14,6 +16,38 @@
 #include <unistd.h>
 
 using namespace std;
+
+// Helper to forward a command to the leader and return the response
+static CmdResult forwardToLeader(const json &cmd, const string &cmdName) {
+  PeerManager &pm = PeerManager::getInstance();
+
+  if (pm.isLeader()) {
+    // We are the leader, don't forward
+    return CmdResult(-1, ""); // Signal to handle locally
+  }
+
+  if (!pm.isConnectedToLeader()) {
+    // Try to connect
+    if (!pm.connectToLeader()) {
+      return CmdResult(1, "Not connected to leader. Run 'd registerWorker' first.\n");
+    }
+  }
+
+  int leaderFd = pm.getLeaderSocket();
+  string msg = cmd.dump() + "\n";
+  if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
+    return CmdResult(1, "Failed to forward " + cmdName + " to leader\n");
+  }
+
+  // Read response from leader
+  char buffer[8192];
+  memset(buffer, 0, sizeof(buffer));
+  ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
+  if (n > 0) {
+    return CmdResult(0, string(buffer));
+  }
+  return CmdResult(1, "No response from leader\n");
+}
 
 static std::string getGitVersion(const std::string &path) {
   std::string cmdHash = "git -C " + path + " rev-parse --short HEAD";
@@ -36,6 +70,15 @@ static std::string getGitVersion(const std::string &path) {
 }
 
 CmdResult handleGetPort(const json &command) {
+  // Forward to leader if we're a worker
+  json fwdCmd = command;
+  fwdCmd["command"] = COMMAND_GET_PORT;
+  CmdResult fwdResult = forwardToLeader(fwdCmd, "getPort");
+  if (fwdResult.status != -1) {
+    return fwdResult; // Forwarded successfully or error
+  }
+
+  // We are the leader, handle locally
   string key = command[COMMAND_ARG_KEY].get<string>();
   string portKey = "port_" + key;
   string value = SettingsTable::getSetting(portKey);
@@ -46,6 +89,15 @@ CmdResult handleGetPort(const json &command) {
 }
 
 CmdResult handleSetPort(const json &command) {
+  // Forward to leader if we're a worker
+  json fwdCmd = command;
+  fwdCmd["command"] = COMMAND_SET_PORT;
+  CmdResult fwdResult = forwardToLeader(fwdCmd, "setPort");
+  if (fwdResult.status != -1) {
+    return fwdResult; // Forwarded successfully or error
+  }
+
+  // We are the leader, handle locally
   string key = command[COMMAND_ARG_KEY].get<string>();
   string value;
   if (command[COMMAND_ARG_VALUE].is_number()) {
@@ -59,6 +111,15 @@ CmdResult handleSetPort(const json &command) {
 }
 
 CmdResult handleDeletePort(const json &command) {
+  // Forward to leader if we're a worker
+  json fwdCmd = command;
+  fwdCmd["command"] = COMMAND_DELETE_PORT;
+  CmdResult fwdResult = forwardToLeader(fwdCmd, "deletePort");
+  if (fwdResult.status != -1) {
+    return fwdResult; // Forwarded successfully or error
+  }
+
+  // We are the leader, handle locally
   string key = command[COMMAND_ARG_KEY].get<string>();
   string portKey = "port_" + key;
   int rc = SettingsTable::deleteSetting(portKey);
@@ -68,7 +129,16 @@ CmdResult handleDeletePort(const json &command) {
   return CmdResult(1, "Port entry not found for " + key + "\n");
 }
 
-CmdResult handleListPorts(const json &) {
+CmdResult handleListPorts(const json &command) {
+  // Forward to leader if we're a worker
+  json fwdCmd;
+  fwdCmd["command"] = COMMAND_LIST_PORTS;
+  CmdResult fwdResult = forwardToLeader(fwdCmd, "listPorts");
+  if (fwdResult.status != -1) {
+    return fwdResult; // Forwarded successfully or error
+  }
+
+  // We are the leader, handle locally
   auto allSettings = SettingsTable::getAllSettings();
   std::vector<std::pair<std::string, int>> ports;
 

@@ -226,6 +226,75 @@ setPasswordForRoot(){
     sudo passwd root
 }
 
+typeMode() {
+    local text=""
+    local char
+    local lines=0
+    local col=0
+    local old_stty
+    old_stty=$(stty -g </dev/tty)
+
+    echo "Typing mode: Ctrl+X to copy, Ctrl+U to clear all, Ctrl+D to exit"
+
+    # Raw mode: disable signals, canonical mode, and echo
+    stty raw -echo -isig </dev/tty
+
+    while true; do
+        IFS= read -r -n1 char </dev/tty
+
+        case "$char" in
+            $'\x18')  # Ctrl+X - copy and clear
+                echo -n "$text" | xclip -selection clipboard
+                printf "\033[2J\033[H" >/dev/tty
+                text=""
+                lines=0
+                col=0
+                ;;
+            $'\x04')  # Ctrl+D - exit
+                stty "$old_stty" </dev/tty
+                printf "\r\n" >/dev/tty
+                return 0
+                ;;
+            $'\x15')  # Ctrl+U - clear all: move up and clear each line
+                # Clear current line
+                printf "\r\033[K" >/dev/tty
+                # Move up and clear each previous line
+                while [ $lines -gt 0 ]; do
+                    printf "\033[A\033[K" >/dev/tty
+                    ((lines--))
+                done
+                text=""
+                col=0
+                ;;
+            $'\x7f'|$'\x08')  # Backspace
+                if [ -n "$text" ]; then
+                    local last_char="${text: -1}"
+                    text="${text%?}"
+                    if [[ "$last_char" == $'\n' ]]; then
+                        # Move up one line, go to end
+                        ((lines--))
+                        printf "\033[A\033[999C" >/dev/tty
+                    else
+                        printf '\b \b' >/dev/tty
+                    fi
+                fi
+                ;;
+            ''|$'\r'|$'\n')  # Enter - newline
+                text+=$'\n'
+                ((lines++))
+                col=0
+                printf "\r\n" >/dev/tty
+                ;;
+            *)
+                text+="$char"
+                ((col++))
+                printf '%s' "$char" >/dev/tty
+                ;;
+        esac
+    done
+}
+export -f typeMode
+
 enableGraphocalSessionForRoot() {
     sudo cp /etc/gdm3/custom.conf /etc/gdm3/custom.conf.bak
     sudo cp /etc/pam.d/gdm-password /etc/pam.d/gdm-password.bak

@@ -13,8 +13,8 @@ using namespace std;
 
 // Static app configurations - hardcoded for now, can move to DB later
 static const vector<AppConfig> APP_CONFIGS = {
-    {"cad", "CAD Application", false, "", "cad-{mode}", "cad", "",
-     "/opt/automateLinux/extraApps/cad", "/opt/prod/cad", "", "web"},
+    {"cad", "CAD Application", true, "", "cad-{mode}", "cad", "",
+     "/opt/automateLinux/extraApps/cad", "/opt/prod/cad", ".", "web"},
     {"pt", "Public Transportation", false, "", "pt-{mode}", "pt", "",
      "/opt/automateLinux/extraApps/publicTransportation",
      "/opt/prod/publicTransportation", "", "web"},

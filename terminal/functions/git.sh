@@ -229,6 +229,110 @@ gitp(){
     git push
 }
 
+gitP(){
+    # Check if we're in a git repo
+    if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+        echo "Not a git repository"
+        return 1
+    fi
+
+    local branch
+    branch=$(git branch --show-current 2>/dev/null)
+    local stashed=false
+
+    # Check for uncommitted changes
+    if [[ -n $(git status --porcelain) ]]; then
+        echo -e "${YELLOW}Warning: You have uncommitted changes${NC}"
+        git status -sb
+        echo
+        read -p "Stash changes before pulling? [y/N] " confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            git stash || return 1
+            stashed=true
+        else
+            echo -e "${YELLOW}Proceeding without stash (may cause merge conflicts)${NC}"
+        fi
+    fi
+
+    # Fetch and show ahead/behind before pulling
+    git fetch origin "$branch" &>/dev/null
+
+    local counts behind ahead
+    counts=$(git rev-list --left-right --count "origin/$branch...HEAD" 2>/dev/null)
+    if [ -n "$counts" ]; then
+        behind=$(echo "$counts" | cut -f1)
+        ahead=$(echo "$counts" | cut -f2)
+    fi
+
+    # Pull if behind
+    if [ "${behind:-0}" -gt 0 ]; then
+        echo -e "Pulling ${YELLOW}$behind${NC} commit(s)..."
+        local before_head
+        before_head=$(git rev-parse HEAD)
+
+        if git pull; then
+            local after_head
+            after_head=$(git rev-parse HEAD)
+            echo -e "${GREEN}✓ Pulled${NC} $(git rev-parse --short "$before_head")..$(git rev-parse --short "$after_head")"
+        else
+            echo -e "${RED}✗ Pull failed${NC}"
+            if [ -n "$(git ls-files -u)" ]; then
+                echo -e "${YELLOW}Merge conflicts detected. Resolve them and commit.${NC}"
+            fi
+            return 1
+        fi
+    else
+        echo "Already up to date with remote."
+    fi
+
+    # Pop stash if we stashed
+    if [ "$stashed" = true ]; then
+        echo "Restoring stashed changes..."
+        git stash pop || return 1
+    fi
+
+    # Commit if there are changes
+    if [[ -n $(git status --porcelain) ]]; then
+        echo
+        git status -sb
+        echo
+        read -p "Commit message (empty to skip): " msg
+        if [ -n "$msg" ]; then
+            git add -A
+            if git commit -m "$msg"; then
+                echo -e "${GREEN}✓ Committed${NC}"
+            else
+                echo -e "${RED}✗ Commit failed${NC}"
+                return 1
+            fi
+        else
+            echo "Skipping commit."
+            return 0
+        fi
+    fi
+
+    # Push if ahead
+    counts=$(git rev-list --left-right --count "origin/$branch...HEAD" 2>/dev/null)
+    if [ -n "$counts" ]; then
+        ahead=$(echo "$counts" | cut -f2)
+    fi
+
+    if [ "${ahead:-0}" -gt 0 ]; then
+        echo -e "Pushing ${YELLOW}$ahead${NC} commit(s)..."
+        if git push; then
+            echo -e "${GREEN}✓ Pushed${NC}"
+        else
+            echo -e "${RED}✗ Push failed${NC}"
+            return 1
+        fi
+    else
+        echo "Nothing to push."
+    fi
+
+    return 0
+}
+export -f gitP
+
 gitd(){
     git diff
 }

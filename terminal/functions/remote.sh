@@ -56,6 +56,10 @@ sshLaptop(){
     ssh root@$laptopIp
 }
 
+sshDesktop(){
+    ssh root@$pcIp
+}
+
 # RDP to peer using gnome-remote-desktop
 # Usage: rdp <peer> [password]
 # Peers: desktop (10.0.0.2), laptop (10.0.0.4), vps (10.0.0.1), or IP address

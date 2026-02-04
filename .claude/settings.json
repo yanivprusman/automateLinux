@@ -1,0 +1,6 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "bash /opt/automateLinux/.claude/statusline-command.sh"
+  }
+}

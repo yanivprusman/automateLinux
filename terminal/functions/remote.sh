@@ -122,7 +122,27 @@ si.SetAlias('default', col)
 print('Login collection created')
 " 2>&1
 
+    # Generate TLS certificates if missing
+    local grd_dir="$HOME/.local/share/gnome-remote-desktop"
+    local grd_key="$grd_dir/rdp-tls.key"
+    local grd_cert="$grd_dir/rdp-tls.crt"
+    mkdir -p "$grd_dir"
+    if [ ! -f "$grd_key" ] || [ ! -f "$grd_cert" ]; then
+        echo "Generating TLS certificates..."
+        openssl req -x509 -newkey rsa:2048 \
+            -keyout "$grd_key" -out "$grd_cert" \
+            -days 365 -nodes -subj "/CN=localhost" 2>/dev/null
+        chmod 600 "$grd_key"
+    fi
+
+    # Enable RDP and configure
+    grdctl rdp enable 2>/dev/null || true
+    grdctl rdp set-tls-key "$grd_key" 2>/dev/null || true
+    grdctl rdp set-tls-cert "$grd_cert" 2>/dev/null || true
+    grdctl rdp disable-view-only 2>/dev/null || true
     grdctl rdp set-credentials "$user" "$pass"
+
+    systemctl --user enable gnome-remote-desktop 2>/dev/null || true
     systemctl --user restart gnome-remote-desktop
 
     sleep 1

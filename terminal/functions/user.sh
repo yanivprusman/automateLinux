@@ -134,7 +134,7 @@ _tuc(){
     
     # Shell configuration
     sudo rm -f "$NEW_HOME/.bashrc"
-    sudo ln -s "$SOURCE_HOME/coding/automateLinux/terminal/bashrc" "$NEW_HOME/.bashrc"
+    sudo ln -s "/opt/automateLinux/terminal/bashrc" "$NEW_HOME/.bashrc"
     
     # Ensure GNOME autostart for GUI login persistence
     local AUTOSTART="$NEW_HOME/.config/autostart"
@@ -219,7 +219,7 @@ _tucno(){
     
     # Shell configuration
     sudo rm -f "$NEW_HOME/.bashrc"
-    sudo ln -s "$SOURCE_HOME/coding/automateLinux/terminal/bashrc" "$NEW_HOME/.bashrc"
+    sudo ln -s "/opt/automateLinux/terminal/bashrc" "$NEW_HOME/.bashrc"
     
     # Setup .profile for robust session initialization
     echo "source /opt/automateLinux/terminal/functions/user.sh" | sudo -u "$NEW_USER" tee -a "$NEW_HOME/.profile" >/dev/null

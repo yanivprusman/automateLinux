@@ -66,7 +66,7 @@ verify_dependencies() {
     CORE_PACKAGES="$CORE_PACKAGES wakeonlan"
 
     # Extra packages for full desktop installation
-    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev code freerdp3-x11 krb5-user xrdp zenity jq"
+    EXTRA_PACKAGES="npm wireguard resolvconf openssh-server openssh-client tree util-linux libsqlite3-dev freeglut3-dev libtbb-dev code freerdp3-x11 krb5-user xrdp zenity jq autoconf automake autopoint gettext texinfo libncurses-dev"
 
     if [ "$MINIMAL_INSTALL" = true ]; then
         REQUIRED_PACKAGES="$CORE_PACKAGES"

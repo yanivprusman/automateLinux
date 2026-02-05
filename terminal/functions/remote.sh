@@ -97,13 +97,28 @@ setupRdp(){
     local user="${1:-$(whoami)}"
     local pass="${2:-testpass123}"
 
-    # Kill existing keyring daemon, wipe keyring files, create fresh login keyring
+    # Wipe keyring files (both old .keyring and new .keystore formats)
+    rm -f ~/.local/share/keyrings/*.keyring ~/.local/share/keyrings/*.keystore
+
+    # Restart keyring daemon with fresh state
     pkill -u "$(id -u)" gnome-keyring-daemon 2>/dev/null || true
     sleep 0.5
-    rm -f ~/.local/share/keyrings/*.keyring
-    # --login reads a NUL-terminated password from stdin and creates the login keyring
-    printf '\0' | gnome-keyring-daemon --start --login --components=secrets 2>/dev/null
+    eval "$(printf '\0' | gnome-keyring-daemon --start --login --components=secrets 2>/dev/null)"
     sleep 1
+
+    # Create the login collection via D-Bus if it doesn't exist
+    python3 -c "
+import gi, sys
+gi.require_version('Secret', '1')
+from gi.repository import Secret
+service = Secret.Service.get_sync(Secret.ServiceFlags.OPEN_SESSION)
+collections = service.get_collections()
+if not any(c.get_label() == 'Login' for c in collections):
+    Secret.Collection.create_sync(service, 'Login', 'default', Secret.CollectionCreateFlags.NONE, None)
+    print('Login collection created')
+else:
+    print('Login collection exists')
+" 2>/dev/null || echo "  Falling back to grdctl directly..."
 
     grdctl rdp set-credentials "$user" "$pass"
     systemctl --user restart gnome-remote-desktop

@@ -99,7 +99,10 @@
       "Bash(gcc-15:*)",
       "Bash(sudo apt remove:*)",
       "Bash(/home/yaniv/.claude/hooks/safe-bash-commands.sh)",
-      "Bash(crontab:*)"
+      "Bash(crontab:*)",
+      "Bash(daemon send listPeers)",
+      "Bash(daemon send execOnPeer:*)",
+      "Bash(xfreerdp3:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

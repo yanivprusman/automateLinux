@@ -223,7 +223,16 @@ else
     echo "Skipping autostart configuration (minimal install)..."
 fi
 
-# 7. Configure GNOME Remote Desktop (RDP)
+# 7. Configure GNOME Desktop Settings
+if [ "$MINIMAL_INSTALL" = false ]; then
+    echo "Configuring GNOME desktop settings..."
+    gsettings set org.gnome.desktop.interface enable-hot-corners true
+    echo "  ✓ Hot corners enabled"
+else
+    echo "Skipping GNOME desktop settings (minimal install)..."
+fi
+
+# 8. Configure GNOME Remote Desktop (RDP)
 if [ "$MINIMAL_INSTALL" = false ]; then
     echo "Configuring GNOME Remote Desktop..."
     GRD_DIR="$USER_HOME/.local/share/gnome-remote-desktop"
@@ -316,7 +325,7 @@ else
     echo "Skipping GNOME Remote Desktop (minimal install)..."
 fi
 
-# 8. Configure SSH Keys
+# 9. Configure SSH Keys
 echo "Configuring SSH keys..."
 SSH_KEY="$USER_HOME/.ssh/id_ed25519"
 if [ ! -f "$SSH_KEY" ]; then

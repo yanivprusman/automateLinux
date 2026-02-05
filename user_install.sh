@@ -263,31 +263,39 @@ if [ "$MINIMAL_INSTALL" = false ]; then
         grdctl rdp set-tls-cert "$GRD_CERT" 2>/dev/null || true
         grdctl rdp disable-view-only 2>/dev/null || true
 
-        # Check if credentials are set (shows "(null)" or "(hidden)" when set)
-        # Empty CRED_STATUS means grdctl couldn't reach keyring — treat as needing credentials
-        CRED_STATUS=$(grdctl status --show-credentials 2>/dev/null | grep -E "Username:|Password:" || true)
-        if [ -z "$CRED_STATUS" ] || echo "$CRED_STATUS" | grep -q "(null)"; then
-            echo "  Setting default RDP credentials..."
-            CRED_OUTPUT=$(grdctl rdp set-credentials "$TARGET_USER" "changeme123" 2>&1)
-            CRED_RESULT=$?
+        # Bootstrap gnome-keyring for credential storage
+        # grdctl stores RDP credentials in the GNOME keyring; on a fresh
+        # install or headless session the keyring is often locked/missing
+        echo "  Bootstrapping gnome-keyring..."
+        rm -f "$USER_HOME/.local/share/keyrings/"*.keyring "$USER_HOME/.local/share/keyrings/"*.keystore
+        pkill -u "$(id -u)" gnome-keyring-daemon 2>/dev/null || true
+        sleep 0.5
+        eval "$(printf '\0' | gnome-keyring-daemon --start --login --components=secrets 2>/dev/null)" || true
+        sleep 1
 
-            if [ $CRED_RESULT -ne 0 ] || echo "$CRED_OUTPUT" | grep -qi "locked"; then
-                echo "  Keyring locked or missing, resetting..."
-                rm -f "$USER_HOME/.local/share/keyrings/login.keyring"
-                CRED_OUTPUT=$(grdctl rdp set-credentials "$TARGET_USER" "changeme123" 2>&1)
-                CRED_RESULT=$?
-                if [ $CRED_RESULT -ne 0 ]; then
-                    echo "  ⚠ WARNING: Could not set RDP credentials after keyring reset."
-                    echo "  Try logging out and back in, then re-run: ./user_install.sh"
-                else
-                    echo "  Keyring reset and RDP credentials set (password: changeme123)"
-                fi
-            else
-                echo "  RDP credentials set (password: changeme123)"
-                echo "  Change with: grdctl rdp set-credentials USER NEWPASS"
-            fi
-        elif echo "$CRED_STATUS" | grep -q "(hidden)"; then
-            echo "  RDP credentials already set."
+        # Create the login collection via gnome-keyring internal D-Bus API
+        python3 -c "
+import dbus
+bus = dbus.SessionBus()
+svc = bus.get_object('org.freedesktop.secrets', '/org/freedesktop/secrets')
+si = dbus.Interface(svc, 'org.freedesktop.Secret.Service')
+_, session = si.OpenSession('plain', dbus.String('', variant_level=1))
+ki = dbus.Interface(svc, 'org.gnome.keyring.InternalUnsupportedGuiltRiddenInterface')
+props = dbus.Dictionary({'org.freedesktop.Secret.Collection.Label': 'Login'}, signature='sv')
+secret = dbus.Struct((session, dbus.ByteArray(b''), dbus.ByteArray(b''), 'text/plain'), signature='oayays')
+col = ki.CreateWithMasterPassword(props, secret)
+si.SetAlias('default', col)
+print('  Login collection created')
+" 2>&1 || echo "  Warning: Could not create keyring login collection"
+
+        # Set RDP credentials
+        echo "  Setting RDP credentials..."
+        if grdctl rdp set-credentials "$TARGET_USER" "changeme123" 2>&1; then
+            echo "  RDP credentials set (user: $TARGET_USER, password: changeme123)"
+            echo "  Change with: grdctl rdp set-credentials USER NEWPASS"
+        else
+            echo "  ⚠ WARNING: Could not set RDP credentials"
+            echo "  Try logging out and back in, then re-run: ./user_install.sh"
         fi
 
         # Check if xrdp is blocking port 3389

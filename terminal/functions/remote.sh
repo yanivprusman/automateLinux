@@ -57,7 +57,8 @@ sshLaptop(){
 }
 
 sshDesktop(){
-    ssh root@$pcIp
+    # ssh root@$pcIp
+    ssh yaniv@$pcIp
 }
 
 # RDP to peer using gnome-remote-desktop

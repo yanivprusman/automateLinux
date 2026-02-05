@@ -85,6 +85,7 @@ d deletePort --key <app>                # Remove port entry
 | dashboard-dev | 3007 | Dashboard frontend development |
 | dashboard-bridge | 3501 | Dashboard daemon bridge |
 | peer-socket | 3502 | Daemon peer-to-peer TCP socket (WireGuard) |
+| rdp | 3389 | RDP (gnome-remote-desktop) |
 
 ## Daemon Communication
 

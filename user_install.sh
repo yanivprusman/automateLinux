@@ -252,16 +252,16 @@ if [ "$MINIMAL_INSTALL" = false ]; then
             CRED_RESULT=$?
 
             if [ $CRED_RESULT -ne 0 ] || echo "$CRED_OUTPUT" | grep -qi "locked"; then
-                echo ""
-                echo "  ⚠ WARNING: Could not set RDP credentials - keyring is locked!"
-                echo "  This happens when keyring password doesn't match login password."
-                echo ""
-                echo "  To fix, reset your keyring by running:"
-                echo "    rm ~/.local/share/keyrings/login.keyring"
-                echo "    # Then log out and log back in"
-                echo "    # On next login, a new keyring matching your password will be created"
-                echo "    # Then re-run: ./user_install.sh"
-                echo ""
+                echo "  Keyring locked or missing, resetting..."
+                rm -f "$USER_HOME/.local/share/keyrings/login.keyring"
+                CRED_OUTPUT=$(grdctl rdp set-credentials "$TARGET_USER" "changeme123" 2>&1)
+                CRED_RESULT=$?
+                if [ $CRED_RESULT -ne 0 ]; then
+                    echo "  ⚠ WARNING: Could not set RDP credentials after keyring reset."
+                    echo "  Try logging out and back in, then re-run: ./user_install.sh"
+                else
+                    echo "  Keyring reset and RDP credentials set (password: changeme123)"
+                fi
             else
                 echo "  RDP credentials set (password: changeme123)"
                 echo "  Change with: grdctl rdp set-credentials USER NEWPASS"

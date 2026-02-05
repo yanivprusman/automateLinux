@@ -1,8 +1,8 @@
 [Desktop Entry]
 Version=1.0
-Name=RDP Laptop
-Comment=Connect to laptop via RDP
-Exec=xfreerdp3 /v:10.0.0.4:3389 /u:yaniv /p:testpass123 /f /smart-sizing
+Name=RDP Peer
+Comment=Connect to a peer via RDP
+Exec=/opt/automateLinux/desktop/rdpPeer.sh
 Icon=preferences-desktop-remote-desktop
 Terminal=false
 Type=Application

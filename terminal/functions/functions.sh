@@ -26,6 +26,7 @@
 . $(theRealPath to.sh)
 . $(theRealPath deploy.sh)
 . $(theRealPath claude.sh)
+. $(theRealPath claudePermissions.sh)
 . $(theRealPath vscode.sh)
 . $(theRealPath chrome.sh)
 . $(theRealPath keyring.sh)

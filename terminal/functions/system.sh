@@ -82,3 +82,8 @@ sudoVisudo() {
     script -q -c 'sudo visudo' /dev/null
 }
 export -f sudoVisudo
+
+ubuntuVersion() {
+    lsb_release -d | cut -f2
+}
+export -f ubuntuVersion

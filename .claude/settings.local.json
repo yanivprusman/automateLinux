@@ -97,7 +97,9 @@
       "Bash(gcc:*)",
       "Bash(update-alternatives --query:*)",
       "Bash(gcc-15:*)",
-      "Bash(sudo apt remove:*)"
+      "Bash(sudo apt remove:*)",
+      "Bash(/home/yaniv/.claude/hooks/safe-bash-commands.sh)",
+      "Bash(crontab:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

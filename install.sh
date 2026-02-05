@@ -176,20 +176,30 @@ install_software() {
         echo "  @google/gemini-cli is already installed."
     fi
 
-    # Check for Claude CLI (install system-wide to /usr/local/bin)
-    if [ -x /usr/local/bin/claude ]; then
+    # Check for Claude CLI (install system-wide to /usr/local/share/claude/)
+    # The installer sometimes places files under /root/.local/share/claude/
+    # which other users can't traverse. We normalize to /usr/local/share/claude/
+    # with a symlink at /usr/local/bin/claude (matching the laptop layout).
+    if [ -x /usr/local/bin/claude ] && readlink -f /usr/local/bin/claude | grep -q '^/usr/local/share/claude/'; then
         echo "  Claude CLI is already installed."
-    elif [ -x /root/.local/bin/claude ]; then
-        # Move existing installation to system-wide location
-        echo "  Moving Claude CLI to /usr/local/bin..."
-        mv /root/.local/bin/claude /usr/local/bin/claude
     else
-        # Fresh install
-        echo "  Installing Claude CLI system-wide..."
-        curl -fsSL https://claude.ai/install.sh | bash
-        if [ -x /root/.local/bin/claude ]; then
-            mv /root/.local/bin/claude /usr/local/bin/claude
-            echo "  Moved Claude CLI to /usr/local/bin"
+        if ! [ -d /usr/local/share/claude/versions ]; then
+            echo "  Installing Claude CLI system-wide..."
+            curl -fsSL https://claude.ai/install.sh | bash
+        fi
+        # If the installer placed files under /root/, copy them to /usr/local/share/
+        # (keep root's copy intact so root can also run claude directly)
+        if [ -d /root/.local/share/claude/versions ] && ! [ -d /usr/local/share/claude/versions ]; then
+            echo "  Copying Claude CLI to /usr/local/share/claude/..."
+            mkdir -p /usr/local/share/claude
+            cp -a /root/.local/share/claude/versions /usr/local/share/claude/versions
+        fi
+        # Point /usr/local/bin/claude at the latest system-wide version
+        if [ -d /usr/local/share/claude/versions ]; then
+            CLAUDE_LATEST=$(ls -v /usr/local/share/claude/versions/ | tail -1)
+            ln -sf "/usr/local/share/claude/versions/$CLAUDE_LATEST" /usr/local/bin/claude
+            chmod 755 "/usr/local/share/claude/versions/$CLAUDE_LATEST"
+            echo "  Claude CLI ready: /usr/local/bin/claude -> versions/$CLAUDE_LATEST"
         fi
     fi
 }
@@ -255,6 +265,14 @@ if [ -n "$SUDO_USER" ]; then
         usermod -aG coding "$SUDO_USER"
         echo "  Note: You may need to log out and back in for group changes to take full effect."
     fi
+fi
+
+# Deploy passwordless sudo rules for coding group
+if [ ! -f /etc/sudoers.d/codingUsers ]; then
+    echo "  Installing sudoers rules for coding group..."
+    cp "$INSTALL_DIR/sudoers/codingUsers" /etc/sudoers.d/codingUsers
+    chown root:root /etc/sudoers.d/codingUsers
+    chmod 440 /etc/sudoers.d/codingUsers
 fi
 
 # Ensure data and config are group-writable for the daemon/scripts

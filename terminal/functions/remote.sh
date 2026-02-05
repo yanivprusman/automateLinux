@@ -97,10 +97,12 @@ setupRdp(){
     local user="${1:-$(whoami)}"
     local pass="${2:-testpass123}"
 
-    # Kill existing keyring daemon, wipe keyring files, restart with fresh unlocked keyring
+    # Kill existing keyring daemon, wipe keyring files, create fresh login keyring
     pkill -u "$(id -u)" gnome-keyring-daemon 2>/dev/null || true
     rm -f ~/.local/share/keyrings/*.keyring
-    echo -n "" | gnome-keyring-daemon --unlock --components=secrets &
+    # --login creates the login keyring (--unlock only opens an existing one)
+    echo -n "" | gnome-keyring-daemon --start --components=secrets 2>/dev/null
+    echo -n "" | gnome-keyring-daemon --login --components=secrets 2>/dev/null
     sleep 1
 
     grdctl rdp set-credentials "$user" "$pass"

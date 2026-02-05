@@ -48,6 +48,16 @@ echo "  User: $TARGET_USER"
 echo "  Home: $USER_HOME"
 echo "  Source Installation: $INSTALL_DIR"
 
+# Ensure DBUS session bus is available (needed for grdctl, systemctl --user)
+# When run remotely via daemon execOnPeer, these env vars are missing
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+    UID_NUM=$(id -u)
+    if [ -S "/run/user/$UID_NUM/bus" ]; then
+        export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$UID_NUM/bus"
+        export XDG_RUNTIME_DIR="/run/user/$UID_NUM"
+    fi
+fi
+
 if [ ! -d "$INSTALL_DIR" ]; then
     echo "Error: AutomateLinux is not installed at $INSTALL_DIR."
     exit 1

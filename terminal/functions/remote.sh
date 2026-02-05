@@ -90,3 +90,21 @@ rdp(){
     echo "Connecting to $peer ($ip)..."
     xfreerdp3 /v:"$ip":3389 /u:yaniv /p:"$pass" /f /smart-sizing &
 }
+
+# Set up RDP credentials on the local machine (run on the target peer)
+# Usage: setupRdp [user] [password]
+setupRdp(){
+    local user="${1:-$(whoami)}"
+    local pass="${2:-testpass123}"
+
+    rm -f ~/.local/share/keyrings/*.keyring
+    grdctl rdp set-credentials "$user" "$pass"
+    systemctl --user restart gnome-remote-desktop
+
+    sleep 1
+    if ss -tlnp 2>/dev/null | grep -q ":3389 "; then
+        echo "RDP ready on port 3389 (user: $user)"
+    else
+        echo "RDP not listening — try logging out and back in"
+    fi
+}

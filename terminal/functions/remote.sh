@@ -106,19 +106,20 @@ setupRdp(){
     eval "$(printf '\0' | gnome-keyring-daemon --start --login --components=secrets 2>/dev/null)"
     sleep 1
 
-    # Create the login collection via D-Bus if it doesn't exist
+    # Create the login collection via gnome-keyring internal D-Bus API (no prompt)
     python3 -c "
-import gi, sys
-gi.require_version('Secret', '1')
-from gi.repository import Secret
-service = Secret.Service.get_sync(Secret.ServiceFlags.OPEN_SESSION)
-collections = service.get_collections()
-if not any(c.get_label() == 'Login' for c in collections):
-    Secret.Collection.create_sync(service, 'Login', 'default', Secret.CollectionCreateFlags.NONE, None)
-    print('Login collection created')
-else:
-    print('Login collection exists')
-" 2>/dev/null || echo "  Falling back to grdctl directly..."
+import dbus
+bus = dbus.SessionBus()
+svc = bus.get_object('org.freedesktop.secrets', '/org/freedesktop/secrets')
+si = dbus.Interface(svc, 'org.freedesktop.Secret.Service')
+_, session = si.OpenSession('plain', dbus.String('', variant_level=1))
+ki = dbus.Interface(svc, 'org.gnome.keyring.InternalUnsupportedGuiltRiddenInterface')
+props = dbus.Dictionary({'org.freedesktop.Secret.Collection.Label': 'Login'}, signature='sv')
+secret = dbus.Struct((session, dbus.ByteArray(b''), dbus.ByteArray(b''), 'text/plain'), signature='oayays')
+col = ki.CreateWithMasterPassword(props, secret)
+si.SetAlias('default', col)
+print('Login collection created')
+" 2>&1
 
     grdctl rdp set-credentials "$user" "$pass"
     systemctl --user restart gnome-remote-desktop

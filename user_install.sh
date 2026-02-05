@@ -290,9 +290,8 @@ print('  Login collection created')
 
         # Set RDP credentials
         echo "  Setting RDP credentials..."
-        if grdctl rdp set-credentials "$TARGET_USER" "changeme123" 2>&1; then
-            echo "  RDP credentials set (user: $TARGET_USER, password: changeme123)"
-            echo "  Change with: grdctl rdp set-credentials USER NEWPASS"
+        if grdctl rdp set-credentials "$TARGET_USER" "automateLinux" 2>&1; then
+            echo "  RDP credentials set (user: $TARGET_USER, password: automateLinux)"
         else
             echo "  ⚠ WARNING: Could not set RDP credentials"
             echo "  Try logging out and back in, then re-run: ./user_install.sh"

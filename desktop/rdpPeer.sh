@@ -50,4 +50,4 @@ fi
 # Extract IP for selected peer
 IP=$(echo "$PEERS_JSON" | jq -r --arg peer "$SELECTED" '.[] | select(.peer_id == $peer) | .ip_address')
 
-xfreerdp3 /v:"$IP":3389 /u:yaniv /p:testpass123 /f /smart-sizing
+xfreerdp3 /v:"$IP":3389 /u:yaniv /p:automateLinux /f /smart-sizing /cert:tofu

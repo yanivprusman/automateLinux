@@ -245,8 +245,9 @@ if [ "$MINIMAL_INSTALL" = false ]; then
         grdctl rdp disable-view-only 2>/dev/null || true
 
         # Check if credentials are set (shows "(null)" or "(hidden)" when set)
+        # Empty CRED_STATUS means grdctl couldn't reach keyring — treat as needing credentials
         CRED_STATUS=$(grdctl status --show-credentials 2>/dev/null | grep -E "Username:|Password:" || true)
-        if echo "$CRED_STATUS" | grep -q "(null)"; then
+        if [ -z "$CRED_STATUS" ] || echo "$CRED_STATUS" | grep -q "(null)"; then
             echo "  Setting default RDP credentials..."
             CRED_OUTPUT=$(grdctl rdp set-credentials "$TARGET_USER" "changeme123" 2>&1)
             CRED_RESULT=$?

@@ -17,6 +17,8 @@
 . $(theRealPath wireguard.sh)
 . $(theRealPath testDirHistory.sh)
 . $(theRealPath remote.sh)
+. $(theRealPath peerDiag.sh)
+. $(theRealPath audioTunnel.sh)
 . $(theRealPath shed.sh)
 . $(theRealPath prompt.sh)
 . $(theRealPath tree.sh)

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Audio Tunnel
+Comment=Stream audio from a remote peer
+Exec=/opt/automateLinux/desktop/audioTunnel.sh
+Icon=audio-speakers
+Terminal=false
+Type=Application
+Categories=Network;Audio;

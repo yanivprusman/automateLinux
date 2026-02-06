@@ -3,6 +3,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const net = require('net');
 const cors = require('cors');
+const { execSync } = require('child_process');
 
 const app = express();
 app.use(cors());
@@ -196,6 +197,25 @@ app.get('/api/bridge-status', (req, res) => {
     res.json({ fallbackPort: usingFallbackPort });
 });
 
+function startServer(PORT, retried = false) {
+    server.listen(PORT, () => {
+        console.log(`Bridge listening on http://localhost:${PORT}`);
+    });
+    server.on('error', (e) => {
+        if (e.code === 'EADDRINUSE' && !retried) {
+            console.warn(`Port ${PORT} in use, killing existing process...`);
+            try { execSync(`fuser -k ${PORT}/tcp`, { stdio: 'ignore' }); } catch {}
+            setTimeout(() => {
+                server.removeAllListeners('error');
+                startServer(PORT, true);
+            }, 1000);
+        } else {
+            console.error(`Cannot start bridge: ${e.message}`);
+            process.exit(1);
+        }
+    });
+}
+
 (async () => {
     let PORT = DEFAULT_PORT;
     try {
@@ -204,7 +224,5 @@ app.get('/api/bridge-status', (req, res) => {
         usingFallbackPort = true;
         console.warn(`Could not get port from daemon (${err.message}), using default ${DEFAULT_PORT}`);
     }
-    server.listen(PORT, () => {
-        console.log(`Bridge listening on http://localhost:${PORT}`);
-    });
+    startServer(PORT);
 })();

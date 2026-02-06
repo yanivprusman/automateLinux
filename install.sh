@@ -377,8 +377,14 @@ if [ "$MINIMAL_INSTALL" = false ]; then
         done
 
         systemctl daemon-reload
-        systemctl enable cad-dev.service pt-dev.service dashboard-bridge.service dashboard-dev.service dashboard-prod.service 2>/dev/null || true
-        echo "  ExtraApps services installed. Start with: systemctl start cad-dev pt-dev dashboard-dev"
+
+        echo "  Enabling services..."
+        systemctl enable dashboard-bridge.service dashboard-dev.service dashboard-prod.service || echo "  Warning: Failed to enable some dashboard services"
+        systemctl enable cad-dev.service pt-dev.service || echo "  Warning: Failed to enable some app services"
+
+        echo "  Starting dashboard services..."
+        systemctl start dashboard-bridge.service dashboard-dev.service dashboard-prod.service || echo "  Warning: Failed to start some dashboard services"
+        echo "  ExtraApps services installed."
     else
         echo "  Warning: $SERVICES_SRC not found, skipping extraApps services."
     fi

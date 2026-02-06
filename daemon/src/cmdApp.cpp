@@ -21,7 +21,7 @@ static const vector<AppConfig> APP_CONFIGS = {
      "/opt/automateLinux/extraApps/cad", "/opt/prod/cad", ".", "web"},
     {"pt", "Public Transportation", false, "", "pt-{mode}", "pt", "",
      "/opt/automateLinux/extraApps/publicTransportation",
-     "/opt/prod/publicTransportation", "", "web"},
+     "/opt/prod/publicTransportation", "", "frontend/public-transportation"},
     {"dashboard", "Dashboard", true, "dashboard-bridge", "dashboard-{mode}",
      "dashboard", "dashboard-bridge", "/opt/automateLinux/dashboard",
      "/opt/automateLinux/dashboard", "", ""}};

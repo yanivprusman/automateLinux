@@ -12,7 +12,7 @@ automateLinux is a suite of tools for personalizing and automating a Linux deskt
 - **GNOME Extensions** (`gnomeExtensions/`): Desktop integration - status menu for daemon control, active window tracking
 - **VS Code Extensions** (`visualStudioCodeExtensions/`): Editor integrations for daemon monitoring, git workflows, and log viewing
 - **Utilities** (`utilities/`): Standalone tools - termcontrol, sendKeysUInput, lastChanged, cleanBetween, emergencyRestore.sh
-- **Extra Apps** (`extraApps/`): Standalone applications housed directly in this repo (cad, publicTransportation) to simplify agent access.
+- **Extra Apps** (`extraApps/`): Standalone applications housed directly in this repo (cad, publicTransportation, immersiveRDP) to simplify agent access.
 
 ## Build Commands
 

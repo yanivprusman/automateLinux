@@ -102,6 +102,17 @@ verify_dependencies() {
         # If exactly 1 source exists, it's already configured correctly - do nothing
     fi
 
+    # Ensure CMake >= 3.30 (needed for CMP0167 policy)
+    CURRENT_CMAKE_VERSION=$(cmake --version 2>/dev/null | head -1 | grep -oP '\d+\.\d+' | head -1)
+    if [ -z "$CURRENT_CMAKE_VERSION" ] || [ "$(echo -e "$CURRENT_CMAKE_VERSION\n3.30" | sort -V | head -1)" != "3.30" ]; then
+        echo "CMake >= 3.30 required (found: ${CURRENT_CMAKE_VERSION:-none}), adding Kitware PPA..."
+        apt-get install -y gpg wget >/dev/null 2>&1
+        wget -qO- https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg 2>/dev/null
+        echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/kitware.list
+        # Force reinstall cmake from Kitware PPA
+        MISSING_PACKAGES="$MISSING_PACKAGES cmake"
+    fi
+
     if [ -n "$MISSING_PACKAGES" ]; then
         echo "Missing packages:$MISSING_PACKAGES"
         echo "Installing missing dependencies..."

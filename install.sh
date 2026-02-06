@@ -160,6 +160,18 @@ KRBEOF
             echo "  xrdp installed but masked (use gnome-remote-desktop for existing sessions)"
             echo "  To use xrdp instead: sudo systemctl unmask xrdp && sudo systemctl enable --now xrdp"
         fi
+
+        # Force headless HDMI on Raspberry Pi so gnome-remote-desktop has a display
+        if [ -f /sys/firmware/devicetree/base/model ] && grep -qi "raspberry pi" /sys/firmware/devicetree/base/model; then
+            echo "  Raspberry Pi detected, configuring headless HDMI for RDP..."
+            CMDLINE="/boot/firmware/cmdline.txt"
+            if [ -f "$CMDLINE" ] && ! grep -q "video=HDMI-A-1:" "$CMDLINE"; then
+                sed -i 's/$/ video=HDMI-A-1:1920x1080@60D/' "$CMDLINE"
+                echo "  ✓ Forced HDMI output in kernel cmdline (reboot required)"
+            else
+                echo "  HDMI video output already configured."
+            fi
+        fi
     fi
 }
 verify_dependencies

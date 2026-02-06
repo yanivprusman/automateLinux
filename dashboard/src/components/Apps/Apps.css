@@ -26,6 +26,17 @@
     border-color: var(--primary);
 }
 
+.app-card.expanded {
+    grid-column: 1 / -1;
+}
+
+.app-card-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
 .app-icon {
     font-size: 3rem;
     margin-bottom: 16px;
@@ -73,4 +84,120 @@
 .launch-btn:disabled {
     opacity: 0.7;
     cursor: wait;
+}
+
+/* Peer status section */
+.peer-status-section {
+    width: 100%;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border, #333);
+    text-align: left;
+}
+
+.peer-status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.refresh-btn {
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+}
+
+.refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.peer-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.peer-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.peer-row.offline {
+    opacity: 0.5;
+}
+
+.peer-name {
+    font-weight: 600;
+    min-width: 80px;
+    color: var(--text-primary);
+}
+
+.peer-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.status-badge.installed {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.status-badge.not-installed {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.status-badge.running {
+    background: rgba(34, 197, 94, 0.25);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.status-badge.stopped {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+}
+
+.status-badge.unknown {
+    background: rgba(156, 163, 175, 0.15);
+    color: #9ca3af;
+}
+
+.status-badge.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    font-style: italic;
+}
+
+.peer-loading {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    padding: 8px 0;
 }

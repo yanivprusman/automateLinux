@@ -208,6 +208,8 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Check prod worktree status (clean/dirty)"),
     CommandSignature(COMMAND_CLEAN_PROD, {COMMAND_ARG_APP},
                      "Discard uncommitted changes in prod worktree"),
+    CommandSignature(COMMAND_GET_APP_PEERS, {COMMAND_ARG_APP},
+                     "Show which peers have an app installed and running"),
 
     // Test/Debug Commands
     CommandSignature(COMMAND_TEST_INTEGRITY, {},
@@ -374,6 +376,7 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_DEPLOY_TO_PROD, handleDeployToProd},
     {COMMAND_PROD_STATUS, handleProdStatus},
     {COMMAND_CLEAN_PROD, handleCleanProd},
+    {COMMAND_GET_APP_PEERS, handleGetAppPeers},
 
     // Peer commands
     {COMMAND_SET_PEER_CONFIG, handleSetPeerConfig},

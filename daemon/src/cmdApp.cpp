@@ -1,13 +1,17 @@
 #include "cmdApp.h"
 #include "Constants.h"
 #include "DatabaseTableManagers.h"
+#include "Globals.h"
+#include "PeerManager.h"
 #include "Utils.h"
+#include "cmdPeer.h"
 #include <algorithm>
 #include <chrono>
 #include <set>
 #include <sstream>
 #include <thread>
 #include <tuple>
+#include <unistd.h>
 
 using namespace std;
 
@@ -1288,4 +1292,140 @@ CmdResult handleListExtraApps(const json &) {
   }
 
   return CmdResult(0, ss.str());
+}
+
+CmdResult handleGetAppPeers(const json &command) {
+  string appId = command[COMMAND_ARG_APP].get<string>();
+
+  AppConfig config = AppManager::getAppConfig(appId);
+  if (config.appId.empty()) {
+    return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  PeerManager &pm = PeerManager::getInstance();
+
+  // Get peer list - forward to leader if worker (same pattern as handleListPeers)
+  vector<PeerRecord> peers;
+  if (!pm.isLeader() && pm.isConnectedToLeader()) {
+    json fwdCmd;
+    fwdCmd["command"] = COMMAND_LIST_PEERS;
+
+    int leaderFd = pm.getLeaderSocket();
+    string msg = fwdCmd.dump() + "\n";
+    if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
+      return CmdResult(1, "Failed to forward listPeers to leader\n");
+    }
+
+    char buffer[8192];
+    memset(buffer, 0, sizeof(buffer));
+    ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
+    if (n > 0) {
+      try {
+        json peerArray = json::parse(buffer);
+        for (const auto &p : peerArray) {
+          PeerRecord rec;
+          rec.peer_id = p.value("peer_id", "");
+          rec.ip_address = p.value("ip_address", "");
+          rec.hostname = p.value("hostname", "");
+          rec.is_online = p.value("is_online", false);
+          peers.push_back(rec);
+        }
+      } catch (...) {
+        return CmdResult(1, "Failed to parse peer list from leader\n");
+      }
+    } else {
+      return CmdResult(1, "No response from leader\n");
+    }
+  } else {
+    peers = PeerTable::getAllPeers();
+  }
+
+  // Build service names for probing
+  string clientDevSvc =
+      config.clientServiceTemplate.empty()
+          ? ""
+          : AppManager::resolveServiceName(config.clientServiceTemplate, appId,
+                                           "dev");
+  string clientProdSvc =
+      config.clientServiceTemplate.empty()
+          ? ""
+          : AppManager::resolveServiceName(config.clientServiceTemplate, appId,
+                                           "prod");
+
+  string localPeerId = pm.getPeerId();
+  json result;
+  result["app"] = appId;
+  result["peers"] = json::array();
+
+  for (const auto &peer : peers) {
+    json peerObj;
+    peerObj["peer_id"] = peer.peer_id;
+    peerObj["is_online"] = peer.is_online;
+
+    if (peer.peer_id == localPeerId) {
+      // Local machine - check directly
+      peerObj["dev_installed"] =
+          (access(config.devPath.c_str(), F_OK) == 0);
+      peerObj["prod_installed"] =
+          !config.prodPath.empty() &&
+          (access(config.prodPath.c_str(), F_OK) == 0);
+      peerObj["dev_running"] =
+          !clientDevSvc.empty() && AppManager::isServiceActive(clientDevSvc);
+      peerObj["prod_running"] =
+          !clientProdSvc.empty() && AppManager::isServiceActive(clientProdSvc);
+      peerObj["error"] = nullptr;
+    } else if (!peer.is_online) {
+      // Offline peer - can't query
+      peerObj["dev_installed"] = nullptr;
+      peerObj["prod_installed"] = nullptr;
+      peerObj["dev_running"] = nullptr;
+      peerObj["prod_running"] = nullptr;
+      peerObj["error"] = "peer offline";
+    } else {
+      // Online remote peer - probe via execOnPeer
+      string probeCmd = "test -d " + config.devPath +
+                        " && echo DEV_INSTALLED; test -d " + config.prodPath +
+                        " && echo PROD_INSTALLED;";
+      if (!clientDevSvc.empty()) {
+        probeCmd += " systemctl is-active --quiet " + clientDevSvc +
+                    " 2>/dev/null && echo DEV_RUNNING;";
+      }
+      if (!clientProdSvc.empty()) {
+        probeCmd += " systemctl is-active --quiet " + clientProdSvc +
+                    " 2>/dev/null && echo PROD_RUNNING;";
+      }
+      probeCmd += " echo DONE";
+
+      json execCmd;
+      execCmd["command"] = COMMAND_EXEC_ON_PEER;
+      execCmd[COMMAND_ARG_PEER] = peer.peer_id;
+      execCmd[COMMAND_ARG_DIRECTORY] = "/tmp";
+      execCmd[COMMAND_ARG_SHELL_CMD] = probeCmd;
+
+      CmdResult execResult = handleExecOnPeer(execCmd);
+
+      if (execResult.status != 0) {
+        peerObj["dev_installed"] = nullptr;
+        peerObj["prod_installed"] = nullptr;
+        peerObj["dev_running"] = nullptr;
+        peerObj["prod_running"] = nullptr;
+        peerObj["error"] = "exec failed: " + execResult.message;
+      } else {
+        string out = execResult.message;
+        peerObj["dev_installed"] =
+            (out.find("DEV_INSTALLED") != string::npos);
+        peerObj["prod_installed"] =
+            (out.find("PROD_INSTALLED") != string::npos);
+        peerObj["dev_running"] =
+            (out.find("DEV_RUNNING") != string::npos);
+        peerObj["prod_running"] =
+            (out.find("PROD_RUNNING") != string::npos);
+        peerObj["error"] = nullptr;
+      }
+    }
+
+    result["peers"].push_back(peerObj);
+  }
+
+  return CmdResult(0, result.dump(2) + "\n");
 }

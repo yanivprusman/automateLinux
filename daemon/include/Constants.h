@@ -117,6 +117,7 @@
 #define COMMAND_DEPLOY_TO_PROD "deployToProd"
 #define COMMAND_PROD_STATUS "prodStatus"
 #define COMMAND_CLEAN_PROD "cleanProd"
+#define COMMAND_GET_APP_PEERS "getAppPeers"
 
 // App Arguments
 #define COMMAND_ARG_APP "app"

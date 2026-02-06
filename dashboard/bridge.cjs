@@ -49,7 +49,7 @@ const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 // Function to send command to UDS and return response
-function sendToDaemon(commandObj) {
+function sendToDaemon(commandObj, timeoutMs = 2000) {
     return new Promise((resolve, reject) => {
         const client = net.createConnection(UDS_PATH);
         let response = '';
@@ -74,7 +74,7 @@ function sendToDaemon(commandObj) {
         setTimeout(() => {
             client.destroy();
             reject(new Error('Daemon connection timeout'));
-        }, 2000);
+        }, timeoutMs);
     });
 }
 
@@ -172,6 +172,18 @@ app.post('/api/command', async (req, res) => {
         res.send(result);
     } catch (err) {
         console.error('Error handling command:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/app-peers/:appId', async (req, res) => {
+    try {
+        const result = await sendToDaemon(
+            { command: 'getAppPeers', app: req.params.appId },
+            15000
+        );
+        res.json(JSON.parse(result));
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });

@@ -141,6 +141,12 @@ if [ -f "$TMUX_TARGET" ]; then
     fi
 fi
 
+# 4.5. Configure Git Identity
+echo "Configuring git identity..."
+git config --global user.name "Yaniv Prusman"
+git config --global user.email "yanivprusman@gmail.com"
+echo "  Done."
+
 # 5. Configure GNOME Extensions
 if [ "$MINIMAL_INSTALL" = false ]; then
     echo "Configuring GNOME Extensions..."
@@ -327,6 +333,20 @@ print('  Login collection created')
         fi
     else
         echo "  grdctl not found, skipping RDP configuration."
+    fi
+
+    # Enable GDM auto-login so gnome-remote-desktop has a session after reboot
+    echo "  Configuring GDM auto-login..."
+    GDM_CONF="/etc/gdm3/custom.conf"
+    if [ -f "$GDM_CONF" ]; then
+        if grep -q "^AutomaticLoginEnable" "$GDM_CONF"; then
+            echo "  Auto-login already configured."
+        else
+            sudo sed -i "/^\[daemon\]/a AutomaticLoginEnable=True\nAutomaticLogin=$TARGET_USER" "$GDM_CONF"
+            echo "  ✓ Auto-login enabled for $TARGET_USER (reboot required)"
+        fi
+    else
+        echo "  GDM config not found at $GDM_CONF, skipping auto-login."
     fi
 else
     echo "Skipping GNOME Remote Desktop (minimal install)..."

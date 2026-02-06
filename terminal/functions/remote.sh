@@ -63,10 +63,10 @@ sshDesktop(){
 
 # RDP to peer using gnome-remote-desktop
 # Usage: rdp <peer> [password]
-# Peers: desktop (10.0.0.2), laptop (10.0.0.4), vps (10.0.0.1), or IP address
+# Peers: desktop (10.0.0.2), laptop (10.0.0.4), rpi (10.0.0.6), vps (10.0.0.1), or IP address
 rdp(){
     local peer="${1:-desktop}"
-    local pass="${2:-testpass123}"
+    local pass="${2:-automateLinux}"
     local ip
 
     case "$peer" in
@@ -75,6 +75,9 @@ rdp(){
             ;;
         laptop)
             ip="10.0.0.4"
+            ;;
+        rpi|rpi-ubuntu)
+            ip="10.0.0.6"
             ;;
         vps)
             ip="10.0.0.1"

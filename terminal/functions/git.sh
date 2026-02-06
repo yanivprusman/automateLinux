@@ -197,7 +197,8 @@ gitl(){
 
 gita(){
     # Fetch latest from remote silently
-    git fetch origin main &>/dev/null
+    local fetch_err
+    fetch_err=$(git fetch origin main 2>&1) || echo "$fetch_err" >&2
 
     # Get commit counts: left=behind (remote), right=ahead (local)
     local counts
@@ -376,7 +377,9 @@ gitCount(){
 }
 
 gitAheadBehind(){
-    git fetch origin main &>/dev/null
+    # Suppress fetch noise on success, but show output on failure (git prints everything to stderr)
+    local fetch_err
+    fetch_err=$(git fetch origin main 2>&1) || echo "$fetch_err" >&2
     local counts
     counts=$(git rev-list --left-right --count origin/main...HEAD 2>/dev/null)
     if [ -z "$counts" ]; then

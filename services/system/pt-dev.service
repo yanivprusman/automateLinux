@@ -6,7 +6,7 @@ Wants=daemon.service
 [Service]
 Type=simple
 WorkingDirectory=/opt/automateLinux/extraApps/publicTransportation/frontend/public-transportation
-ExecStart=/usr/bin/npm run dev -- --port 3003
+ExecStart=/usr/bin/npm run dev -- --port 3003 --host
 Restart=on-failure
 RestartSec=5s
 User=root

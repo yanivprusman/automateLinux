@@ -23,8 +23,8 @@ static const vector<AppConfig> APP_CONFIGS = {
      "/opt/automateLinux/extraApps/publicTransportation",
      "/opt/prod/publicTransportation", "", "frontend/public-transportation"},
     {"dashboard", "Dashboard", true, "dashboard-bridge", "dashboard-{mode}",
-     "dashboard", "dashboard-bridge", "/opt/automateLinux/dashboard",
-     "/opt/automateLinux/dashboard", "", ""}};
+     "dashboard", "dashboard-bridge", "/opt/automateLinux/extraApps/dashboard",
+     "/opt/prod/dashboard", "", ""}};
 
 // ============================================================================
 // AppManager namespace implementation

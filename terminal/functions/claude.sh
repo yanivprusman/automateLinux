@@ -51,6 +51,10 @@
 #     fi
 # }
 
+cl(){
+    claude "$@"
+}
+
 claudeLimitReset(){
     local initial_datetime="${1:-19/01/26 06:00}"
     local cycle_seconds=$((5 * 60 * 60))  # 5 hours in seconds

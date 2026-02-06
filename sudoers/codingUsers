@@ -43,3 +43,10 @@
 # 5. GNOME Replication (Allow running commands as other users)
 %coding ALL=(ALL) NOPASSWD: /usr/bin/sudo -u *
 %coding ALL=(ALL) NOPASSWD: /usr/bin/sudo -i -u *
+
+# 6. System Management (Remote administration via SSH/daemon)
+%coding ALL=(ALL) NOPASSWD: /usr/sbin/reboot
+%coding ALL=(ALL) NOPASSWD: /usr/bin/systemctl reboot
+%coding ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart daemon.service
+%coding ALL=(ALL) NOPASSWD: /opt/automateLinux/install.sh
+%coding ALL=(ALL) NOPASSWD: /opt/automateLinux/install.sh *

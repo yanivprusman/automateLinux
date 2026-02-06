@@ -47,6 +47,9 @@ if [ -z "$SELECTED" ]; then
     exit 0
 fi
 
+# zenity may return "col1|col2|col3" — extract first field (peer_id)
+SELECTED=$(echo "$SELECTED" | cut -d'|' -f1)
+
 # Extract IP for selected peer
 IP=$(echo "$PEERS_JSON" | jq -r --arg peer "$SELECTED" '.[] | select(.peer_id == $peer) | .ip_address')
 

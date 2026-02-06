@@ -7,12 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 automateLinux is a suite of tools for personalizing and automating a Linux desktop environment:
 - **C++ Daemon** (`daemon/`): Central background service managing input events, port registry, database state, peer networking (over WireGuard VPN), and command dispatching via UNIX sockets and TCP
 - **Terminal Environment** (`terminal/`): Modular Bash scripts for shell customization including shared directory history (`Ctrl+Up/Down`), custom prompt, aliases, and functions
-- **Dashboard** (`dashboard/`): React/Vite web app for live logs, macro builder, and system configuration. Uses bridge.cjs to communicate with daemon
+- **Dashboard** (`extraApps/dashboard/`): React/Vite web app for live logs, macro builder, and system configuration. Uses bridge.cjs to communicate with daemon. Separate git repo (prod worktree at `/opt/prod/dashboard/`)
 - **Chrome Extension** (`chromeExtensions/daemon/`): Browser state sync via Native Messaging (tracks active tabs, Ctrl+V focus+paste on ChatGPT)
 - **GNOME Extensions** (`gnomeExtensions/`): Desktop integration - status menu for daemon control, active window tracking
 - **VS Code Extensions** (`visualStudioCodeExtensions/`): Editor integrations for daemon monitoring, git workflows, and log viewing
 - **Utilities** (`utilities/`): Standalone tools - termcontrol, sendKeysUInput, lastChanged, cleanBetween, emergencyRestore.sh
-- **Extra Apps** (`extraApps/`): Standalone applications housed directly in this repo (cad, publicTransportation, immersiveRDP) to simplify agent access.
+- **Extra Apps** (`extraApps/`): Standalone applications as separate git repos (cad, publicTransportation, dashboard, immersiveRDP) to simplify agent access.
 
 ## Build Commands
 
@@ -24,9 +24,10 @@ The `bd` function changes to daemon dir, runs `source ./build.sh`, and returns. 
 
 ### Dashboard
 ```bash
-node dashboard/bridge.cjs &                      # Start bridge (port 3501)
-cd dashboard && npm run dev -- --port 3007       # Start frontend (port 3007)
+node extraApps/dashboard/bridge.cjs &                      # Start bridge (port 3501)
+cd extraApps/dashboard && npm run dev -- --port 3007       # Start frontend (port 3007)
 # Then open http://localhost:3007
+# Or use daemon commands: d startApp --app dashboard --mode dev
 ```
 
 ### Extra Apps (CAD, PT)
@@ -265,7 +266,7 @@ All peer commands work from **any peer** (leader or worker). Workers automatical
 - **daemon/src/DaemonServer.cpp**: UNIX socket server + TCP peer socket handling
 - **daemon/src/PeerManager.cpp**: Leader/worker connection management
 - **daemon/src/DatabaseTableManagers.cpp**: MySQL table management (including peer_registry)
-- **dashboard/bridge.cjs**: WebSocket/REST bridge to daemon for dashboard
+- **extraApps/dashboard/bridge.cjs**: WebSocket/REST bridge to daemon for dashboard
 - **terminal/functions/git.sh**: Git helpers including `gita` with behind-branch warning
 - **terminal/functions/*.sh**: Modular bash functions
 

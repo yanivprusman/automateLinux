@@ -360,10 +360,23 @@ if [ "$MINIMAL_INSTALL" = false ]; then
     echo "Installing ExtraApps system services..."
     SERVICES_SRC="$INSTALL_DIR/services/system"
 
-    # Install npm dependencies for dashboard
-    if [ -f "$INSTALL_DIR/dashboard/package.json" ]; then
+    # Clone and install dashboard if not present
+    DASHBOARD_DEV="$INSTALL_DIR/extraApps/dashboard"
+    if [ ! -d "$DASHBOARD_DEV" ]; then
+        echo "  Cloning dashboard repo..."
+        git clone https://github.com/yanivprusman/dashboard.git "$DASHBOARD_DEV"
+    fi
+    if [ -f "$DASHBOARD_DEV/package.json" ]; then
         echo "  Installing dashboard npm dependencies..."
-        cd "$INSTALL_DIR/dashboard" && npm install --production && cd "$INSTALL_DIR"
+        cd "$DASHBOARD_DEV" && npm install && cd "$INSTALL_DIR"
+    fi
+    # Set up prod worktree if not present
+    DASHBOARD_PROD="/opt/prod/dashboard"
+    if [ ! -d "$DASHBOARD_PROD" ]; then
+        echo "  Creating dashboard prod worktree..."
+        mkdir -p /opt/prod
+        cd "$DASHBOARD_DEV" && git worktree add --detach "$DASHBOARD_PROD" HEAD && cd "$INSTALL_DIR"
+        cd "$DASHBOARD_PROD" && npm install && npx vite build && cd "$INSTALL_DIR"
     fi
 
     if [ -d "$SERVICES_SRC" ]; then

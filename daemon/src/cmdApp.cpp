@@ -1207,8 +1207,8 @@ CmdResult handleDeployToProd(const json &command) {
   }
   result << "  Checkout: OK\n";
 
-  // 4. Rebuild server if app has one
-  if (config.hasServerComponent) {
+  // 4. Rebuild server if app has a buildable server component
+  if (config.hasServerComponent && !config.serverBuildSubdir.empty()) {
     result << "  Rebuilding server...\n";
     string buildResult = AppManager::buildServerComponent(appId, "prod");
     if (buildResult.find("Build complete") == string::npos) {

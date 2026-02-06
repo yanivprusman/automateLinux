@@ -3,7 +3,7 @@
 # Define paths
 DAEMON_DIR="$(dirname "$(dirname "$(readlink -f "$0")")")"
 PROJECT_ROOT="$(dirname "$DAEMON_DIR")"
-DASHBOARD_DIR="$PROJECT_ROOT/dashboard"
+DASHBOARD_DIR="$PROJECT_ROOT/extraApps/dashboard"
 LOG_FILE="/tmp/automatelinux-dashboard.log"
 
 # Function to check if a process is running
@@ -32,7 +32,7 @@ else
     echo "Bridge not listening on port 3501. Attempting start..." >> "$LOG_FILE"
     
     # Kill any stale processes matches
-    pkill -f "node dashboard/bridge.cjs"
+    pkill -f "node extraApps/dashboard/bridge.cjs"
     
     # Ensure port 3501 is free
     fuser -k 3501/tcp >> "$LOG_FILE" 2>&1
@@ -41,7 +41,7 @@ else
     sleep 1
     
     cd "$PROJECT_ROOT"
-    nohup node dashboard/bridge.cjs >> "$LOG_FILE" 2>&1 &
+    nohup node extraApps/dashboard/bridge.cjs >> "$LOG_FILE" 2>&1 &
     
     # Verify startup
     sleep 2

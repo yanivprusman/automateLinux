@@ -177,9 +177,10 @@ CmdResult handleListPorts(const json &command) {
       std::string repoPath = "";
 
       // Determine repository path based on key
-      if (key == "dashboard-dev" || key == "dashboard-prod" ||
-          key == "dashboard-bridge") {
-        repoPath = directories.base;
+      if (key == "dashboard-dev" || key == "dashboard-bridge") {
+        repoPath = directories.base + "extraApps/dashboard";
+      } else if (key == "dashboard-prod") {
+        repoPath = "/opt/prod/dashboard";
       } else if (key == "cad-dev") {
         repoPath = directories.base + "extraApps/cad";
       } else if (key == "cad-prod") {

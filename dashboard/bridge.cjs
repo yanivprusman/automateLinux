@@ -176,15 +176,23 @@ app.post('/api/command', async (req, res) => {
     }
 });
 
-// Start server with port from daemon
+// Start server with port from daemon, fallback to 3501
+const DEFAULT_PORT = 3501;
+let usingFallbackPort = false;
+
+app.get('/api/bridge-status', (req, res) => {
+    res.json({ fallbackPort: usingFallbackPort });
+});
+
 (async () => {
+    let PORT = DEFAULT_PORT;
     try {
-        const PORT = await getPortFromDaemon('dashboard-bridge');
-        server.listen(PORT, () => {
-            console.log(`Bridge listening on http://localhost:${PORT}`);
-        });
+        PORT = await getPortFromDaemon('dashboard-bridge');
     } catch (err) {
-        console.error('Failed to get port from daemon:', err.message);
-        process.exit(1);
+        usingFallbackPort = true;
+        console.warn(`Could not get port from daemon (${err.message}), using default ${DEFAULT_PORT}`);
     }
+    server.listen(PORT, () => {
+        console.log(`Bridge listening on http://localhost:${PORT}`);
+    });
 })();

@@ -349,6 +349,12 @@ if [ "$MINIMAL_INSTALL" = false ]; then
     echo "Installing ExtraApps system services..."
     SERVICES_SRC="$INSTALL_DIR/services/system"
 
+    # Install npm dependencies for dashboard
+    if [ -f "$INSTALL_DIR/dashboard/package.json" ]; then
+        echo "  Installing dashboard npm dependencies..."
+        cd "$INSTALL_DIR/dashboard" && npm install --production && cd "$INSTALL_DIR"
+    fi
+
     if [ -d "$SERVICES_SRC" ]; then
         for SERVICE_FILE in "$SERVICES_SRC"/*.service; do
             if [ -f "$SERVICE_FILE" ]; then
@@ -360,8 +366,8 @@ if [ "$MINIMAL_INSTALL" = false ]; then
         done
 
         systemctl daemon-reload
-        systemctl enable cad-dev.service pt-dev.service 2>/dev/null || true
-        echo "  ExtraApps services installed. Start with: systemctl start cad-dev pt-dev"
+        systemctl enable cad-dev.service pt-dev.service dashboard-bridge.service dashboard-dev.service 2>/dev/null || true
+        echo "  ExtraApps services installed. Start with: systemctl start cad-dev pt-dev dashboard-dev"
     else
         echo "  Warning: $SERVICES_SRC not found, skipping extraApps services."
     fi

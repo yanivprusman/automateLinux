@@ -7,11 +7,17 @@ interface SidebarProps {
 
 const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
     const [version, setVersion] = useState<number | null>(null);
+    const [fallbackPort, setFallbackPort] = useState(false);
 
     useEffect(() => {
         fetch('http://localhost:3501/api/version')
             .then(res => res.json())
             .then(data => setVersion(data.version))
+            .catch(console.error);
+
+        fetch('http://localhost:3501/api/bridge-status')
+            .then(res => res.json())
+            .then(data => setFallbackPort(data.fallbackPort))
             .catch(console.error);
     }, []);
 
@@ -41,6 +47,19 @@ const Sidebar = ({ currentView, onViewChange }: SidebarProps) => {
             </nav>
 
             <div className="sidebar-footer" style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid var(--glass-border)' }}>
+                {fallbackPort && (
+                    <div style={{
+                        fontSize: '0.75rem',
+                        color: '#ff9800',
+                        background: 'rgba(255, 152, 0, 0.1)',
+                        border: '1px solid rgba(255, 152, 0, 0.3)',
+                        borderRadius: '6px',
+                        padding: '6px 10px',
+                        marginBottom: '10px',
+                    }}>
+                        Bridge using fallback port (no leader)
+                    </div>
+                )}
                 <div className="status-indicator">
                     <span className="dot pulse" style={{
                         width: '8px',

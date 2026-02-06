@@ -106,9 +106,9 @@ if command -v pyenv 1>/dev/null 2>&1; then
     eval "$(pyenv init --path)"
 fi
 
-# Load Angular CLI autocompletion only if ng exists
+# Lazy load Angular CLI autocompletion
 if command -v ng &> /dev/null; then
-    source <(ng completion script)
+    ng() { unset -f ng; source <(command ng completion script); command ng "$@"; }
 fi
 
 if [ -f "${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}user.sh" ]; then

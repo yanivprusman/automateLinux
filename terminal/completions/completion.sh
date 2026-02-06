@@ -1,18 +1,19 @@
-. $(theRealPath sendKeys.bash)
-. $(theRealPath daemon.bash)
-. $(theRealPath build.bash)
-. $(theRealPath printDir.bash)
-. $(theRealPath prepareBuild.bash)
-. $(theRealPath gnome.bash)
-. $(theRealPath changeTitle.bash)
-. $(theRealPath log.bash)
-. $(theRealPath theRealPath.bash)
-. $(theRealPath cd.bash)
-. $(theRealPath changeDevice.bash)
-. $(theRealPath grep.bash)
-. $(theRealPath evsieve.bash)
-. $(theRealPath tailCombinedLog.bash)
-. $(theRealPath remote.bash)
-. $(theRealPath user.bash)
-. $(theRealPath to.bash)
-
+_comp_dir="${AUTOMATE_LINUX_TERMINAL_DIR}completions/"
+. "${_comp_dir}sendKeys.bash"
+. "${_comp_dir}daemon.bash"
+. "${_comp_dir}build.bash"
+. "${_comp_dir}printDir.bash"
+. "${_comp_dir}prepareBuild.bash"
+. "${_comp_dir}gnome.bash"
+. "${_comp_dir}changeTitle.bash"
+. "${_comp_dir}log.bash"
+. "${_comp_dir}theRealPath.bash"
+. "${_comp_dir}cd.bash"
+. "${_comp_dir}changeDevice.bash"
+. "${_comp_dir}grep.bash"
+. "${_comp_dir}evsieve.bash"
+. "${_comp_dir}tailCombinedLog.bash"
+. "${_comp_dir}remote.bash"
+. "${_comp_dir}user.bash"
+. "${_comp_dir}to.bash"
+unset _comp_dir

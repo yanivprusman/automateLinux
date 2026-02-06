@@ -1,38 +1,40 @@
-. $(theRealPath emoji.sh)
-. $(theRealPath terminal.sh)
-. $(theRealPath terminalCapture.sh)
-. $(theRealPath files.sh)
-. $(theRealPath daemon.sh)
-. $(theRealPath variables.sh)
-. $(theRealPath system.sh)
-. $(theRealPath misc.sh)
-. $(theRealPath build.sh)
-. $(theRealPath printDir.sh)
-. $(theRealPath db.sh)
-. $(theRealPath git.sh)
-. $(theRealPath sshgit.sh)
-. $(theRealPath log.sh)
-. $(theRealPath gemini.sh)
-. $(theRealPath evsieve.sh)
-. $(theRealPath wireguard.sh)
-. $(theRealPath testDirHistory.sh)
-. $(theRealPath remote.sh)
-. $(theRealPath peerDiag.sh)
-. $(theRealPath audioTunnel.sh)
-. $(theRealPath shed.sh)
-. $(theRealPath prompt.sh)
-. $(theRealPath tree.sh)
-. $(theRealPath user.sh)
-. $(theRealPath cad.sh)
-. $(theRealPath windowSwitcher.sh)
-. $(theRealPath to.sh)
-. $(theRealPath deploy.sh)
-. $(theRealPath claude.sh)
-. $(theRealPath claudePermissions.sh)
-. $(theRealPath vscode.sh)
-. $(theRealPath chrome.sh)
-. $(theRealPath keyring.sh)
+_fn_dir="${AUTOMATE_LINUX_TERMINAL_FUNCTIONS_DIR}"
+. "${_fn_dir}emoji.sh"
+. "${_fn_dir}terminal.sh"
+. "${_fn_dir}terminalCapture.sh"
+. "${_fn_dir}files.sh"
+. "${_fn_dir}daemon.sh"
+. "${_fn_dir}variables.sh"
+. "${_fn_dir}system.sh"
+. "${_fn_dir}misc.sh"
+. "${_fn_dir}build.sh"
+. "${_fn_dir}printDir.sh"
+. "${_fn_dir}db.sh"
+. "${_fn_dir}git.sh"
+. "${_fn_dir}sshgit.sh"
+. "${_fn_dir}log.sh"
+. "${_fn_dir}gemini.sh"
+. "${_fn_dir}evsieve.sh"
+. "${_fn_dir}wireguard.sh"
+. "${_fn_dir}testDirHistory.sh"
+. "${_fn_dir}remote.sh"
+. "${_fn_dir}peerDiag.sh"
+. "${_fn_dir}audioTunnel.sh"
+. "${_fn_dir}shed.sh"
+. "${_fn_dir}prompt.sh"
+. "${_fn_dir}tree.sh"
+. "${_fn_dir}user.sh"
+. "${_fn_dir}cad.sh"
+. "${_fn_dir}windowSwitcher.sh"
+. "${_fn_dir}to.sh"
+. "${_fn_dir}deploy.sh"
+. "${_fn_dir}claude.sh"
+. "${_fn_dir}claudePermissions.sh"
+. "${_fn_dir}vscode.sh"
+. "${_fn_dir}chrome.sh"
+. "${_fn_dir}keyring.sh"
 # extra
-if [ -f "$(theRealPath extra/extra.sh 2>/dev/null)" ]; then
-  . "$(theRealPath extra/extra.sh 2>/dev/null)"
+if [ -f "${_fn_dir}extra/extra.sh" ]; then
+  . "${_fn_dir}extra/extra.sh"
 fi
+unset _fn_dir

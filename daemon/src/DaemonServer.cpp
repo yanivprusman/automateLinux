@@ -24,6 +24,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/wait.h>
+#include <thread>
 #include <unistd.h>
 
 using namespace std;
@@ -452,6 +453,56 @@ void signal_handler(int sig) {
   }
 }
 
+// Retry peer socket setup in background when wg0 isn't available at startup.
+// This handles the common case where the daemon starts before WireGuard is up.
+void retry_peer_socket_setup() {
+  const int MAX_RETRIES = 12;
+  const int RETRY_INTERVAL_SECS = 5;
+
+  for (int i = 1; i <= MAX_RETRIES && running; i++) {
+    for (int s = 0; s < RETRY_INTERVAL_SECS && running; s++) {
+      sleep(1);
+    }
+    if (!running) break;
+
+    string wg_ip = getWgInterfaceIP();
+    if (wg_ip.empty()) {
+      logToFile("Peer socket retry " + to_string(i) + "/" +
+                    to_string(MAX_RETRIES) + ": wg0 not available yet",
+                LOG_CORE);
+      continue;
+    }
+
+    logToFile("wg0 found on retry " + to_string(i) + ", setting up peer socket",
+              LOG_CORE);
+    if (setup_peer_socket() == 0 && peer_socket_fd >= 0) {
+      logToFile("Peer socket ready after retry", LOG_CORE);
+
+      // If leader, update self-registration with correct IP
+      PeerManager &pm = PeerManager::getInstance();
+      if (pm.isLeader() && !pm.getPeerId().empty()) {
+        string my_mac = getPrimaryMacAddress();
+        char hostname[256];
+        string my_hostname = "";
+        if (gethostname(hostname, sizeof(hostname)) == 0) {
+          my_hostname = string(hostname);
+        }
+        PeerTable::upsertPeer(pm.getPeerId(), wg_ip, my_mac, my_hostname, true);
+        logToFile("Updated leader registration with IP " + wg_ip, LOG_CORE);
+      }
+      return;
+    }
+    logToFile("Peer socket setup failed on retry", LOG_CORE);
+  }
+
+  if (running) {
+    logToFile("Gave up on peer socket after " + to_string(MAX_RETRIES) +
+                  " retries (" +
+                  to_string(MAX_RETRIES * RETRY_INTERVAL_SECS) + "s)",
+              LOG_CORE);
+  }
+}
+
 int initialize_daemon() {
   cerr << "Starting daemon..." << endl;
   signal(SIGTERM, signal_handler);
@@ -499,7 +550,11 @@ int initialize_daemon() {
   rc = setup_peer_socket();
   if (rc != 0) {
     logToFile("WARNING: Peer socket setup failed, continuing without peer networking", LOG_CORE);
-    // Don't fail daemon startup if peer socket fails
+  } else if (peer_socket_fd < 0) {
+    // wg0 not available yet — retry in background (common after boot when
+    // daemon starts before WireGuard)
+    logToFile("Starting background retry for peer socket (wg0 not yet available)", LOG_CORE);
+    std::thread(retry_peer_socket_setup).detach();
   }
 
   // DISABLED: Keyboard grab feature removed - using separate keybinding project

@@ -84,7 +84,7 @@ CmdResult handleSetPeerConfig(const json &command) {
     pm.setLeaderAddress(command[COMMAND_ARG_LEADER].get<string>());
   }
 
-  // If configured as leader, register self in database
+  // If configured as leader, register self in database and start self-heartbeat
   if (pm.isLeader() && !pm.getPeerId().empty()) {
     string my_ip = getWgInterfaceIP();
     string my_mac = getPrimaryMacAddress();
@@ -94,6 +94,7 @@ CmdResult handleSetPeerConfig(const json &command) {
       my_hostname = string(hostname);
     }
     PeerTable::upsertPeer(pm.getPeerId(), my_ip, my_mac, my_hostname, true, DAEMON_VERSION);
+    pm.startReconnectLoop();
   }
 
   // If configured as worker and leader address is set, try to connect

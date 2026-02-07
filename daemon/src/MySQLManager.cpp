@@ -177,7 +177,16 @@ void MySQLManager::createDatabaseAndUser(int port,
                        "mac_address VARCHAR(17), "
                        "hostname VARCHAR(255), "
                        "last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-                       "is_online BOOLEAN DEFAULT FALSE)");
+                       "is_online BOOLEAN DEFAULT FALSE, "
+                       "daemon_version INT DEFAULT 0)");
+
+    // Migration: add daemon_version column for existing databases
+    try {
+      tableStmt->execute("ALTER TABLE peer_registry ADD COLUMN "
+                         "daemon_version INT DEFAULT 0");
+    } catch (sql::SQLException &) {
+      // Column already exists - ignore
+    }
 
     // 7. App Assignments (lock apps to peers to prevent git conflicts)
     tableStmt->execute("CREATE TABLE IF NOT EXISTS app_assignments ("

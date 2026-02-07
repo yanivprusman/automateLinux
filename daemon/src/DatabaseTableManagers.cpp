@@ -354,25 +354,27 @@ SettingsTable::getAllSettings() {
 
 void PeerTable::upsertPeer(const std::string &peer_id, const std::string &ip,
                            const std::string &mac, const std::string &hostname,
-                           bool is_online) {
+                           bool is_online, int daemon_version) {
   std::unique_ptr<sql::Connection> con(getCon());
   if (!con)
     return;
   try {
     std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
         "INSERT INTO peer_registry (peer_id, ip_address, mac_address, hostname, "
-        "is_online, last_seen) VALUES (?, ?, ?, ?, ?, NOW()) "
+        "is_online, last_seen, daemon_version) VALUES (?, ?, ?, ?, ?, NOW(), ?) "
         "ON DUPLICATE KEY UPDATE ip_address = ?, mac_address = ?, hostname = ?, "
-        "is_online = ?, last_seen = NOW()"));
+        "is_online = ?, last_seen = NOW(), daemon_version = ?"));
     pstmt->setString(1, peer_id);
     pstmt->setString(2, ip);
     pstmt->setString(3, mac);
     pstmt->setString(4, hostname);
     pstmt->setBoolean(5, is_online);
-    pstmt->setString(6, ip);
-    pstmt->setString(7, mac);
-    pstmt->setString(8, hostname);
-    pstmt->setBoolean(9, is_online);
+    pstmt->setInt(6, daemon_version);
+    pstmt->setString(7, ip);
+    pstmt->setString(8, mac);
+    pstmt->setString(9, hostname);
+    pstmt->setBoolean(10, is_online);
+    pstmt->setInt(11, daemon_version);
     pstmt->executeUpdate();
   } catch (sql::SQLException &e) {
     logToFile("PeerTable: upsertPeer error: " + std::string(e.what()),
@@ -381,14 +383,14 @@ void PeerTable::upsertPeer(const std::string &peer_id, const std::string &ip,
 }
 
 PeerRecord PeerTable::getPeer(const std::string &peer_id) {
-  PeerRecord result{"", "", "", "", "", false};
+  PeerRecord result;
   std::unique_ptr<sql::Connection> con(getCon());
   if (!con)
     return result;
   try {
     std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
-        "SELECT peer_id, ip_address, mac_address, hostname, last_seen, is_online "
-        "FROM peer_registry WHERE peer_id = ?"));
+        "SELECT peer_id, ip_address, mac_address, hostname, last_seen, is_online, "
+        "daemon_version FROM peer_registry WHERE peer_id = ?"));
     pstmt->setString(1, peer_id);
     std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
     if (res->next()) {
@@ -398,6 +400,7 @@ PeerRecord PeerTable::getPeer(const std::string &peer_id) {
       result.hostname = res->getString("hostname");
       result.last_seen = res->getString("last_seen");
       result.is_online = res->getBoolean("is_online");
+      result.daemon_version = res->getInt("daemon_version");
     }
   } catch (sql::SQLException &e) {
     logToFile("PeerTable: getPeer error: " + std::string(e.what()), 0xFFFFFFFF);
@@ -413,8 +416,8 @@ std::vector<PeerRecord> PeerTable::getAllPeers() {
   try {
     std::unique_ptr<sql::Statement> stmt(con->createStatement());
     std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
-        "SELECT peer_id, ip_address, mac_address, hostname, last_seen, is_online "
-        "FROM peer_registry ORDER BY peer_id"));
+        "SELECT peer_id, ip_address, mac_address, hostname, last_seen, is_online, "
+        "daemon_version FROM peer_registry ORDER BY peer_id"));
     while (res->next()) {
       PeerRecord record;
       record.peer_id = res->getString("peer_id");
@@ -423,6 +426,7 @@ std::vector<PeerRecord> PeerTable::getAllPeers() {
       record.hostname = res->getString("hostname");
       record.last_seen = res->getString("last_seen");
       record.is_online = res->getBoolean("is_online");
+      record.daemon_version = res->getInt("daemon_version");
       results.push_back(record);
     }
   } catch (sql::SQLException &e) {
@@ -457,6 +461,23 @@ void PeerTable::touchLastSeen(const std::string &peer_id) {
     std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
         "UPDATE peer_registry SET last_seen = NOW(), is_online = 1 WHERE peer_id = ?"));
     pstmt->setString(1, peer_id);
+    pstmt->executeUpdate();
+  } catch (sql::SQLException &e) {
+    logToFile("PeerTable: touchLastSeen error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
+void PeerTable::touchLastSeen(const std::string &peer_id, int daemon_version) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "UPDATE peer_registry SET last_seen = NOW(), is_online = 1, "
+        "daemon_version = ? WHERE peer_id = ?"));
+    pstmt->setInt(1, daemon_version);
+    pstmt->setString(2, peer_id);
     pstmt->executeUpdate();
   } catch (sql::SQLException &e) {
     logToFile("PeerTable: touchLastSeen error: " + std::string(e.what()),

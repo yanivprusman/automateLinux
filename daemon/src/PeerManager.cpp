@@ -2,6 +2,7 @@
 #include "Constants.h"
 #include "DatabaseTableManagers.h"
 #include "Utils.h"
+#include "Version.h"
 #include <arpa/inet.h>
 #include <chrono>
 #include <cstring>
@@ -108,6 +109,7 @@ bool PeerManager::connectToLeader() {
   regMsg["peer_id"] = m_peerId;
   regMsg["ip"] = getWgInterfaceIP();
   regMsg["mac"] = getPrimaryMacAddress();
+  regMsg["daemon_version"] = DAEMON_VERSION;
 
   // Get hostname
   char hostname[256];
@@ -373,6 +375,7 @@ void PeerManager::reconnectLoop() {
       json hb;
       hb["command"] = "heartbeat";
       hb["peer_id"] = m_peerId;
+      hb["daemon_version"] = DAEMON_VERSION;
       sendToLeader(hb);
       heartbeatCounter = 0;
     }

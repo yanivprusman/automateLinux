@@ -4,6 +4,7 @@
 #include "Globals.h"
 #include "PeerManager.h"
 #include "Utils.h"
+#include "Version.h"
 #include <arpa/inet.h>
 #include <cstring>
 #include <netinet/in.h>
@@ -92,7 +93,7 @@ CmdResult handleSetPeerConfig(const json &command) {
     if (gethostname(hostname, sizeof(hostname)) == 0) {
       my_hostname = string(hostname);
     }
-    PeerTable::upsertPeer(pm.getPeerId(), my_ip, my_mac, my_hostname, true);
+    PeerTable::upsertPeer(pm.getPeerId(), my_ip, my_mac, my_hostname, true, DAEMON_VERSION);
   }
 
   // If configured as worker and leader address is set, try to connect
@@ -144,9 +145,12 @@ CmdResult handleRegisterPeer(const json &command) {
   string mac = command.contains("mac") ? command["mac"].get<string>() : "";
   string hostname =
       command.contains("hostname") ? command["hostname"].get<string>() : "";
+  int daemon_version = command.contains("daemon_version")
+                           ? command["daemon_version"].get<int>()
+                           : 0;
 
   // Store in database
-  PeerTable::upsertPeer(peer_id, ip, mac, hostname, true);
+  PeerTable::upsertPeer(peer_id, ip, mac, hostname, true, daemon_version);
 
   // Register in memory
   pm.registerPeer(peer_id, ip, mac, hostname, g_clientSocket);
@@ -217,6 +221,7 @@ CmdResult handleListPeers(const json &) {
       }
     }
     p["is_online"] = online;
+    p["daemon_version"] = peer.daemon_version;
     result.push_back(p);
   }
 
@@ -303,6 +308,7 @@ CmdResult handleGetPeerInfo(const json &command) {
   result["hostname"] = peer.hostname;
   result["last_seen"] = peer.last_seen;
   result["is_online"] = peer.is_online;
+  result["daemon_version"] = peer.daemon_version;
 
   return CmdResult(0, result.dump(2) + "\n");
 }
@@ -641,7 +647,7 @@ CmdResult handleUpdatePeerMac(const json &) {
     if (peer.peer_id.empty()) {
       return CmdResult(1, "Peer not found in database: " + peer_id + "\n");
     }
-    PeerTable::upsertPeer(peer_id, peer.ip_address, mac, peer.hostname, peer.is_online);
+    PeerTable::upsertPeer(peer_id, peer.ip_address, mac, peer.hostname, peer.is_online, peer.daemon_version);
     return CmdResult(0, "Updated MAC for " + peer_id + ": " + mac + "\n");
   }
 
@@ -690,7 +696,7 @@ CmdResult handleUpdatePeerMacInternal(const json &command) {
     return CmdResult(1, "Peer not found: " + peer_id + "\n");
   }
 
-  PeerTable::upsertPeer(peer_id, peer.ip_address, mac, peer.hostname, peer.is_online);
+  PeerTable::upsertPeer(peer_id, peer.ip_address, mac, peer.hostname, peer.is_online, peer.daemon_version);
   logToFile("Updated MAC for peer " + peer_id + ": " + mac, LOG_CORE);
   return CmdResult(0, "Updated MAC for " + peer_id + ": " + mac + "\n");
 }

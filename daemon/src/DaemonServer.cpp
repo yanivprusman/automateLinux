@@ -362,7 +362,11 @@ int handle_peer_data(int peer_fd) {
     // Intercept heartbeat — just update last_seen, no response
     if (j.contains("command") && j["command"] == "heartbeat" && j.contains("peer_id")) {
       string hbPeerId = j["peer_id"].get<string>();
-      PeerTable::touchLastSeen(hbPeerId);
+      if (j.contains("daemon_version")) {
+        PeerTable::touchLastSeen(hbPeerId, j["daemon_version"].get<int>());
+      } else {
+        PeerTable::touchLastSeen(hbPeerId);
+      }
       if (state.peer_id.empty())
         state.peer_id = hbPeerId;
       continue;

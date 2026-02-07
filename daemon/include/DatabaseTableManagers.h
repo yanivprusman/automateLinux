@@ -49,17 +49,19 @@ struct PeerRecord {
   std::string hostname;
   std::string last_seen;
   bool is_online;
+  int daemon_version = 0;
 };
 
 class PeerTable {
 public:
   static void upsertPeer(const std::string &peer_id, const std::string &ip,
                          const std::string &mac, const std::string &hostname,
-                         bool is_online);
+                         bool is_online, int daemon_version = 0);
   static PeerRecord getPeer(const std::string &peer_id);
   static std::vector<PeerRecord> getAllPeers();
   static void updateOnlineStatus(const std::string &peer_id, bool is_online);
   static void touchLastSeen(const std::string &peer_id);
+  static void touchLastSeen(const std::string &peer_id, int daemon_version);
   static void deletePeer(const std::string &peer_id);
   static std::string getIpAddress(const std::string &peer_id);
   static int clearAllPeers();  // Returns count of deleted rows

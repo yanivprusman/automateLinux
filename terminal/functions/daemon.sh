@@ -47,7 +47,7 @@ execOnPeerByIp() {
 export -f execOnPeerByIp
 
 # Create a test commit and push to verify deployment pipeline
-testDeploy() {
+bumpBuild() {
     local dir="/opt/automateLinux"
     local file="$dir/.deploy-test"
     date +%s > "$file"
@@ -56,4 +56,4 @@ testDeploy() {
     git -C "$dir" push
     echo "Pushed test commit. Current version: $(git -C "$dir" rev-list --count HEAD)"
 }
-export -f testDeploy
+export -f bumpBuild

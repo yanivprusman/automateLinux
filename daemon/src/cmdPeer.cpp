@@ -93,7 +93,8 @@ CmdResult handleSetPeerConfig(const json &command) {
     if (gethostname(hostname, sizeof(hostname)) == 0) {
       my_hostname = string(hostname);
     }
-    PeerTable::upsertPeer(pm.getPeerId(), my_ip, my_mac, my_hostname, true, DAEMON_VERSION);
+    PeerTable::upsertPeer(pm.getPeerId(), my_ip, my_mac, my_hostname, true,
+                          DAEMON_VERSION);
     pm.startReconnectLoop();
   }
 
@@ -103,10 +104,9 @@ CmdResult handleSetPeerConfig(const json &command) {
       return CmdResult(0, "Peer config saved. Connected to leader at " +
                               pm.getLeaderAddress() + "\n");
     } else {
-      return CmdResult(0,
-                       "Peer config saved. Failed to connect to leader at " +
-                           pm.getLeaderAddress() +
-                           " (will retry on next command)\n");
+      return CmdResult(0, "Peer config saved. Failed to connect to leader at " +
+                              pm.getLeaderAddress() +
+                              " (will retry on next command)\n");
     }
   }
 
@@ -187,16 +187,17 @@ CmdResult handleListPeers(const json &) {
   auto peers = PeerTable::getAllPeers();
 
   // Sort by IP address (numeric comparison of last octet for 10.0.0.x)
-  sort(peers.begin(), peers.end(), [](const PeerRecord &a, const PeerRecord &b) {
-    auto getLastOctet = [](const string &ip) -> int {
-      size_t lastDot = ip.rfind('.');
-      if (lastDot != string::npos) {
-        return stoi(ip.substr(lastDot + 1));
-      }
-      return 0;
-    };
-    return getLastOctet(a.ip_address) < getLastOctet(b.ip_address);
-  });
+  sort(peers.begin(), peers.end(),
+       [](const PeerRecord &a, const PeerRecord &b) {
+         auto getLastOctet = [](const string &ip) -> int {
+           size_t lastDot = ip.rfind('.');
+           if (lastDot != string::npos) {
+             return stoi(ip.substr(lastDot + 1));
+           }
+           return 0;
+         };
+         return getLastOctet(a.ip_address) < getLastOctet(b.ip_address);
+       });
 
   ordered_json result = ordered_json::array();
 
@@ -321,83 +322,108 @@ CmdResult handleExecOnPeer(const json &command) {
 
   PeerManager &pm = PeerManager::getInstance();
 
-  // Check if peer is already connected in memory
-  PeerInfo peer = pm.getPeerInfo(peer_id);
-  if (peer.peer_id.empty() || peer.socket_fd < 0) {
-    // Not connected - need to find IP and connect on-demand
-    string ip;
-
-    if (pm.isLeader()) {
-      // Leader: look up in local database
-      PeerRecord dbPeer = PeerTable::getPeer(peer_id);
-      if (dbPeer.peer_id.empty()) {
-        return CmdResult(1, "Peer not found: " + peer_id + "\n");
-      }
-      if (dbPeer.ip_address.empty()) {
-        return CmdResult(1, "Peer has no IP address: " + peer_id + "\n");
-      }
-      ip = dbPeer.ip_address;
-    } else {
-      // Worker: query leader for peer IP
-      if (!pm.isConnectedToLeader()) {
-        return CmdResult(1, "Not connected to leader\n");
-      }
-      ip = queryLeaderForPeerIP(peer_id);
-      if (ip.empty()) {
-        return CmdResult(1, "Peer not found or leader unavailable: " + peer_id + "\n");
-      }
-    }
-
-    logToFile("Peer " + peer_id + " not connected, attempting on-demand connection to " + ip,
-              LOG_CORE);
-
-    if (!pm.connectToPeer(peer_id, ip)) {
-      return CmdResult(1, "Failed to connect to peer: " + peer_id + " (" + ip + ")\n");
-    }
-  }
-
   // Build exec request message
   json execRequest;
   execRequest["command"] = COMMAND_EXEC_REQUEST;
   execRequest[COMMAND_ARG_DIRECTORY] = directory;
   execRequest[COMMAND_ARG_SHELL_CMD] = cmd;
 
-  // Send to peer
-  if (!pm.sendToPeer(peer_id, execRequest)) {
-    return CmdResult(1, "Failed to send command to peer: " + peer_id + "\n");
-  }
+  for (int attempt = 0; attempt < 2; ++attempt) {
+    // Check if peer is already connected in memory
+    PeerInfo peer = pm.getPeerInfo(peer_id);
+    if (peer.peer_id.empty() || peer.socket_fd < 0) {
+      // Not connected - need to find IP and connect on-demand
+      string ip;
 
-  logToFile("Sent exec request to " + peer_id + ": cd " + directory + " && " + cmd, LOG_CORE);
+      if (pm.isLeader()) {
+        // Leader: look up in local database
+        PeerRecord dbPeer = PeerTable::getPeer(peer_id);
+        if (dbPeer.peer_id.empty()) {
+          return CmdResult(1, "Peer not found: " + peer_id + "\n");
+        }
+        if (dbPeer.ip_address.empty()) {
+          return CmdResult(1, "Peer has no IP address: " + peer_id + "\n");
+        }
+        ip = dbPeer.ip_address;
+      } else {
+        // Worker: query leader for peer IP
+        if (!pm.isConnectedToLeader()) {
+          return CmdResult(1, "Not connected to leader\n");
+        }
+        ip = queryLeaderForPeerIP(peer_id);
+        if (ip.empty()) {
+          return CmdResult(
+              1, "Peer not found or leader unavailable: " + peer_id + "\n");
+        }
+      }
 
-  // Wait for response from peer
-  PeerInfo peerAfterSend = pm.getPeerInfo(peer_id);
-  if (peerAfterSend.socket_fd < 0) {
-    return CmdResult(1, "Lost connection to peer: " + peer_id + "\n");
-  }
+      logToFile("Peer " + peer_id +
+                    " not connected, attempting on-demand connection to " + ip,
+                LOG_CORE);
 
-  // Set read timeout
-  struct timeval timeout;
-  timeout.tv_sec = 30;  // 30 second timeout for command execution
-  timeout.tv_usec = 0;
-  setsockopt(peerAfterSend.socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+      if (!pm.connectToPeer(peer_id, ip)) {
+        if (attempt == 0)
+          continue;
+        return CmdResult(1, "Failed to connect to peer: " + peer_id + " (" +
+                                ip + ")\n");
+      }
 
-  // Read response
-  char buffer[65536];
-  memset(buffer, 0, sizeof(buffer));
-  ssize_t n = read(peerAfterSend.socket_fd, buffer, sizeof(buffer) - 1);
-  if (n <= 0) {
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-      return CmdResult(1, "Timeout waiting for response from " + peer_id + "\n");
+      // Re-fetch info after connection
+      peer = pm.getPeerInfo(peer_id);
     }
-    return CmdResult(1, "Failed to read response from " + peer_id + ": " + strerror(errno) + "\n");
+
+    // Send to peer
+    if (!pm.sendToPeer(peer_id, execRequest)) {
+      if (attempt == 0) {
+        logToFile("Send failed for " + peer_id + ", will retry...", LOG_CORE);
+        continue; // pm.sendToPeer already cleared the stale connection
+      }
+      return CmdResult(1, "Failed to send command to peer: " + peer_id + "\n");
+    }
+
+    logToFile("Sent exec request to " + peer_id + ": cd " + directory + " && " +
+                  cmd,
+              LOG_CORE);
+
+    // Set read timeout
+    struct timeval timeout;
+    timeout.tv_sec = 120; // 2 minute timeout for command execution
+    timeout.tv_usec = 0;
+    setsockopt(peer.socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout,
+               sizeof(timeout));
+
+    // Read response
+    char buffer[65536];
+    memset(buffer, 0, sizeof(buffer));
+    ssize_t n = read(peer.socket_fd, buffer, sizeof(buffer) - 1);
+    if (n <= 0) {
+      // Clear from map if it was a connection error (not timeout)
+      if (n == 0 || (errno != EAGAIN && errno != EWOULDBLOCK)) {
+        pm.unregisterPeer(peer_id); // Clear stale connection
+        if (attempt == 0) {
+          logToFile("Read failed for " + peer_id + ", will retry...", LOG_CORE);
+          continue;
+        }
+      }
+
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        return CmdResult(1,
+                         "Timeout waiting for response from " + peer_id + "\n");
+      }
+      return CmdResult(1, "Failed to read response from " + peer_id + ": " +
+                              strerror(errno) + "\n");
+    }
+
+    return CmdResult(0, string(buffer));
   }
 
-  return CmdResult(0, string(buffer));
+  return CmdResult(1, "Unknown error in handleExecOnPeer\n");
 }
 
 // Execute a command in a forked process to avoid blocking the daemon
 // Returns output via pipe, with timeout protection
-static string executeCommandWithTimeout(const string &full_cmd, int timeout_sec, int &exit_code) {
+static string executeCommandWithTimeout(const string &full_cmd, int timeout_sec,
+                                        int &exit_code) {
   int pipefd[2];
   if (pipe(pipefd) == -1) {
     exit_code = 1;
@@ -455,7 +481,8 @@ static string executeCommandWithTimeout(const string &full_cmd, int timeout_sec,
 
     int ret = select(pipefd[0] + 1, &readfds, nullptr, nullptr, &tv);
     if (ret == -1) {
-      if (errno == EINTR) continue;
+      if (errno == EINTR)
+        continue;
       break;
     }
     if (ret == 0) {
@@ -468,7 +495,8 @@ static string executeCommandWithTimeout(const string &full_cmd, int timeout_sec,
     }
 
     ssize_t n = read(pipefd[0], buffer, sizeof(buffer) - 1);
-    if (n <= 0) break;
+    if (n <= 0)
+      break;
     buffer[n] = '\0';
     output += buffer;
   }
@@ -487,15 +515,18 @@ CmdResult handleExecRequest(const json &command) {
   string directory = command[COMMAND_ARG_DIRECTORY].get<string>();
   string cmd = command[COMMAND_ARG_SHELL_CMD].get<string>();
 
-  // Prevent deadlock: reject commands that would try to connect back to this daemon
+  // Prevent deadlock: reject commands that would try to connect back to this
+  // daemon
   if (cmd.find("daemon send") != string::npos ||
       cmd.find("daemon daemon") != string::npos ||
       cmd.find("/daemon send") != string::npos ||
       cmd.find(" d ") != string::npos ||
       (cmd.length() >= 2 && cmd[0] == 'd' && cmd[1] == ' ')) {
     logToFile("Rejected deadlock-prone command: " + cmd, LOG_CORE);
-    return CmdResult(1, "Error: Cannot run daemon commands via execOnPeer (would cause deadlock). "
-                        "Use direct daemon commands instead (e.g., 'd listPorts' locally forwards to leader).\n");
+    return CmdResult(1, "Error: Cannot run daemon commands via execOnPeer "
+                        "(would cause deadlock). "
+                        "Use direct daemon commands instead (e.g., 'd "
+                        "listPorts' locally forwards to leader).\n");
   }
 
   // Build full command: cd to directory && execute command
@@ -507,7 +538,8 @@ CmdResult handleExecRequest(const json &command) {
   int exit_code = 0;
   string output = executeCommandWithTimeout(full_cmd, 60, exit_code);
 
-  logToFile("Command completed with exit code " + to_string(exit_code), LOG_CORE);
+  logToFile("Command completed with exit code " + to_string(exit_code),
+            LOG_CORE);
 
   return CmdResult(exit_code, output);
 }
@@ -554,10 +586,12 @@ CmdResult handleRemoteDeployDaemon(const json &command) {
 
   CmdResult buildResult = handleExecOnPeer(buildCmd);
   if (buildResult.status != 0) {
-    return CmdResult(buildResult.status, "Pull succeeded, build failed:\n" + buildResult.message);
+    return CmdResult(buildResult.status,
+                     "Pull succeeded, build failed:\n" + buildResult.message);
   }
 
-  return CmdResult(0, "Pull:\n" + pullResult.message + "\nBuild:\n" + buildResult.message);
+  return CmdResult(0, "Pull:\n" + pullResult.message + "\nBuild:\n" +
+                          buildResult.message);
 }
 
 CmdResult handleDbSanityCheck(const json &) {
@@ -621,11 +655,14 @@ CmdResult handleRegisterWorker(const json &) {
 
   // Connect to leader
   if (pm.connectToLeader()) {
-    return CmdResult(0, "Registered as worker '" + peer_id + "', connected to leader at " +
+    return CmdResult(0, "Registered as worker '" + peer_id +
+                            "', connected to leader at " +
                             string(WG_LEADER_IP) + "\n");
   } else {
-    return CmdResult(0, "Registered as worker '" + peer_id + "', failed to connect to leader at " +
-                            string(WG_LEADER_IP) + " (will retry on next command)\n");
+    return CmdResult(0, "Registered as worker '" + peer_id +
+                            "', failed to connect to leader at " +
+                            string(WG_LEADER_IP) +
+                            " (will retry on next command)\n");
   }
 }
 
@@ -648,7 +685,8 @@ CmdResult handleUpdatePeerMac(const json &) {
     if (peer.peer_id.empty()) {
       return CmdResult(1, "Peer not found in database: " + peer_id + "\n");
     }
-    PeerTable::upsertPeer(peer_id, peer.ip_address, mac, peer.hostname, peer.is_online, peer.daemon_version);
+    PeerTable::upsertPeer(peer_id, peer.ip_address, mac, peer.hostname,
+                          peer.is_online, peer.daemon_version);
     return CmdResult(0, "Updated MAC for " + peer_id + ": " + mac + "\n");
   }
 
@@ -697,7 +735,8 @@ CmdResult handleUpdatePeerMacInternal(const json &command) {
     return CmdResult(1, "Peer not found: " + peer_id + "\n");
   }
 
-  PeerTable::upsertPeer(peer_id, peer.ip_address, mac, peer.hostname, peer.is_online, peer.daemon_version);
+  PeerTable::upsertPeer(peer_id, peer.ip_address, mac, peer.hostname,
+                        peer.is_online, peer.daemon_version);
   logToFile("Updated MAC for peer " + peer_id + ": " + mac, LOG_CORE);
   return CmdResult(0, "Updated MAC for " + peer_id + ": " + mac + "\n");
 }

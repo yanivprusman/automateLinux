@@ -399,36 +399,96 @@ addSafeGitDir() {
 gitsAll() {
     local start_dir="${1:-.}"
     local found_any=false
+    local clean_output="" dirty_output=""
+    local total_count=0 clean_count=0 dirty_count=0
+    local CYAN='\e[0;36m'
+    local sep="$AUTOMATE_LINUX_PRINT_BLOCK_SEPARATOR"
+
+    _gitsAll_format_repo() {
+        local repo_dir="$1"
+        local repo_name="$2"
+
+        # Get status (no color so we can parse cleanly)
+        local status_output
+        status_output=$(git -C "$repo_dir" -c color.status=never status -sb 2>/dev/null)
+
+        # Parse the branch line for a human-readable summary
+        local branch_line
+        branch_line=$(echo "$status_output" | head -1)
+        local branch_info=""
+        if [[ "$branch_line" =~ ^##\ (.+)\.\.\.(.+) ]]; then
+            local local_branch="${BASH_REMATCH[1]}"
+            branch_info="${CYAN}${local_branch}${NC}"
+            if [[ "$branch_line" =~ \[ahead\ ([0-9]+),\ behind\ ([0-9]+)\] ]]; then
+                branch_info="${CYAN}${local_branch}${NC} ${GREEN}↑${BASH_REMATCH[1]}${NC} ${RED}↓${BASH_REMATCH[2]}${NC}"
+            elif [[ "$branch_line" =~ \[ahead\ ([0-9]+)\] ]]; then
+                branch_info+=" ${GREEN}↑${BASH_REMATCH[1]}${NC}"
+            elif [[ "$branch_line" =~ \[behind\ ([0-9]+)\] ]]; then
+                branch_info+=" ${RED}↓${BASH_REMATCH[1]}${NC}"
+            else
+                branch_info+=" ${GREEN}✓${NC}"
+            fi
+        elif [[ "$branch_line" =~ ^##\ (.+) ]]; then
+            branch_info="${CYAN}${BASH_REMATCH[1]}${NC} (no remote)"
+        else
+            branch_info="${YELLOW}detached${NC}"
+        fi
+
+        # Get file changes (lines after the branch line)
+        local file_changes
+        file_changes=$(echo "$status_output" | tail -n +2)
+        local has_changes=false
+        [ -n "$file_changes" ] && has_changes=true
+
+        local result=""
+        if $has_changes; then
+            # Count change types
+            local staged=0 modified=0 untracked=0
+            staged=$(echo "$file_changes" | grep -c '^[MADRC]' 2>/dev/null || true)
+            modified=$(echo "$file_changes" | grep -c '^ [MDRC]\|^MM' 2>/dev/null || true)
+            untracked=$(echo "$file_changes" | grep -c '^??' 2>/dev/null || true)
+
+            result+="${YELLOW}${sep}${NC} ${YELLOW}$repo_name${NC} $branch_info\n"
+            local summary=""
+            [ "$staged" -gt 0 ] && summary+="${GREEN}${staged} staged${NC}  "
+            [ "$modified" -gt 0 ] && summary+="${RED}${modified} modified${NC}  "
+            [ "$untracked" -gt 0 ] && summary+="${YELLOW}${untracked} untracked${NC}  "
+            result+="  $summary\n"
+            while IFS= read -r line; do
+                result+="  $line\n"
+            done <<< "$file_changes"
+            dirty_output+="$result"
+            ((dirty_count++))
+        else
+            result+="${GREEN}${sep}${NC} ${GREEN}$repo_name${NC} $branch_info\n"
+            clean_output+="$result"
+            ((clean_count++))
+        fi
+        ((total_count++))
+    }
 
     # Find all .git directories and process their parent folders
     while IFS= read -r gitdir; do
         local repo_dir="${gitdir%/.git}"
         local repo_name="${repo_dir#$start_dir/}"
         [ "$repo_dir" = "$start_dir" ] && repo_name="$(basename "$repo_dir")"
-
-        # Get status
-        local status_output
-        status_output=$(git -C "$repo_dir" status -sb 2>/dev/null)
-
-        # Check if there are changes (more than just the branch line)
-        local line_count=$(echo "$status_output" | wc -l)
-        local has_changes=false
-        [ "$line_count" -gt 1 ] && has_changes=true
-
-        # Print header with color based on status
-        if $has_changes; then
-            echo -e "${YELLOW}━━━ $repo_name ━━━${NC}"
-        else
-            echo -e "${GREEN}━━━ $repo_name ━━━${NC}"
-        fi
-        echo "$status_output"
-        echo
+        _gitsAll_format_repo "$repo_dir" "$repo_name"
         found_any=true
     done < <(find "$start_dir" -name ".git" -type d 2>/dev/null | sort)
 
     if ! $found_any; then
         echo "No git repositories found under $(realpath "$start_dir")"
+        return
     fi
+
+    # Print clean repos first, then dirty
+    [ -n "$clean_output" ] && echo -ne "$clean_output"
+    [ -n "$dirty_output" ] && echo -ne "$dirty_output"
+
+    # Summary
+    local summary="${GREEN}${clean_count} clean${NC}"
+    [ "$dirty_count" -gt 0 ] && summary+=", ${YELLOW}${dirty_count} dirty${NC}"
+    echo -e "${sep}\n${summary}"
 }
 export -f gitsAll
 

@@ -288,6 +288,8 @@ bool PeerManager::sendToPeer(const string &peer_id, const json &message) {
     logToFile("Failed to send to peer " + peer_id + ": " +
                   string(strerror(errno)),
               LOG_CORE);
+    close(it->second.socket_fd);
+    m_peers.erase(it);
     return false;
   }
   return true;

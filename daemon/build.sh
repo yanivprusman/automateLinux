@@ -14,16 +14,6 @@ cat > include/Version.h << EOF
 EOF
 echo "Version: ${VERSION}"
 
-echo "Stopping services..."
-
-# Stop via systemd (proper way - ensures clean ungrab)
-# Stop via systemd (proper way - ensures clean ungrab)
-sudo /usr/bin/systemctl stop daemon.service 2>/dev/null || true
-# Also kill any orphan processes not managed by systemd
-./stop_daemon.sh 2>/dev/null || true
-# Give time for ungrab to complete
-sleep 0.5
-
 # Ensure socket directory exists with correct permissions
 if [ ! -d "/run/automatelinux" ]; then
     echo "Creating /run/automatelinux..."
@@ -40,6 +30,8 @@ if [ ! -d "build" ]; then
     mkdir -p build
     chmod g+s build
 fi
+
+echo "Building..."
 cd build
 cmake .. > /dev/null && \
 make > /dev/null && \
@@ -56,7 +48,7 @@ if [ -f "doc/daemon.1" ]; then
 fi
 
 if [ -z "$SKIP_SERVICE_RESTART" ]; then
-    echo "Reloading systemd and starting daemon.service..."
+    echo "Restarting daemon.service..."
     sudo /usr/bin/systemctl daemon-reload
-    sudo /usr/bin/systemctl start daemon.service
+    sudo /usr/bin/systemctl restart daemon.service
 fi

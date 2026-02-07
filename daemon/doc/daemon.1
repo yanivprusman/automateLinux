@@ -114,10 +114,10 @@ d setPeerConfig --role worker --id laptop --leader 10.0.0.2
 .RE
 .SH APP ASSIGNMENT COMMANDS
 App assignments prevent git conflicts when multiple peers work on the same
-extraApps (cad, pt). The leader tracks who owns each app.
+extra apps (cad, pt). The leader tracks who owns each app.
 .TP
 .B claimApp \fB\-\-app\fR \fIname\fR
-Claim exclusive work on an extraApp. Updates VPS nginx forwarding.
+Claim exclusive work on an extra app. Updates VPS nginx forwarding.
 .TP
 .B releaseApp \fB\-\-app\fR \fIname\fR [\fB\-\-force\fR \fItrue\fR]
 Release app assignment. Use \fB\-\-force true\fR to release apps owned by

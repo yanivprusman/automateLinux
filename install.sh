@@ -361,9 +361,10 @@ if [ "$MINIMAL_INSTALL" = false ]; then
     SERVICES_SRC="$INSTALL_DIR/services/system"
 
     # Clone and install dashboard if not present
-    DASHBOARD_DEV="$INSTALL_DIR/extraApps/dashboard"
+    DASHBOARD_DEV="/opt/dev/dashboard"
     if [ ! -d "$DASHBOARD_DEV" ]; then
         echo "  Cloning dashboard repo..."
+        mkdir -p /opt/dev
         git clone https://github.com/yanivprusman/dashboard.git "$DASHBOARD_DEV"
     fi
     if [ -f "$DASHBOARD_DEV/package.json" ]; then
@@ -397,12 +398,12 @@ if [ "$MINIMAL_INSTALL" = false ]; then
 
         echo "  Starting dashboard services..."
         systemctl start dashboard-bridge.service dashboard-dev.service dashboard-prod.service || echo "  Warning: Failed to start some dashboard services"
-        echo "  ExtraApps services installed."
+        echo "  Extra app services installed."
     else
-        echo "  Warning: $SERVICES_SRC not found, skipping extraApps services."
+        echo "  Warning: $SERVICES_SRC not found, skipping extra app services."
     fi
 else
-    echo "Skipping ExtraApps services (minimal install)..."
+    echo "Skipping extra app services (minimal install)..."
 fi
 
 # 8. Configure System-Wide PATH

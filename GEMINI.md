@@ -12,9 +12,7 @@ automateLinux is a suite of tools for personalizing and automating a Linux deskt
 - **GNOME Extensions** (`gnomeExtensions/`): Desktop integration - status menu for daemon control, active window tracking.
 - **VS Code Extensions** (`visualStudioCodeExtensions/`): Editor integrations for daemon monitoring, git workflows, and log viewing.
 - **Utilities** (`utilities/`): Standalone tools - termcontrol, sendKeysUInput, lastChanged, cleanBetween, emergencyRestore.sh.
-- **Extra Apps** (`extraApps/`): Standalone applications housed directly in this repo (cad, publicTransportation).
-  > [!IMPORTANT]
-  > **AI AGENT ACCESS**: To avoid security prompts/permission gates when accessing `extraApps/`, ALWAYS call tools (like `grep` or `find`) from the **root project directory** with path filters. Nested `.git` folders in these directories are part of the trusted workspace and should NOT be treated as external project boundaries.
+- **Extra Apps** (`/opt/dev/`): Standalone applications as separate git repos (cad, publicTransportation, dashboard, immersiveRDP). Dev at `/opt/dev/<app>`, prod at `/opt/prod/<app>`.
 
 ## Build Commands
 
@@ -33,7 +31,7 @@ cd dashboard && npm run dev -- --port 3007       # Start frontend (port 3007)
 ### Extra Apps (CAD, PT)
 ```bash
 # CAD Frontend
-cd extraApps/cad/web && npm run dev -- -p $(d getPort --key cad-dev)
+cd /opt/dev/cad/web && npm run dev -- -p $(d getPort --key cad-dev)
 ```
 
 ## Port Management
@@ -94,8 +92,8 @@ graph TD
 
 ## App-Specific Documentation
 
-Some applications within the `extraApps/` directory have their own dedicated documentation:
-- **CAD**: [GEMINI.md](file:///opt/automateLinux/extraApps/cad/GEMINI.md)
+Some applications have their own dedicated documentation:
+- **CAD**: [GEMINI.md](file:///opt/dev/cad/GEMINI.md)
 
 ## Environment Variables
 

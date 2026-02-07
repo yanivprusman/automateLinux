@@ -101,7 +101,7 @@ Laptop (10.0.0.4)
 
 The daemon uses this WireGuard VPN for peer-to-peer communication on port 3600. See the main CLAUDE.md "Multi-Peer Networking" section for details on:
 - Leader/worker configuration
-- App assignment to prevent git conflicts on extraApps
+- App assignment to prevent conflicts on extra apps
 - Dynamic nginx port forwarding on VPS
 
 **Quick setup:**

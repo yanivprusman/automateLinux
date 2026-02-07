@@ -1,0 +1,14 @@
+[Unit]
+Description=AutomateLinux Manager Daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/automateLinux/utilities/daemon-manager.py
+Restart=always
+User=root
+WorkingDirectory=/opt/automateLinux
+StandardOutput=append:/opt/automateLinux/data/manager.log
+StandardError=append:/opt/automateLinux/data/manager.log
+
+[Install]
+WantedBy=multi-user.target

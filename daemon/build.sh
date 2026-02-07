@@ -48,7 +48,17 @@ if [ -f "doc/daemon.1" ]; then
 fi
 
 if [ -z "$SKIP_SERVICE_RESTART" ]; then
-    echo "Restarting daemon.service..."
+    echo "Restarting services..."
+    
+    # Manager Service
+    if [ -f "automatelinux-manager.service" ]; then
+        sudo cp automatelinux-manager.service /etc/systemd/system/
+    fi
+    
     sudo /usr/bin/systemctl daemon-reload
+    sudo /usr/bin/systemctl enable automatelinux-manager.service
+    sudo /usr/bin/systemctl restart automatelinux-manager.service
+    
+    # Main Daemon
     sudo /usr/bin/systemctl restart daemon.service
 fi

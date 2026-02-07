@@ -50,14 +50,16 @@ fi
 if [ -z "$SKIP_SERVICE_RESTART" ]; then
     echo "Restarting services..."
     
-    # Manager Service
+    # Manager Service — install and enable but never restart
+    # (the manager orchestrates builds, restarting it mid-build kills it)
     if [ -f "automatelinux-manager.service" ]; then
         sudo cp automatelinux-manager.service /etc/systemd/system/
     fi
-
     sudo /usr/bin/systemctl daemon-reload
     sudo /usr/bin/systemctl enable automatelinux-manager.service
-    sudo /usr/bin/systemctl restart automatelinux-manager.service
+    if ! systemctl is-active --quiet automatelinux-manager.service; then
+        sudo /usr/bin/systemctl start automatelinux-manager.service
+    fi
 
     # Main Daemon
     sudo /usr/bin/systemctl restart daemon.service

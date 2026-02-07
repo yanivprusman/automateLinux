@@ -29,3 +29,4 @@ data/**
 daemon/include/Version.h
 node_modules/
 mcpServers/*/dist/
+.claude/settings.local.json

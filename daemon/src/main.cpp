@@ -67,8 +67,9 @@ int main(int argc, char *argv[]) {
         if (gethostname(hostname, sizeof(hostname)) == 0) {
           my_hostname = string(hostname);
         }
-        PeerTable::upsertPeer(pm.getPeerId(), my_ip, my_mac, my_hostname, true);
+        PeerTable::upsertPeer(pm.getPeerId(), my_ip, my_mac, my_hostname, true, DAEMON_VERSION);
         cerr << "Peer config restored: leader " << pm.getPeerId() << endl;
+        pm.startReconnectLoop(); // Leader self-heartbeat to keep last_seen fresh
       } else if (!pm.getLeaderAddress().empty()) {
         // Worker connects to leader
         if (pm.connectToLeader()) {

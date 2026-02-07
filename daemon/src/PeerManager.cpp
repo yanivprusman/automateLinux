@@ -326,7 +326,13 @@ void PeerManager::saveConfig() {
 
 void PeerManager::startReconnectLoop() {
   if (isLeader()) {
-    return; // Leaders don't need to reconnect
+    // Leader still needs a self-heartbeat to keep last_seen fresh
+    if (m_reconnectRunning.load())
+      return;
+    m_reconnectRunning.store(true);
+    m_reconnectThread = std::thread(&PeerManager::reconnectLoop, this);
+    logToFile("Started leader self-heartbeat thread", LOG_CORE);
+    return;
   }
   if (m_leaderAddress.empty()) {
     return; // No leader configured
@@ -354,6 +360,17 @@ void PeerManager::reconnectLoop() {
   int heartbeatCounter = 0;
 
   while (m_reconnectRunning.load()) {
+    // Leader: just touch own last_seen periodically
+    if (isLeader()) {
+      for (int i = 0; i < HEARTBEAT_INTERVAL_SECS && m_reconnectRunning.load(); i++) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+      }
+      if (m_reconnectRunning.load() && !m_peerId.empty()) {
+        PeerTable::touchLastSeen(m_peerId, DAEMON_VERSION);
+      }
+      continue;
+    }
+
     if (!m_connectedToLeader) {
       logToFile("Attempting to reconnect to leader at " + m_leaderAddress,
                 LOG_CORE);

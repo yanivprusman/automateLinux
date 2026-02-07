@@ -45,3 +45,15 @@ execOnPeerByIp() {
     d execOnPeer --peer "$peer_id" --directory "$dir" --shellCmd "$cmd"
 }
 export -f execOnPeerByIp
+
+# Create a test commit and push to verify deployment pipeline
+testDeploy() {
+    local dir="/opt/automateLinux"
+    local file="$dir/.deploy-test"
+    date +%s > "$file"
+    git -C "$dir" add "$file"
+    git -C "$dir" commit -m "Test deploy bump"
+    git -C "$dir" push
+    echo "Pushed test commit. Current version: $(git -C "$dir" rev-list --count HEAD)"
+}
+export -f testDeploy

@@ -61,6 +61,10 @@ sshDesktop(){
     ssh yaniv@$pcIp
 }
 
+sshRpi(){
+    ssh yaniv@10.0.0.6
+}
+
 # RDP to peer using gnome-remote-desktop
 # Usage: rdp <peer> [password]
 # Peers: desktop (10.0.0.2), laptop (10.0.0.4), rpi (10.0.0.6), vps (10.0.0.1), or IP address

@@ -359,14 +359,15 @@ void PeerManager::stopReconnectLoop() {
 }
 
 void PeerManager::reconnectLoop() {
-  const int RECONNECT_INTERVAL_SECS = 15;
-  const int HEARTBEAT_INTERVAL_SECS = 60;
-  int heartbeatCounter = 0;
+  const int HEARTBEAT_INTERVAL_SECS = 10;
+  const int APP_STATUS_INTERVAL_SECS = 60;
+  int appStatusCounter = 0;
 
   while (m_reconnectRunning.load()) {
     // Leader: just touch own last_seen periodically
     if (isLeader()) {
-      for (int i = 0; i < HEARTBEAT_INTERVAL_SECS && m_reconnectRunning.load(); i++) {
+      for (int i = 0; i < HEARTBEAT_INTERVAL_SECS && m_reconnectRunning.load();
+           i++) {
         std::this_thread::sleep_for(std::chrono::seconds(1));
       }
       if (m_reconnectRunning.load() && !m_peerId.empty()) {
@@ -380,26 +381,28 @@ void PeerManager::reconnectLoop() {
                 LOG_CORE);
       if (connectToLeader()) {
         logToFile("Reconnected to leader successfully", LOG_CORE);
-        heartbeatCounter = 0;
+        appStatusCounter = 0;
       }
     }
 
     // Sleep in small increments to allow quick shutdown
-    for (int i = 0; i < RECONNECT_INTERVAL_SECS && m_reconnectRunning.load();
+    for (int i = 0; i < HEARTBEAT_INTERVAL_SECS && m_reconnectRunning.load();
          i++) {
       std::this_thread::sleep_for(std::chrono::seconds(1));
-      heartbeatCounter++;
+      appStatusCounter++;
     }
 
-    // Send heartbeat to keep last_seen fresh on the leader
-    if (m_connectedToLeader && heartbeatCounter >= HEARTBEAT_INTERVAL_SECS) {
+    // Send heartbeat every 10s, include appStatus every 60s
+    if (m_connectedToLeader) {
       json hb;
       hb["command"] = "heartbeat";
       hb["peer_id"] = m_peerId;
       hb["daemon_version"] = DAEMON_VERSION;
-      hb["appStatus"] = AppManager::getLocalAppStatusAll();
+      if (appStatusCounter >= APP_STATUS_INTERVAL_SECS) {
+        hb["appStatus"] = AppManager::getLocalAppStatusAll();
+        appStatusCounter = 0;
+      }
       sendToLeader(hb);
-      heartbeatCounter = 0;
     }
   }
 }

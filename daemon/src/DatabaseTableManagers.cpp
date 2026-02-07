@@ -419,11 +419,11 @@ std::vector<PeerRecord> PeerTable::getAllPeers() {
     return results;
   try {
     std::unique_ptr<sql::Statement> stmt(con->createStatement());
-    // Mark as offline if last_seen > 90s ago (heartbeat is every 60s, so
-    // 90s gives 50% grace period). Using IF to avoid alias conflicts.
+    // Mark as offline if last_seen > 20s ago (heartbeat is every 10s, so
+    // 20s gives 100% grace period). Using IF to avoid alias conflicts.
     std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
         "SELECT peer_id, ip_address, mac_address, hostname, last_seen, "
-        "IF(is_online = 1 AND last_seen > NOW() - INTERVAL 90 SECOND, 1, 0) as "
+        "IF(is_online = 1 AND last_seen > NOW() - INTERVAL 20 SECOND, 1, 0) as "
         "is_online_calculated, "
         "daemon_version FROM peer_registry ORDER BY peer_id"));
     while (res->next()) {

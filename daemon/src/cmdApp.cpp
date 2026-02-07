@@ -7,6 +7,8 @@
 #include "cmdPeer.h"
 #include <algorithm>
 #include <chrono>
+#include <map>
+#include <mutex>
 #include <set>
 #include <sstream>
 #include <thread>
@@ -25,6 +27,12 @@ static const vector<AppConfig> APP_CONFIGS = {
     {"dashboard", "Dashboard", true, "dashboard-bridge", "dashboard-{mode}",
      "dashboard", "dashboard-bridge", "/opt/dev/dashboard",
      "/opt/prod/dashboard", "", ""}};
+
+// ============================================================================
+// Peer app status cache (leader-side, populated from worker heartbeats)
+// ============================================================================
+static mutex peerAppStatusMutex;
+static map<string, json> peerAppStatusCache; // peer_id -> {appId: {dev_installed, ...}}
 
 // ============================================================================
 // AppManager namespace implementation
@@ -299,6 +307,46 @@ string AppManager::installDependencies(const string &appId, const string &mode,
 
   result << "  npm install: OK\n";
   return result.str();
+}
+
+json AppManager::getLocalAppStatusAll() {
+  json result = json::object();
+  auto apps = getAllApps();
+  for (const auto &app : apps) {
+    json appObj;
+    appObj["dev_installed"] = (access(app.devPath.c_str(), F_OK) == 0);
+    appObj["prod_installed"] =
+        !app.prodPath.empty() && (access(app.prodPath.c_str(), F_OK) == 0);
+
+    // Check dev running
+    if (!app.clientServiceTemplate.empty()) {
+      string devSvc = resolveServiceName(app.clientServiceTemplate, app.appId, "dev");
+      appObj["dev_running"] = isServiceActive(devSvc);
+    } else {
+      appObj["dev_running"] = false;
+    }
+
+    // Check prod running
+    if (!app.clientServiceTemplate.empty() && !app.prodPath.empty()) {
+      string prodSvc = resolveServiceName(app.clientServiceTemplate, app.appId, "prod");
+      appObj["prod_running"] = isServiceActive(prodSvc);
+    } else {
+      appObj["prod_running"] = false;
+    }
+
+    result[app.appId] = appObj;
+  }
+  return result;
+}
+
+void AppManager::updatePeerAppStatus(const string &peerId, const json &appStatus) {
+  lock_guard<mutex> lock(peerAppStatusMutex);
+  peerAppStatusCache[peerId] = appStatus;
+}
+
+void AppManager::clearPeerAppStatus(const string &peerId) {
+  lock_guard<mutex> lock(peerAppStatusMutex);
+  peerAppStatusCache.erase(peerId);
 }
 
 // ============================================================================
@@ -1329,10 +1377,9 @@ CmdResult handleGetAppPeers(const json &command) {
     return CmdResult(0, response);
   }
 
-  // Leader path: probe peers directly
+  // Leader path: use cached data from worker heartbeats
   auto peers = PeerTable::getAllPeers();
 
-  // Build service names for probing
   string clientDevSvc =
       config.clientServiceTemplate.empty()
           ? ""
@@ -1346,6 +1393,13 @@ CmdResult handleGetAppPeers(const json &command) {
 
   string localPeerId = pm.getPeerId();
 
+  // Read cache snapshot under lock
+  map<string, json> cacheSnapshot;
+  {
+    lock_guard<mutex> lock(peerAppStatusMutex);
+    cacheSnapshot = peerAppStatusCache;
+  }
+
   json result;
   result["app"] = appId;
   result["peers"] = json::array();
@@ -1356,7 +1410,7 @@ CmdResult handleGetAppPeers(const json &command) {
     peerObj["is_online"] = peer.is_online;
 
     if (peer.peer_id == localPeerId) {
-      // Local machine - check directly
+      // Local machine - check directly (instant)
       peerObj["dev_installed"] =
           (access(config.devPath.c_str(), F_OK) == 0);
       peerObj["prod_installed"] =
@@ -1374,45 +1428,22 @@ CmdResult handleGetAppPeers(const json &command) {
       peerObj["prod_running"] = nullptr;
       peerObj["error"] = "peer offline";
     } else {
-      // Online remote peer - probe via execOnPeer
-      string probeCmd = "test -d " + config.devPath +
-                        " && echo DEV_INSTALLED; test -d " + config.prodPath +
-                        " && echo PROD_INSTALLED;";
-      if (!clientDevSvc.empty()) {
-        probeCmd += " systemctl is-active --quiet " + clientDevSvc +
-                    " 2>/dev/null && echo DEV_RUNNING;";
-      }
-      if (!clientProdSvc.empty()) {
-        probeCmd += " systemctl is-active --quiet " + clientProdSvc +
-                    " 2>/dev/null && echo PROD_RUNNING;";
-      }
-      probeCmd += " echo DONE";
-
-      json execCmd;
-      execCmd["command"] = COMMAND_EXEC_ON_PEER;
-      execCmd[COMMAND_ARG_PEER] = peer.peer_id;
-      execCmd[COMMAND_ARG_DIRECTORY] = "/tmp";
-      execCmd[COMMAND_ARG_SHELL_CMD] = probeCmd;
-
-      CmdResult execResult = handleExecOnPeer(execCmd);
-
-      if (execResult.status != 0) {
+      // Online remote peer - use cached heartbeat data
+      auto cacheIt = cacheSnapshot.find(peer.peer_id);
+      if (cacheIt != cacheSnapshot.end() && cacheIt->second.contains(appId)) {
+        const json &appData = cacheIt->second[appId];
+        peerObj["dev_installed"] = appData.value("dev_installed", false);
+        peerObj["prod_installed"] = appData.value("prod_installed", false);
+        peerObj["dev_running"] = appData.value("dev_running", false);
+        peerObj["prod_running"] = appData.value("prod_running", false);
+        peerObj["error"] = json(nullptr);
+      } else {
+        // No cached data yet (peer hasn't sent heartbeat with app status)
         peerObj["dev_installed"] = nullptr;
         peerObj["prod_installed"] = nullptr;
         peerObj["dev_running"] = nullptr;
         peerObj["prod_running"] = nullptr;
-        peerObj["error"] = "exec failed: " + execResult.message;
-      } else {
-        string out = execResult.message;
-        peerObj["dev_installed"] =
-            (out.find("DEV_INSTALLED") != string::npos);
-        peerObj["prod_installed"] =
-            (out.find("PROD_INSTALLED") != string::npos);
-        peerObj["dev_running"] =
-            (out.find("DEV_RUNNING") != string::npos);
-        peerObj["prod_running"] =
-            (out.find("PROD_RUNNING") != string::npos);
-        peerObj["error"] = json(nullptr);
+        peerObj["error"] = "awaiting heartbeat";
       }
     }
 

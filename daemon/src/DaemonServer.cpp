@@ -3,6 +3,7 @@
 #include "KeyboardManager.h"
 #include "PeerManager.h"
 #include "Utils.h"
+#include "cmdApp.h"
 #include "common.h"
 #include "main.h"
 #include "mainCommand.h"
@@ -330,6 +331,7 @@ int handle_peer_data(int peer_fd) {
     logToFile("Peer disconnected: " + state.peer_ip + " (" + state.peer_id + ")", LOG_CORE);
     if (!state.peer_id.empty()) {
       PeerTable::updateOnlineStatus(state.peer_id, false);
+      AppManager::clearPeerAppStatus(state.peer_id);
     }
     close(peer_fd);
     peer_clients.erase(peer_fd);
@@ -367,6 +369,9 @@ int handle_peer_data(int peer_fd) {
       } else {
         PeerTable::touchLastSeen(hbPeerId);
       }
+      if (j.contains("appStatus") && j["appStatus"].is_object()) {
+        AppManager::updatePeerAppStatus(hbPeerId, j["appStatus"]);
+      }
       if (state.peer_id.empty())
         state.peer_id = hbPeerId;
       continue;
@@ -375,6 +380,9 @@ int handle_peer_data(int peer_fd) {
     // Track peer_id from registerPeer command
     if (j.contains("command") && j["command"] == COMMAND_REGISTER_PEER && j.contains("peer_id")) {
       state.peer_id = j["peer_id"].get<string>();
+      if (j.contains("appStatus") && j["appStatus"].is_object()) {
+        AppManager::updatePeerAppStatus(state.peer_id, j["appStatus"]);
+      }
     }
 
     // Just process the command - peer connections stay open

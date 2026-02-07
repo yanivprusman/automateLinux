@@ -3,6 +3,7 @@
 #include "DatabaseTableManagers.h"
 #include "Utils.h"
 #include "Version.h"
+#include "cmdApp.h"
 #include <arpa/inet.h>
 #include <chrono>
 #include <cstring>
@@ -110,6 +111,7 @@ bool PeerManager::connectToLeader() {
   regMsg["ip"] = getWgInterfaceIP();
   regMsg["mac"] = getPrimaryMacAddress();
   regMsg["daemon_version"] = DAEMON_VERSION;
+  regMsg["appStatus"] = AppManager::getLocalAppStatusAll();
 
   // Get hostname
   char hostname[256];
@@ -393,6 +395,7 @@ void PeerManager::reconnectLoop() {
       hb["command"] = "heartbeat";
       hb["peer_id"] = m_peerId;
       hb["daemon_version"] = DAEMON_VERSION;
+      hb["appStatus"] = AppManager::getLocalAppStatusAll();
       sendToLeader(hb);
       heartbeatCounter = 0;
     }

@@ -81,6 +81,11 @@ std::string installDependencies(const std::string &appId,
                                 const std::string &mode,
                                 const std::string &component);
 
+// Peer app status cache (leader-side, populated from worker heartbeats)
+json getLocalAppStatusAll();
+void updatePeerAppStatus(const std::string &peerId, const json &appStatus);
+void clearPeerAppStatus(const std::string &peerId);
+
 } // namespace AppManager
 
 #endif // CMD_APP_H

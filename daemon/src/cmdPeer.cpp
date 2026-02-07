@@ -92,25 +92,16 @@ static string queryLeaderForPeerIP(const string &peer_id) {
   query["command"] = COMMAND_GET_PEER_INFO;
   query[COMMAND_ARG_PEER] = peer_id;
 
-  if (!pm.sendToLeader(query)) {
-    logToFile("Failed to send getPeerInfo to leader", LOG_CORE);
-    return "";
-  }
-
-  // Read response from leader
-  char buffer[4096];
-  memset(buffer, 0, sizeof(buffer));
-  int leaderFd = pm.getLeaderSocket();
-  ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
-  if (n <= 0) {
+  string response = pm.forwardToLeader(query);
+  if (response.empty()) {
     logToFile("No response from leader for getPeerInfo", LOG_CORE);
     return "";
   }
 
   try {
-    json response = json::parse(buffer);
-    if (response.contains("ip_address")) {
-      return response["ip_address"].get<string>();
+    json parsed = json::parse(response);
+    if (parsed.contains("ip_address")) {
+      return parsed["ip_address"].get<string>();
     }
   } catch (const exception &e) {
     logToFile("Failed to parse leader response: " + string(e.what()), LOG_CORE);
@@ -222,18 +213,9 @@ CmdResult handleListPeers(const json &) {
     json fwdCmd;
     fwdCmd["command"] = COMMAND_LIST_PEERS;
 
-    int leaderFd = pm.getLeaderSocket();
-    string msg = fwdCmd.dump() + "\n";
-    if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
-      return CmdResult(1, "Failed to forward listPeers to leader\n");
-    }
-
-    // Read response from leader
-    char buffer[8192];
-    memset(buffer, 0, sizeof(buffer));
-    ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
-    if (n > 0) {
-      return CmdResult(0, string(buffer));
+    string response = pm.forwardToLeader(fwdCmd);
+    if (!response.empty()) {
+      return CmdResult(0, response);
     }
     return CmdResult(1, "No response from leader\n");
   }
@@ -295,18 +277,9 @@ CmdResult handleDeletePeer(const json &command) {
     fwdCmd["command"] = COMMAND_DELETE_PEER;
     fwdCmd[COMMAND_ARG_PEER] = peer_id;
 
-    int leaderFd = pm.getLeaderSocket();
-    string msg = fwdCmd.dump() + "\n";
-    if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
-      return CmdResult(1, "Failed to forward deletePeer to leader\n");
-    }
-
-    // Read response from leader
-    char buffer[4096];
-    memset(buffer, 0, sizeof(buffer));
-    ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
-    if (n > 0) {
-      return CmdResult(0, string(buffer));
+    string response = pm.forwardToLeader(fwdCmd);
+    if (!response.empty()) {
+      return CmdResult(0, response);
     }
     return CmdResult(1, "No response from leader\n");
   }
@@ -335,18 +308,9 @@ CmdResult handleGetPeerInfo(const json &command) {
     fwdCmd["command"] = COMMAND_GET_PEER_INFO;
     fwdCmd[COMMAND_ARG_PEER] = peer_id;
 
-    int leaderFd = pm.getLeaderSocket();
-    string msg = fwdCmd.dump() + "\n";
-    if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
-      return CmdResult(1, "Failed to forward getPeerInfo to leader\n");
-    }
-
-    // Read response from leader
-    char buffer[4096];
-    memset(buffer, 0, sizeof(buffer));
-    ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
-    if (n > 0) {
-      return CmdResult(0, string(buffer));
+    string response = pm.forwardToLeader(fwdCmd);
+    if (!response.empty()) {
+      return CmdResult(0, response);
     }
     return CmdResult(1, "No response from leader\n");
   }
@@ -757,17 +721,9 @@ CmdResult handleUpdatePeerMac(const json &) {
   updateMsg["peer_id"] = peer_id;
   updateMsg["mac"] = mac;
 
-  if (!pm.sendToLeader(updateMsg)) {
-    return CmdResult(1, "Failed to send MAC update to leader\n");
-  }
-
-  // Read response
-  char buffer[1024];
-  memset(buffer, 0, sizeof(buffer));
-  int leaderFd = pm.getLeaderSocket();
-  ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
-  if (n > 0) {
-    return CmdResult(0, string(buffer));
+  string response = pm.forwardToLeader(updateMsg);
+  if (!response.empty()) {
+    return CmdResult(0, response);
   }
 
   return CmdResult(0, "Sent MAC update to leader: " + mac + "\n");

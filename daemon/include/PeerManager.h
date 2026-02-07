@@ -55,6 +55,7 @@ public:
 
   // Messaging
   bool sendToLeader(const json &message);
+  std::string forwardToLeader(const json &command, int timeoutMs = 2000);
   bool sendToPeer(const std::string &peer_id, const json &message);
   void broadcastToWorkers(const json &message);
 
@@ -75,6 +76,7 @@ private:
 
   std::map<std::string, PeerInfo> m_peers;  // For leader: tracks all workers
   mutable std::mutex m_peersMutex;
+  std::mutex m_leaderCommMutex;  // Protects leader socket read/write sequences
 
   // Reconnection loop
   std::thread m_reconnectThread;

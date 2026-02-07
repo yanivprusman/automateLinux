@@ -9,6 +9,7 @@
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <thread>
 #include <unistd.h>
@@ -259,6 +260,8 @@ PeerInfo PeerManager::getPeerInfo(const string &peer_id) const {
 }
 
 bool PeerManager::sendToLeader(const json &message) {
+  lock_guard<mutex> lock(m_leaderCommMutex);
+
   if (!m_connectedToLeader || m_leaderSocket < 0) {
     logToFile("Cannot send to leader: not connected", LOG_CORE);
     return false;
@@ -272,6 +275,45 @@ bool PeerManager::sendToLeader(const json &message) {
     return false;
   }
   return true;
+}
+
+string PeerManager::forwardToLeader(const json &command, int timeoutMs) {
+  lock_guard<mutex> lock(m_leaderCommMutex);
+
+  if (!m_connectedToLeader || m_leaderSocket < 0) {
+    return "";
+  }
+
+  string msg = command.dump() + "\n";
+  ssize_t sent = write(m_leaderSocket, msg.c_str(), msg.length());
+  if (sent < 0) {
+    logToFile("forwardToLeader: write failed: " + string(strerror(errno)),
+              LOG_CORE);
+    disconnectFromLeader();
+    return "";
+  }
+
+  // Wait for response with timeout using poll()
+  struct pollfd pfd;
+  pfd.fd = m_leaderSocket;
+  pfd.events = POLLIN;
+  int ready = poll(&pfd, 1, timeoutMs);
+  if (ready <= 0) {
+    logToFile("forwardToLeader: " +
+                  string(ready == 0 ? "timeout" : "poll error"),
+              LOG_CORE);
+    return "";
+  }
+
+  char buffer[16384];
+  memset(buffer, 0, sizeof(buffer));
+  ssize_t n = read(m_leaderSocket, buffer, sizeof(buffer) - 1);
+  if (n <= 0) {
+    logToFile("forwardToLeader: read failed", LOG_CORE);
+    return "";
+  }
+
+  return string(buffer, n);
 }
 
 bool PeerManager::sendToPeer(const string &peer_id, const json &message) {

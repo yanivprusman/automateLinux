@@ -18,6 +18,8 @@ public:
   getAllHistory(); // For showDB - session-history join
   static std::vector<std::pair<int, int>> getAllSessions();
   static int getMaxHistoryIndex();
+  static int getHistoryCount();
+  static void pruneHistory(int maxSize);
 };
 
 class ConfigTable {

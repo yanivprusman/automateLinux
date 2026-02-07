@@ -192,6 +192,103 @@ int TerminalTable::getMaxHistoryIndex() {
   }
   return -1;
 }
+
+int TerminalTable::getHistoryCount() {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return 0;
+  try {
+    std::unique_ptr<sql::Statement> stmt(con->createStatement());
+    std::unique_ptr<sql::ResultSet> res(
+        stmt->executeQuery("SELECT COUNT(*) as cnt FROM terminal_history"));
+    if (res->next())
+      return res->getInt("cnt");
+  } catch (sql::SQLException &e) {
+    logToFile("TerminalTable: getHistoryCount error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+  return 0;
+}
+
+void TerminalTable::pruneHistory(int maxSize) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    // Get count
+    std::unique_ptr<sql::Statement> stmt(con->createStatement());
+    std::unique_ptr<sql::ResultSet> res(
+        stmt->executeQuery("SELECT COUNT(*) as cnt FROM terminal_history"));
+    if (!res->next())
+      return;
+    int count = res->getInt("cnt");
+    if (count <= maxSize)
+      return;
+
+    // Get min index
+    res.reset(stmt->executeQuery(
+        "SELECT MIN(entry_index) as min_idx FROM terminal_history"));
+    if (!res->next())
+      return;
+    int minIndex = res->getInt("min_idx");
+
+    // Delete oldest entries
+    int cutoff = minIndex + (count - maxSize);
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "DELETE FROM terminal_history WHERE entry_index < ?"));
+    pstmt->setInt(1, cutoff);
+    pstmt->executeUpdate();
+
+    // Get new min index after deletion
+    res.reset(stmt->executeQuery(
+        "SELECT MIN(entry_index) as min_idx FROM terminal_history"));
+    if (!res->next())
+      return;
+    int newMin = res->getInt("min_idx");
+    if (newMin <= 0)
+      return;
+
+    // Rebase history entries
+    pstmt.reset(con->prepareStatement(
+        "UPDATE terminal_history SET entry_index = entry_index - ?"));
+    pstmt->setInt(1, newMin);
+    pstmt->executeUpdate();
+
+    // Rebase session pointers
+    pstmt.reset(con->prepareStatement(
+        "UPDATE terminal_sessions SET history_index = GREATEST(0, history_index - ?)"));
+    pstmt->setInt(1, newMin);
+    pstmt->executeUpdate();
+
+    // Rebase the indexOfLastTouchedDir setting
+    std::unique_ptr<sql::PreparedStatement> getSetting(con->prepareStatement(
+        "SELECT setting_value FROM system_settings WHERE setting_key = ?"));
+    getSetting->setString(1, "indexOfLastTouchedDir");
+    res.reset(getSetting->executeQuery());
+    if (res->next()) {
+      std::string val = res->getString("setting_value");
+      try {
+        int oldIdx = std::stoi(val);
+        int newIdx = std::max(0, oldIdx - newMin);
+        std::unique_ptr<sql::PreparedStatement> upd(con->prepareStatement(
+            "UPDATE system_settings SET setting_value = ? WHERE setting_key = ?"));
+        upd->setString(1, std::to_string(newIdx));
+        upd->setString(2, "indexOfLastTouchedDir");
+        upd->executeUpdate();
+      } catch (...) {
+      }
+    }
+
+    logToFile("TerminalTable: pruneHistory pruned " +
+                  std::to_string(count - maxSize) +
+                  " entries, rebased by " + std::to_string(newMin),
+              LOG_TERMINAL);
+  } catch (sql::SQLException &e) {
+    logToFile("TerminalTable: pruneHistory error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
 void ConfigTable::setConfig(const std::string &key,
                             const std::string &jsonValue) {
   std::unique_ptr<sql::Connection> con(getCon());

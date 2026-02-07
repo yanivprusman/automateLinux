@@ -1,6 +1,8 @@
 #include "terminal.h"
+#include "Constants.h"
 #include "DatabaseTableManagers.h"
 #include "Utils.h"
+#include <filesystem>
 
 vector<Terminal *> Terminal::instances;
 
@@ -15,13 +17,41 @@ string Terminal::standardizePath(string path) {
 
 Terminal::Terminal(int tty) : tty(tty) {
   instances.push_back(this);
-  int lastIndex = TerminalTable::getMaxHistoryIndex();
-  if (lastIndex < 0) {
-    lastIndex = 0;
+
+  // Start at the last-interacted directory, not just the highest index
+  int startIndex = -1;
+  string lastTouched = SettingsTable::getSetting(INDEX_OF_LAST_TOUCHED_DIR_KEY);
+  if (!lastTouched.empty()) {
+    try {
+      startIndex = std::stoi(lastTouched);
+    } catch (...) {
+      startIndex = -1;
+    }
+  }
+  if (startIndex < 0)
+    startIndex = TerminalTable::getMaxHistoryIndex();
+  if (startIndex < 0) {
+    startIndex = 0;
     string defaultDir = standardizePath(DIR_HISTORY_DEFAULT_DIR);
     TerminalTable::upsertHistory(0, defaultDir);
   }
-  TerminalTable::setSessionPointer(tty, lastIndex);
+
+  // Validate the directory exists, walk backward if not
+  for (int i = startIndex; i >= 0; i--) {
+    string dir = TerminalTable::getHistory(i);
+    if (!dir.empty() && dir != "/" && std::filesystem::is_directory(dir)) {
+      startIndex = i;
+      goto found;
+    }
+  }
+  // None found, use default
+  startIndex = TerminalTable::getMaxHistoryIndex();
+  if (startIndex < 0)
+    startIndex = 0;
+  TerminalTable::upsertHistory(startIndex, standardizePath(DIR_HISTORY_DEFAULT_DIR));
+
+found:
+  TerminalTable::setSessionPointer(tty, startIndex);
 }
 
 Terminal::~Terminal() {
@@ -83,6 +113,25 @@ CmdResult Terminal::_openedTty(const json &command) {
       TerminalTable::upsertHistory(0, defaultDir);
     }
     string dir = standardizePath(TerminalTable::getHistory(index));
+
+    // Validate the directory exists, walk backward if not
+    if (!dir.empty() && dir != "/" && !std::filesystem::is_directory(dir)) {
+      for (int i = index - 1; i >= 0; i--) {
+        string candidate = standardizePath(TerminalTable::getHistory(i));
+        if (!candidate.empty() && candidate != "/" &&
+            std::filesystem::is_directory(candidate)) {
+          dir = candidate;
+          index = i;
+          TerminalTable::setSessionPointer(tty, index);
+          goto validated;
+        }
+      }
+      // No valid dir found, use default
+      dir = standardizePath(DIR_HISTORY_DEFAULT_DIR);
+      TerminalTable::setSessionPointer(tty, 0);
+    }
+
+  validated:
     if (dir.empty() || dir == "/") {
       dir = standardizePath(DIR_HISTORY_DEFAULT_DIR);
       TerminalTable::upsertHistory(index, dir);
@@ -172,6 +221,7 @@ CmdResult Terminal::_updateDirHistory(const json &command) {
     TerminalTable::setSessionPointer(tty, insertIndex);
     SettingsTable::setSetting(INDEX_OF_LAST_TOUCHED_DIR_KEY,
                               to_string(insertIndex));
+    TerminalTable::pruneHistory(MAX_DIR_HISTORY_SIZE);
   }
   return result;
 }
@@ -212,26 +262,20 @@ CmdResult Terminal::_cdForward(const json &command) {
   forceLog("[Terminal] cdForward tty=" + to_string(tty) +
            " index=" + to_string(index) + " max=" + to_string(maxIndex));
 
-  if (index >= maxIndex) {
-    result.status = 0;
-    result.message = string ("echo \nEND OF HISTORY reached\n") + mustEndWithNewLine;
-    return result;
+  // Loop forward, skipping nonexistent directories
+  for (int i = index + 1; i <= maxIndex; i++) {
+    string dir = standardizePath(getDirHistoryEntry(i));
+    if (!dir.empty() && dir != "/" && std::filesystem::is_directory(dir)) {
+      TerminalTable::setSessionPointer(tty, i);
+      result.message = "cd " + dir + mustEndWithNewLine;
+      result.status = 0;
+      return result;
+    }
   }
 
-  int nextIndex = index + 1;
-  string nextDir = standardizePath(getDirHistoryEntry(nextIndex));
-
-  if (nextDir.empty() || nextDir == "/") {
-    // Safety fallback if there's a gap or error
-    result.status = 1;
-    result.message = "echo 'Empty history entry at " + to_string(nextIndex) +
-                     "'; cd ." + mustEndWithNewLine;
-    return result;
-  }
-
-  TerminalTable::setSessionPointer(tty, nextIndex);
-  result.message = "cd " + nextDir + mustEndWithNewLine;
   result.status = 0;
+  result.message =
+      string("echo \nEND OF HISTORY reached\n") + mustEndWithNewLine;
   return result;
 }
 
@@ -255,28 +299,20 @@ CmdResult Terminal::_cdBackward(const json &command) {
   forceLog("[Terminal] cdBackward tty=" + to_string(tty) +
            " index=" + to_string(index));
 
-  if (index <= 0) {
-    result.status = 0;
-    string currentDir = standardizePath(getDirHistoryEntry(0));
-    if (currentDir.empty() || currentDir == "/")
-      currentDir = standardizePath(DIR_HISTORY_DEFAULT_DIR);
-    result.message = string("echo \nBEGINNING OF HISTORY reached\n") + mustEndWithNewLine;
-    return result;
+  // Loop backward, skipping nonexistent directories
+  for (int i = index - 1; i >= 0; i--) {
+    string dir = standardizePath(getDirHistoryEntry(i));
+    if (!dir.empty() && dir != "/" && std::filesystem::is_directory(dir)) {
+      TerminalTable::setSessionPointer(tty, i);
+      result.message = "cd " + dir + mustEndWithNewLine;
+      result.status = 0;
+      return result;
+    }
   }
 
-  int prevIndex = index - 1;
-  string prevDir = standardizePath(getDirHistoryEntry(prevIndex));
-
-  if (prevDir.empty() || prevDir == "/") {
-    result.status = 1;
-    result.message = "echo 'Empty history entry at " + to_string(prevIndex) +
-                     "'; cd ." + mustEndWithNewLine;
-    return result;
-  }
-
-  TerminalTable::setSessionPointer(tty, prevIndex);
-  result.message = "cd " + prevDir + mustEndWithNewLine;
   result.status = 0;
+  result.message =
+      string("echo \nBEGINNING OF HISTORY reached\n") + mustEndWithNewLine;
   return result;
 }
 

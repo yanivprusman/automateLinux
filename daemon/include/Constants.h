@@ -276,5 +276,6 @@
   "--signal "                                                                  \
   "com.automatelinux.daemon.Ready"
 #define MANAGER_PORT 3505
+#define MAX_DIR_HISTORY_SIZE 500
 
 #endif // CONSTANTS_H

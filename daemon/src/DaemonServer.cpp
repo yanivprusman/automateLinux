@@ -46,6 +46,7 @@ struct PeerClientState {
   int fd;
   string buffer;
   string peer_ip;
+  string peer_id;
   bool authenticated;
 };
 
@@ -314,7 +315,7 @@ void accept_new_peer() {
   char ip_str[INET_ADDRSTRLEN];
   inet_ntop(AF_INET, &(peer_addr.sin_addr), ip_str, INET_ADDRSTRLEN);
 
-  peer_clients[peer_fd] = PeerClientState{peer_fd, "", ip_str, false};
+  peer_clients[peer_fd] = PeerClientState{peer_fd, "", ip_str, "", false};
   cerr << "Peer connected: FD=" << peer_fd << " IP=" << ip_str << endl;
   logToFile("Peer connected from " + string(ip_str), LOG_CORE);
 }
@@ -325,8 +326,11 @@ int handle_peer_data(int peer_fd) {
   ssize_t bytesRead = read(peer_fd, buffer, sizeof(buffer) - 1);
   if (bytesRead <= 0) {
     cerr << "Peer disconnected: FD=" << peer_fd << " IP=" << state.peer_ip
-         << endl;
-    logToFile("Peer disconnected: " + state.peer_ip, LOG_CORE);
+         << " peer_id=" << state.peer_id << endl;
+    logToFile("Peer disconnected: " + state.peer_ip + " (" + state.peer_id + ")", LOG_CORE);
+    if (!state.peer_id.empty()) {
+      PeerTable::updateOnlineStatus(state.peer_id, false);
+    }
     close(peer_fd);
     peer_clients.erase(peer_fd);
     return 0;
@@ -354,6 +358,20 @@ int handle_peer_data(int peer_fd) {
     // Handle peer messages
     // Peer connections are persistent - don't close based on mainCommand return
     logToFile("Peer message from " + state.peer_ip + ": " + message, LOG_CORE);
+
+    // Intercept heartbeat — just update last_seen, no response
+    if (j.contains("command") && j["command"] == "heartbeat" && j.contains("peer_id")) {
+      string hbPeerId = j["peer_id"].get<string>();
+      PeerTable::touchLastSeen(hbPeerId);
+      if (state.peer_id.empty())
+        state.peer_id = hbPeerId;
+      continue;
+    }
+
+    // Track peer_id from registerPeer command
+    if (j.contains("command") && j["command"] == COMMAND_REGISTER_PEER && j.contains("peer_id")) {
+      state.peer_id = j["peer_id"].get<string>();
+    }
 
     // Just process the command - peer connections stay open
     mainCommand(j, peer_fd);
@@ -394,6 +412,12 @@ int handle_leader_data() {
       j = json::parse(message);
     } catch (...) {
       logToFile("Invalid JSON from leader: " + message, LOG_CORE);
+      continue;
+    }
+
+    // Only process JSON objects with a "command" field — ignore responses
+    if (!j.is_object() || !j.contains("command")) {
+      logToFile("Ignoring non-command from leader: " + message, LOG_CORE);
       continue;
     }
 

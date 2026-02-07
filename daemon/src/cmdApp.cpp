@@ -18,12 +18,12 @@ using namespace std;
 // Static app configurations - hardcoded for now, can move to DB later
 static const vector<AppConfig> APP_CONFIGS = {
     {"cad", "CAD Application", true, "", "cad-{mode}", "cad", "",
-     "/opt/automateLinux/extraApps/cad", "/opt/prod/cad", ".", "web"},
+     "/opt/dev/cad", "/opt/prod/cad", ".", "web"},
     {"pt", "Public Transportation", false, "", "pt-{mode}", "pt", "",
-     "/opt/automateLinux/extraApps/publicTransportation",
+     "/opt/dev/publicTransportation",
      "/opt/prod/publicTransportation", "", "frontend/public-transportation"},
     {"dashboard", "Dashboard", true, "dashboard-bridge", "dashboard-{mode}",
-     "dashboard", "dashboard-bridge", "/opt/automateLinux/extraApps/dashboard",
+     "dashboard", "dashboard-bridge", "/opt/dev/dashboard",
      "/opt/prod/dashboard", "", ""}};
 
 // ============================================================================
@@ -897,7 +897,7 @@ CmdResult handleAddExtraApp(const json &command) {
   stringstream result;
   result << "Adding extra app: " << appId << "\n";
 
-  string devPath = string(EXTRA_APPS_DIR) + appId;
+  string devPath = string(DEV_APPS_DIR) + appId;
   string prodPath = string(PROD_APPS_DIR) + appId;
 
   // 1. Check if directory exists, if not clone it
@@ -1304,41 +1304,33 @@ CmdResult handleGetAppPeers(const json &command) {
 
   PeerManager &pm = PeerManager::getInstance();
 
-  // Get peer list - forward to leader if worker (same pattern as handleListPeers)
-  vector<PeerRecord> peers;
+  // Worker: forward entire getAppPeers to leader (leader does the probing directly)
   if (!pm.isLeader() && pm.isConnectedToLeader()) {
-    json fwdCmd;
-    fwdCmd["command"] = COMMAND_LIST_PEERS;
-
     int leaderFd = pm.getLeaderSocket();
-    string msg = fwdCmd.dump() + "\n";
+    string msg = command.dump() + "\n";
     if (write(leaderFd, msg.c_str(), msg.length()) < 0) {
-      return CmdResult(1, "Failed to forward listPeers to leader\n");
+      return CmdResult(1, "Failed to forward getAppPeers to leader\n");
     }
 
+    // Read response - may be large, read until we get complete JSON
+    string response;
     char buffer[8192];
-    memset(buffer, 0, sizeof(buffer));
-    ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
-    if (n > 0) {
-      try {
-        json peerArray = json::parse(buffer);
-        for (const auto &p : peerArray) {
-          PeerRecord rec;
-          rec.peer_id = p.value("peer_id", "");
-          rec.ip_address = p.value("ip_address", "");
-          rec.hostname = p.value("hostname", "");
-          rec.is_online = p.value("is_online", false);
-          peers.push_back(rec);
-        }
-      } catch (...) {
-        return CmdResult(1, "Failed to parse peer list from leader\n");
-      }
-    } else {
+    while (true) {
+      ssize_t n = read(leaderFd, buffer, sizeof(buffer) - 1);
+      if (n <= 0) break;
+      buffer[n] = '\0';
+      response += buffer;
+      if (response.back() == '\n') break;
+    }
+
+    if (response.empty()) {
       return CmdResult(1, "No response from leader\n");
     }
-  } else {
-    peers = PeerTable::getAllPeers();
+    return CmdResult(0, response);
   }
+
+  // Leader path: probe peers directly
+  auto peers = PeerTable::getAllPeers();
 
   // Build service names for probing
   string clientDevSvc =
@@ -1353,6 +1345,7 @@ CmdResult handleGetAppPeers(const json &command) {
                                            "prod");
 
   string localPeerId = pm.getPeerId();
+
   json result;
   result["app"] = appId;
   result["peers"] = json::array();
@@ -1373,9 +1366,8 @@ CmdResult handleGetAppPeers(const json &command) {
           !clientDevSvc.empty() && AppManager::isServiceActive(clientDevSvc);
       peerObj["prod_running"] =
           !clientProdSvc.empty() && AppManager::isServiceActive(clientProdSvc);
-      peerObj["error"] = nullptr;
+      peerObj["error"] = json(nullptr);
     } else if (!peer.is_online) {
-      // Offline peer - can't query
       peerObj["dev_installed"] = nullptr;
       peerObj["prod_installed"] = nullptr;
       peerObj["dev_running"] = nullptr;
@@ -1420,7 +1412,7 @@ CmdResult handleGetAppPeers(const json &command) {
             (out.find("DEV_RUNNING") != string::npos);
         peerObj["prod_running"] =
             (out.find("PROD_RUNNING") != string::npos);
-        peerObj["error"] = nullptr;
+        peerObj["error"] = json(nullptr);
       }
     }
 

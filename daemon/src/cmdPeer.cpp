@@ -202,7 +202,21 @@ CmdResult handleListPeers(const json &) {
     p["mac_address"] = peer.mac_address;
     p["hostname"] = peer.hostname;
     p["last_seen"] = peer.last_seen;
-    p["is_online"] = peer.is_online;
+
+    // Derive is_online from last_seen freshness (heartbeat is every 60s)
+    bool online = peer.is_online;
+    if (online && !peer.last_seen.empty()) {
+      // Parse "YYYY-MM-DD HH:MM:SS" and check if within 2 minutes
+      struct tm tm = {};
+      if (strptime(peer.last_seen.c_str(), "%Y-%m-%d %H:%M:%S", &tm)) {
+        time_t lastSeen = mktime(&tm);
+        time_t now = time(nullptr);
+        if (difftime(now, lastSeen) > 120) {
+          online = false;
+        }
+      }
+    }
+    p["is_online"] = online;
     result.push_back(p);
   }
 

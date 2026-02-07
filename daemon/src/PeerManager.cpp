@@ -160,7 +160,7 @@ bool PeerManager::connectToPeer(const string &peer_id, const string &ip) {
 
   // Set connection timeout
   struct timeval timeout;
-  timeout.tv_sec = 5;
+  timeout.tv_sec = 2;
   timeout.tv_usec = 0;
   setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
 
@@ -348,6 +348,8 @@ void PeerManager::stopReconnectLoop() {
 
 void PeerManager::reconnectLoop() {
   const int RECONNECT_INTERVAL_SECS = 15;
+  const int HEARTBEAT_INTERVAL_SECS = 60;
+  int heartbeatCounter = 0;
 
   while (m_reconnectRunning.load()) {
     if (!m_connectedToLeader) {
@@ -355,6 +357,7 @@ void PeerManager::reconnectLoop() {
                 LOG_CORE);
       if (connectToLeader()) {
         logToFile("Reconnected to leader successfully", LOG_CORE);
+        heartbeatCounter = 0;
       }
     }
 
@@ -362,6 +365,16 @@ void PeerManager::reconnectLoop() {
     for (int i = 0; i < RECONNECT_INTERVAL_SECS && m_reconnectRunning.load();
          i++) {
       std::this_thread::sleep_for(std::chrono::seconds(1));
+      heartbeatCounter++;
+    }
+
+    // Send heartbeat to keep last_seen fresh on the leader
+    if (m_connectedToLeader && heartbeatCounter >= HEARTBEAT_INTERVAL_SECS) {
+      json hb;
+      hb["command"] = "heartbeat";
+      hb["peer_id"] = m_peerId;
+      sendToLeader(hb);
+      heartbeatCounter = 0;
     }
   }
 }

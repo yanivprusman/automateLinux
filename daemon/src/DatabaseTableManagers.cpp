@@ -449,6 +449,21 @@ void PeerTable::updateOnlineStatus(const std::string &peer_id, bool is_online) {
   }
 }
 
+void PeerTable::touchLastSeen(const std::string &peer_id) {
+  std::unique_ptr<sql::Connection> con(getCon());
+  if (!con)
+    return;
+  try {
+    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
+        "UPDATE peer_registry SET last_seen = NOW(), is_online = 1 WHERE peer_id = ?"));
+    pstmt->setString(1, peer_id);
+    pstmt->executeUpdate();
+  } catch (sql::SQLException &e) {
+    logToFile("PeerTable: touchLastSeen error: " + std::string(e.what()),
+              0xFFFFFFFF);
+  }
+}
+
 void PeerTable::deletePeer(const std::string &peer_id) {
   std::unique_ptr<sql::Connection> con(getCon());
   if (!con)
@@ -559,18 +574,21 @@ ExtraAppRecord ExtraAppTable::getApp(const std::string &app_id) {
     pstmt->setString(1, app_id);
     std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
     if (res->next()) {
-      result.app_id = res->getString("app_id");
-      result.display_name = res->getString("display_name");
-      result.repo_url = res->getString("repo_url");
+      auto safeStr = [&](const char *col) -> std::string {
+        return res->isNull(col) ? "" : std::string(res->getString(col));
+      };
+      result.app_id = safeStr("app_id");
+      result.display_name = safeStr("display_name");
+      result.repo_url = safeStr("repo_url");
       result.has_server_component = res->getBoolean("has_server_component");
-      result.server_service_template = res->getString("server_service_template");
-      result.client_service_template = res->getString("client_service_template");
-      result.port_key_client = res->getString("port_key_client");
-      result.port_key_server = res->getString("port_key_server");
-      result.dev_path = res->getString("dev_path");
-      result.prod_path = res->getString("prod_path");
-      result.server_build_subdir = res->getString("server_build_subdir");
-      result.client_subdir = res->getString("client_subdir");
+      result.server_service_template = safeStr("server_service_template");
+      result.client_service_template = safeStr("client_service_template");
+      result.port_key_client = safeStr("port_key_client");
+      result.port_key_server = safeStr("port_key_server");
+      result.dev_path = safeStr("dev_path");
+      result.prod_path = safeStr("prod_path");
+      result.server_build_subdir = safeStr("server_build_subdir");
+      result.client_subdir = safeStr("client_subdir");
     }
   } catch (sql::SQLException &e) {
     logToFile("ExtraAppTable: getApp error: " + std::string(e.what()),
@@ -592,19 +610,22 @@ std::vector<ExtraAppRecord> ExtraAppTable::getAllApps() {
         "port_key_server, dev_path, prod_path, server_build_subdir, client_subdir "
         "FROM extra_apps ORDER BY app_id"));
     while (res->next()) {
+      auto safeStr = [&](const char *col) -> std::string {
+        return res->isNull(col) ? "" : std::string(res->getString(col));
+      };
       ExtraAppRecord record;
-      record.app_id = res->getString("app_id");
-      record.display_name = res->getString("display_name");
-      record.repo_url = res->getString("repo_url");
+      record.app_id = safeStr("app_id");
+      record.display_name = safeStr("display_name");
+      record.repo_url = safeStr("repo_url");
       record.has_server_component = res->getBoolean("has_server_component");
-      record.server_service_template = res->getString("server_service_template");
-      record.client_service_template = res->getString("client_service_template");
-      record.port_key_client = res->getString("port_key_client");
-      record.port_key_server = res->getString("port_key_server");
-      record.dev_path = res->getString("dev_path");
-      record.prod_path = res->getString("prod_path");
-      record.server_build_subdir = res->getString("server_build_subdir");
-      record.client_subdir = res->getString("client_subdir");
+      record.server_service_template = safeStr("server_service_template");
+      record.client_service_template = safeStr("client_service_template");
+      record.port_key_client = safeStr("port_key_client");
+      record.port_key_server = safeStr("port_key_server");
+      record.dev_path = safeStr("dev_path");
+      record.prod_path = safeStr("prod_path");
+      record.server_build_subdir = safeStr("server_build_subdir");
+      record.client_subdir = safeStr("client_subdir");
       results.push_back(record);
     }
   } catch (sql::SQLException &e) {

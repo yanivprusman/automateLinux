@@ -494,7 +494,7 @@ int mainCommand(const json &command, int client_sock) {
   }
   write(client_sock, result.message.c_str(), result.message.length());
 
-  if (command[COMMAND_KEY] == "closedTty") {
+  if (commandName == "closedTty") {
     return 1;
   }
 

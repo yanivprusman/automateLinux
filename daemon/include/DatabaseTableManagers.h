@@ -59,6 +59,7 @@ public:
   static PeerRecord getPeer(const std::string &peer_id);
   static std::vector<PeerRecord> getAllPeers();
   static void updateOnlineStatus(const std::string &peer_id, bool is_online);
+  static void touchLastSeen(const std::string &peer_id);
   static void deletePeer(const std::string &peer_id);
   static std::string getIpAddress(const std::string &peer_id);
   static int clearAllPeers();  // Returns count of deleted rows

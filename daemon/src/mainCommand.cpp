@@ -206,6 +206,22 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Discard uncommitted changes in prod worktree"),
     CommandSignature(COMMAND_GET_APP_PEERS, {COMMAND_ARG_APP},
                      "Show which peers have an app installed and running"),
+    CommandSignature(COMMAND_INSTALL_APP_ON_PEER,
+                     {COMMAND_ARG_APP, COMMAND_ARG_PEER},
+                     "Install an app on a remote peer",
+                     "--mode <dev|prod|all>"),
+    CommandSignature(COMMAND_UNINSTALL_APP_ON_PEER,
+                     {COMMAND_ARG_APP, COMMAND_ARG_PEER},
+                     "Uninstall an app from a remote peer"),
+    CommandSignature(COMMAND_START_APP_ON_PEER,
+                     {COMMAND_ARG_APP, COMMAND_ARG_PEER, COMMAND_ARG_MODE},
+                     "Start an app on a remote peer"),
+    CommandSignature(COMMAND_STOP_APP_ON_PEER,
+                     {COMMAND_ARG_APP, COMMAND_ARG_PEER},
+                     "Stop an app on a remote peer",
+                     "--mode <dev|prod|all>"),
+    CommandSignature(COMMAND_INSTALL_APP_SERVICES, {COMMAND_ARG_APP},
+                     "Install systemd service files for an app locally"),
 
     // Test/Debug Commands
     CommandSignature(COMMAND_TEST_INTEGRITY, {},
@@ -379,6 +395,11 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_PROD_STATUS, handleProdStatus},
     {COMMAND_CLEAN_PROD, handleCleanProd},
     {COMMAND_GET_APP_PEERS, handleGetAppPeers},
+    {COMMAND_INSTALL_APP_ON_PEER, handleInstallAppOnPeer},
+    {COMMAND_UNINSTALL_APP_ON_PEER, handleUninstallAppOnPeer},
+    {COMMAND_START_APP_ON_PEER, handleStartAppOnPeer},
+    {COMMAND_STOP_APP_ON_PEER, handleStopAppOnPeer},
+    {COMMAND_INSTALL_APP_SERVICES, handleInstallAppServices},
 
     // Peer commands
     {COMMAND_SET_PEER_CONFIG, handleSetPeerConfig},
@@ -511,7 +532,11 @@ int mainCommand(const json &command, int client_sock) {
   if (commandName == COMMAND_REMOTE_DEPLOY_DAEMON ||
       commandName == COMMAND_EXEC_ON_PEER ||
       commandName == COMMAND_REMOTE_PULL || commandName == COMMAND_REMOTE_BD ||
-      commandName == COMMAND_EXEC_REQUEST) {
+      commandName == COMMAND_EXEC_REQUEST ||
+      commandName == COMMAND_INSTALL_APP_ON_PEER ||
+      commandName == COMMAND_UNINSTALL_APP_ON_PEER ||
+      commandName == COMMAND_START_APP_ON_PEER ||
+      commandName == COMMAND_STOP_APP_ON_PEER) {
     // Hand over to thread
     std::thread([command, client_sock]() {
       string commandName = command[COMMAND_KEY].get<string>();

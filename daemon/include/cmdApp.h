@@ -40,6 +40,11 @@ CmdResult handleDeployToProd(const json &command);
 CmdResult handleProdStatus(const json &command);
 CmdResult handleCleanProd(const json &command);
 CmdResult handleGetAppPeers(const json &command);
+CmdResult handleInstallAppOnPeer(const json &command);
+CmdResult handleUninstallAppOnPeer(const json &command);
+CmdResult handleStartAppOnPeer(const json &command);
+CmdResult handleStopAppOnPeer(const json &command);
+CmdResult handleInstallAppServices(const json &command);
 
 // App Manager namespace for internal utilities
 namespace AppManager {

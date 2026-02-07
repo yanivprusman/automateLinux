@@ -7,6 +7,12 @@
 
 using json = nlohmann::json;
 
+// Shared utility: send command to daemon-manager.py on a remote peer
+CmdResult sendToManager(const std::string &ip, const json &command);
+
+// Shared utility: resolve peer IP from peer_id (works on leader or worker)
+std::string resolvePeerIP(const std::string &peer_id);
+
 // Peer Networking Command Handlers
 CmdResult handleSetPeerConfig(const json &command);
 CmdResult handleGetPeerStatus(const json &command);

@@ -25,7 +25,7 @@ extern string getPrimaryMacAddress();
 // External client socket - set by mainCommand before calling handlers
 extern int g_clientSocket;
 
-static CmdResult sendToManager(const string &ip, const json &command) {
+CmdResult sendToManager(const string &ip, const json &command) {
   int sock = socket(AF_INET, SOCK_STREAM, 0);
   if (sock < 0)
     return CmdResult(1, "Failed to create socket for manager\n");
@@ -108,6 +108,24 @@ static string queryLeaderForPeerIP(const string &peer_id) {
   }
 
   return "";
+}
+
+string resolvePeerIP(const string &peer_id) {
+  PeerManager &pm = PeerManager::getInstance();
+
+  if (pm.isLeader()) {
+    PeerRecord dbPeer = PeerTable::getPeer(peer_id);
+    if (!dbPeer.ip_address.empty())
+      return dbPeer.ip_address;
+    if (peer_id == pm.getPeerId())
+      return "127.0.0.1";
+    return "";
+  }
+
+  // Worker
+  if (peer_id == pm.getPeerId())
+    return "127.0.0.1";
+  return queryLeaderForPeerIP(peer_id);
 }
 
 CmdResult handleSetPeerConfig(const json &command) {
@@ -582,23 +600,8 @@ CmdResult handleRemoteBd(const json &command) {
 
 CmdResult handleRemoteDeployDaemon(const json &command) {
   string peer_id = command[COMMAND_ARG_PEER].get<string>();
-  PeerManager &pm = PeerManager::getInstance();
 
-  // Find IP for this peer
-  string ip;
-  if (pm.isLeader()) {
-    PeerRecord dbPeer = PeerTable::getPeer(peer_id);
-    ip = dbPeer.ip_address;
-    if (ip.empty() && peer_id == pm.getPeerId())
-      ip = "127.0.0.1";
-  } else {
-    if (peer_id == pm.getPeerId()) {
-      ip = "127.0.0.1";
-    } else {
-      ip = queryLeaderForPeerIP(peer_id);
-    }
-  }
-
+  string ip = resolvePeerIP(peer_id);
   if (ip.empty()) {
     return CmdResult(1, "Could not find IP for peer: " + peer_id + "\n");
   }

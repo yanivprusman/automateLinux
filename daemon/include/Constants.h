@@ -118,6 +118,11 @@
 #define COMMAND_PROD_STATUS "prodStatus"
 #define COMMAND_CLEAN_PROD "cleanProd"
 #define COMMAND_GET_APP_PEERS "getAppPeers"
+#define COMMAND_INSTALL_APP_ON_PEER "installAppOnPeer"
+#define COMMAND_UNINSTALL_APP_ON_PEER "uninstallAppOnPeer"
+#define COMMAND_START_APP_ON_PEER "startAppOnPeer"
+#define COMMAND_STOP_APP_ON_PEER "stopAppOnPeer"
+#define COMMAND_INSTALL_APP_SERVICES "installAppServices"
 
 // App Arguments
 #define COMMAND_ARG_APP "app"

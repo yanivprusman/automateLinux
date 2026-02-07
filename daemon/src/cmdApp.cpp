@@ -1452,3 +1452,267 @@ CmdResult handleGetAppPeers(const json &command) {
 
   return CmdResult(0, result.dump(2) + "\n");
 }
+
+// ============================================================================
+// Cross-Peer App Management
+// ============================================================================
+
+// Helper: get git remote URL for an app
+static string getRepoUrl(const AppConfig &config) {
+  string cmd = "/usr/bin/git -C " + config.devPath + " remote get-url origin 2>/dev/null";
+  string url = executeCommand(cmd.c_str());
+  // Trim whitespace
+  url.erase(url.find_last_not_of(" \n\r\t") + 1);
+  return url;
+}
+
+// Helper: collect port assignments for an app
+static json getAppPorts(const AppConfig &config) {
+  json ports = json::object();
+  string prodPort = SettingsTable::getSetting("port_" + config.portKeyClient + "-prod");
+  string devPort = SettingsTable::getSetting("port_" + config.portKeyClient + "-dev");
+  if (!prodPort.empty()) ports[config.portKeyClient + "-prod"] = stoi(prodPort);
+  if (!devPort.empty()) ports[config.portKeyClient + "-dev"] = stoi(devPort);
+  if (config.hasServerComponent && !config.portKeyServer.empty()) {
+    string serverPort = SettingsTable::getSetting("port_" + config.portKeyServer);
+    if (!serverPort.empty()) ports[config.portKeyServer] = stoi(serverPort);
+  }
+  return ports;
+}
+
+CmdResult handleInstallAppOnPeer(const json &command) {
+  if (!command.contains(COMMAND_ARG_APP) || !command.contains(COMMAND_ARG_PEER)) {
+    return CmdResult(1, "Missing required arguments: --app --peer\n");
+  }
+
+  string appId = command[COMMAND_ARG_APP].get<string>();
+  string peerId = command[COMMAND_ARG_PEER].get<string>();
+  string mode = command.contains(COMMAND_ARG_MODE) ? command[COMMAND_ARG_MODE].get<string>() : "all";
+
+  AppConfig config = AppManager::getAppConfig(appId);
+  if (config.appId.empty()) {
+    return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  // Get repo URL
+  string repoUrl = getRepoUrl(config);
+  if (repoUrl.empty()) {
+    return CmdResult(1, "Could not get repo URL for " + appId + "\n");
+  }
+
+  // Get ports
+  json ports = getAppPorts(config);
+
+  // Resolve peer IP
+  string ip = resolvePeerIP(peerId);
+  if (ip.empty()) {
+    return CmdResult(1, "Could not find IP for peer: " + peerId + "\n");
+  }
+
+  // Build manager command
+  json mgrCmd;
+  mgrCmd["command"] = "install-app";
+  mgrCmd["app_id"] = appId;
+  mgrCmd["display_name"] = config.displayName;
+  mgrCmd["repo_url"] = repoUrl;
+  mgrCmd["has_server"] = config.hasServerComponent;
+  mgrCmd["server_build_subdir"] = config.serverBuildSubdir;
+  mgrCmd["client_subdir"] = config.clientSubdir;
+  mgrCmd["client_service_template"] = config.clientServiceTemplate;
+  mgrCmd["server_service_template"] = config.serverServiceTemplate;
+  mgrCmd["dev_path"] = config.devPath;
+  mgrCmd["prod_path"] = config.prodPath;
+  mgrCmd["ports"] = ports;
+  mgrCmd["mode"] = mode;
+
+  logToFile("Sending install-app for " + appId + " to manager at " + ip, LOG_CORE);
+  return sendToManager(ip, mgrCmd);
+}
+
+CmdResult handleUninstallAppOnPeer(const json &command) {
+  if (!command.contains(COMMAND_ARG_APP) || !command.contains(COMMAND_ARG_PEER)) {
+    return CmdResult(1, "Missing required arguments: --app --peer\n");
+  }
+
+  string appId = command[COMMAND_ARG_APP].get<string>();
+  string peerId = command[COMMAND_ARG_PEER].get<string>();
+
+  AppConfig config = AppManager::getAppConfig(appId);
+  if (config.appId.empty()) {
+    return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  string ip = resolvePeerIP(peerId);
+  if (ip.empty()) {
+    return CmdResult(1, "Could not find IP for peer: " + peerId + "\n");
+  }
+
+  json mgrCmd;
+  mgrCmd["command"] = "uninstall-app";
+  mgrCmd["app_id"] = appId;
+  mgrCmd["dev_path"] = config.devPath;
+  mgrCmd["prod_path"] = config.prodPath;
+  mgrCmd["client_service_template"] = config.clientServiceTemplate;
+  mgrCmd["server_service_template"] = config.serverServiceTemplate;
+  mgrCmd["has_server"] = config.hasServerComponent;
+  mgrCmd["port_key_client"] = config.portKeyClient;
+  mgrCmd["port_key_server"] = config.portKeyServer;
+
+  logToFile("Sending uninstall-app for " + appId + " to manager at " + ip, LOG_CORE);
+  return sendToManager(ip, mgrCmd);
+}
+
+CmdResult handleStartAppOnPeer(const json &command) {
+  if (!command.contains(COMMAND_ARG_APP) || !command.contains(COMMAND_ARG_PEER) ||
+      !command.contains(COMMAND_ARG_MODE)) {
+    return CmdResult(1, "Missing required arguments: --app --peer --mode\n");
+  }
+
+  string appId = command[COMMAND_ARG_APP].get<string>();
+  string peerId = command[COMMAND_ARG_PEER].get<string>();
+  string mode = command[COMMAND_ARG_MODE].get<string>();
+
+  string ip = resolvePeerIP(peerId);
+  if (ip.empty()) {
+    return CmdResult(1, "Could not find IP for peer: " + peerId + "\n");
+  }
+
+  json mgrCmd;
+  mgrCmd["command"] = "app-control";
+  mgrCmd["action"] = "start";
+  mgrCmd["app_id"] = appId;
+  mgrCmd["mode"] = mode;
+
+  logToFile("Sending start " + appId + " (" + mode + ") to manager at " + ip, LOG_CORE);
+  return sendToManager(ip, mgrCmd);
+}
+
+CmdResult handleStopAppOnPeer(const json &command) {
+  if (!command.contains(COMMAND_ARG_APP) || !command.contains(COMMAND_ARG_PEER)) {
+    return CmdResult(1, "Missing required arguments: --app --peer\n");
+  }
+
+  string appId = command[COMMAND_ARG_APP].get<string>();
+  string peerId = command[COMMAND_ARG_PEER].get<string>();
+  string mode = command.contains(COMMAND_ARG_MODE) ? command[COMMAND_ARG_MODE].get<string>() : "all";
+
+  string ip = resolvePeerIP(peerId);
+  if (ip.empty()) {
+    return CmdResult(1, "Could not find IP for peer: " + peerId + "\n");
+  }
+
+  json mgrCmd;
+  mgrCmd["command"] = "app-control";
+  mgrCmd["action"] = "stop";
+  mgrCmd["app_id"] = appId;
+  mgrCmd["mode"] = mode;
+
+  logToFile("Sending stop " + appId + " (" + mode + ") to manager at " + ip, LOG_CORE);
+  return sendToManager(ip, mgrCmd);
+}
+
+CmdResult handleInstallAppServices(const json &command) {
+  if (!command.contains(COMMAND_ARG_APP)) {
+    return CmdResult(1, "Missing required argument: --app\n");
+  }
+
+  string appId = command[COMMAND_ARG_APP].get<string>();
+
+  AppConfig config = AppManager::getAppConfig(appId);
+  if (config.appId.empty()) {
+    return CmdResult(1, "Unknown app: " + appId + "\n");
+  }
+
+  stringstream result;
+  result << "Installing service files for " << appId << "...\n";
+
+  // Collect service names to install
+  vector<string> serviceNames;
+  if (!config.clientServiceTemplate.empty()) {
+    serviceNames.push_back(AppManager::resolveServiceName(config.clientServiceTemplate, appId, "dev"));
+    if (!config.prodPath.empty()) {
+      serviceNames.push_back(AppManager::resolveServiceName(config.clientServiceTemplate, appId, "prod"));
+    }
+  }
+  if (config.hasServerComponent && !config.serverServiceTemplate.empty()) {
+    serviceNames.push_back(AppManager::resolveServiceName(config.serverServiceTemplate, appId, "dev"));
+    if (!config.prodPath.empty()) {
+      serviceNames.push_back(AppManager::resolveServiceName(config.serverServiceTemplate, appId, "prod"));
+    }
+  }
+
+  string servicesDir = "/opt/automateLinux/services/system/";
+  string generatedDir = servicesDir + "generated/";
+  string systemDir = "/etc/systemd/system/";
+
+  for (const auto &svcName : serviceNames) {
+    string svcFile = svcName + ".service";
+    string handWritten = servicesDir + svcFile;
+    string generated = generatedDir + svcFile;
+    string systemLink = systemDir + svcFile;
+
+    // Check for hand-written service file first
+    string checkCmd = "/usr/bin/test -f " + handWritten;
+    if (std::system(checkCmd.c_str()) == 0) {
+      // Symlink hand-written to /etc/systemd/system/
+      string lnCmd = "/usr/bin/ln -sf " + handWritten + " " + systemLink;
+      std::system(lnCmd.c_str());
+      result << "  " << svcFile << " -> linked (hand-written)\n";
+    } else {
+      // Generate service file
+      bool isDev = svcName.find("-dev") != string::npos;
+      string mode = isDev ? "dev" : "prod";
+      string appPath = isDev ? config.devPath : config.prodPath;
+      string workDir = appPath;
+      if (!config.clientSubdir.empty()) {
+        workDir += "/" + config.clientSubdir;
+      }
+
+      string npmScript = isDev ? "dev" : "start";
+      string nodeEnv = isDev ? "development" : "production";
+
+      // Get port
+      string portKey = "port_" + config.portKeyClient + "-" + mode;
+      string portStr = SettingsTable::getSetting(portKey);
+      string portArg = portStr.empty() ? "" : " -- -p " + portStr;
+
+      string svcContent =
+          "[Unit]\n"
+          "Description=" + config.displayName + " (" + mode + ")\n"
+          "After=network.target daemon.service\n"
+          "Wants=daemon.service\n\n"
+          "[Service]\n"
+          "Type=simple\n"
+          "WorkingDirectory=" + workDir + "\n"
+          "ExecStart=/usr/bin/npm run " + npmScript + portArg + "\n"
+          "Restart=on-failure\n"
+          "RestartSec=5s\n"
+          "User=root\n"
+          "Group=root\n"
+          "Environment=NODE_ENV=" + nodeEnv + "\n"
+          "StandardOutput=journal\n"
+          "StandardError=journal\n\n"
+          "[Install]\n"
+          "WantedBy=multi-user.target\n";
+
+      // Write generated file
+      FILE *f = fopen(generated.c_str(), "w");
+      if (f) {
+        fputs(svcContent.c_str(), f);
+        fclose(f);
+        // Symlink to /etc/systemd/system/
+        string lnCmd = "/usr/bin/ln -sf " + generated + " " + systemLink;
+        std::system(lnCmd.c_str());
+        result << "  " << svcFile << " -> linked (generated)\n";
+      } else {
+        result << "  " << svcFile << " -> FAILED to write generated file\n";
+      }
+    }
+  }
+
+  // Reload systemd
+  std::system("/usr/bin/systemctl daemon-reload");
+  result << "  systemctl daemon-reload: OK\n";
+
+  return CmdResult(0, result.str());
+}

@@ -30,3 +30,5 @@ daemon/include/Version.h
 node_modules/
 mcpServers/*/dist/
 .claude/settings.local.json
+services/system/generated/*
+!services/system/generated/.gitkeep

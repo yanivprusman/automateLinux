@@ -53,3 +53,4 @@ installation instructions:
 sudo git clone https://github.com/yanivprusman/automateLinux.git /opt/automateLinux
 cd /opt/automateLinux
 sudo ./install.sh
+

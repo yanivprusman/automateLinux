@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 // Include all command handler headers
+#include "cmdApp.h"
 #include "cmdBrowser.h"
 #include "cmdDatabase.h"
 #include "cmdInput.h"
@@ -16,7 +17,6 @@
 #include "cmdTerminal.h"
 #include "cmdWindow.h"
 #include "cmdWireGuard.h"
-#include "cmdApp.h"
 
 using namespace std;
 
@@ -42,7 +42,8 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Notify daemon that a terminal was opened"),
     CommandSignature(COMMAND_CLOSED_TTY, {COMMAND_ARG_TTY},
                      "Notify daemon that a terminal was closed"),
-    CommandSignature(COMMAND_UPDATE_DIR_HISTORY, {COMMAND_ARG_TTY, COMMAND_ARG_PWD},
+    CommandSignature(COMMAND_UPDATE_DIR_HISTORY,
+                     {COMMAND_ARG_TTY, COMMAND_ARG_PWD},
                      "Update directory history for a terminal"),
     CommandSignature(COMMAND_CD_FORWARD, {COMMAND_ARG_TTY},
                      "Navigate forward in directory history (Ctrl+Down)"),
@@ -66,8 +67,9 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "(Deprecated) Show entries by prefix"),
     CommandSignature(COMMAND_DELETE_ENTRIES_BY_PREFIX, {COMMAND_ARG_PREFIX},
                      "(Deprecated) Delete entries by prefix"),
-    CommandSignature(COMMAND_SHOW_DB, {},
-                     "Show database summary (terminal history, devices, settings)"),
+    CommandSignature(
+        COMMAND_SHOW_DB, {},
+        "Show database summary (terminal history, devices, settings)"),
     CommandSignature(COMMAND_UPSERT_ENTRY, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE},
                      "Insert or update a setting entry"),
     CommandSignature(COMMAND_GET_ENTRY, {COMMAND_ARG_KEY},
@@ -75,7 +77,8 @@ const CommandSignature COMMAND_REGISTRY[] = {
 
     // System Commands
     CommandSignature(COMMAND_PING, {}, "Ping the daemon (returns 'pong')"),
-    CommandSignature(COMMAND_VERSION, {}, "Show daemon version (git commit count)"),
+    CommandSignature(COMMAND_VERSION, {},
+                     "Show daemon version (git commit count)"),
     CommandSignature(COMMAND_QUIT, {}, "Stop the daemon"),
     CommandSignature(COMMAND_GET_DIR, {COMMAND_ARG_DIR_NAME},
                      "Get daemon directory path (base, data, mappings)"),
@@ -112,20 +115,17 @@ const CommandSignature COMMAND_REGISTRY[] = {
     // Logging Commands
     CommandSignature(COMMAND_SHOULD_LOG, {COMMAND_ARG_ENABLE},
                      "Enable or disable logging"),
-    CommandSignature(COMMAND_GET_SHOULD_LOG, {},
-                     "Get current logging state"),
+    CommandSignature(COMMAND_GET_SHOULD_LOG, {}, "Get current logging state"),
     CommandSignature(COMMAND_REGISTER_LOG_LISTENER, {},
                      "Register as a live log listener (streaming)"),
     CommandSignature(COMMAND_ADD_LOG_FILTER, {COMMAND_ARG_ACTION},
                      "Add granular input event log filter",
                      "--type --code --value --devicePathRegex --isKeyboard"),
-    CommandSignature(COMMAND_REMOVE_LOG_FILTER, {},
-                     "Remove a log filter",
+    CommandSignature(COMMAND_REMOVE_LOG_FILTER, {}, "Remove a log filter",
                      "--type --code --value --devicePathRegex --isKeyboard"),
     CommandSignature(COMMAND_LIST_LOG_FILTERS, {},
                      "List all active log filters"),
-    CommandSignature(COMMAND_CLEAR_LOG_FILTERS, {},
-                     "Clear all log filters"),
+    CommandSignature(COMMAND_CLEAR_LOG_FILTERS, {}, "Clear all log filters"),
 
     // Window/Context Commands
     CommandSignature(COMMAND_ACTIVE_WINDOW_CHANGED,
@@ -138,14 +138,12 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Register Chrome native messaging host"),
     CommandSignature(COMMAND_FOCUS_CHATGPT, {},
                      "Request focus on ChatGPT browser tab"),
-    CommandSignature(COMMAND_FOCUS_ACK, {},
-                     "Acknowledge focus request"),
+    CommandSignature(COMMAND_FOCUS_ACK, {}, "Acknowledge focus request"),
     CommandSignature(COMMAND_GET_ACTIVE_CONTEXT, {},
                      "Get current active window context (JSON)"),
     CommandSignature(COMMAND_REGISTER_WINDOW_EXTENSION, {},
                      "Register GNOME window tracking extension"),
-    CommandSignature(COMMAND_LIST_WINDOWS, {},
-                     "List all tracked windows"),
+    CommandSignature(COMMAND_LIST_WINDOWS, {}, "List all tracked windows"),
     CommandSignature(COMMAND_ACTIVATE_WINDOW, {COMMAND_ARG_WINDOW_ID},
                      "Activate a window by ID"),
 
@@ -164,8 +162,7 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Get assigned port for an app/service"),
     CommandSignature(COMMAND_SET_PORT, {COMMAND_ARG_KEY, COMMAND_ARG_VALUE},
                      "Assign a port to an app/service"),
-    CommandSignature(COMMAND_LIST_PORTS, {},
-                     "List all port assignments"),
+    CommandSignature(COMMAND_LIST_PORTS, {}, "List all port assignments"),
     CommandSignature(COMMAND_DELETE_PORT, {COMMAND_ARG_KEY},
                      "Delete a port assignment"),
 
@@ -176,16 +173,14 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Open public transportation app"),
 
     // App Management Commands
-    CommandSignature(COMMAND_START_APP, {COMMAND_ARG_APP},
-                     "Start an app", "--mode <prod|dev>"),
-    CommandSignature(COMMAND_STOP_APP, {COMMAND_ARG_APP},
-                     "Stop an app", "--mode <prod|dev|all>"),
-    CommandSignature(COMMAND_RESTART_APP, {COMMAND_ARG_APP},
-                     "Restart an app", "--mode <prod|dev>"),
-    CommandSignature(COMMAND_APP_STATUS, {},
-                     "Show app status", "--app <name>"),
-    CommandSignature(COMMAND_LIST_APPS, {},
-                     "List all registered apps"),
+    CommandSignature(COMMAND_START_APP, {COMMAND_ARG_APP}, "Start an app",
+                     "--mode <prod|dev>"),
+    CommandSignature(COMMAND_STOP_APP, {COMMAND_ARG_APP}, "Stop an app",
+                     "--mode <prod|dev|all>"),
+    CommandSignature(COMMAND_RESTART_APP, {COMMAND_ARG_APP}, "Restart an app",
+                     "--mode <prod|dev>"),
+    CommandSignature(COMMAND_APP_STATUS, {}, "Show app status", "--app <name>"),
+    CommandSignature(COMMAND_LIST_APPS, {}, "List all registered apps"),
     CommandSignature(COMMAND_BUILD_APP, {COMMAND_ARG_APP},
                      "Build an app's server component", "--mode <prod|dev>"),
     CommandSignature(COMMAND_INSTALL_APP_DEPS, {COMMAND_ARG_APP},
@@ -197,7 +192,8 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Disable app services from boot", "--mode <prod|dev|all>"),
     CommandSignature(COMMAND_ADD_EXTRA_APP, {COMMAND_ARG_REPO_URL},
                      "Add an extra app from git repository",
-                     "--displayName <name> --hasServer --serverSubdir <dir> --clientSubdir <dir>"),
+                     "--displayName <name> --hasServer --serverSubdir <dir> "
+                     "--clientSubdir <dir>"),
     CommandSignature(COMMAND_REMOVE_EXTRA_APP, {COMMAND_ARG_APP},
                      "Remove an extra app from registry (keeps files)"),
     CommandSignature(COMMAND_LIST_EXTRA_APPS, {},
@@ -235,9 +231,12 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Delete a peer from the registry"),
     CommandSignature(COMMAND_GET_PEER_INFO, {COMMAND_ARG_PEER},
                      "Get detailed info about a specific peer"),
-    CommandSignature(COMMAND_EXEC_ON_PEER, {COMMAND_ARG_PEER, COMMAND_ARG_DIRECTORY, COMMAND_ARG_SHELL_CMD},
-                     "Execute a command on a remote peer in specified directory"),
-    CommandSignature(COMMAND_EXEC_REQUEST, {COMMAND_ARG_DIRECTORY, COMMAND_ARG_SHELL_CMD},
+    CommandSignature(
+        COMMAND_EXEC_ON_PEER,
+        {COMMAND_ARG_PEER, COMMAND_ARG_DIRECTORY, COMMAND_ARG_SHELL_CMD},
+        "Execute a command on a remote peer in specified directory"),
+    CommandSignature(COMMAND_EXEC_REQUEST,
+                     {COMMAND_ARG_DIRECTORY, COMMAND_ARG_SHELL_CMD},
                      "(Internal) Handle exec request from another peer"),
     CommandSignature(COMMAND_REMOTE_PULL, {COMMAND_ARG_PEER},
                      "Git pull automateLinux on a remote peer"),
@@ -247,17 +246,19 @@ const CommandSignature COMMAND_REGISTRY[] = {
                      "Pull and build daemon on a remote peer"),
     CommandSignature(COMMAND_DB_SANITY_CHECK, {},
                      "Check and fix worker database (delete leader-only data)"),
-    CommandSignature(COMMAND_REGISTER_WORKER, {},
-                     "Register this machine as a worker (uses hostname, connects to VPS)"),
+    CommandSignature(
+        COMMAND_REGISTER_WORKER, {},
+        "Register this machine as a worker (uses hostname, connects to VPS)"),
     CommandSignature(COMMAND_UPDATE_PEER_MAC, {},
                      "Update this peer's MAC address in the leader's database"),
     CommandSignature("updatePeerMacInternal", {},
                      "(internal) Receives MAC update from worker"),
 
     // WireGuard Setup Commands
-    CommandSignature(COMMAND_SETUP_WIREGUARD_PEER, {COMMAND_ARG_NAME},
-                     "Set up WireGuard on a peer and register with daemon",
-                     "--host <ip> --vpnIp <ip> --mac <addr> --dualBoot --privateKey <key>"),
+    CommandSignature(
+        COMMAND_SETUP_WIREGUARD_PEER, {COMMAND_ARG_NAME},
+        "Set up WireGuard on a peer and register with daemon",
+        "--host <ip> --vpnIp <ip> --mac <addr> --dualBoot --privateKey <key>"),
     CommandSignature(COMMAND_LIST_WIREGUARD_PEERS, {},
                      "List peers configured in WireGuard on the VPS"),
     CommandSignature(COMMAND_GET_WIREGUARD_IP, {},
@@ -357,7 +358,8 @@ static const CommandDispatch COMMAND_HANDLERS[] = {
     {COMMAND_SET_PORT, handleSetPort},
     {COMMAND_LIST_PORTS, handleListPorts},
     {COMMAND_DELETE_PORT, handleDeletePort},
-    {COMMAND_PUBLIC_TRANSPORTATION_START_PROXY, handlePublicTransportationStartProxy},
+    {COMMAND_PUBLIC_TRANSPORTATION_START_PROXY,
+     handlePublicTransportationStartProxy},
     {COMMAND_PUBLIC_TRANSPORTATION_OPEN_APP, handlePublicTransportationOpenApp},
 
     // App management commands
@@ -498,11 +500,53 @@ int mainCommand(const json &command, int client_sock) {
     return 1;
   }
 
-  // Return 1 (close) for regular commands, 0 (keep) for log listeners.
+  // Return 1 (close) for regular commands, 0 (keep) for log listeners,
+  // 2 (handover to thread) for slow commands.
   if (commandName == COMMAND_REGISTER_LOG_LISTENER ||
       commandName == COMMAND_REGISTER_WINDOW_EXTENSION ||
       commandName == COMMAND_REGISTER_NATIVE_HOST) {
     return 0;
   }
+
+  if (commandName == COMMAND_REMOTE_DEPLOY_DAEMON ||
+      commandName == COMMAND_EXEC_ON_PEER ||
+      commandName == COMMAND_REMOTE_PULL || commandName == COMMAND_REMOTE_BD ||
+      commandName == COMMAND_EXEC_REQUEST) {
+    // Hand over to thread
+    std::thread([command, client_sock]() {
+      string commandName = command[COMMAND_KEY].get<string>();
+      CommandHandler handler = nullptr;
+      for (size_t i = 0; i < COMMAND_HANDLERS_SIZE; ++i) {
+        if (COMMAND_HANDLERS[i].name == commandName) {
+          handler = COMMAND_HANDLERS[i].handler;
+          break;
+        }
+      }
+
+      CmdResult result;
+      if (handler) {
+        try {
+          result = handler(command);
+        } catch (const std::exception &e) {
+          result.status = 1;
+          result.message = std::string("error: ") + e.what() + "\n";
+        }
+      } else {
+        result.status = 1;
+        result.message = "Async handler not found\n";
+      }
+
+      if (!result.message.empty() && result.message.back() != '\n') {
+        result.message += "\n";
+      }
+
+      // Send result and close
+      write(client_sock, result.message.c_str(), result.message.length());
+      close(client_sock);
+    }).detach();
+
+    return 2;
+  }
+
   return 1;
 }

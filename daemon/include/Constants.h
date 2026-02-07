@@ -270,4 +270,6 @@
   "/usr/bin/gdbus emit --system --object-path /com/automatelinux/daemon "      \
   "--signal "                                                                  \
   "com.automatelinux.daemon.Ready"
+#define MANAGER_PORT 3505
+
 #endif // CONSTANTS_H

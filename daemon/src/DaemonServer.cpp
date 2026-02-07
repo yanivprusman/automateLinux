@@ -12,10 +12,10 @@
 #include <arpa/inet.h>
 #include <array>
 #include <csignal>
-#include <dirent.h>
-#include <fstream>
 #include <cstdlib>
+#include <dirent.h>
 #include <fcntl.h>
+#include <fstream>
 #include <ifaddrs.h>
 #include <iostream>
 #include <map>
@@ -31,11 +31,11 @@
 using namespace std;
 
 static int socket_fd = -1;
-static int peer_socket_fd = -1;  // TCP socket for peer-to-peer communication
-extern int g_keyboard_fd;        // Defined in main.cpp, used here
-extern volatile int running;     // Defined in main.cpp
-extern std::ofstream g_logFile;  // Defined in Globals.h/main.cpp
-extern bool g_keyboardEnabled;   // Defined in mainCommand.cpp
+static int peer_socket_fd = -1; // TCP socket for peer-to-peer communication
+extern int g_keyboard_fd;       // Defined in main.cpp, used here
+extern volatile int running;    // Defined in main.cpp
+extern std::ofstream g_logFile; // Defined in Globals.h/main.cpp
+extern bool g_keyboardEnabled;  // Defined in mainCommand.cpp
 
 struct ClientState {
   int fd;
@@ -155,15 +155,15 @@ int setup_socket() {
 string getPrimaryMacAddress() {
   // Read from /sys/class/net/<interface>/address
   // Priority: eth*, en*, wlan*, then any non-virtual interface
-  const char* prefixes[] = {"eth", "en", "wlan", nullptr};
+  const char *prefixes[] = {"eth", "en", "wlan", nullptr};
 
-  DIR* netDir = opendir("/sys/class/net");
+  DIR *netDir = opendir("/sys/class/net");
   if (!netDir) {
     return "";
   }
 
   string result = "";
-  struct dirent* entry;
+  struct dirent *entry;
 
   // First pass: look for preferred interfaces
   for (int i = 0; prefixes[i] != nullptr && result.empty(); i++) {
@@ -245,7 +245,7 @@ int setup_peer_socket() {
   string wg_ip = getWgInterfaceIP();
   if (wg_ip.empty()) {
     cerr << "INFO: wg0 interface not found, peer networking disabled" << endl;
-    return 0;  // Not an error, just no WireGuard available
+    return 0; // Not an error, just no WireGuard available
   }
 
   peer_socket_fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
@@ -307,7 +307,8 @@ void accept_new_client() {
 void accept_new_peer() {
   struct sockaddr_in peer_addr;
   socklen_t peer_len = sizeof(peer_addr);
-  int peer_fd = accept(peer_socket_fd, (struct sockaddr *)&peer_addr, &peer_len);
+  int peer_fd =
+      accept(peer_socket_fd, (struct sockaddr *)&peer_addr, &peer_len);
   if (peer_fd < 0)
     return;
 
@@ -328,7 +329,9 @@ int handle_peer_data(int peer_fd) {
   if (bytesRead <= 0) {
     cerr << "Peer disconnected: FD=" << peer_fd << " IP=" << state.peer_ip
          << " peer_id=" << state.peer_id << endl;
-    logToFile("Peer disconnected: " + state.peer_ip + " (" + state.peer_id + ")", LOG_CORE);
+    logToFile("Peer disconnected: " + state.peer_ip + " (" + state.peer_id +
+                  ")",
+              LOG_CORE);
     if (!state.peer_id.empty()) {
       PeerTable::updateOnlineStatus(state.peer_id, false);
       AppManager::clearPeerAppStatus(state.peer_id);
@@ -362,7 +365,8 @@ int handle_peer_data(int peer_fd) {
     logToFile("Peer message from " + state.peer_ip + ": " + message, LOG_CORE);
 
     // Intercept heartbeat — just update last_seen, no response
-    if (j.contains("command") && j["command"] == "heartbeat" && j.contains("peer_id")) {
+    if (j.contains("command") && j["command"] == "heartbeat" &&
+        j.contains("peer_id")) {
       string hbPeerId = j["peer_id"].get<string>();
       if (j.contains("daemon_version")) {
         PeerTable::touchLastSeen(hbPeerId, j["daemon_version"].get<int>());
@@ -378,7 +382,8 @@ int handle_peer_data(int peer_fd) {
     }
 
     // Track peer_id from registerPeer command
-    if (j.contains("command") && j["command"] == COMMAND_REGISTER_PEER && j.contains("peer_id")) {
+    if (j.contains("command") && j["command"] == COMMAND_REGISTER_PEER &&
+        j.contains("peer_id")) {
       state.peer_id = j["peer_id"].get<string>();
       if (j.contains("appStatus") && j["appStatus"].is_object()) {
         AppManager::updatePeerAppStatus(state.peer_id, j["appStatus"]);
@@ -468,15 +473,19 @@ int handle_client_data(int client_fd) {
       write(client_fd, result.c_str(), result.length());
       continue;
     }
-    if (mainCommand(j, client_fd) == 1) {
+    int res = mainCommand(j, client_fd);
+    if (res == 1) {
       // If mainCommand returns 1, it means we should close the connection.
-      // We don't need to call close() here as mainCommand already might have or
-      // we will. Actually mainCommand shouldn't close it, handle_client_data
-      // should.
       unregisterLogSubscriber(client_fd);
       close(client_fd);
       clients.erase(client_fd);
       return 0;
+    } else if (res == 2) {
+      // Slow command handed off to a thread.
+      // We must stop tracking this client in the main loop immediately.
+      unregisterLogSubscriber(client_fd);
+      clients.erase(client_fd);
+      return 0; // Break out of processing for this client
     }
   }
   return 0;
@@ -499,7 +508,8 @@ void retry_peer_socket_setup() {
     for (int s = 0; s < RETRY_INTERVAL_SECS && running; s++) {
       sleep(1);
     }
-    if (!running) break;
+    if (!running)
+      break;
 
     string wg_ip = getWgInterfaceIP();
     if (wg_ip.empty()) {
@@ -533,8 +543,8 @@ void retry_peer_socket_setup() {
 
   if (running) {
     logToFile("Gave up on peer socket after " + to_string(MAX_RETRIES) +
-                  " retries (" +
-                  to_string(MAX_RETRIES * RETRY_INTERVAL_SECS) + "s)",
+                  " retries (" + to_string(MAX_RETRIES * RETRY_INTERVAL_SECS) +
+                  "s)",
               LOG_CORE);
   }
 }
@@ -585,11 +595,15 @@ int initialize_daemon() {
   // Setup peer-to-peer socket (optional - only if wg0 exists)
   rc = setup_peer_socket();
   if (rc != 0) {
-    logToFile("WARNING: Peer socket setup failed, continuing without peer networking", LOG_CORE);
+    logToFile(
+        "WARNING: Peer socket setup failed, continuing without peer networking",
+        LOG_CORE);
   } else if (peer_socket_fd < 0) {
     // wg0 not available yet — retry in background (common after boot when
     // daemon starts before WireGuard)
-    logToFile("Starting background retry for peer socket (wg0 not yet available)", LOG_CORE);
+    logToFile(
+        "Starting background retry for peer socket (wg0 not yet available)",
+        LOG_CORE);
     std::thread(retry_peer_socket_setup).detach();
   }
 
@@ -680,7 +694,8 @@ void daemon_loop() {
     for (auto &pair : peer_clients)
       peer_fds.push_back(pair.first);
     for (int fd : peer_fds)
-      if (FD_ISSET(fd, &read_fds) && peer_clients.find(fd) != peer_clients.end())
+      if (FD_ISSET(fd, &read_fds) &&
+          peer_clients.find(fd) != peer_clients.end())
         handle_peer_data(fd);
 
     // Handle data from leader (for workers)

@@ -25,6 +25,60 @@ extern string getPrimaryMacAddress();
 // External client socket - set by mainCommand before calling handlers
 extern int g_clientSocket;
 
+static CmdResult sendToManager(const string &ip, const json &command) {
+  int sock = socket(AF_INET, SOCK_STREAM, 0);
+  if (sock < 0)
+    return CmdResult(1, "Failed to create socket for manager\n");
+
+  struct sockaddr_in server_addr;
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_port = htons(MANAGER_PORT);
+  if (inet_pton(AF_INET, ip.c_str(), &server_addr.sin_addr) <= 0) {
+    close(sock);
+    return CmdResult(1, "Invalid IP address for manager: " + ip + "\n");
+  }
+
+  // Set timeout
+  struct timeval timeout;
+  timeout.tv_sec = 10;
+  timeout.tv_usec = 0;
+  setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+  timeout.tv_sec = 300; // 5 minute timeout for build
+  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+  if (connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    close(sock);
+    return CmdResult(1, "Failed to connect to manager at " + ip + ":" +
+                            to_string(MANAGER_PORT) + "\n");
+  }
+
+  string msg = command.dump() + "\n";
+  if (send(sock, msg.c_str(), msg.length(), 0) < 0) {
+    close(sock);
+    return CmdResult(1, "Failed to send command to manager at " + ip + "\n");
+  }
+
+  char buffer[65536];
+  memset(buffer, 0, sizeof(buffer));
+  ssize_t n = recv(sock, buffer, sizeof(buffer) - 1, 0);
+  close(sock);
+
+  if (n <= 0)
+    return CmdResult(1, "No response from manager at " + ip + "\n");
+
+  try {
+    json response = json::parse(buffer);
+    int status =
+        response.contains("status") ? response["status"].get<int>() : 1;
+    string output = response.contains("output")
+                        ? response["output"].get<string>()
+                        : string(buffer);
+    return CmdResult(status, output);
+  } catch (const exception &e) {
+    return CmdResult(0, string(buffer)); // Fallback to raw output
+  }
+}
+
 // Helper function for workers to query leader for peer IP
 static string queryLeaderForPeerIP(const string &peer_id) {
   PeerManager &pm = PeerManager::getInstance();
@@ -564,34 +618,34 @@ CmdResult handleRemoteBd(const json &command) {
 
 CmdResult handleRemoteDeployDaemon(const json &command) {
   string peer_id = command[COMMAND_ARG_PEER].get<string>();
+  PeerManager &pm = PeerManager::getInstance();
 
-  // First: git pull
-  json pullCmd;
-  pullCmd["command"] = COMMAND_EXEC_ON_PEER;
-  pullCmd[COMMAND_ARG_PEER] = peer_id;
-  pullCmd[COMMAND_ARG_DIRECTORY] = "/opt/automateLinux";
-  pullCmd[COMMAND_ARG_SHELL_CMD] = "git pull";
-
-  CmdResult pullResult = handleExecOnPeer(pullCmd);
-  if (pullResult.status != 0) {
-    return CmdResult(pullResult.status, "Pull failed:\n" + pullResult.message);
+  // Find IP for this peer
+  string ip;
+  if (pm.isLeader()) {
+    PeerRecord dbPeer = PeerTable::getPeer(peer_id);
+    ip = dbPeer.ip_address;
+    if (ip.empty() && peer_id == pm.getPeerId())
+      ip = "127.0.0.1";
+  } else {
+    if (peer_id == pm.getPeerId()) {
+      ip = "127.0.0.1";
+    } else {
+      ip = queryLeaderForPeerIP(peer_id);
+    }
   }
 
-  // Second: build daemon
-  json buildCmd;
-  buildCmd["command"] = COMMAND_EXEC_ON_PEER;
-  buildCmd[COMMAND_ARG_PEER] = peer_id;
-  buildCmd[COMMAND_ARG_DIRECTORY] = "/opt/automateLinux/daemon";
-  buildCmd[COMMAND_ARG_SHELL_CMD] = "bash -c 'source ./build.sh'";
-
-  CmdResult buildResult = handleExecOnPeer(buildCmd);
-  if (buildResult.status != 0) {
-    return CmdResult(buildResult.status,
-                     "Pull succeeded, build failed:\n" + buildResult.message);
+  if (ip.empty()) {
+    return CmdResult(1, "Could not find IP for peer: " + peer_id + "\n");
   }
 
-  return CmdResult(0, "Pull:\n" + pullResult.message + "\nBuild:\n" +
-                          buildResult.message);
+  logToFile("Directing deploy request to manager at " + ip, LOG_CORE);
+
+  // Send single 'deploy' command to manager
+  json mgrCmd;
+  mgrCmd["command"] = "deploy";
+
+  return sendToManager(ip, mgrCmd);
 }
 
 CmdResult handleDbSanityCheck(const json &) {

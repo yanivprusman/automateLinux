@@ -360,9 +360,12 @@ void PeerTable::upsertPeer(const std::string &peer_id, const std::string &ip,
     return;
   try {
     std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
-        "INSERT INTO peer_registry (peer_id, ip_address, mac_address, hostname, "
-        "is_online, last_seen, daemon_version) VALUES (?, ?, ?, ?, ?, NOW(), ?) "
-        "ON DUPLICATE KEY UPDATE ip_address = ?, mac_address = ?, hostname = ?, "
+        "INSERT INTO peer_registry (peer_id, ip_address, mac_address, "
+        "hostname, "
+        "is_online, last_seen, daemon_version) VALUES (?, ?, ?, ?, ?, NOW(), "
+        "?) "
+        "ON DUPLICATE KEY UPDATE ip_address = ?, mac_address = ?, hostname = "
+        "?, "
         "is_online = ?, last_seen = NOW(), daemon_version = ?"));
     pstmt->setString(1, peer_id);
     pstmt->setString(2, ip);
@@ -389,7 +392,8 @@ PeerRecord PeerTable::getPeer(const std::string &peer_id) {
     return result;
   try {
     std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
-        "SELECT peer_id, ip_address, mac_address, hostname, last_seen, is_online, "
+        "SELECT peer_id, ip_address, mac_address, hostname, last_seen, "
+        "is_online, "
         "daemon_version FROM peer_registry WHERE peer_id = ?"));
     pstmt->setString(1, peer_id);
     std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
@@ -415,8 +419,12 @@ std::vector<PeerRecord> PeerTable::getAllPeers() {
     return results;
   try {
     std::unique_ptr<sql::Statement> stmt(con->createStatement());
+    // Mark as offline if last_seen > 1 minute ago. Using IF to avoid alias
+    // conflicts.
     std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
-        "SELECT peer_id, ip_address, mac_address, hostname, last_seen, is_online, "
+        "SELECT peer_id, ip_address, mac_address, hostname, last_seen, "
+        "IF(is_online = 1 AND last_seen > NOW() - INTERVAL 60 SECOND, 1, 0) as "
+        "is_online_calculated, "
         "daemon_version FROM peer_registry ORDER BY peer_id"));
     while (res->next()) {
       PeerRecord record;
@@ -425,7 +433,7 @@ std::vector<PeerRecord> PeerTable::getAllPeers() {
       record.mac_address = res->getString("mac_address");
       record.hostname = res->getString("hostname");
       record.last_seen = res->getString("last_seen");
-      record.is_online = res->getBoolean("is_online");
+      record.is_online = res->getBoolean("is_online_calculated");
       record.daemon_version = res->getInt("daemon_version");
       results.push_back(record);
     }
@@ -458,8 +466,9 @@ void PeerTable::touchLastSeen(const std::string &peer_id) {
   if (!con)
     return;
   try {
-    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
-        "UPDATE peer_registry SET last_seen = NOW(), is_online = 1 WHERE peer_id = ?"));
+    std::unique_ptr<sql::PreparedStatement> pstmt(
+        con->prepareStatement("UPDATE peer_registry SET last_seen = NOW(), "
+                              "is_online = 1 WHERE peer_id = ?"));
     pstmt->setString(1, peer_id);
     pstmt->executeUpdate();
   } catch (sql::SQLException &e) {
@@ -541,14 +550,17 @@ void ExtraAppTable::upsertApp(const ExtraAppRecord &app) {
   try {
     std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
         "INSERT INTO extra_apps (app_id, display_name, repo_url, "
-        "has_server_component, server_service_template, client_service_template, "
+        "has_server_component, server_service_template, "
+        "client_service_template, "
         "port_key_client, port_key_server, dev_path, prod_path, "
         "server_build_subdir, client_subdir) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
         "ON DUPLICATE KEY UPDATE display_name = ?, repo_url = ?, "
         "has_server_component = ?, server_service_template = ?, "
-        "client_service_template = ?, port_key_client = ?, port_key_server = ?, "
-        "dev_path = ?, prod_path = ?, server_build_subdir = ?, client_subdir = ?"));
+        "client_service_template = ?, port_key_client = ?, port_key_server = "
+        "?, "
+        "dev_path = ?, prod_path = ?, server_build_subdir = ?, client_subdir = "
+        "?"));
     // Insert values
     pstmt->setString(1, app.app_id);
     pstmt->setString(2, app.display_name);
@@ -590,7 +602,8 @@ ExtraAppRecord ExtraAppTable::getApp(const std::string &app_id) {
     std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
         "SELECT app_id, display_name, repo_url, has_server_component, "
         "server_service_template, client_service_template, port_key_client, "
-        "port_key_server, dev_path, prod_path, server_build_subdir, client_subdir "
+        "port_key_server, dev_path, prod_path, server_build_subdir, "
+        "client_subdir "
         "FROM extra_apps WHERE app_id = ?"));
     pstmt->setString(1, app_id);
     std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
@@ -628,7 +641,8 @@ std::vector<ExtraAppRecord> ExtraAppTable::getAllApps() {
     std::unique_ptr<sql::ResultSet> res(stmt->executeQuery(
         "SELECT app_id, display_name, repo_url, has_server_component, "
         "server_service_template, client_service_template, port_key_client, "
-        "port_key_server, dev_path, prod_path, server_build_subdir, client_subdir "
+        "port_key_server, dev_path, prod_path, server_build_subdir, "
+        "client_subdir "
         "FROM extra_apps ORDER BY app_id"));
     while (res->next()) {
       auto safeStr = [&](const char *col) -> std::string {
@@ -676,8 +690,8 @@ bool ExtraAppTable::appExists(const std::string &app_id) {
   if (!con)
     return false;
   try {
-    std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement(
-        "SELECT 1 FROM extra_apps WHERE app_id = ?"));
+    std::unique_ptr<sql::PreparedStatement> pstmt(
+        con->prepareStatement("SELECT 1 FROM extra_apps WHERE app_id = ?"));
     pstmt->setString(1, app_id);
     std::unique_ptr<sql::ResultSet> res(pstmt->executeQuery());
     return res->next();

@@ -73,9 +73,19 @@ export -f tmuxReloadConfig
 
 bd(){
     local caller_dir="$PWD"
+    local peer_id
+    peer_id=$(hostname)
+    # Notify dashboard: building
+    curl -s -X POST http://localhost:3501/api/local-build \
+        -H "Content-Type: application/json" \
+        -d "{\"peer_id\":\"$peer_id\",\"status\":\"building\"}" >/dev/null 2>&1 || true
     cd "$AUTOMATE_LINUX_DAEMON_DIR"
     bs
     cd "$caller_dir" >/dev/null
+    # Notify dashboard: done
+    curl -s -X POST http://localhost:3501/api/local-build \
+        -H "Content-Type: application/json" \
+        -d "{\"peer_id\":\"$peer_id\",\"status\":\"done\"}" >/dev/null 2>&1 || true
 }
 export -f bd
 

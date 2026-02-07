@@ -85,6 +85,8 @@ CmdResult handleGetDir(const json &command) {
   string result;
   if (dirName == "base") {
     result = directories.base;
+  } else if (dirName == "dev") {
+    result = directories.dev;
   } else if (dirName == "data") {
     result = directories.data;
   } else {

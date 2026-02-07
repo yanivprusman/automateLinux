@@ -131,7 +131,7 @@
 #define COMMAND_ARG_COMPONENT "component"
 
 // App Paths
-#define EXTRA_APPS_DIR "/opt/automateLinux/extraApps/"
+#define DEV_APPS_DIR "/opt/dev/"
 #define PROD_APPS_DIR "/opt/prod/"
 
 #define COMMAND_DELETE_PORT "deletePort"

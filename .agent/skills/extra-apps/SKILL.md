@@ -5,14 +5,14 @@ description: Instructions for finding and managing extra/external applications l
 
 # Extra Applications
 
-The AutomateLinux ecosystem integrates several external applications stored directly in the `extraApps/` directory.
+The AutomateLinux ecosystem integrates several external applications stored at `/opt/dev/` (development) and `/opt/prod/` (production).
 
 ## Registered Apps
 
 | App ID | Display Name | Has Server | Dev Path | Prod Path |
 |--------|--------------|------------|----------|-----------|
-| `cad` | CAD Application | No | `/opt/automateLinux/extraApps/cad` | `/opt/prod/cad` |
-| `pt` | Public Transportation | No | `/opt/automateLinux/extraApps/publicTransportation` | `/opt/prod/publicTransportation` |
+| `cad` | CAD Application | No | `/opt/dev/cad` | `/opt/prod/cad` |
+| `pt` | Public Transportation | No | `/opt/dev/publicTransportation` | `/opt/prod/publicTransportation` |
 
 ## App Lifecycle Commands
 
@@ -94,7 +94,7 @@ d restartApp --app cad --mode prod         # Restart services
 
 ### CAD Dev Server
 ```bash
-/opt/automateLinux/extraApps/cad/open_app.sh
+/opt/dev/cad/open_app.sh
 ```
 This starts the dev server on the daemon-registered port and opens Chrome in app mode.
 
@@ -112,7 +112,7 @@ When multiple machines are connected via WireGuard VPN, the daemon tracks which 
 Use `gita` instead of `git add` when working in an extraApp directory:
 
 ```bash
-cd /opt/automateLinux/extraApps/cad
+cd /opt/dev/cad
 gita .                    # Claims app, then runs git add
 ```
 

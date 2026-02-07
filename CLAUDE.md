@@ -7,12 +7,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 automateLinux is a suite of tools for personalizing and automating a Linux desktop environment:
 - **C++ Daemon** (`daemon/`): Central background service managing input events, port registry, database state, peer networking (over WireGuard VPN), and command dispatching via UNIX sockets and TCP
 - **Terminal Environment** (`terminal/`): Modular Bash scripts for shell customization including shared directory history (`Ctrl+Up/Down`), custom prompt, aliases, and functions
-- **Dashboard** (`extraApps/dashboard/`): React/Vite web app for live logs, macro builder, and system configuration. Uses bridge.cjs to communicate with daemon. Separate git repo (prod worktree at `/opt/prod/dashboard/`)
+- **Dashboard** (`/opt/dev/dashboard/`): React/Vite web app for live logs, macro builder, and system configuration. Uses bridge.cjs to communicate with daemon. Separate git repo (prod worktree at `/opt/prod/dashboard/`)
 - **Chrome Extension** (`chromeExtensions/daemon/`): Browser state sync via Native Messaging (tracks active tabs, Ctrl+V focus+paste on ChatGPT)
 - **GNOME Extensions** (`gnomeExtensions/`): Desktop integration - status menu for daemon control, active window tracking
 - **VS Code Extensions** (`visualStudioCodeExtensions/`): Editor integrations for daemon monitoring, git workflows, and log viewing
 - **Utilities** (`utilities/`): Standalone tools - termcontrol, sendKeysUInput, lastChanged, cleanBetween, emergencyRestore.sh
-- **Extra Apps** (`extraApps/`): Standalone applications as separate git repos (cad, publicTransportation, dashboard, immersiveRDP) to simplify agent access.
+- **Extra Apps** (`/opt/dev/`): Standalone applications as separate git repos (cad, publicTransportation, dashboard, immersiveRDP). Dev at `/opt/dev/<app>`, prod at `/opt/prod/<app>`.
 
 ## Build Commands
 
@@ -24,8 +24,8 @@ The `bd` function changes to daemon dir, runs `source ./build.sh`, and returns. 
 
 ### Dashboard
 ```bash
-node extraApps/dashboard/bridge.cjs &                      # Start bridge (port 3501)
-cd extraApps/dashboard && npm run dev -- --port 3007       # Start frontend (port 3007)
+node /opt/dev/dashboard/bridge.cjs &                       # Start bridge (port 3501)
+cd /opt/dev/dashboard && npm run dev -- --port 3007        # Start frontend (port 3007)
 # Then open http://localhost:3007
 # Or use daemon commands: d startApp --app dashboard --mode dev
 ```
@@ -266,7 +266,7 @@ All peer commands work from **any peer** (leader or worker). Workers automatical
 - **daemon/src/DaemonServer.cpp**: UNIX socket server + TCP peer socket handling
 - **daemon/src/PeerManager.cpp**: Leader/worker connection management
 - **daemon/src/DatabaseTableManagers.cpp**: MySQL table management (including peer_registry)
-- **extraApps/dashboard/bridge.cjs**: WebSocket/REST bridge to daemon for dashboard
+- **/opt/dev/dashboard/bridge.cjs**: WebSocket/REST bridge to daemon for dashboard
 - **terminal/functions/git.sh**: Git helpers including `gita` with behind-branch warning
 - **terminal/functions/*.sh**: Modular bash functions
 
@@ -297,14 +297,14 @@ fixAutoLinuxPerms /opt/prod/cad      # Fix specific path
 
 ## Extra Apps
 
-Applications in `extraApps/` are stored directly in this repo (not symlinks) to simplify AI agent access without extra permissions. Each app may have its own build system and CLAUDE.md/GEMINI.md for app-specific guidance.
+Applications live at `/opt/dev/<appName>` (development) and `/opt/prod/<appName>` (production worktrees). Each app is a separate git repo with its own build system and CLAUDE.md/GEMINI.md for app-specific guidance.
 
-**Production versions** are git worktrees at `/opt/prod/<appName>`, checked out at specific commits (detached HEAD). To update prod, use `git worktree` commands to move to a new commit.
+**Production versions** are git worktrees at `/opt/prod/<appName>`, checked out at specific commits (detached HEAD). To update prod, use daemon commands.
 
-> **⚠️ NEVER DEVELOP IN PROD.** All development must happen in `extraApps/<appName>` (dev). The prod worktree at `/opt/prod/<appName>` must ONLY contain committed code - no local modifications ever.
+> **⚠️ NEVER DEVELOP IN PROD.** All development must happen in `/opt/dev/<appName>`. The prod worktree at `/opt/prod/<appName>` must ONLY contain committed code - no local modifications ever.
 >
 > **Deployment workflow (use daemon commands only):**
-> 1. Make changes in `extraApps/<appName>` and test with dev mode
+> 1. Make changes in `/opt/dev/<appName>` and test with dev mode
 > 2. Commit changes to the app's git repo
 > 3. Deploy to prod: `d deployToProd --app <name>` (uses latest dev commit)
 >    - Or specify commit: `d deployToProd --app <name> --commit <hash>`

@@ -13,7 +13,7 @@ shedSwitch(){
     if [ -z "$base_dir" ]; then
         base_dir="${AUTOMATE_LINUX_DIR:-/opt/automateLinux/}"
     fi
-    local repo_dir="${base_dir}extraApps/cad"
+    local repo_dir="/opt/dev/cad"
 
     echo -e "${YELLOW}Switching shed version to: $target...${NC}"
     

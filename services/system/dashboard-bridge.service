@@ -7,8 +7,9 @@ StartLimitBurst=20
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/automateLinux/extraApps/dashboard
+WorkingDirectory=/opt/dev/dashboard
 ExecStartPre=-/bin/bash -c 'fuser -k 3501/tcp 2>/dev/null || true; sleep 0.5'
+ExecStartPre=/bin/bash -c 'for i in $(seq 1 30); do [ -S /run/automatelinux/automatelinux-daemon.sock ] && exit 0; sleep 1; done; echo "Warning: daemon socket not ready after 30s"'
 ExecStart=/usr/bin/node bridge.cjs
 Restart=on-failure
 RestartSec=5s

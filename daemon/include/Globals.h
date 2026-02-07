@@ -14,6 +14,7 @@ using std::filesystem::canonical;
 
 struct Directories {
   string base;
+  string dev;
   string data;
   string symlinks;
   string terminal;
@@ -43,6 +44,7 @@ struct Directories {
     } else {
       base = p.string() + "/";
     }
+    dev = "/opt/dev/";
     data = base + "data/";
     symlinks = base + "symlinks/";
     terminal = base + "terminal/";

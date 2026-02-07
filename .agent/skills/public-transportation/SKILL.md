@@ -47,7 +47,7 @@ d listPorts                           # List all ports
 
 | Mode | Path |
 |------|------|
-| Development | `/opt/automateLinux/extraApps/publicTransportation` |
+| Development | `/opt/dev/publicTransportation` |
 | Production | `/opt/prod/publicTransportation` |
 
 ## Troubleshooting

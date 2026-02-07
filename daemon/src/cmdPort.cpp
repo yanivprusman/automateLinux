@@ -178,15 +178,15 @@ CmdResult handleListPorts(const json &command) {
 
       // Determine repository path based on key
       if (key == "dashboard-dev" || key == "dashboard-bridge") {
-        repoPath = directories.base + "extraApps/dashboard";
+        repoPath = "/opt/dev/dashboard";
       } else if (key == "dashboard-prod") {
         repoPath = "/opt/prod/dashboard";
       } else if (key == "cad-dev") {
-        repoPath = directories.base + "extraApps/cad";
+        repoPath = "/opt/dev/cad";
       } else if (key == "cad-prod") {
         repoPath = "/opt/prod/cad";
       } else if (key == "pt-dev") {
-        repoPath = directories.base + "extraApps/publicTransportation";
+        repoPath = "/opt/dev/publicTransportation";
       } else if (key == "pt-prod") {
         repoPath = "/opt/prod/publicTransportation";
       }

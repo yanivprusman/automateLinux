@@ -17,7 +17,7 @@ struct AppConfig {
   std::string clientServiceTemplate; // e.g., "{app}-client-{mode}"
   std::string portKeyClient;         // e.g., "cad" -> port_cad-dev
   std::string portKeyServer;         // e.g., "cad-server" -> port_cad-server
-  std::string devPath;               // e.g., "/opt/automateLinux/extraApps/cad"
+  std::string devPath;               // e.g., "/opt/dev/cad"
   std::string prodPath;              // e.g., "/opt/prod/cad"
   std::string serverBuildSubdir;     // e.g., "server" (relative to app path)
   std::string clientSubdir;          // e.g., "client" (relative to app path)

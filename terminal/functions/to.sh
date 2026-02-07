@@ -17,8 +17,8 @@ to() {
     done
 
     local base=$(d getDir --dirName base)
-    local extra_apps_dir="${base}extraApps"
-    local prod_dir="$HOME/coding/prod"
+    local dev_dir="/opt/dev"
+    local prod_dir="/opt/prod"
 
     # Handle automateLinux specially
     if [[ "$target" == "automateLinux" ]]; then
@@ -26,12 +26,12 @@ to() {
         return 0
     fi
 
-    # Check if target is a valid app in extraApps
-    if [[ -n "$target" && -d "${extra_apps_dir}/${target}" ]]; then
+    # Check if target is a valid app in dev
+    if [[ -n "$target" && -d "${dev_dir}/${target}" ]]; then
         if $prod; then
             cd "${prod_dir}/${target}"
         else
-            cd "${extra_apps_dir}/${target}"
+            cd "${dev_dir}/${target}"
         fi
         return 0
     fi
@@ -41,12 +41,12 @@ to() {
 
 _to_completions() {
     local cur="${COMP_WORDS[COMP_CWORD]}"
-    local extra_apps_dir="${AUTOMATE_LINUX_DIR}extraApps"
+    local dev_dir="/opt/dev"
 
     # Build list of completions
     local completions="-prod automateLinux"
-    if [[ -d "$extra_apps_dir" ]]; then
-        for app in "${extra_apps_dir}"/*/; do
+    if [[ -d "$dev_dir" ]]; then
+        for app in "${dev_dir}"/*/; do
             if [[ -d "$app" ]]; then
                 app_name=$(basename "$app")
                 completions="$completions $app_name"

@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Exec=ptyxis --maximize
+Exec=bash -c 'if command -v gnome-terminal >/dev/null 2>&1; then gnome-terminal --maximize; else ptyxis --maximize; fi'
 Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
